@@ -17,7 +17,7 @@ export function PendingDevices({
     <section className="content-section" aria-labelledby="pending-title">
       <div className="section-heading">
         <div>
-          <h2 id="pending-title">Solicitudes pendientes</h2>
+          <div className="section-title-row"><span className="section-icon"><TabletSmartphone size={19} /></span><h2 id="pending-title">Solicitudes pendientes</h2></div>
           <p>Autoriza una nueva tablet o rechaza una solicitud obsoleta.</p>
         </div>
       </div>
@@ -58,14 +58,14 @@ export function PendingDevices({
                     disabled={mutation !== null}
                     onClick={() => onAuthorize(device)}
                   >
-                    {isAuthorizing ? 'Autorizando…' : 'Autorizar tablet'}
+                    <Check size={17} /> {isAuthorizing ? 'Autorizando…' : 'Autorizar tablet'}
                   </button>
                   <button
                     className="button button--secondary"
                     disabled={mutation !== null}
                     onClick={() => onReject(device)}
                   >
-                    {isRejecting ? 'Rechazando…' : 'Rechazar'}
+                    <X size={17} /> {isRejecting ? 'Rechazando…' : 'Rechazar'}
                   </button>
                 </div>
               </article>
@@ -76,3 +76,4 @@ export function PendingDevices({
     </section>
   )
 }
+import { Check, TabletSmartphone, X } from 'lucide-react'

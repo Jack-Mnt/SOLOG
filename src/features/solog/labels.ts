@@ -1,12 +1,4 @@
-import type { SologCountType, SologDifferenceState } from './types'
-
-const COUNT_TYPE_LABELS: Record<SologCountType, string> = {
-  categoria: 'Por categoría',
-  cambios_recientes: 'Cambios recientes',
-  stock_cero: 'Stock 0',
-  stock_negativo: 'Stock negativo',
-  reconteo: 'Contar detalladamente',
-}
+import type { SologDifferenceState } from './types'
 
 const DIFFERENCE_STATE_LABELS: Record<SologDifferenceState, string> = {
   coincide: 'Coincide',
@@ -16,10 +8,6 @@ const DIFFERENCE_STATE_LABELS: Record<SologDifferenceState, string> = {
   persistente: 'Persistente',
   confirmada_reconteo: 'Confirmada por reconteo',
   conteos_inconsistentes: 'Conteos inconsistentes',
-}
-
-export function getSologCountTypeLabel(type: SologCountType): string {
-  return COUNT_TYPE_LABELS[type]
 }
 
 export function getSologDifferenceStateLabel(

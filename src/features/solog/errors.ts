@@ -16,7 +16,6 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_CASHIER_WITHOUT_SEDE',
   'SOLOG_OPERATIONAL_ROLE_REQUIRED',
   'SOLOG_ADMIN_ROLE_REQUIRED',
-  'SOLOG_INVALID_COUNT_TYPE',
   'SOLOG_CATEGORY_REQUIRED',
   'SOLOG_CATEGORY_NOT_AVAILABLE',
   'SOLOG_ACTIVE_COUNT_EXISTS',
@@ -24,16 +23,23 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_COUNT_NOT_AVAILABLE',
   'SOLOG_COUNT_NOT_ACTIVE',
   'SOLOG_COUNT_EXPIRED',
+  'SOLOG_SNAPSHOT_EXPIRED',
+  'SOLOG_SNAPSHOT_EXPIRING',
   'SOLOG_ACTIVE_COUNT_REQUIRED',
   'SOLOG_REFERENCE_SNAPSHOT_NOT_AVAILABLE',
   'SOLOG_INVALID_COUNT_PAYLOAD',
-  'SOLOG_GROUP_ALREADY_COUNTED',
+  'SOLOG_INVALID_BATCH_PAYLOAD',
+  'SOLOG_BATCH_TOO_LARGE',
+  'SOLOG_INVALID_BATCH_ITEM',
+  'SOLOG_INVALID_COUNT_TIMESTAMP',
+  'SOLOG_DUPLICATE_GROUP_IN_BATCH',
+  'SOLOG_GROUP_ALREADY_COVERED_QUINCENA',
+  'SOLOG_QUINCENAL_COVERAGE_REQUIRED',
   'SOLOG_GROUP_NOT_AVAILABLE',
   'SOLOG_GROUP_NOT_IN_CATALOG',
   'SOLOG_GROUP_NOT_ALLOWED_IN_COUNT',
   'SOLOG_USE_RECOUNT_ACTION',
   'SOLOG_VIEW_REQUIRED',
-  'SOLOG_VIEW_MISMATCH',
   'SOLOG_INVALID_RECOUNT_PAYLOAD',
   'SOLOG_RECOUNT_NOT_AVAILABLE',
   'SOLOG_RECOUNT_NOT_ELIGIBLE',
@@ -75,12 +81,25 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_COUNT_NOT_AVAILABLE: 'Este conteo ya no está disponible.',
   SOLOG_COUNT_NOT_ACTIVE: 'La sesión de conteo ya no está activa.',
   SOLOG_COUNT_EXPIRED: 'La sesión de conteo venció. Inicia una nueva.',
+  SOLOG_SNAPSHOT_EXPIRED:
+    'El inventario de referencia venció. Se requiere un Excel actualizado.',
+  SOLOG_SNAPSHOT_EXPIRING:
+    'El inventario está por vencer y ya no permite iniciar una sesión nueva.',
   SOLOG_CONFIRMED_SNAPSHOT_REQUIRED:
     'Todavía no existe stock actualizado para esta sede.',
   SOLOG_REFERENCE_SNAPSHOT_NOT_AVAILABLE:
     'El snapshot de referencia de esta sesión ya no está disponible.',
-  SOLOG_GROUP_ALREADY_COUNTED:
-    'Este grupo ya fue contado en esta sesión.',
+  SOLOG_INVALID_BATCH_PAYLOAD: 'El lote de capturas no es válido.',
+  SOLOG_BATCH_TOO_LARGE: 'El lote supera el máximo de 500 capturas.',
+  SOLOG_INVALID_BATCH_ITEM: 'Una captura del lote no es válida.',
+  SOLOG_INVALID_COUNT_TIMESTAMP:
+    'La hora física de una captura no es válida.',
+  SOLOG_DUPLICATE_GROUP_IN_BATCH:
+    'El lote contiene el mismo grupo más de una vez.',
+  SOLOG_GROUP_ALREADY_COVERED_QUINCENA:
+    'Uno de los grupos ya estaba cubierto en la quincena. Actualiza la vista antes de reintentar.',
+  SOLOG_QUINCENAL_COVERAGE_REQUIRED:
+    'Completa primero la cobertura quincenal para usar esta vista.',
   SOLOG_GROUP_NOT_ALLOWED_IN_COUNT:
     'Este grupo no pertenece al conteo activo.',
   SOLOG_INVALID_RECOUNT_PAYLOAD:
@@ -92,7 +111,7 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_RECOUNT_ALREADY_DONE:
     'Este grupo ya fue recontado.',
   SOLOG_INVALID_RECOUNT_GROUP:
-    'El backend no devolvió los datos de origen necesarios para recontar este grupo.',
+    'El backend no devolvió el detalle original necesario para recontar este grupo.',
   SOLOG_CLIENT_NOT_CONFIGURED:
     'SOLOG todavía no tiene configurada la conexión con Supabase.',
   SOLOG_EMPTY_RESPONSE: 'El backend no devolvió una respuesta.',

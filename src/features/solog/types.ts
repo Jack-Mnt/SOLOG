@@ -6,26 +6,15 @@ export type SologDeviceState =
   | 'autorizado'
   | 'revocado'
 
-export type SologCountType =
+export type SologCountView =
   | 'categoria'
-  | 'cambios_recientes'
   | 'stock_cero'
-  | 'stock_negativo'
-  | 'reconteo'
-
-export type SologGroupView =
-  | 'categoria'
   | 'cambios_recientes'
-  | 'stock_cero'
   | 'stock_negativo'
   | 'contar_detalladamente'
 
-export type SologRegularCountType = Exclude<SologCountType, 'reconteo'>
-
-export type SologRegularGroupView = Exclude<
-  SologGroupView,
-  'contar_detalladamente'
->
+export type SologBatchCountView = Exclude<SologCountView, 'contar_detalladamente'>
+export type SologSessionState = 'activo' | 'finalizado' | 'expirado'
 
 export type SologDifferenceState =
   | 'coincide'
@@ -36,8 +25,6 @@ export type SologDifferenceState =
   | 'confirmada_reconteo'
   | 'conteos_inconsistentes'
 
-export type SologCountCompletionState = 'completado' | 'parcial'
-
 export type SologAdminReportType =
   | 'summary'
   | 'counts'
@@ -45,17 +32,8 @@ export type SologAdminReportType =
   | 'history'
   | 'pos_adjustments'
 
-export type SologAdminCountState =
-  | 'activo'
-  | 'parcial'
-  | 'completado'
-  | 'expirado'
-
-export type SologAdminDifferenceState = Exclude<
-  SologDifferenceState,
-  'coincide'
->
-
+export type SologAdminCountState = SologSessionState
+export type SologAdminDifferenceState = Exclude<SologDifferenceState, 'coincide'>
 export type SologAdminPosAdjustmentState =
   | 'parcialmente_explicada'
   | 'persistente'
@@ -84,20 +62,23 @@ export interface SologDevice {
 
 export interface SologActiveSession {
   id: string
-  tipo: SologCountType
-  categoria_id?: string | null
+  estado: 'activo'
   iniciado_at: string
   expira_at: string
   snapshot_referencia_id: string
   snapshot_referencia_at: string
-  grupos_contados: number
+  snapshot_confirmado_at: string
+  grupos_registrados: number
 }
 
 export interface SologStockState {
   disponible: boolean
   snapshot_id: string | null
-  snapshot_at: string | null
+  snapshot_referencia_at: string | null
+  snapshot_confirmado_at: string | null
+  expira_at: string | null
   version_catalogo: number | null
+  puede_iniciar_conteo: boolean
 }
 
 export interface SologCoverage {
@@ -107,16 +88,21 @@ export interface SologCoverage {
   porcentaje: number
 }
 
+export interface SologFortnightCoverage extends SologCoverage {
+  completa: boolean
+  periodo: 'primera' | 'segunda'
+}
+
 export interface SologCategory {
   id: string
   nombre: string
   orden: number
-  grupos_inventariables: number
+  pendientes: number
 }
 
 export interface SologViewCounts {
-  cambios_recientes: number
   stock_cero: number
+  cambios_recientes: number
   stock_negativo: number
   contar_detalladamente: number
 }
@@ -127,7 +113,9 @@ export interface SologOperationalBootstrap {
   dispositivo: SologDevice
   sesion_activa: SologActiveSession | null
   stock: SologStockState
-  cobertura_hoy: SologCoverage
+  server_now: string
+  cobertura_diaria: SologCoverage
+  cobertura_quincenal: SologFortnightCoverage
   categorias: SologCategory[]
   vistas: SologViewCounts
 }
@@ -150,15 +138,14 @@ export interface SologCountGroupBase {
 }
 
 export interface SologRegularCountGroup extends SologCountGroupBase {
-  conteo_origen_id: string | null
-  estado_diferencia: 'parcialmente_explicada' | 'persistente' | null
-  stock_fisico_original: number | null
-  contado_at_original: string | null
+  detalle_id: null
+  estado_diferencia: null
+  stock_fisico_original: null
+  contado_at_original: null
 }
 
 export interface SologRecountGroup extends SologCountGroupBase {
-  /** ID del conteo original. Se usa solo en `rpc_solog_count/recount`. */
-  conteo_origen_id: string
+  detalle_id: string
   estado_diferencia: 'parcialmente_explicada' | 'persistente'
   stock_fisico_original: number
   contado_at_original: string
@@ -166,62 +153,67 @@ export interface SologRecountGroup extends SologCountGroupBase {
 
 export type SologCountGroup = SologRegularCountGroup | SologRecountGroup
 
-export function isSologRecountGroup(
-  group: SologCountGroup,
-): group is SologRecountGroup {
+export function isSologRecountGroup(group: SologCountGroup): group is SologRecountGroup {
   return (
-    typeof group.conteo_origen_id === 'string' &&
-    group.conteo_origen_id.length > 0 &&
+    typeof group.detalle_id === 'string' &&
+    group.detalle_id.length > 0 &&
     (group.estado_diferencia === 'parcialmente_explicada' ||
-      group.estado_diferencia === 'persistente') &&
-    Number.isInteger(group.stock_fisico_original) &&
-    typeof group.contado_at_original === 'string' &&
-    group.contado_at_original.length > 0
+      group.estado_diferencia === 'persistente')
   )
 }
 
 export interface SologGroupsResponse {
   conteo_id: string
-  vista: SologGroupView
+  vista: SologCountView
   snapshot_referencia_id: string
   snapshot_referencia_at: string
+  server_now?: string
   grupos: SologCountGroup[]
 }
 
-export type SologCountStartPayload =
-  | {
-      device_token: string
-      tipo: 'categoria'
-      categoria_id: string
-    }
-  | {
-      device_token: string
-      tipo: Exclude<SologCountType, 'categoria'>
-    }
+export type SologGroupsPayload =
+  | { device_token: string; vista: 'categoria'; categoria_id: string }
+  | { device_token: string; vista: Exclude<SologCountView, 'categoria'> }
+
+export interface SologCountStartPayload {
+  device_token: string
+}
 
 export interface SologCountStartResponse {
   ok: true
   codigo: 'COUNT_STARTED'
   conteo_id: string
-  tipo: SologCountType
-  categoria_id?: string | null
   snapshot_referencia_id: string
   snapshot_referencia_at: string
+  snapshot_confirmado_at: string
   iniciado_at: string
   expira_at: string
+  server_now: string
 }
 
-export interface SologCountSavePayload {
-  device_token: string
-  conteo_id: string
+export interface SologBatchItem {
   grupo_id: string
   stock_fisico: number
+  contado_at: string
 }
 
-export interface SologCountSaveResponse {
-  ok: true
-  codigo: 'GROUP_COUNT_SAVED'
-  conteo_id: string
+export type SologCountBatchPayload =
+  | {
+      device_token: string
+      conteo_id: string
+      vista: 'categoria'
+      categoria_id: string
+      items: SologBatchItem[]
+    }
+  | {
+      device_token: string
+      conteo_id: string
+      vista: Exclude<SologBatchCountView, 'categoria'>
+      items: SologBatchItem[]
+    }
+
+export interface SologBatchResultItem {
+  detalle_id: string
   grupo_id: string
   stock_teorico: number
   stock_fisico: number
@@ -230,6 +222,16 @@ export interface SologCountSaveResponse {
   valor_diferencia: number
   estado_diferencia: SologDifferenceState
   contado_at: string
+}
+
+export interface SologCountBatchResponse {
+  ok: true
+  codigo: 'COUNT_BATCH_SAVED'
+  conteo_id: string
+  items: SologBatchResultItem[]
+  guardados: number
+  sesion_expirada: boolean
+  server_now: string
 }
 
 export interface SologCountFinishPayload {
@@ -241,30 +243,41 @@ export interface SologCountFinishResponse {
   ok: true
   codigo: 'COUNT_FINISHED'
   conteo_id: string
-  estado: SologCountCompletionState
-  grupos_elegibles: number | null
-  grupos_contados: number | null
-  reconteos_pendientes: number | null
+  estado: 'finalizado'
   finalizado_at: string
+  server_now?: string
 }
 
 export interface SologRecountPayload {
   device_token: string
-  /** ID del conteo original; nunca el ID de la sesión activa de reconteo. */
   conteo_id: string
-  grupo_id: string
+  detalle_id: string
   stock_fisico: number
+  contado_at: string
 }
 
 export interface SologRecountResponse {
   ok: true
   codigo: 'RECOUNT_SAVED'
   conteo_id: string
-  grupo_id: string
+  detalle_id: string
   stock_fisico_original: number
   reconteo_stock: number
   estado_diferencia: 'confirmada_reconteo' | 'conteos_inconsistentes'
   recontado_at: string
+  server_now?: string
+}
+
+export interface SologPendingCapture extends SologBatchItem {
+  local_id: string
+  vista: SologBatchCountView
+  categoria_id?: string
+}
+
+export interface SologPendingQueue {
+  version: 2
+  conteo_id: string
+  items: SologPendingCapture[]
 }
 
 export interface SologAdminUser {
@@ -280,23 +293,20 @@ export interface SologAuthorizedDevice {
   ultimo_acceso_at: string | null
 }
 
-export interface SologAdminCoverage {
-  grupos_contados: number
-  grupos_totales: number
-}
-
 export interface SologAdminActiveSession {
   id: string
-  tipo: SologCountType
+  estado: 'activo'
   iniciado_at: string
   expira_at: string
   usuario_id: string
+  grupos_registrados: number
 }
 
 export interface SologAdminSite extends SologSede {
-  dispositivo: SologAuthorizedDevice | null
+  tablet: SologAuthorizedDevice | null
   sesion_activa: SologAdminActiveSession | null
-  cobertura_hoy: SologAdminCoverage
+  cobertura_diaria: SologCoverage
+  cobertura_quincenal: SologFortnightCoverage
 }
 
 export interface SologPendingDevice {
@@ -337,9 +347,7 @@ export interface SologAdminReportFilters {
 }
 
 export type SologAdminReportPayload =
-  | (SologAdminReportFilters & {
-      report_type: 'summary'
-    })
+  | (SologAdminReportFilters & { report_type: 'summary' })
   | (SologAdminReportFilters & {
       report_type: 'counts'
       estado?: SologAdminCountState
@@ -388,19 +396,18 @@ export interface SologAdminCountRow {
   sede: string
   usuario_id: string
   usuario: string
-  tipo: SologCountType
-  categoria_id: string | null
   estado: SologAdminCountState
   iniciado_at: string
   expira_at: string
   finalizado_at: string | null
   snapshot_referencia_id: string
-  grupos_contados: number
+  grupos_registrados: number
 }
 
 export interface SologAdminObservationRow<
   TState extends SologDifferenceState = SologDifferenceState,
 > {
+  id: string
   conteo_id: string
   grupo_id: string
   grupo: string
@@ -426,13 +433,9 @@ export interface SologAdminObservationRow<
   sku_unico: number | null
 }
 
-export type SologAdminDifferenceRow =
-  SologAdminObservationRow<SologAdminDifferenceState>
-
+export type SologAdminDifferenceRow = SologAdminObservationRow<SologAdminDifferenceState>
 export type SologAdminHistoryRow = SologAdminObservationRow
-
-export type SologAdminPosAdjustmentRow =
-  SologAdminObservationRow<SologAdminPosAdjustmentState>
+export type SologAdminPosAdjustmentRow = SologAdminObservationRow<SologAdminPosAdjustmentState>
 
 export interface SologAdminSummaryResponse {
   report_type: 'summary'

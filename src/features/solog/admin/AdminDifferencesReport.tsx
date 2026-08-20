@@ -38,7 +38,7 @@ export function AdminDifferencesReport({
         </thead>
         <tbody>
           {report.rows.map((row) => (
-            <tr key={`${row.conteo_id}-${row.grupo_id}`}>
+            <tr key={row.id}>
               <td>{formatAdminDate(row.contado_at)}</td>
               <td>{row.sede}</td>
               <td>{row.grupo}</td>

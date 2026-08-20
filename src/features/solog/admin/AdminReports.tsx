@@ -13,12 +13,13 @@ import type { SologAdminReportType, SologAdminSite } from '../types'
 const REPORT_TABS: Array<{
   type: SologAdminReportType
   label: string
+  icon: LucideIcon
 }> = [
-  { type: 'summary', label: 'Resumen por período' },
-  { type: 'counts', label: 'Conteos' },
-  { type: 'differences', label: 'Diferencias' },
-  { type: 'history', label: 'Historial' },
-  { type: 'pos_adjustments', label: 'Ajuste POS' },
+  { type: 'summary', label: 'Resumen por período', icon: ScrollText },
+  { type: 'counts', label: 'Conteos', icon: ListChecks },
+  { type: 'differences', label: 'Diferencias', icon: Scale },
+  { type: 'history', label: 'Historial', icon: History },
+  { type: 'pos_adjustments', label: 'Ajuste POS', icon: SlidersHorizontal },
 ]
 
 export function AdminReports({
@@ -47,7 +48,9 @@ export function AdminReports({
       </div>
 
       <div className="admin-report-tabs" role="tablist" aria-label="Tipos de reporte">
-        {REPORT_TABS.map((tab) => (
+        {REPORT_TABS.map((tab) => {
+          const TabIcon = tab.icon
+          return (
           <button
             aria-selected={reports.reportType === tab.type}
             className={`admin-tab${reports.reportType === tab.type ? ' admin-tab--active' : ''}`}
@@ -56,9 +59,10 @@ export function AdminReports({
             role="tab"
             type="button"
           >
-            {tab.label}
+            <TabIcon size={17} /> {tab.label}
           </button>
-        ))}
+          )
+        })}
       </div>
 
       <AdminReportFilters
@@ -119,7 +123,7 @@ export function AdminReports({
             onClick={reports.previousPage}
             type="button"
           >
-            Anterior
+            <ArrowLeft size={17} /> Anterior
           </button>
           <span>Página {Math.floor(reports.offset / ADMIN_REPORT_PAGE_SIZE) + 1}</span>
           <button
@@ -131,10 +135,20 @@ export function AdminReports({
             onClick={reports.nextPage}
             type="button"
           >
-            Siguiente
+            Siguiente <ArrowRight size={17} />
           </button>
         </nav>
       ) : null}
     </section>
   )
 }
+import {
+  ArrowLeft,
+  ArrowRight,
+  History,
+  ListChecks,
+  Scale,
+  ScrollText,
+  SlidersHorizontal,
+  type LucideIcon,
+} from 'lucide-react'

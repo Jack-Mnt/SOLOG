@@ -13,8 +13,7 @@ const peruCurrency = new Intl.NumberFormat('es-PE', {
 
 const COUNT_STATE_LABELS: Record<SologAdminCountState, string> = {
   activo: 'Activo',
-  parcial: 'Parcial',
-  completado: 'Completado',
+  finalizado: 'Finalizado',
   expirado: 'Expirado',
 }
 

@@ -1,5 +1,7 @@
 # SOLOG V1 — Contrato técnico Backend ↔ Frontend
 
+> **OBSOLETO:** este contrato se conserva solo como trazabilidad histórica. El frontend actual consume [SOLOG_Contrato_Tecnico_Backend_V2.md](./SOLOG_Contrato_Tecnico_Backend_V2.md), deliberadamente incompatible con V1.
+
 **Proyecto:** SOLOG  
 **Backend:** Supabase — `PuertoRicoOnline`  
 **Project ID:** `fvtohxvcvsflzmftgfzs`  

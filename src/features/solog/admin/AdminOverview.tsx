@@ -1,8 +1,4 @@
-import {
-  formatAdminDate,
-  getCoveragePercentage,
-} from './format'
-import { getSologCountTypeLabel } from '../labels'
+import { formatAdminDate } from './format'
 import type { SologAdminBootstrap, SologAdminSite } from '../types'
 
 function SiteAdminCard({
@@ -10,11 +6,8 @@ function SiteAdminCard({
 }: {
   site: SologAdminSite
 }) {
-  const coverage = site.cobertura_hoy
-  const percentage = getCoveragePercentage(
-    coverage.grupos_contados,
-    coverage.grupos_totales,
-  )
+  const fortnight = site.cobertura_quincenal
+  const daily = site.cobertura_diaria
   return (
     <article className="admin-site-card">
       <div className="admin-site-card__heading">
@@ -28,19 +21,25 @@ function SiteAdminCard({
       </div>
 
       <div className="admin-site-grid">
-        <section aria-label={`Cobertura de ${site.nombre}`}>
-          <span>Cobertura de hoy</span>
+        <section aria-label={`Cobertura quincenal de ${site.nombre}`}>
+          <span>Cobertura quincenal</span>
           <strong>
-            {coverage.grupos_contados} / {coverage.grupos_totales}
+            {fortnight.grupos_contados} / {fortnight.grupos_totales}
           </strong>
-          <small>{percentage}% contado</small>
+          <small>{fortnight.porcentaje}% · {fortnight.completa ? 'Completa' : `${fortnight.pendientes} pendientes`}</small>
+        </section>
+
+        <section aria-label={`Cobertura diaria de ${site.nombre}`}>
+          <span>Cobertura de hoy</span>
+          <strong>{daily.grupos_contados} / {daily.grupos_totales}</strong>
+          <small>{daily.porcentaje}% contado</small>
         </section>
 
         <section aria-label={`Sesión de ${site.nombre}`}>
           <span>Sesión</span>
           {site.sesion_activa ? (
             <>
-              <strong>{getSologCountTypeLabel(site.sesion_activa.tipo)}</strong>
+              <strong>{site.sesion_activa.grupos_registrados} grupos registrados</strong>
               <small>Inicio: {formatAdminDate(site.sesion_activa.iniciado_at)}</small>
               <small>Expira: {formatAdminDate(site.sesion_activa.expira_at)}</small>
             </>
@@ -51,14 +50,14 @@ function SiteAdminCard({
 
         <section aria-label={`Tablet de ${site.nombre}`}>
           <span>Tablet</span>
-          {site.dispositivo ? (
+          {site.tablet ? (
             <>
               <strong>Autorizada</strong>
               <small>
-                Autorizada: {formatAdminDate(site.dispositivo.autorizado_at)}
+                Autorizada: {formatAdminDate(site.tablet.autorizado_at)}
               </small>
               <small>
-                Último acceso: {formatAdminDate(site.dispositivo.ultimo_acceso_at)}
+                Último acceso: {formatAdminDate(site.tablet.ultimo_acceso_at)}
               </small>
             </>
           ) : (
@@ -77,7 +76,7 @@ export function AdminOverview({
 }) {
   const activeSites = bootstrap.sedes.filter((site) => site.activo).length
   const authorizedDevices = bootstrap.sedes.filter(
-    (site) => site.dispositivo !== null,
+    (site) => site.tablet !== null,
   ).length
   const activeSessions = bootstrap.sedes.filter(
     (site) => site.sesion_activa !== null,
@@ -87,19 +86,19 @@ export function AdminOverview({
     <>
       <div className="status-grid status-grid--four" aria-label="Resumen general">
         <div className="status-item">
-          <span>Sedes activas</span>
+          <span><Building2 size={15} /> Sedes activas</span>
           <strong>{activeSites}</strong>
         </div>
         <div className="status-item">
-          <span>Tablets autorizadas</span>
+          <span><TabletSmartphone size={15} /> Tablets autorizadas</span>
           <strong>{authorizedDevices}</strong>
         </div>
         <div className="status-item">
-          <span>Solicitudes pendientes</span>
+          <span><CalendarRange size={15} /> Solicitudes pendientes</span>
           <strong>{bootstrap.dispositivos_pendientes.length}</strong>
         </div>
         <div className="status-item">
-          <span>Sesiones activas</span>
+          <span><Activity size={15} /> Sesiones activas</span>
           <strong>{activeSessions}</strong>
         </div>
       </div>
@@ -107,7 +106,7 @@ export function AdminOverview({
       <section className="content-section" aria-labelledby="sites-title">
         <div className="section-heading">
           <div>
-            <h2 id="sites-title">Resumen por sede</h2>
+            <div className="section-title-row"><span className="section-icon"><Building2 size={19} /></span><h2 id="sites-title">Resumen por sede</h2></div>
             <p>Cobertura, sesión operativa y tablet autorizada.</p>
           </div>
         </div>
@@ -124,3 +123,9 @@ export function AdminOverview({
     </>
   )
 }
+import {
+  Activity,
+  Building2,
+  CalendarRange,
+  TabletSmartphone,
+} from 'lucide-react'

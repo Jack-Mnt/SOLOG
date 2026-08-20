@@ -34,7 +34,7 @@ export function AdminPosAdjustmentsReport({
         return (
           <article
             className="admin-pos-card"
-            key={`${row.conteo_id}-${row.grupo_id}`}
+            key={row.id}
           >
             <div className="admin-pos-heading">
               <div>

@@ -21,7 +21,9 @@ interface SologContextValue {
   bootstrap: SologOperationalBootstrap | null
   error: string | null
   notice: string | null
+  serverOffsetMs: number
   refresh: (preserveView?: boolean) => Promise<void>
+  updateServerNow: (serverNow: string) => void
   setNotice: (notice: string | null) => void
 }
 
@@ -56,6 +58,7 @@ export function SologProvider({ children }: { children: ReactNode }) {
     useState<SologOperationalBootstrap | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [serverOffsetMs, setServerOffsetMs] = useState(0)
   const requestVersion = useRef(0)
 
   const refresh = useCallback(async (preserveView = false) => {
@@ -75,6 +78,7 @@ export function SologProvider({ children }: { children: ReactNode }) {
       const nextBootstrap = await loadTrustedBootstrap()
       if (currentRequest !== requestVersion.current) return
       setBootstrap(nextBootstrap)
+      setServerOffsetMs(Date.parse(nextBootstrap.server_now) - Date.now())
       setStatus('ready')
     } catch (bootstrapError) {
       if (currentRequest !== requestVersion.current) return
@@ -101,9 +105,23 @@ export function SologProvider({ children }: { children: ReactNode }) {
     }
   }, [auth.user?.id, refresh])
 
+  const updateServerNow = useCallback((serverNow: string) => {
+    const serverTime = Date.parse(serverNow)
+    if (!Number.isNaN(serverTime)) setServerOffsetMs(serverTime - Date.now())
+  }, [])
+
   const value = useMemo<SologContextValue>(
-    () => ({ status, bootstrap, error, notice, refresh, setNotice }),
-    [bootstrap, error, notice, refresh, status],
+    () => ({
+      status,
+      bootstrap,
+      error,
+      notice,
+      serverOffsetMs,
+      refresh,
+      updateServerNow,
+      setNotice,
+    }),
+    [bootstrap, error, notice, refresh, serverOffsetMs, status, updateServerNow],
   )
 
   return <SologContext.Provider value={value}>{children}</SologContext.Provider>

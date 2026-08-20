@@ -10,7 +10,10 @@ import { DevicePendingPage } from './pages/DevicePendingPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 
-function resolveTrustedRoute(bootstrap: SologOperationalBootstrap): AppRoute {
+function resolveTrustedRoute(
+  bootstrap: SologOperationalBootstrap,
+  requestedPath: string,
+): AppRoute {
   if (
     bootstrap.usuario.rol === 'admin' ||
     bootstrap.usuario.rol === 'moderador'
@@ -23,7 +26,7 @@ function resolveTrustedRoute(bootstrap: SologOperationalBootstrap): AppRoute {
     bootstrap.dispositivo.estado === 'autorizado'
 
   if (!deviceAuthorized) return '/device-pending'
-  if (bootstrap.sesion_activa) return '/count'
+  if (requestedPath === '/count' && bootstrap.sesion_activa) return '/count'
   return '/'
 }
 
@@ -36,7 +39,7 @@ function AppContent() {
     auth.status === 'unauthenticated'
       ? '/login'
       : solog.status === 'ready' && solog.bootstrap
-        ? resolveTrustedRoute(solog.bootstrap)
+        ? resolveTrustedRoute(solog.bootstrap, pathname)
         : null
 
   useEffect(() => {
@@ -51,6 +54,7 @@ function AppContent() {
         description="Recuperando la sesión existente de Supabase Auth."
         eyebrow="SOLOG"
         title="Cargando…"
+        variant="auth"
       />
     )
   }
@@ -61,6 +65,7 @@ function AppContent() {
         description={auth.initializationError}
         eyebrow="Configuración"
         title="SOLOG no está disponible"
+        variant="auth"
       />
     )
   }
@@ -73,6 +78,7 @@ function AppContent() {
         description="Validando perfil, rol, sede y dispositivo con el backend."
         eyebrow="SOLOG"
         title="Preparando sesión…"
+        variant="auth"
       />
     )
   }
@@ -98,7 +104,7 @@ function AppContent() {
 
   const bootstrap = solog.bootstrap
 
-  switch (resolveTrustedRoute(bootstrap)) {
+  switch (resolveTrustedRoute(bootstrap, pathname)) {
     case '/admin':
       return <AdminPage bootstrap={bootstrap} onLogout={handleLogout} />
     case '/device-pending':

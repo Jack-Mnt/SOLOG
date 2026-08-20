@@ -36,7 +36,7 @@ export function AdminPage({
     )
 
     if (
-      site?.dispositivo &&
+      site?.tablet &&
       !window.confirm(
         `${site.nombre} ya tiene una tablet autorizada.\n\nAl autorizar este nuevo dispositivo, la tablet anterior será revocada.\n\n¿Continuar?`,
       )
@@ -48,7 +48,7 @@ export function AdminPage({
   }
 
   const handleRevoke = (site: SologAdminSite) => {
-    if (!site.dispositivo) return
+    if (!site.tablet) return
     if (
       !window.confirm(
         `¿Revocar la tablet autorizada de ${site.nombre}?\n\nLa sede no podrá iniciar nuevos conteos desde ese dispositivo.`,
@@ -57,7 +57,7 @@ export function AdminPage({
       return
     }
 
-    void admin.revoke(site.dispositivo.id)
+    void admin.revoke(site.tablet.id)
   }
 
   const handleReject = (device: SologPendingDevice) => {
@@ -78,6 +78,7 @@ export function AdminPage({
       eyebrow={bootstrap.usuario.rol}
       onLogout={onLogout}
       title="Administración SOLOG"
+      variant="admin"
       wide
     >
       <div className="admin-toolbar">
@@ -90,6 +91,7 @@ export function AdminPage({
           disabled={admin.status === 'loading' || admin.mutation !== null}
           onClick={() => void admin.refresh()}
         >
+          <RefreshCw className={admin.status === 'loading' ? 'icon-spin' : undefined} size={18} />
           {admin.status === 'loading' ? 'Actualizando…' : 'Refrescar'}
         </button>
       </div>
@@ -124,59 +126,66 @@ export function AdminPage({
       ) : null}
 
       {admin.bootstrap ? (
-        <>
+        <div className="admin-layout">
           <nav className="admin-main-tabs" aria-label="Secciones administrativas">
             <button
               aria-current={activeSection === 'summary' ? 'page' : undefined}
               className={`admin-tab${activeSection === 'summary' ? ' admin-tab--active' : ''}`}
               onClick={() => setActiveSection('summary')}
             >
-              Resumen
+              <LayoutDashboard size={19} /> <span>Resumen</span>
             </button>
             <button
               aria-current={activeSection === 'devices' ? 'page' : undefined}
               className={`admin-tab${activeSection === 'devices' ? ' admin-tab--active' : ''}`}
               onClick={() => setActiveSection('devices')}
             >
-              Dispositivos
+              <TabletSmartphone size={19} /> <span>Dispositivos</span>
             </button>
             <button
               aria-current={activeSection === 'reports' ? 'page' : undefined}
               className={`admin-tab${activeSection === 'reports' ? ' admin-tab--active' : ''}`}
               onClick={() => setActiveSection('reports')}
             >
-              Reportes
+              <TableProperties size={19} /> <span>Reportes</span>
             </button>
           </nav>
+          <div className="admin-content">
+            {activeSection === 'summary' ? (
+              <AdminOverview bootstrap={admin.bootstrap} />
+            ) : null}
 
-          {activeSection === 'summary' ? (
-            <AdminOverview bootstrap={admin.bootstrap} />
-          ) : null}
+            {activeSection === 'devices' ? (
+              <>
+                <AuthorizedDevices
+                  mutation={admin.mutation}
+                  onRevoke={handleRevoke}
+                  sites={admin.bootstrap.sedes}
+                />
+                <PendingDevices
+                  devices={admin.bootstrap.dispositivos_pendientes}
+                  mutation={admin.mutation}
+                  onAuthorize={handleAuthorize}
+                  onReject={handleReject}
+                />
+              </>
+            ) : null}
 
-          {activeSection === 'devices' ? (
-            <>
-              <AuthorizedDevices
-                mutation={admin.mutation}
-                onRevoke={handleRevoke}
+            {activeSection === 'reports' ? (
+              <AdminReports
+                refreshOperationalState={solog.refresh}
                 sites={admin.bootstrap.sedes}
               />
-              <PendingDevices
-                devices={admin.bootstrap.dispositivos_pendientes}
-                mutation={admin.mutation}
-                onAuthorize={handleAuthorize}
-                onReject={handleReject}
-              />
-            </>
-          ) : null}
-
-          {activeSection === 'reports' ? (
-            <AdminReports
-              refreshOperationalState={solog.refresh}
-              sites={admin.bootstrap.sedes}
-            />
-          ) : null}
-        </>
+            ) : null}
+          </div>
+        </div>
       ) : null}
     </PageShell>
   )
 }
+import {
+  LayoutDashboard,
+  RefreshCw,
+  TabletSmartphone,
+  TableProperties,
+} from 'lucide-react'

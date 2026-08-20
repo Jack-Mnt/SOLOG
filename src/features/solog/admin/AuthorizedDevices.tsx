@@ -15,7 +15,7 @@ export function AuthorizedDevices({
     <section className="content-section" aria-labelledby="authorized-title">
       <div className="section-heading">
         <div>
-          <h2 id="authorized-title">Tablets por sede</h2>
+          <div className="section-title-row"><span className="section-icon"><TabletSmartphone size={19} /></span><h2 id="authorized-title">Tablets por sede</h2></div>
           <p>Dispositivos actualmente autorizados por el backend.</p>
         </div>
       </div>
@@ -23,29 +23,29 @@ export function AuthorizedDevices({
         {sites.map((site) => {
           const isRevoking =
             mutation?.action === 'revoke' &&
-            mutation.deviceId === site.dispositivo?.id
+            mutation.deviceId === site.tablet?.id
 
           return (
             <article className="admin-pending-card" key={site.id}>
               <div>
                 <h3>{site.nombre}</h3>
-                {site.dispositivo ? (
+                {site.tablet ? (
                   <dl className="admin-device-details">
                     <div><dt>Estado</dt><dd>Autorizada</dd></div>
-                    <div><dt>Autorizada</dt><dd>{formatAdminDate(site.dispositivo.autorizado_at)}</dd></div>
-                    <div><dt>Último acceso</dt><dd>{formatAdminDate(site.dispositivo.ultimo_acceso_at)}</dd></div>
+                    <div><dt>Autorizada</dt><dd>{formatAdminDate(site.tablet.autorizado_at)}</dd></div>
+                    <div><dt>Último acceso</dt><dd>{formatAdminDate(site.tablet.ultimo_acceso_at)}</dd></div>
                   </dl>
                 ) : (
                   <p className="admin-device-empty">Sin tablet autorizada</p>
                 )}
               </div>
-              {site.dispositivo ? (
+              {site.tablet ? (
                 <button
                   className="button button--danger"
                   disabled={mutation !== null}
                   onClick={() => onRevoke(site)}
                 >
-                  {isRevoking ? 'Revocando…' : 'Revocar tablet'}
+                  <ShieldOff size={17} /> {isRevoking ? 'Revocando…' : 'Revocar tablet'}
                 </button>
               ) : null}
             </article>
@@ -55,3 +55,4 @@ export function AuthorizedDevices({
     </section>
   )
 }
+import { ShieldOff, TabletSmartphone } from 'lucide-react'

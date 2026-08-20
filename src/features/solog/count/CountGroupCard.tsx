@@ -1,12 +1,16 @@
 import { useState, type FormEvent } from 'react'
-import type { SologCountGroup, SologCountSaveResponse } from '../types'
+import type {
+  SologBatchResultItem,
+  SologCountGroup,
+  SologPendingCapture,
+} from '../types'
 
 interface CountGroupCardProps {
   group: SologCountGroup
-  result?: SologCountSaveResponse
-  saving: boolean
+  result?: SologBatchResultItem
+  pending?: SologPendingCapture
   captureDisabled: boolean
-  onSave: (grupoId: string, stockFisico: number) => Promise<void>
+  onCapture: (grupoId: string, stockFisico: number) => void
 }
 
 function formatSignedInteger(value: number): string {
@@ -16,9 +20,9 @@ function formatSignedInteger(value: number): string {
 export function CountGroupCard({
   group,
   result,
-  saving,
+  pending,
   captureDisabled,
-  onSave,
+  onCapture,
 }: CountGroupCardProps) {
   const [physicalStock, setPhysicalStock] = useState('')
   const inputId = `stock-${group.grupo_id}`
@@ -27,24 +31,27 @@ export function CountGroupCard({
     /^\d+$/.test(physicalStock) &&
     Number.isSafeInteger(parsedStock) &&
     parsedStock >= 0
-  const disabled = group.contado || saving || captureDisabled
+  const resolved = group.contado || Boolean(pending) || Boolean(result)
+  const disabled = resolved || captureDisabled
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!validStock || disabled) return
-    void onSave(group.grupo_id, parsedStock)
+    onCapture(group.grupo_id, parsedStock)
   }
 
   const statusLabel = result
     ? result.diferencia === 0
       ? 'Coincide'
       : 'Pendiente'
-    : group.contado
-      ? 'Contado'
+    : pending
+      ? 'Contado · pendiente de enviar'
+      : group.contado
+        ? 'Enviado'
       : 'Pendiente de captura'
 
   return (
-    <article className={`count-group${group.contado ? ' count-group--done' : ''}`}>
+    <article className={`count-group${resolved ? ' count-group--done' : ''}`}>
       <div className="count-group__heading">
         <div>
           <h3>{group.nombre}</h3>
@@ -52,7 +59,7 @@ export function CountGroupCard({
             Stock teórico: <strong>{group.stock_teorico}</strong>
           </p>
         </div>
-        <span className="count-state">{statusLabel}</span>
+        <span className="count-state">{resolved ? <Check aria-hidden="true" size={15} /> : <Cloud aria-hidden="true" size={15} />}{statusLabel}</span>
       </div>
 
       {result ? (
@@ -72,7 +79,7 @@ export function CountGroupCard({
         </dl>
       ) : null}
 
-      {!group.contado ? (
+      {!resolved ? (
         <form className="count-form" onSubmit={handleSubmit}>
           <label htmlFor={inputId}>Stock físico del grupo</label>
           <div className="count-form__controls">
@@ -95,17 +102,21 @@ export function CountGroupCard({
               disabled={disabled || !validStock}
               type="submit"
             >
-              {saving ? 'Guardando…' : 'Guardar grupo'}
+              <PackageCheck aria-hidden="true" size={20} /> Registrar localmente
             </button>
           </div>
         </form>
       ) : (
-        <p className="locked-message">Guardado. Este grupo ya no puede editarse.</p>
+        <p className="locked-message">
+          {pending
+            ? `Registrado localmente: ${pending.stock_fisico}. Se enviará en lote.`
+            : 'Enviado al backend. Este grupo ya no puede editarse.'}
+        </p>
       )}
 
       {group.productos.length > 0 ? (
         <details className="products">
-          <summary>Ver productos ({group.productos.length})</summary>
+          <summary><ChevronDown aria-hidden="true" size={18} /> Ver productos ({group.productos.length})</summary>
           <ul>
             {group.productos.map((product) => (
               <li key={product.c_interno}>
@@ -121,3 +132,4 @@ export function CountGroupCard({
     </article>
   )
 }
+import { Check, ChevronDown, Cloud, PackageCheck } from 'lucide-react'

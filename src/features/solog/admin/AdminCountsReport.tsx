@@ -1,4 +1,3 @@
-import { getSologCountTypeLabel } from '../labels'
 import type { SologAdminCountsResponse } from '../types'
 import { formatAdminDate, getAdminCountStateLabel } from './format'
 
@@ -17,27 +16,25 @@ export function AdminCountsReport({
         <caption>Conteos del período seleccionado</caption>
         <thead>
           <tr>
-            <th>Fecha/hora</th>
+            <th>Inicio</th>
+            <th>Fin</th>
             <th>Sede</th>
             <th>Usuario</th>
-            <th>Tipo</th>
             <th>Estado</th>
-            <th>Grupos contados</th>
-            <th>Inicio</th>
-            <th>Finalización</th>
+            <th>Grupos registrados</th>
+            <th>Snapshot</th>
           </tr>
         </thead>
         <tbody>
           {report.rows.map((row) => (
             <tr key={row.conteo_id}>
-              <td>{formatAdminDate(row.finalizado_at ?? row.iniciado_at)}</td>
-              <td>{row.sede}</td>
-              <td>{row.usuario}</td>
-              <td>{getSologCountTypeLabel(row.tipo)}</td>
-              <td><span className="count-state">{getAdminCountStateLabel(row.estado)}</span></td>
-              <td>{row.grupos_contados}</td>
               <td>{formatAdminDate(row.iniciado_at)}</td>
               <td>{formatAdminDate(row.finalizado_at)}</td>
+              <td>{row.sede}</td>
+              <td>{row.usuario}</td>
+              <td><span className="count-state">{getAdminCountStateLabel(row.estado)}</span></td>
+              <td>{row.grupos_registrados}</td>
+              <td><code>{row.snapshot_referencia_id}</code></td>
             </tr>
           ))}
         </tbody>

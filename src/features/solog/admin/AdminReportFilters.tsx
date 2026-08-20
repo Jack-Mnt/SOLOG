@@ -5,8 +5,7 @@ import type { AdminReportDraftFilters } from './useAdminReports'
 
 const COUNT_STATES = [
   ['activo', 'Activo'],
-  ['parcial', 'Parcial'],
-  ['completado', 'Completado'],
+  ['finalizado', 'Finalizado'],
   ['expirado', 'Expirado'],
 ] as const
 
@@ -200,7 +199,7 @@ export function AdminReportFilters({
 
       <div className="admin-report-filter-actions">
         <button className="button" disabled={loading} type="submit">
-          {loading ? 'Consultando…' : 'Aplicar'}
+          <Filter size={17} /> {loading ? 'Consultando…' : 'Aplicar'}
         </button>
         <button
           className="button button--secondary"
@@ -208,9 +207,10 @@ export function AdminReportFilters({
           onClick={onReset}
           type="button"
         >
-          Restablecer
+          <RotateCcw size={17} /> Restablecer
         </button>
       </div>
     </form>
   )
 }
+import { Filter, RotateCcw } from 'lucide-react'

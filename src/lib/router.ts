@@ -27,7 +27,13 @@ export function usePathname(): string {
 }
 
 export function replaceRoute(route: AppRoute): void {
-  if (window.location.pathname === route) return
+  if (window.location.pathname === route && !window.location.search) return
   window.history.replaceState(null, '', route)
+  window.dispatchEvent(new Event(NAVIGATION_EVENT))
+}
+
+export function navigateTo(url: string): void {
+  if (`${window.location.pathname}${window.location.search}` === url) return
+  window.history.pushState(null, '', url)
   window.dispatchEvent(new Event(NAVIGATION_EVENT))
 }

@@ -1,4 +1,6 @@
+import { ArrowRight, LockKeyhole, Mail } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
+import { PageShell } from '../components/PageShell'
 import { useAuth } from '../features/auth/AuthContext'
 import { getAuthErrorMessage } from '../features/auth/errors'
 
@@ -23,45 +25,57 @@ export function LoginPage() {
   }
 
   return (
-    <main className="shell">
-      <section className="status-card login-card" aria-labelledby="login-title">
-        <p className="eyebrow">Puerto Rico</p>
-        <h1 id="login-title">SOLOG</h1>
-        <p className="subtitle">Ingresa con tu usuario existente.</p>
-
+    <PageShell
+      description="Inventarios físicos precisos, ágiles y conectados."
+      eyebrow="Puerto Rico"
+      title="Bienvenido"
+      variant="auth"
+    >
+      <div className="login-card">
+        <div className="login-intro">
+          <strong>Acceso seguro</strong>
+          <p>Ingresa con tu usuario existente de SOLOG.</p>
+        </div>
         <form className="login-form" onSubmit={handleSubmit}>
           <label>
-            Email
-            <input
-              autoComplete="email"
-              inputMode="email"
-              name="email"
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
-              value={email}
-            />
+            Correo electrónico
+            <span className="input-with-icon">
+              <Mail aria-hidden="true" size={19} />
+              <input
+                autoComplete="email"
+                inputMode="email"
+                name="email"
+                onChange={(event) => setEmail(event.target.value)}
+                required
+                type="email"
+                value={email}
+              />
+            </span>
           </label>
 
           <label>
             Contraseña
-            <input
-              autoComplete="current-password"
-              name="password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
+            <span className="input-with-icon">
+              <LockKeyhole aria-hidden="true" size={19} />
+              <input
+                autoComplete="current-password"
+                name="password"
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                type="password"
+                value={password}
+              />
+            </span>
           </label>
 
           {error ? <p className="form-error">{error}</p> : null}
 
           <button className="button" disabled={submitting} type="submit">
-            {submitting ? 'Ingresando…' : 'Ingresar'}
+            <span>{submitting ? 'Ingresando…' : 'Ingresar a SOLOG'}</span>
+            <ArrowRight aria-hidden="true" size={20} />
           </button>
         </form>
-      </section>
-    </main>
+      </div>
+    </PageShell>
   )
 }

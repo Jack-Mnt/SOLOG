@@ -8,8 +8,7 @@ interface RecountGroupCardProps {
   saving: boolean
   captureDisabled: boolean
   onRecount: (
-    grupoId: string,
-    conteoOrigenId: string,
+    detalleId: string,
     stockFisico: number,
   ) => Promise<void>
 }
@@ -37,7 +36,7 @@ export function RecountGroupCard({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!validStock || disabled) return
-    void onRecount(group.grupo_id, group.conteo_origen_id, parsedStock)
+    void onRecount(group.detalle_id, parsedStock)
   }
 
   return (
@@ -49,7 +48,7 @@ export function RecountGroupCard({
             Categoría: <strong>{group.categoria}</strong>
           </p>
         </div>
-        <span className="count-state">{stateLabel}</span>
+        <span className="count-state">{resolved ? <Check size={15} /> : <RotateCcw size={15} />}{stateLabel}</span>
       </div>
 
       <dl className="count-result count-result--recount">
@@ -92,19 +91,19 @@ export function RecountGroupCard({
               disabled={disabled || !validStock}
               type="submit"
             >
-              {saving ? 'Guardando…' : 'Guardar reconteo'}
+              <RotateCcw className={saving ? 'icon-spin' : undefined} size={19} /> {saving ? 'Guardando…' : 'Guardar reconteo'}
             </button>
           </div>
         </form>
       ) : (
         <p className="locked-message">
-          Reconteo guardado. Este grupo ya no puede modificarse.
+          Reconteo enviado. Esta observación ya no puede modificarse.
         </p>
       )}
 
       {group.productos.length > 0 ? (
         <details className="products">
-          <summary>Ver productos ({group.productos.length})</summary>
+          <summary><ChevronDown aria-hidden="true" size={18} /> Ver productos ({group.productos.length})</summary>
           <ul>
             {group.productos.map((product) => (
               <li key={product.c_interno}>
@@ -120,3 +119,4 @@ export function RecountGroupCard({
     </article>
   )
 }
+import { Check, ChevronDown, RotateCcw } from 'lucide-react'
