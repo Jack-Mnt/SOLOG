@@ -72,7 +72,7 @@ function ActiveCount({
         <div><span>Vista</span><strong>{selectedView.title}</strong></div>
         <div><span>Sede</span><strong>{bootstrap.sede.nombre}</strong></div>
         <div><span>{isRecount ? 'Observaciones' : 'Progreso local'}</span><strong>{isRecount ? count.groups.length : `${count.countedGroups} / ${count.groups.length}`}</strong></div>
-        <div><span>Vigencia del Excel</span><strong className="metric-with-icon"><Clock3 size={17} /> {formatRemainingTime(count.expiry.remainingSeconds)}</strong></div>
+        <div><span>Vigencia del Excel</span><strong className="metric-with-icon"><Clock3 size={17} /> {count.expiry.remainingSeconds === null ? 'No disponible' : formatRemainingTime(count.expiry.remainingSeconds)}</strong></div>
       </div>
 
       {count.expiry.warning ? <div className="notice notice--warning" role="alert"><strong>{count.expiry.warning}</strong></div> : null}

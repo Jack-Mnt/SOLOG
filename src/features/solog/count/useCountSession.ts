@@ -43,9 +43,11 @@ export function useCountSession(
   const [batchResults, setBatchResults] = useState<Record<string, SologBatchResultItem>>({})
   const [recountResults, setRecountResults] = useState<Record<string, SologRecountResponse>>({})
   const expiryFlushAttempted = useRef(false)
+  const stock = bootstrap.stock
   const expiry = useInventoryExpiry(
-    bootstrap.stock.snapshot_id,
-    bootstrap.stock.expira_at,
+    stock.disponible
+      ? { available: true, snapshotId: stock.snapshot_id, expiraAt: stock.expira_at }
+      : { available: false },
     serverOffsetMs,
   )
 
@@ -112,7 +114,7 @@ export function useCountSession(
 
   const capture = useCallback(
     (groupId: string, stockFisico: number) => {
-      if (!session || expiry.expired || !isBatchView(selectedView.vista)) return
+      if (!session || !expiry.available || expiry.expired || !isBatchView(selectedView.vista)) return
       setError(null)
       try {
         enqueuePendingCapture(session.id, {
@@ -129,7 +131,7 @@ export function useCountSession(
         setError(getSologErrorMessageFromUnknown(captureError))
       }
     },
-    [expiry.expired, selectedView, serverOffsetMs, session],
+    [expiry.available, expiry.expired, selectedView, serverOffsetMs, session],
   )
 
   const flush = useCallback(async () => {
@@ -202,7 +204,7 @@ export function useCountSession(
 
   const recount = useCallback(
     async (detalleId: string, stockFisico: number) => {
-      if (!session || expiry.expired || recountingIds.includes(detalleId)) return
+      if (!session || !expiry.available || expiry.expired || recountingIds.includes(detalleId)) return
       setRecountingIds((current) => [...current, detalleId])
       setError(null)
       const contadoAt = new Date(Date.now() + serverOffsetMs).toISOString()
@@ -232,7 +234,15 @@ export function useCountSession(
         setRecountingIds((current) => current.filter((id) => id !== detalleId))
       }
     },
-    [expiry.expired, loadGroups, recountingIds, serverOffsetMs, session, updateServerNow],
+    [
+      expiry.available,
+      expiry.expired,
+      loadGroups,
+      recountingIds,
+      serverOffsetMs,
+      session,
+      updateServerNow,
+    ],
   )
 
   const finish = useCallback(async () => {

@@ -29,6 +29,11 @@ interface SologContextValue {
 
 const SologContext = createContext<SologContextValue | null>(null)
 
+function getServerOffset(serverNow: string): number | null {
+  const serverTime = Date.parse(serverNow)
+  return Number.isNaN(serverTime) ? null : serverTime - Date.now()
+}
+
 async function loadTrustedBootstrap(): Promise<SologOperationalBootstrap> {
   try {
     const initialBootstrap = await getSologBootstrap()
@@ -78,7 +83,8 @@ export function SologProvider({ children }: { children: ReactNode }) {
       const nextBootstrap = await loadTrustedBootstrap()
       if (currentRequest !== requestVersion.current) return
       setBootstrap(nextBootstrap)
-      setServerOffsetMs(Date.parse(nextBootstrap.server_now) - Date.now())
+      const nextOffset = getServerOffset(nextBootstrap.server_now)
+      if (nextOffset !== null) setServerOffsetMs(nextOffset)
       setStatus('ready')
     } catch (bootstrapError) {
       if (currentRequest !== requestVersion.current) return
@@ -106,8 +112,8 @@ export function SologProvider({ children }: { children: ReactNode }) {
   }, [auth.user?.id, refresh])
 
   const updateServerNow = useCallback((serverNow: string) => {
-    const serverTime = Date.parse(serverNow)
-    if (!Number.isNaN(serverTime)) setServerOffsetMs(serverTime - Date.now())
+    const nextOffset = getServerOffset(serverNow)
+    if (nextOffset !== null) setServerOffsetMs(nextOffset)
   }, [])
 
   const value = useMemo<SologContextValue>(

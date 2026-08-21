@@ -8,9 +8,16 @@ const WARNING_MESSAGES: Record<5 | 10 | 15, string> = {
   5: 'Quedan 5 minutos. Finaliza el conteo. Será necesario subir un inventario actualizado para continuar.',
 }
 
-function getRemainingSeconds(expiraAt: string | null, serverOffsetMs: number): number {
-  if (!expiraAt) return 0
-  return Math.max(0, Math.ceil((Date.parse(expiraAt) - (Date.now() + serverOffsetMs)) / 1000))
+export type InventoryExpirySource =
+  | { available: false }
+  | { available: true; snapshotId: string; expiraAt: string }
+
+function getRemainingSeconds(
+  expiraAt: string,
+  serverOffsetMs: number,
+  currentTime: number,
+): number {
+  return Math.max(0, Math.ceil((Date.parse(expiraAt) - (currentTime + serverOffsetMs)) / 1000))
 }
 
 function readSeenWarnings(snapshotId: string): number[] {
@@ -25,29 +32,34 @@ function readSeenWarnings(snapshotId: string): number[] {
 }
 
 export function useInventoryExpiry(
-  snapshotId: string | null,
-  expiraAt: string | null,
+  source: InventoryExpirySource,
   serverOffsetMs: number,
 ) {
-  const [remainingSeconds, setRemainingSeconds] = useState(() =>
-    getRemainingSeconds(expiraAt, serverOffsetMs),
-  )
+  const [currentTime, setCurrentTime] = useState(Date.now)
   const [warning, setWarning] = useState<string | null>(null)
+  const snapshotId = source.available ? source.snapshotId : null
   const previousSnapshot = useRef(snapshotId)
+  const remainingSeconds = source.available
+    ? getRemainingSeconds(source.expiraAt, serverOffsetMs, currentTime)
+    : null
 
   useEffect(() => {
-    const update = () => setRemainingSeconds(getRemainingSeconds(expiraAt, serverOffsetMs))
-    update()
-    const timer = window.setInterval(update, 1000)
+    if (!source.available) return
+    const timer = window.setInterval(() => setCurrentTime(Date.now()), 1000)
     return () => window.clearInterval(timer)
-  }, [expiraAt, serverOffsetMs])
+  }, [source.available])
 
   useEffect(() => {
     if (previousSnapshot.current !== snapshotId) {
       previousSnapshot.current = snapshotId
       setWarning(null)
     }
-    if (!snapshotId || remainingSeconds <= 0) return
+    if (
+      !source.available ||
+      snapshotId === null ||
+      remainingSeconds === null ||
+      remainingSeconds <= 0
+    ) return
 
     const minutes = remainingSeconds / 60
     const threshold: 5 | 10 | 15 | null =
@@ -66,11 +78,16 @@ export function useInventoryExpiry(
       0,
     )
     return () => window.clearTimeout(notification)
-  }, [remainingSeconds, snapshotId])
+  }, [remainingSeconds, snapshotId, source.available])
 
   return useMemo(
-    () => ({ remainingSeconds, expired: remainingSeconds <= 0, warning }),
-    [remainingSeconds, warning],
+    () => ({
+      available: source.available,
+      remainingSeconds,
+      expired: source.available && remainingSeconds === 0,
+      warning: source.available ? warning : null,
+    }),
+    [remainingSeconds, source.available, warning],
   )
 }
 

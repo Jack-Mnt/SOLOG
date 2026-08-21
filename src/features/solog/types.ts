@@ -71,15 +71,27 @@ export interface SologActiveSession {
   grupos_registrados: number
 }
 
-export interface SologStockState {
-  disponible: boolean
-  snapshot_id: string | null
-  snapshot_referencia_at: string | null
-  snapshot_confirmado_at: string | null
-  expira_at: string | null
-  version_catalogo: number | null
+export interface SologAvailableStockState {
+  disponible: true
+  snapshot_id: string
+  snapshot_at: string
+  confirmado_at: string
+  expira_at: string
+  version_catalogo: number
   puede_iniciar_conteo: boolean
 }
+
+export interface SologUnavailableStockState {
+  disponible: false
+  snapshot_id: null
+  snapshot_at: null
+  confirmado_at: null
+  expira_at: null
+  version_catalogo: null
+  puede_iniciar_conteo: false
+}
+
+export type SologStockState = SologAvailableStockState | SologUnavailableStockState
 
 export interface SologCoverage {
   grupos_contados: number
@@ -107,6 +119,11 @@ export interface SologViewCounts {
   contar_detalladamente: number
 }
 
+export interface SologMainCountState {
+  categorias: SologCategory[]
+  stock_cero_pendientes: number
+}
+
 export interface SologOperationalBootstrap {
   usuario: SologUser
   sede: SologSede
@@ -116,8 +133,8 @@ export interface SologOperationalBootstrap {
   server_now: string
   cobertura_diaria: SologCoverage
   cobertura_quincenal: SologFortnightCoverage
-  categorias: SologCategory[]
-  vistas: SologViewCounts
+  conteo_principal: SologMainCountState
+  vistas?: SologViewCounts
 }
 
 export interface SologGroupProduct {

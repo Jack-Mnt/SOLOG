@@ -2,33 +2,12 @@ import { useEffect } from 'react'
 import { PageShell } from './components/PageShell'
 import { AuthProvider, useAuth } from './features/auth/AuthContext'
 import { SologProvider, useSolog } from './features/solog/SologContext'
-import type { SologOperationalBootstrap } from './features/solog/types'
-import { replaceRoute, usePathname, type AppRoute } from './lib/router'
+import { replaceRoute, resolveTrustedRoute, usePathname } from './lib/router'
 import { AdminPage } from './pages/AdminPage'
 import { CountPage } from './pages/CountPage'
 import { DevicePendingPage } from './pages/DevicePendingPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
-
-function resolveTrustedRoute(
-  bootstrap: SologOperationalBootstrap,
-  requestedPath: string,
-): AppRoute {
-  if (
-    bootstrap.usuario.rol === 'admin' ||
-    bootstrap.usuario.rol === 'moderador'
-  ) {
-    return '/admin'
-  }
-
-  const deviceAuthorized =
-    bootstrap.dispositivo.autorizado &&
-    bootstrap.dispositivo.estado === 'autorizado'
-
-  if (!deviceAuthorized) return '/device-pending'
-  if (requestedPath === '/count' && bootstrap.sesion_activa) return '/count'
-  return '/'
-}
 
 function AppContent() {
   const auth = useAuth()

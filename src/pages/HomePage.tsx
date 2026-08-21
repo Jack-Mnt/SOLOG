@@ -74,11 +74,14 @@ export function HomePage({
   const requestInFlight = useRef(false)
   const expiryFlushAttempted = useRef(false)
   const session = bootstrap.sesion_activa
+  const stock = bootstrap.stock
+  const mainCount = bootstrap.conteo_principal
   const staleQueue = Boolean(queue && (!session || queue.conteo_id !== session.id))
   const pendingCount = queue && session && queue.conteo_id === session.id ? queue.items.length : 0
   const expiry = useInventoryExpiry(
-    bootstrap.stock.snapshot_id,
-    bootstrap.stock.expira_at,
+    stock.disponible
+      ? { available: true, snapshotId: stock.snapshot_id, expiraAt: stock.expira_at }
+      : { available: false },
     solog.serverOffsetMs,
   )
 
@@ -160,7 +163,7 @@ export function HomePage({
     return () => window.clearTimeout(finalTransmission)
   }, [expiry.expired, handleSync, pendingCount, session])
 
-  const canNavigate = Boolean(session) && !expiry.expired && !staleQueue
+  const canNavigate = Boolean(session) && expiry.available && !expiry.expired && !staleQueue
   const smartUnlocked = bootstrap.cobertura_quincenal.completa
   const periodLabel =
     bootstrap.cobertura_quincenal.periodo === 'primera'
@@ -195,20 +198,29 @@ export function HomePage({
         <div className="section-heading">
           <div>
             <div className="section-title-row"><span className="section-icon"><FileSpreadsheet size={20} /></span><h2 id="inventory-title">Estado del inventario</h2></div>
-            <p>La vigencia corresponde al último Excel confirmado.</p>
+            <p>{stock.disponible ? 'La vigencia corresponde al último Excel confirmado.' : 'No existe un snapshot operativo confirmado.'}</p>
           </div>
-          <strong className="time-pill"><Clock3 size={18} /> {formatRemainingTime(expiry.remainingSeconds)}</strong>
+          {stock.disponible && expiry.remainingSeconds !== null ? (
+            <strong className="time-pill"><Clock3 size={18} /> {formatRemainingTime(expiry.remainingSeconds)}</strong>
+          ) : null}
         </div>
-        <div className="status-grid status-grid--four">
-          <div className="status-item"><span>Último Excel</span><strong>{bootstrap.stock.snapshot_confirmado_at ? peruDateTime.format(new Date(bootstrap.stock.snapshot_confirmado_at)) : 'No disponible'}</strong></div>
-          <div className="status-item"><span>Válido hasta</span><strong>{bootstrap.stock.expira_at ? peruDateTime.format(new Date(bootstrap.stock.expira_at)) : 'No disponible'}</strong></div>
-          <div className="status-item"><span>Estado</span><strong>{expiry.expired ? 'Vencido' : 'Vigente'}</strong></div>
-          <div className="status-item"><span>Sesión</span><strong>{session ? 'Activa' : 'Sin sesión'}</strong></div>
-        </div>
+        {stock.disponible ? (
+          <div className="status-grid status-grid--four">
+            <div className="status-item"><span>Último Excel</span><strong>{peruDateTime.format(new Date(stock.confirmado_at))}</strong></div>
+            <div className="status-item"><span>Válido hasta</span><strong>{peruDateTime.format(new Date(stock.expira_at))}</strong></div>
+            <div className="status-item"><span>Estado</span><strong>{expiry.expired ? 'Vencido' : 'Vigente'}</strong></div>
+            <div className="status-item"><span>Sesión</span><strong>{session ? 'Activa' : 'Sin sesión'}</strong></div>
+          </div>
+        ) : (
+          <div className="notice" role="status">
+            <strong>No hay un inventario disponible.</strong>
+            <p>Carga un nuevo inventario desde ConeXion para comenzar un conteo.</p>
+          </div>
+        )}
         {!session ? (
           <button
             className="button"
-            disabled={!bootstrap.stock.disponible || !bootstrap.stock.puede_iniciar_conteo || expiry.expired || Boolean(busy) || staleQueue}
+            disabled={!stock.disponible || !stock.puede_iniciar_conteo || expiry.expired || Boolean(busy) || staleQueue}
             onClick={() => void handleStart()}
           >
             <Play aria-hidden="true" size={20} />
@@ -224,9 +236,18 @@ export function HomePage({
             </button>
           </div>
         )}
-        {!bootstrap.stock.puede_iniciar_conteo && !session && !expiry.expired ? (
+        {stock.disponible && !stock.puede_iniciar_conteo && !session && !expiry.expired ? (
           <p className="form-hint">El inventario está en sus últimos 5 minutos y ya no permite iniciar una sesión.</p>
         ) : null}
+      </section>
+
+      <section className="content-section" aria-label="Contexto operativo">
+        <div className="status-grid status-grid--four">
+          <div className="status-item"><span>Usuario</span><strong>{bootstrap.usuario.nombre}</strong></div>
+          <div className="status-item"><span>Sede</span><strong>{bootstrap.sede.nombre}</strong></div>
+          <div className="status-item"><span>Dispositivo</span><strong>{bootstrap.dispositivo.estado}</strong></div>
+          <div className="status-item"><span>Autorización</span><strong>{bootstrap.dispositivo.autorizado ? 'Autorizado' : 'Pendiente'}</strong></div>
+        </div>
       </section>
 
       <CoverageCard
@@ -238,7 +259,7 @@ export function HomePage({
         primary
         icon={CalendarRange}
       />
-      {!smartUnlocked ? <div className="notice"><strong>Completa el conteo total de la {periodLabel.toLowerCase()}.</strong><p>Las vistas inteligentes se habilitarán al llegar al 100 %.</p></div> : null}
+      {stock.disponible && !smartUnlocked ? <div className="notice"><strong>Completa el conteo total de la {periodLabel.toLowerCase()}.</strong><p>Las vistas inteligentes se habilitarán al llegar al 100 %.</p></div> : null}
       <CoverageCard
         title="Cobertura de hoy"
         counted={bootstrap.cobertura_diaria.grupos_contados}
@@ -248,10 +269,10 @@ export function HomePage({
         icon={CalendarDays}
       />
 
-      <section className="content-section" aria-labelledby="main-count-title">
+      {stock.disponible ? <section className="content-section" aria-labelledby="main-count-title">
         <div className="section-heading"><div><div className="section-title-row"><span className="section-icon"><Boxes size={20} /></span><h2 id="main-count-title">Conteo principal</h2></div><p>El backend ya excluye los grupos cubiertos en la quincena.</p></div></div>
         <div className="category-list">
-          {bootstrap.categorias.map((category) => (
+          {mainCount.categorias.map((category) => (
             <button
               className="category-card"
               disabled={!canNavigate || category.pendientes === 0 || Boolean(busy)}
@@ -265,36 +286,39 @@ export function HomePage({
           ))}
           <button
             className="category-card"
-            disabled={!canNavigate || bootstrap.vistas.stock_cero === 0 || Boolean(busy)}
+            disabled={!canNavigate || mainCount.stock_cero_pendientes === 0 || Boolean(busy)}
             onClick={() => navigateTo(createCountRoute({ vista: 'stock_cero', title: 'Stock 0' }))}
           >
             <span className="category-card__icon"><PackageX aria-hidden="true" size={24} /></span>
-            <span className="category-card__content"><strong>Stock 0</strong><small>{bootstrap.vistas.stock_cero} pendientes</small></span><span className="category-card__action">Abrir <ArrowRight size={19} /></span>
+            <span className="category-card__content"><strong>Stock 0</strong><small>{mainCount.stock_cero_pendientes} pendientes</small></span><span className="category-card__action">Abrir <ArrowRight size={19} /></span>
           </button>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="content-section" aria-labelledby="smart-title">
+      {stock.disponible ? <section className="content-section" aria-labelledby="smart-title">
         <div className="section-heading"><div><div className="section-title-row"><span className="section-icon"><Activity size={20} /></span><h2 id="smart-title">Vistas inteligentes</h2></div><p>Disponibles después de completar la cobertura quincenal.</p></div></div>
         <div className="category-list">
           {([
             ['cambios_recientes', 'Cambios recientes', History],
             ['stock_negativo', 'Stock negativo', TrendingDown],
             ['contar_detalladamente', 'Contar detalladamente', ScanSearch],
-          ] as const).map(([vista, title, ViewIcon]) => (
-            <button
-              className="category-card"
-              disabled={!canNavigate || !smartUnlocked || bootstrap.vistas[vista] === 0 || Boolean(busy)}
-              key={vista}
-              onClick={() => navigateTo(createCountRoute({ vista, title }))}
-            >
-              <span className="category-card__icon"><ViewIcon aria-hidden="true" size={24} /></span>
-              <span className="category-card__content"><strong>{title}</strong><small>{smartUnlocked ? `${bootstrap.vistas[vista]} pendientes` : 'Completa primero la cobertura quincenal'}</small></span>
-              <span className="category-card__action">{smartUnlocked ? <>Abrir <ArrowRight size={19} /></> : <><LockKeyhole size={17} /> Bloqueada</>}</span>
-            </button>
-          ))}
+          ] as const).map(([vista, title, ViewIcon]) => {
+            const pending = bootstrap.vistas?.[vista]
+            return (
+              <button
+                className="category-card"
+                disabled={!canNavigate || !smartUnlocked || pending === undefined || pending === 0 || Boolean(busy)}
+                key={vista}
+                onClick={() => navigateTo(createCountRoute({ vista, title }))}
+              >
+                <span className="category-card__icon"><ViewIcon aria-hidden="true" size={24} /></span>
+                <span className="category-card__content"><strong>{title}</strong><small>{smartUnlocked ? pending === undefined ? 'No disponible' : `${pending} pendientes` : 'Completa primero la cobertura quincenal'}</small></span>
+                <span className="category-card__action">{smartUnlocked && pending !== undefined ? <>Abrir <ArrowRight size={19} /></> : <><LockKeyhole size={17} /> Bloqueada</>}</span>
+              </button>
+            )
+          })}
         </div>
-      </section>
+      </section> : null}
     </PageShell>
   )
 }

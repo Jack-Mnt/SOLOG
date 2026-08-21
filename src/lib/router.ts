@@ -1,8 +1,29 @@
 import { useSyncExternalStore } from 'react'
+import type { SologOperationalBootstrap } from '../features/solog/types'
 
 export type AppRoute = '/login' | '/' | '/device-pending' | '/count' | '/admin'
 
 const NAVIGATION_EVENT = 'solog:navigation'
+
+export function resolveTrustedRoute(
+  bootstrap: SologOperationalBootstrap,
+  requestedPath: string,
+): AppRoute {
+  if (
+    bootstrap.usuario.rol === 'admin' ||
+    bootstrap.usuario.rol === 'moderador'
+  ) {
+    return '/admin'
+  }
+
+  const deviceAuthorized =
+    bootstrap.dispositivo.autorizado &&
+    bootstrap.dispositivo.estado === 'autorizado'
+
+  if (!deviceAuthorized) return '/device-pending'
+  if (requestedPath === '/count' && bootstrap.sesion_activa) return '/count'
+  return '/'
+}
 
 function subscribe(onStoreChange: () => void) {
   window.addEventListener('popstate', onStoreChange)
