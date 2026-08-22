@@ -342,6 +342,230 @@ export interface SologAdminBootstrap {
   dispositivos_pendientes: SologPendingDevice[]
 }
 
+export type SologAdminIncidentType =
+  | 'producto_ausente'
+  | 'codigo_interno_invalido'
+  | 'codigo_interno_duplicado'
+  | 'stock_invalido'
+
+export type SologAdminIncidentDecision =
+  | 'reviewed'
+  | 'ignore_15d'
+  | 'deleted'
+
+export interface SologAdminIncidentRow {
+  id: string
+  tipo: SologAdminIncidentType
+  estado: string
+  sede_id: string | null
+  sede: string | null
+  c_interno: number | null
+  c_interno_original: string | null
+  producto: string | null
+  datos: Record<string, unknown>
+  first_seen_at: string
+  last_seen_at: string
+  occurrence_count: number
+  stock_actual: number | null
+  categoria: string | null
+  grupo: string | null
+  primer_snapshot_id: string | null
+  ultimo_snapshot_id: string | null
+  producto_eliminado_stock: boolean | null
+}
+
+export interface SologAdminIncidentsFilters {
+  sede_id?: string
+  tipo?: SologAdminIncidentType
+  estado?: string
+  c_interno?: number
+  producto?: string
+  desde?: string
+  hasta?: string
+  limit?: number
+  offset?: number
+}
+
+export interface SologAdminIncidentsResponse {
+  rows: SologAdminIncidentRow[]
+  limit: number
+  offset: number
+  counts: Record<string, number>
+}
+
+export interface SologAdminIncidentActionPayload {
+  incident_id: string
+  decision: SologAdminIncidentDecision
+}
+
+export interface SologAdminIncidentActionResponse {
+  ok: true
+  codigo: string
+  [key: string]: unknown
+}
+
+export type SologCatalogChangeType =
+  | 'agregar_producto'
+  | 'eliminar_producto'
+  | 'nombre'
+  | 'precio'
+  | 'codigo'
+
+export type SologCatalogChangeSection = 'urgente' | 'pendiente'
+
+export type SologCatalogChangeStatus =
+  | 'pendiente'
+  | 'aprobado'
+  | 'ignorado'
+  | 'incorporado'
+
+export type SologCatalogDecision = 'approve' | 'ignore'
+
+export interface SologCatalogChangeSite {
+  id: string
+  nombre: string
+}
+
+export interface SologCurrentCatalogProduct {
+  producto: string | null
+  marca: string | null
+  categoria: string | null
+  precio: number | null
+  c_barras: string | null
+  estado: string | null
+  grupo: string | null
+}
+
+export interface SologCatalogChangeRow {
+  propuesta_fingerprint: string
+  cambio_id: string | null
+  tipo: SologCatalogChangeType
+  seccion: SologCatalogChangeSection
+  estado: SologCatalogChangeStatus
+  c_interno: number
+  producto: string | null
+  datos: Record<string, unknown>
+  sedes: SologCatalogChangeSite[]
+  occurrence_count: number
+  first_seen_at: string
+  last_seen_at: string
+  catalogo_actual: SologCurrentCatalogProduct
+  aprobado_at: string | null
+  ignorado_at: string | null
+  incorporado_at: string | null
+  version_aplicada: number | null
+}
+
+export interface SologCatalogChangesFilters {
+  seccion?: SologCatalogChangeSection
+  tipo?: SologCatalogChangeType
+  estado?: SologCatalogChangeStatus
+  c_interno?: number
+  producto?: string
+  limit?: number
+  offset?: number
+}
+
+export interface SologCatalogChangeCounts {
+  pendiente?: number
+  aprobado?: number
+  ignorado?: number
+  incorporado?: number
+  urgentes_pendientes?: number
+  cambios_pendientes?: number
+  [key: string]: number | undefined
+}
+
+export interface SologCatalogChangesResponse {
+  rows: SologCatalogChangeRow[]
+  limit: number
+  offset: number
+  counts: SologCatalogChangeCounts
+}
+
+interface SologCatalogNewProductConfigBase {
+  marca: string
+  categoria_id: string
+}
+
+export type SologCatalogNewProductConfig = SologCatalogNewProductConfigBase &
+  (
+    | { estado: 'Único' | 'Excluido'; grupo_conteo_id: null }
+    | { estado: 'Agrupado'; grupo_conteo_id: string }
+  )
+
+export type SologCatalogChangeActionPayload =
+  | {
+      propuesta_fingerprint: string
+      decision: 'ignore'
+    }
+  | {
+      propuesta_fingerprint: string
+      decision: 'approve'
+      config?: SologCatalogNewProductConfig
+    }
+
+export interface SologCatalogChangeActionResponse {
+  ok: true
+  codigo: string
+  [key: string]: unknown
+}
+
+export interface SologCatalogReferenceCategory {
+  id: string
+  nombre: string
+  orden?: number | null
+}
+
+export interface SologCatalogReferenceGroup {
+  id: string
+  nombre: string
+  categoria_id: string
+  precio: number
+  activo?: boolean
+}
+
+export interface SologCatalogReference {
+  categorias: SologCatalogReferenceCategory[]
+  grupos: SologCatalogReferenceGroup[]
+}
+
+export type SologCatalogPublicationSummary = Partial<
+  Record<SologCatalogChangeType, number>
+> & Record<string, number | undefined>
+
+export type CatalogPublicationPreview =
+  | {
+      ok: true
+      version_actual: number
+      version_nueva: number
+      schema_version: number
+      sku_actuales: number
+      sku_resultantes: number
+      cambios_total: number
+      resumen: SologCatalogPublicationSummary
+      errores: []
+    }
+  | {
+      ok: false
+      codigo: string
+      errores: string[]
+      [key: string]: unknown
+    }
+
+export type PublishCatalogResponse =
+  | {
+      ok: true
+      codigo: 'CATALOG_PUBLISHED'
+      version: number
+      [key: string]: unknown
+    }
+  | {
+      ok: false
+      codigo: string
+      [key: string]: unknown
+    }
+
 export interface SologAuthorizeDeviceResponse {
   ok: true
   codigo: 'DEVICE_AUTHORIZED'

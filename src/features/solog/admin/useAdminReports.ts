@@ -144,12 +144,14 @@ function createPayload(
 export function useAdminReports({
   enabled,
   refreshOperationalState,
+  initialReportType = 'summary',
 }: {
   enabled: boolean
   refreshOperationalState: () => Promise<void>
+  initialReportType?: SologAdminReportType
 }) {
   const [reportType, setReportType] =
-    useState<SologAdminReportType>('summary')
+    useState<SologAdminReportType>(initialReportType)
   const [draftFilters, setDraftFilters] =
     useState<AdminReportDraftFilters>(createDefaultFilters)
   const [appliedFilters, setAppliedFilters] =
@@ -206,14 +208,14 @@ export function useAdminReports({
     let active = true
 
     queueMicrotask(() => {
-      if (active) void loadReport('summary', initialFilters, 0)
+      if (active) void loadReport(initialReportType, initialFilters, 0)
     })
 
     return () => {
       active = false
       requestVersion.current += 1
     }
-  }, [enabled, loadReport])
+  }, [enabled, initialReportType, loadReport])
 
   const updateFilters = useCallback(
     (updates: Partial<AdminReportDraftFilters>) => {

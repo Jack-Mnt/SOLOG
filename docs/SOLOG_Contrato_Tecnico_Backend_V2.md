@@ -1,7 +1,7 @@
 # SOLOG V2 — Contrato técnico Backend ↔ Frontend
 
 **Estado:** vigente  
-**Fecha de sincronización:** 2026-08-20  
+**Fecha de sincronización:** 2026-08-21
 **RPC públicas:** `rpc_solog_state`, `rpc_solog_count`, `rpc_solog_admin`
 
 Este documento describe únicamente el contrato V2 consumido por el frontend. V2 es incompatible con V1. El frontend no accede directamente a `inventario` ni replica reglas de negocio del backend.
@@ -34,12 +34,12 @@ Para un cajero se envía `{ "device_token": "..." }`. La respuesta operativa con
 
 - `usuario`, `sede` y `dispositivo` resueltos por backend;
 - `sesion_activa`, nula o con ID, estado activo, snapshot y horas de inicio/vencimiento;
-- `stock`: disponibilidad, IDs/fechas del snapshot, `snapshot_confirmado_at`, `expira_at`, versión y `puede_iniciar_conteo`;
+- `stock`: disponibilidad, `snapshot_id`, `snapshot_at`, `confirmado_at`, `expira_at`, versión y `puede_iniciar_conteo`; cuando no hay snapshot, esos identificadores y fechas son `null`;
 - `server_now`;
 - `cobertura_diaria`;
 - `cobertura_quincenal`, incluida `completa` y el período `primera`/`segunda`;
-- `categorias` ordenadas por backend con `id`, `nombre`, `orden` y `pendientes`;
-- contadores de `stock_cero`, `cambios_recientes`, `stock_negativo` y `contar_detalladamente`.
+- `conteo_principal.categorias`, ordenadas por backend con `id`, `nombre`, `orden` y `pendientes`;
+- `conteo_principal.stock_cero_pendientes` y los contadores de las vistas inteligentes cuando hay inventario disponible.
 
 Cada cobertura entrega `grupos_contados`, `grupos_totales`, `pendientes` y `porcentaje`. El frontend no recalcula estos valores.
 
@@ -126,6 +126,8 @@ El temporizador usa `stock.expira_at`. No produce polling. Al vencer se bloquean
 `bootstrap` devuelve usuario administrador/moderador, sedes y dispositivos pendientes. Cada sede expone `cobertura_quincenal`, `cobertura_diaria`, `sesion_activa` general y dispositivo autorizado.
 
 `authorize_device` y `revoke_device` mantienen la administración de tablets. `report` conserva `summary`, `counts`, `differences`, `history` y `pos_adjustments`. El reporte `counts` ya no entrega tipo/categoría y usa estados activo/finalizado/expirado; muestra grupos registrados y snapshot. Las filas de detalle de los demás reportes incluyen su propio `id` y conservan datos de SKU, stock posterior y reconteo.
+
+El frontend ya consume el contrato administrativo de `incidents`, `incident_action`, `catalog_reference`, `catalog_changes`, `catalog_change_action` y `catalog_publication_preview`. La publicación controlada de una versión oficial se ejecuta desde `Admin → Catálogo` mediante `conexion-admin`, únicamente después de un preview válido y solo para un usuario `admin`. El flujo y su semántica `Aprobado ≠ Incorporado` se documentan en [SOLOG_Admin_Incidencias_Catalogo_Contrato_V1.md](SOLOG_Admin_Incidencias_Catalogo_Contrato_V1.md).
 
 ## 7. Errores relevantes
 

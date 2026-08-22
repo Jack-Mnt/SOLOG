@@ -10,28 +10,27 @@ import {
 } from './useAdminReports'
 import type { SologAdminReportType, SologAdminSite } from '../types'
 
-const REPORT_TABS: Array<{
-  type: SologAdminReportType
-  label: string
-  icon: LucideIcon
-}> = [
-  { type: 'summary', label: 'Resumen por período', icon: ScrollText },
-  { type: 'counts', label: 'Conteos', icon: ListChecks },
-  { type: 'differences', label: 'Diferencias', icon: Scale },
-  { type: 'history', label: 'Historial', icon: History },
-  { type: 'pos_adjustments', label: 'Ajuste POS', icon: SlidersHorizontal },
-]
+const REPORT_LABELS: Record<SologAdminReportType, string> = {
+  summary: 'Resumen por período',
+  counts: 'Conteos',
+  differences: 'Diferencias',
+  history: 'Historial',
+  pos_adjustments: 'Ajuste POS',
+}
 
 export function AdminReports({
   sites,
   refreshOperationalState,
+  reportType,
 }: {
   sites: SologAdminSite[]
   refreshOperationalState: () => Promise<void>
+  reportType: SologAdminReportType
 }) {
   const reports = useAdminReports({
     enabled: true,
     refreshOperationalState,
+    initialReportType: reportType,
   })
   const currentData =
     reports.data?.report_type === reports.reportType ? reports.data : null
@@ -42,27 +41,9 @@ export function AdminReports({
     <section className="content-section admin-reports" aria-labelledby="reports-title">
       <div className="section-heading">
         <div>
-          <h2 id="reports-title">Reportes</h2>
-          <p>Consulta los cinco reportes administrativos procesados por backend.</p>
+          <h2 id="reports-title">{REPORT_LABELS[reportType]}</h2>
+          <p>Consulta procesada por backend con filtros server-side.</p>
         </div>
-      </div>
-
-      <div className="admin-report-tabs" role="tablist" aria-label="Tipos de reporte">
-        {REPORT_TABS.map((tab) => {
-          const TabIcon = tab.icon
-          return (
-          <button
-            aria-selected={reports.reportType === tab.type}
-            className={`admin-tab${reports.reportType === tab.type ? ' admin-tab--active' : ''}`}
-            key={tab.type}
-            onClick={() => reports.selectReport(tab.type)}
-            role="tab"
-            type="button"
-          >
-            <TabIcon size={17} /> {tab.label}
-          </button>
-          )
-        })}
       </div>
 
       <AdminReportFilters
@@ -145,10 +126,4 @@ export function AdminReports({
 import {
   ArrowLeft,
   ArrowRight,
-  History,
-  ListChecks,
-  Scale,
-  ScrollText,
-  SlidersHorizontal,
-  type LucideIcon,
 } from 'lucide-react'

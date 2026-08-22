@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { PageShell } from '../components/PageShell'
 import { AdminOverview } from '../features/solog/admin/AdminOverview'
 import { AdminReports } from '../features/solog/admin/AdminReports'
@@ -8,9 +8,44 @@ import { useAdminSolog } from '../features/solog/admin/useAdminSolog'
 import { useSolog } from '../features/solog/SologContext'
 import type {
   SologAdminSite,
+  SologAdminReportType,
   SologOperationalBootstrap,
   SologPendingDevice,
 } from '../features/solog/types'
+
+const CatalogPanel = lazy(() =>
+  import('../features/solog/admin/catalog/CatalogPanel').then((module) => ({
+    default: module.CatalogPanel,
+  })),
+)
+
+const IncidentsPanel = lazy(() =>
+  import('../features/solog/admin/incidents/IncidentsPanel').then((module) => ({
+    default: module.IncidentsPanel,
+  })),
+)
+
+type AdminSection =
+  | 'overview'
+  | 'devices'
+  | 'incidents'
+  | 'catalog'
+  | Exclude<SologAdminReportType, 'summary'>
+
+const ADMIN_NAVIGATION: Array<{
+  section: AdminSection
+  label: string
+  icon: LucideIcon
+}> = [
+  { section: 'overview', label: 'Resumen', icon: LayoutDashboard },
+  { section: 'counts', label: 'Conteos', icon: ListChecks },
+  { section: 'differences', label: 'Diferencias', icon: Scale },
+  { section: 'history', label: 'Historial', icon: History },
+  { section: 'pos_adjustments', label: 'Ajuste POS', icon: SlidersHorizontal },
+  { section: 'incidents', label: 'Incidencias', icon: TriangleAlert },
+  { section: 'catalog', label: 'Catálogo', icon: BookOpenCheck },
+  { section: 'devices', label: 'Dispositivos', icon: TabletSmartphone },
+]
 
 export function AdminPage({
   bootstrap,
@@ -19,9 +54,7 @@ export function AdminPage({
   bootstrap: SologOperationalBootstrap
   onLogout: () => void
 }) {
-  const [activeSection, setActiveSection] = useState<
-    'summary' | 'devices' | 'reports'
-  >('summary')
+  const [activeSection, setActiveSection] = useState<AdminSection>('overview')
   const solog = useSolog()
   const hasAdminRole =
     bootstrap.usuario.rol === 'admin' || bootstrap.usuario.rol === 'moderador'
@@ -74,7 +107,7 @@ export function AdminPage({
 
   return (
     <PageShell
-      description="Resumen operativo y administración de tablets por sede."
+      description="Operación, incidencias, catálogo, reportes y dispositivos por sede."
       eyebrow={bootstrap.usuario.rol}
       onLogout={onLogout}
       title="Administración SOLOG"
@@ -128,31 +161,31 @@ export function AdminPage({
       {admin.bootstrap ? (
         <div className="admin-layout">
           <nav className="admin-main-tabs" aria-label="Secciones administrativas">
-            <button
-              aria-current={activeSection === 'summary' ? 'page' : undefined}
-              className={`admin-tab${activeSection === 'summary' ? ' admin-tab--active' : ''}`}
-              onClick={() => setActiveSection('summary')}
-            >
-              <LayoutDashboard size={19} /> <span>Resumen</span>
-            </button>
-            <button
-              aria-current={activeSection === 'devices' ? 'page' : undefined}
-              className={`admin-tab${activeSection === 'devices' ? ' admin-tab--active' : ''}`}
-              onClick={() => setActiveSection('devices')}
-            >
-              <TabletSmartphone size={19} /> <span>Dispositivos</span>
-            </button>
-            <button
-              aria-current={activeSection === 'reports' ? 'page' : undefined}
-              className={`admin-tab${activeSection === 'reports' ? ' admin-tab--active' : ''}`}
-              onClick={() => setActiveSection('reports')}
-            >
-              <TableProperties size={19} /> <span>Reportes</span>
-            </button>
+            {ADMIN_NAVIGATION.map((item) => {
+              const ItemIcon = item.icon
+              return (
+                <button
+                  aria-current={activeSection === item.section ? 'page' : undefined}
+                  className={`admin-tab${activeSection === item.section ? ' admin-tab--active' : ''}`}
+                  key={item.section}
+                  onClick={() => setActiveSection(item.section)}
+                >
+                  <ItemIcon size={19} /> <span>{item.label}</span>
+                </button>
+              )
+            })}
           </nav>
           <div className="admin-content">
-            {activeSection === 'summary' ? (
-              <AdminOverview bootstrap={admin.bootstrap} />
+            {activeSection === 'overview' ? (
+              <>
+                <AdminOverview bootstrap={admin.bootstrap} />
+                <AdminReports
+                  key="summary"
+                  refreshOperationalState={solog.refresh}
+                  reportType="summary"
+                  sites={admin.bootstrap.sedes}
+                />
+              </>
             ) : null}
 
             {activeSection === 'devices' ? (
@@ -171,11 +204,31 @@ export function AdminPage({
               </>
             ) : null}
 
-            {activeSection === 'reports' ? (
+            {activeSection === 'counts' || activeSection === 'differences' || activeSection === 'history' || activeSection === 'pos_adjustments' ? (
               <AdminReports
+                key={activeSection}
                 refreshOperationalState={solog.refresh}
+                reportType={activeSection}
                 sites={admin.bootstrap.sedes}
               />
+            ) : null}
+
+            {activeSection === 'incidents' ? (
+              <Suspense fallback={<div className="empty-state" role="status">Preparando Incidencias…</div>}>
+                <IncidentsPanel
+                  refreshOperationalState={solog.refresh}
+                  sites={admin.bootstrap.sedes}
+                />
+              </Suspense>
+            ) : null}
+
+            {activeSection === 'catalog' ? (
+              <Suspense fallback={<div className="empty-state" role="status">Preparando Catálogo…</div>}>
+                <CatalogPanel
+                  refreshOperationalState={solog.refresh}
+                  role={admin.bootstrap.usuario.rol}
+                />
+              </Suspense>
             ) : null}
           </div>
         </div>
@@ -184,8 +237,14 @@ export function AdminPage({
   )
 }
 import {
+  BookOpenCheck,
+  History,
   LayoutDashboard,
+  ListChecks,
   RefreshCw,
+  Scale,
+  SlidersHorizontal,
   TabletSmartphone,
-  TableProperties,
+  TriangleAlert,
+  type LucideIcon,
 } from 'lucide-react'

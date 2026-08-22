@@ -3,12 +3,22 @@ import {
   createSologConfigurationError,
   createSologEmptyResponseError,
   normalizeSologError,
+  normalizeSologFunctionError,
 } from './errors'
 import type {
   SologAdminBootstrap,
+  SologAdminIncidentActionPayload,
+  SologAdminIncidentActionResponse,
+  SologAdminIncidentsFilters,
+  SologAdminIncidentsResponse,
   SologAdminReportPayload,
   SologAdminReportResponse,
   SologAuthorizeDeviceResponse,
+  SologCatalogChangeActionPayload,
+  SologCatalogChangeActionResponse,
+  SologCatalogChangesFilters,
+  SologCatalogChangesResponse,
+  SologCatalogReference,
   SologCountBatchPayload,
   SologCountBatchResponse,
   SologCountFinishPayload,
@@ -18,6 +28,8 @@ import type {
   SologGroupsPayload,
   SologGroupsResponse,
   SologOperationalBootstrap,
+  CatalogPublicationPreview,
+  PublishCatalogResponse,
   SologRecountPayload,
   SologRecountResponse,
   SologRevokeDeviceResponse,
@@ -87,4 +99,65 @@ export function revokeSologDevice(deviceId: string) {
 
 export function getSologAdminReport(input: SologAdminReportPayload) {
   return callSologRpc<SologAdminReportResponse>('rpc_solog_admin', 'report', input)
+}
+
+export function getAdminIncidents(filters: SologAdminIncidentsFilters = {}) {
+  return callSologRpc<SologAdminIncidentsResponse>(
+    'rpc_solog_admin',
+    'incidents',
+    filters,
+  )
+}
+
+export function applyAdminIncidentDecision(
+  input: SologAdminIncidentActionPayload,
+) {
+  return callSologRpc<SologAdminIncidentActionResponse>(
+    'rpc_solog_admin',
+    'incident_action',
+    input,
+  )
+}
+
+export function getCatalogReference() {
+  return callSologRpc<SologCatalogReference>(
+    'rpc_solog_admin',
+    'catalog_reference',
+    {},
+  )
+}
+
+export function getCatalogChanges(filters: SologCatalogChangesFilters = {}) {
+  return callSologRpc<SologCatalogChangesResponse>(
+    'rpc_solog_admin',
+    'catalog_changes',
+    filters,
+  )
+}
+
+export function applyCatalogDecision(input: SologCatalogChangeActionPayload) {
+  return callSologRpc<SologCatalogChangeActionResponse>(
+    'rpc_solog_admin',
+    'catalog_change_action',
+    input,
+  )
+}
+
+export function getCatalogPublicationPreview() {
+  return callSologRpc<CatalogPublicationPreview>(
+    'rpc_solog_admin',
+    'catalog_publication_preview',
+    {},
+  )
+}
+
+export async function publishCatalog(): Promise<PublishCatalogResponse> {
+  const { data, error } = await getClient().functions.invoke<PublishCatalogResponse>(
+    'conexion-admin',
+    { body: { action: 'publish_catalog' } },
+  )
+
+  if (error) throw await normalizeSologFunctionError(error)
+  if (data === null) throw createSologEmptyResponseError()
+  return data
 }

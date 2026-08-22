@@ -1,4 +1,4 @@
-import type { PostgrestError } from '@supabase/supabase-js'
+import { FunctionsHttpError, type PostgrestError } from '@supabase/supabase-js'
 
 export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_AUTH_REQUIRED',
@@ -48,13 +48,33 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_INVALID_REPORT_FILTER',
   'SOLOG_INVALID_DATE_RANGE',
   'SOLOG_INVALID_REPORT_TYPE',
+  'SOLOG_INVALID_INCIDENT_ACTION',
+  'SOLOG_INVALID_CATALOG_ACTION',
+  'SOLOG_CATALOG_CHANGE_NOT_FOUND',
+  'SOLOG_CATALOG_CONFLICT',
+  'SOLOG_CATALOG_INCOMPLETE_NEW_PRODUCT',
 ] as const
 
 export type SologBackendErrorCode =
   (typeof SOLOG_BACKEND_ERROR_CODES)[number]
 
+export const SOLOG_CATALOG_FUNCTION_ERROR_CODES = [
+  'AUTH_REQUIRED',
+  'AUTH_INVALID',
+  'USER_DISABLED',
+  'ADMIN_REQUIRED',
+  'NO_APPROVED_CATALOG_CHANGES',
+  'CATALOG_UPLOAD_FAILED',
+  'CATALOG_COMMIT_FAILED',
+  'INVALID_CATALOG_PREVIEW',
+] as const
+
+export type SologCatalogFunctionErrorCode =
+  (typeof SOLOG_CATALOG_FUNCTION_ERROR_CODES)[number]
+
 export type SologErrorCode =
   | SologBackendErrorCode
+  | SologCatalogFunctionErrorCode
   | `SOLOG_${string}`
 
 const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
@@ -77,6 +97,28 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_INVALID_DATE_RANGE:
     'El rango de fechas no es válido. Revisa Desde y Hasta.',
   SOLOG_INVALID_REPORT_TYPE: 'El reporte seleccionado no está disponible.',
+  SOLOG_INVALID_INCIDENT_ACTION:
+    'La decisión seleccionada no es válida para esta incidencia.',
+  SOLOG_INVALID_CATALOG_ACTION:
+    'La decisión seleccionada no es válida para este cambio de catálogo.',
+  SOLOG_CATALOG_CHANGE_NOT_FOUND:
+    'La propuesta de catálogo ya no está disponible.',
+  SOLOG_CATALOG_CONFLICT:
+    'La propuesta entra en conflicto con el estado actual del catálogo.',
+  SOLOG_CATALOG_INCOMPLETE_NEW_PRODUCT:
+    'Completa la marca, categoría, estado y grupo requeridos para aprobar el producto.',
+  AUTH_REQUIRED: 'Inicia sesión para continuar con la publicación del catálogo.',
+  AUTH_INVALID: 'La sesión no es válida. Inicia sesión nuevamente.',
+  USER_DISABLED: 'Este usuario está deshabilitado.',
+  ADMIN_REQUIRED: 'Solo un administrador puede publicar el catálogo.',
+  NO_APPROVED_CATALOG_CHANGES:
+    'No hay cambios aprobados pendientes de incorporación.',
+  CATALOG_UPLOAD_FAILED:
+    'No se pudo almacenar el archivo de la nueva versión. No se publicó ningún cambio.',
+  CATALOG_COMMIT_FAILED:
+    'No se pudo completar la publicación del catálogo.',
+  INVALID_CATALOG_PREVIEW:
+    'La propuesta de catálogo ya no es válida. Actualiza la información e inténtalo nuevamente.',
   SOLOG_ACTIVE_COUNT_EXISTS: 'Ya existe un conteo activo en esta sede.',
   SOLOG_COUNT_NOT_AVAILABLE: 'Este conteo ya no está disponible.',
   SOLOG_COUNT_NOT_ACTIVE: 'La sesión de conteo ya no está activa.',
@@ -118,6 +160,34 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
 }
 
 const ERROR_CODE_PATTERN = /SOLOG_[A-Z0-9_]+/
+
+function extractKnownErrorCode(value: string): SologErrorCode | null {
+  const backendCode = value.match(ERROR_CODE_PATTERN)?.[0]
+  if (backendCode) return backendCode as SologErrorCode
+
+  return (
+    SOLOG_CATALOG_FUNCTION_ERROR_CODES.find((code) => value.includes(code)) ??
+    null
+  )
+}
+
+function getStringProperty(value: unknown, property: string): string | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
+  const propertyValue = (value as Record<string, unknown>)[property]
+  return typeof propertyValue === 'string' ? propertyValue : null
+}
+
+async function readFunctionErrorBody(error: unknown): Promise<unknown> {
+  if (!(error instanceof FunctionsHttpError)) return null
+  const context = error.context
+  if (!(context instanceof Response)) return null
+
+  try {
+    return await context.clone().json()
+  } catch {
+    return null
+  }
+}
 
 export class SologApiError extends Error {
   readonly code: SologErrorCode
@@ -166,15 +236,32 @@ export function normalizeSologError(error: PostgrestError): SologApiError {
   const diagnosticText = [error.code, error.message, error.details, error.hint]
     .filter(Boolean)
     .join(' ')
-  const extractedCode = diagnosticText.match(ERROR_CODE_PATTERN)?.[0] as
-    | SologErrorCode
-    | undefined
+  const extractedCode = extractKnownErrorCode(diagnosticText)
 
   return new SologApiError(extractedCode ?? 'SOLOG_UNKNOWN_ERROR', {
     backendCode: error.code,
     details: error.details,
     hint: error.hint,
     original: error,
+  })
+}
+
+export async function normalizeSologFunctionError(
+  error: unknown,
+): Promise<SologApiError> {
+  const body = await readFunctionErrorBody(error)
+  const bodyCode =
+    getStringProperty(body, 'codigo') ??
+    getStringProperty(body, 'code') ??
+    getStringProperty(body, 'error')
+  const errorMessage = error instanceof Error ? error.message : ''
+  const extractedCode = extractKnownErrorCode(
+    [bodyCode, errorMessage].filter(Boolean).join(' '),
+  )
+
+  return new SologApiError(extractedCode ?? 'SOLOG_FUNCTION_ERROR', {
+    backendCode: bodyCode,
+    details: getStringProperty(body, 'message'),
   })
 }
 
