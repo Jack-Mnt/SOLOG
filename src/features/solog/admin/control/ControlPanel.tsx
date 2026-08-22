@@ -15,9 +15,9 @@ import type {
 } from '../../types'
 import {
   formatAdminCurrency,
-  formatAdminDate,
   formatSignedInteger,
 } from '../format'
+import { formatControlDate, getControlDifferenceClass } from './control-format'
 import type { ControlPeriodPreset } from './control-period'
 import { ControlDrawer } from './ControlDrawer'
 import {
@@ -78,12 +78,12 @@ function ControlTable({
               role="button"
               tabIndex={disabled ? -1 : 0}
             >
-              <td>{formatAdminDate(row.contado_at)}</td>
-              <td><strong>{row.grupo}</strong><small>{row.sku_count === 1 && row.sku_unico ? `C. interno ${row.sku_unico}` : `${row.sku_count} productos`}</small></td>
+              <td>{formatControlDate(row.contado_at)}</td>
+              <td><strong>{row.grupo}</strong></td>
               <td>{row.categoria}</td>
               <td>{row.stock_teorico}</td>
               <td>{row.stock_fisico}</td>
-              <td>{formatSignedInteger(row.diferencia)}</td>
+              <td><span className={getControlDifferenceClass(row.diferencia)}>{formatSignedInteger(row.diferencia)}</span></td>
               <td>{formatAdminCurrency(row.valor_diferencia)}</td>
               <td><DifferenceBadge state={row.estado_diferencia} /></td>
               <td>{row.stock_posterior ?? '—'}</td>

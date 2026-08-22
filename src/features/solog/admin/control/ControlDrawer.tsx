@@ -4,9 +4,9 @@ import { getSologDifferenceStateLabel } from '../../labels'
 import type { SologControlDetailResponse } from '../../types'
 import {
   formatAdminCurrency,
-  formatAdminDate,
   formatSignedInteger,
 } from '../format'
+import { formatControlDate, getControlDifferenceClass } from './control-format'
 import {
   SOLOG_CONTROL_HISTORY_PAGE_SIZE,
   useSologControlDetail,
@@ -52,9 +52,15 @@ export function ControlDrawer({
     >
       <aside aria-labelledby="control-drawer-title" aria-modal="true" className="control-drawer" role="dialog">
         <header className="control-drawer__header">
-          <div>
-            <span>Observación de inventario</span>
+          <div className="control-drawer__heading">
             <h2 id="control-drawer-title">{response?.detalle.grupo ?? 'Cargando detalle…'}</h2>
+            {response ? (
+              <>
+                <strong>{formatAdminCurrency(response.detalle.precio)}</strong>
+                <span>{response.detalle.categoria}</span>
+                <DifferenceBadge state={response.detalle.estado_diferencia} />
+              </>
+            ) : null}
           </div>
           <button aria-label="Cerrar detalle" className="icon-button" onClick={onClose} type="button">
             <X size={20} />
@@ -79,12 +85,6 @@ export function ControlDrawer({
 
           {response ? (
             <>
-              <div className="control-detail-identity">
-                <DifferenceBadge state={response.detalle.estado_diferencia} />
-                <strong>{response.detalle.grupo}</strong>
-                <span>{response.detalle.categoria} · {response.detalle.sede}</span>
-              </div>
-
               <nav aria-label="Secciones del detalle" className="control-detail-tabs">
                 {([
                   ['detail', 'Detalle'],
@@ -104,17 +104,22 @@ export function ControlDrawer({
               </nav>
 
               {tab === 'detail' ? (
-                <dl className="control-detail-grid">
-                  <div><dt>Fecha y hora</dt><dd>{formatAdminDate(response.detalle.contado_at)}</dd></div>
-                  <div><dt>Usuario</dt><dd>{response.detalle.usuario}</dd></div>
-                  <div><dt>Teórico</dt><dd>{response.detalle.stock_teorico}</dd></div>
-                  <div><dt>Físico</dt><dd>{response.detalle.stock_fisico}</dd></div>
-                  <div><dt>Diferencia</dt><dd>{formatSignedInteger(response.detalle.diferencia)}</dd></div>
-                  <div><dt>Valor diferencia</dt><dd>{formatAdminCurrency(response.detalle.valor_diferencia)}</dd></div>
-                  <div><dt>Stock posterior</dt><dd>{response.detalle.stock_posterior ?? 'Sin registro'}</dd></div>
-                  <div><dt>Reconteo</dt><dd>{response.detalle.reconteo_stock ?? 'Sin reconteo'}</dd></div>
-                  <div><dt>Fecha de reconteo</dt><dd>{formatAdminDate(response.detalle.recontado_at)}</dd></div>
-                </dl>
+                <div className="control-detail-content">
+                  <dl className="control-detail-metrics">
+                    <div><dt>Teórico</dt><dd>{response.detalle.stock_teorico}</dd></div>
+                    <div><dt>Físico</dt><dd>{response.detalle.stock_fisico}</dd></div>
+                    <div><dt>Diferencia</dt><dd><span className={getControlDifferenceClass(response.detalle.diferencia)}>{formatSignedInteger(response.detalle.diferencia)}</span></dd></div>
+                    <div><dt>Valor</dt><dd>{formatAdminCurrency(response.detalle.valor_diferencia)}</dd></div>
+                  </dl>
+                  <dl className="control-detail-meta">
+                    <div><dt>Fecha y hora</dt><dd>{formatControlDate(response.detalle.contado_at, 'text')}</dd></div>
+                    <div><dt>Usuario</dt><dd>{response.detalle.usuario}</dd></div>
+                    <div><dt>Sede</dt><dd>{response.detalle.sede}</dd></div>
+                    <div><dt>Stock posterior</dt><dd>{response.detalle.stock_posterior ?? 'Sin registro'}</dd></div>
+                    <div><dt>Reconteo</dt><dd>{response.detalle.reconteo_stock ?? 'Sin reconteo'}</dd></div>
+                    {response.detalle.recontado_at ? <div><dt>Fecha de reconteo</dt><dd>{formatControlDate(response.detalle.recontado_at, 'text')}</dd></div> : null}
+                  </dl>
+                </div>
               ) : null}
 
               {tab === 'products' ? (
@@ -123,13 +128,13 @@ export function ControlDrawer({
                     {response.skus.map((sku) => (
                       <article key={sku.c_interno}>
                         <span className="control-products__icon"><PackageSearch size={18} /></span>
-                        <div><strong>{sku.producto}</strong><small>{sku.marca ?? 'Sin marca'}</small></div>
-                        <dl>
-                          <div><dt>C. interno</dt><dd>{sku.c_interno}</dd></div>
-                          <div><dt>C. barras</dt><dd>{sku.c_barras ?? 'No disponible'}</dd></div>
-                          <div><dt>Precio</dt><dd>{formatAdminCurrency(sku.precio)}</dd></div>
-                          <div><dt>Estado</dt><dd>{sku.estado}</dd></div>
-                        </dl>
+                        <div className="control-products__content">
+                          <strong>{sku.producto}</strong>
+                          <dl>
+                            <div><dt>C. interno</dt><dd>{sku.c_interno}</dd></div>
+                            <div><dt>C. barras</dt><dd>{sku.c_barras ?? 'No disponible'}</dd></div>
+                          </dl>
+                        </div>
                       </article>
                     ))}
                   </div>
@@ -139,24 +144,23 @@ export function ControlDrawer({
               {tab === 'history' ? (
                 <section className="control-history" aria-busy={detail.status === 'loading'}>
                   {response.historial.length ? (
-                    <div className="admin-report-table-wrap">
-                      <table className="admin-report-table">
-                        <caption>Historial del grupo en esta sede</caption>
-                        <thead><tr><th>Fecha</th><th>Teórico</th><th>Físico</th><th>Diferencia</th><th>Estado</th><th>Usuario</th></tr></thead>
-                        <tbody>
-                          {response.historial.map((row) => (
-                            <tr key={row.detalle_id}>
-                              <td>{formatAdminDate(row.contado_at)}</td>
-                              <td>{row.stock_teorico}</td>
-                              <td>{row.stock_fisico}</td>
-                              <td>{formatSignedInteger(row.diferencia)}</td>
-                              <td><DifferenceBadge state={row.estado_diferencia} /></td>
-                              <td>{row.usuario}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <ol className="control-timeline" aria-label="Historial del grupo en esta sede">
+                      {response.historial.map((row) => (
+                        <li key={row.detalle_id}>
+                          <span className="control-timeline__marker" aria-hidden="true" />
+                          <div className="control-timeline__entry">
+                            <div className="control-timeline__heading">
+                              <time dateTime={row.contado_at}>{formatControlDate(row.contado_at, 'text')}</time>
+                              <DifferenceBadge state={row.estado_diferencia} />
+                            </div>
+                            <div className="control-timeline__values">
+                              <span>Físico <strong>{row.stock_fisico}</strong></span>
+                              <span>Diferencia <strong className={getControlDifferenceClass(row.diferencia)}>{formatSignedInteger(row.diferencia)}</strong></span>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
                   ) : <div className="empty-state">No hay observaciones históricas para este grupo.</div>}
 
                   <nav className="admin-report-pagination" aria-label="Paginación del historial del grupo">
