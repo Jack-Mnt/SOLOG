@@ -9,6 +9,7 @@ export function AdminDialog({
   onClose,
   closeDisabled = false,
   wide = false,
+  className,
 }: {
   title: string
   description?: string
@@ -17,6 +18,7 @@ export function AdminDialog({
   onClose: () => void
   closeDisabled?: boolean
   wide?: boolean
+  className?: string
 }) {
   const titleId = useId()
   const descriptionId = useId()
@@ -40,7 +42,7 @@ export function AdminDialog({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className={`admin-dialog${wide ? ' admin-dialog--wide' : ''}`}
+        className={`admin-dialog${wide ? ' admin-dialog--wide' : ''}${className ? ` ${className}` : ''}`}
         role="dialog"
       >
         <header className="admin-dialog__header">
