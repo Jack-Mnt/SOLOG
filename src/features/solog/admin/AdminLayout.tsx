@@ -163,11 +163,10 @@ export function AdminLayout({
           ) : (
             <>
               <span className="admin-sidebar__avatar" aria-hidden="true">
-                <UserRound size={17} />
+                <UserRound size={20} />
               </span>
               <span className="admin-sidebar__account-copy">
                 <strong>{userName}</strong>
-                <small>{userRole}</small>
               </span>
               <button
                 aria-label="Cerrar sesión"

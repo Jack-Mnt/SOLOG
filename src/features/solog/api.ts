@@ -13,6 +13,7 @@ import type {
   SologAdminIncidentsResponse,
   SologAdminReportPayload,
   SologAdminReportResponse,
+  SologDashboardResponse,
   SologAuthorizeDeviceResponse,
   SologCatalogChangeActionPayload,
   SologCatalogChangeActionResponse,
@@ -83,6 +84,14 @@ export function recountSologGroup(input: SologRecountPayload) {
 
 export function getSologAdminBootstrap() {
   return callSologRpc<SologAdminBootstrap>('rpc_solog_admin', 'bootstrap', {})
+}
+
+export async function getSologDashboard(): Promise<SologDashboardResponse> {
+  const { data, error } = await getClient().rpc('rpc_solog_dashboard')
+
+  if (error) throw normalizeSologError(error)
+  if (data === null) throw createSologEmptyResponseError()
+  return data as SologDashboardResponse
 }
 
 export function authorizeSologDevice(deviceId: string) {

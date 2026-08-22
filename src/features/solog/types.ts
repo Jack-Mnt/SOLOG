@@ -26,8 +26,7 @@ export type SologDifferenceState =
   | 'conteos_inconsistentes'
 
 export type SologAdminReportType =
-  | 'summary'
-  | 'counts'
+  'counts'
   | 'differences'
   | 'history'
   | 'pos_adjustments'
@@ -342,6 +341,48 @@ export interface SologAdminBootstrap {
   dispositivos_pendientes: SologPendingDevice[]
 }
 
+export interface SologDashboardCoverage {
+  grupos_contados: number
+  grupos_totales: number
+  porcentaje: number
+}
+
+export interface SologDashboardActivity {
+  ultima_actividad_at: string | null
+  sesion_activa: boolean
+  sesion_iniciada_at: string | null
+  sesion_expira_at: string | null
+}
+
+export interface SologDashboardSite {
+  sede_id: string
+  sede: string
+  cobertura_quincenal: SologDashboardCoverage
+  cobertura_hoy: SologDashboardCoverage
+  diferencias_pendientes: number
+  persistentes: number
+  actividad: SologDashboardActivity
+}
+
+export interface SologDashboardResponse {
+  kpis: {
+    cobertura_quincenal: SologDashboardCoverage
+    contados_hoy: {
+      grupos_contados: number
+      sedes_con_actividad: number
+    }
+    diferencias_pendientes: number
+    persistentes: number
+  }
+  sedes: SologDashboardSite[]
+  periodo: {
+    fecha: string
+    quincena_desde: string
+    quincena_hasta: string
+  }
+  server_now: string
+}
+
 export type SologAdminIncidentType =
   | 'producto_ausente'
   | 'codigo_interno_invalido'
@@ -588,7 +629,6 @@ export interface SologAdminReportFilters {
 }
 
 export type SologAdminReportPayload =
-  | (SologAdminReportFilters & { report_type: 'summary' })
   | (SologAdminReportFilters & {
       report_type: 'counts'
       estado?: SologAdminCountState
@@ -615,21 +655,6 @@ export type SologAdminReportPayload =
       limit: number
       offset: number
     })
-
-export interface SologAdminSummaryRow {
-  sede_id: string
-  sede: string
-  grupos_totales: number
-  grupos_contados: number
-  sesiones: number
-  coincide: number
-  pendiente: number
-  probablemente_explicada: number
-  parcialmente_explicada: number
-  persistente: number
-  confirmada_reconteo: number
-  conteos_inconsistentes: number
-}
 
 export interface SologAdminCountRow {
   conteo_id: string
@@ -678,13 +703,6 @@ export type SologAdminDifferenceRow = SologAdminObservationRow<SologAdminDiffere
 export type SologAdminHistoryRow = SologAdminObservationRow
 export type SologAdminPosAdjustmentRow = SologAdminObservationRow<SologAdminPosAdjustmentState>
 
-export interface SologAdminSummaryResponse {
-  report_type: 'summary'
-  date_from: string
-  date_to: string
-  rows: SologAdminSummaryRow[]
-}
-
 export interface SologAdminCountsResponse {
   report_type: 'counts'
   limit: number
@@ -714,7 +732,6 @@ export interface SologAdminPosAdjustmentsResponse {
 }
 
 export type SologAdminReportResponse =
-  | SologAdminSummaryResponse
   | SologAdminCountsResponse
   | SologAdminDifferencesResponse
   | SologAdminHistoryResponse

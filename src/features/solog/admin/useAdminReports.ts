@@ -88,10 +88,6 @@ function createPayload(
     date_to: filters.dateTo,
   }
 
-  if (reportType === 'summary') {
-    return { report_type: 'summary', ...common }
-  }
-
   if (reportType === 'counts') {
     return {
       report_type: 'counts',
@@ -144,11 +140,11 @@ function createPayload(
 export function useAdminReports({
   enabled,
   refreshOperationalState,
-  initialReportType = 'summary',
+  initialReportType,
 }: {
   enabled: boolean
   refreshOperationalState: () => Promise<void>
-  initialReportType?: SologAdminReportType
+  initialReportType: SologAdminReportType
 }) {
   const [reportType, setReportType] =
     useState<SologAdminReportType>(initialReportType)

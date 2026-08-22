@@ -3,7 +3,6 @@ import { AdminDifferencesReport } from './AdminDifferencesReport'
 import { AdminReportFilters } from './AdminReportFilters'
 import { AdminHistoryReport } from './AdminHistoryReport'
 import { AdminPosAdjustmentsReport } from './AdminPosAdjustmentsReport'
-import { AdminSummaryReport } from './AdminSummaryReport'
 import {
   ADMIN_REPORT_PAGE_SIZE,
   useAdminReports,
@@ -11,7 +10,6 @@ import {
 import type { SologAdminReportType, SologAdminSite } from '../types'
 
 const REPORT_LABELS: Record<SologAdminReportType, string> = {
-  summary: 'Resumen por período',
   counts: 'Conteos',
   differences: 'Diferencias',
   history: 'Historial',
@@ -34,7 +32,6 @@ export function AdminReports({
   })
   const currentData =
     reports.data?.report_type === reports.reportType ? reports.data : null
-  const isPaginated = reports.reportType !== 'summary'
   const currentRows = currentData?.rows.length ?? 0
 
   return (
@@ -77,9 +74,6 @@ export function AdminReports({
         </div>
       ) : null}
 
-      {currentData?.report_type === 'summary' ? (
-        <AdminSummaryReport report={currentData} />
-      ) : null}
       {currentData?.report_type === 'counts' ? (
         <AdminCountsReport report={currentData} />
       ) : null}
@@ -96,7 +90,7 @@ export function AdminReports({
         <AdminPosAdjustmentsReport report={currentData} />
       ) : null}
 
-      {isPaginated && currentData ? (
+      {currentData ? (
         <nav className="admin-report-pagination" aria-label="Paginación del reporte">
           <button
             className="button button--secondary"
