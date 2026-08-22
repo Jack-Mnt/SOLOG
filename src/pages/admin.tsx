@@ -7,13 +7,13 @@ export function AdminDashboardPage() {
   if (!admin.bootstrap) return null
 
   return (
-    <>
+    <div className="admin-dashboard">
       <AdminOverview bootstrap={admin.bootstrap} />
       <AdminReports
         refreshOperationalState={refreshOperationalState}
         reportType="summary"
         sites={admin.bootstrap.sedes}
       />
-    </>
+    </div>
   )
 }

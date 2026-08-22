@@ -90,6 +90,27 @@ export function AdminLayout({
           <span className="admin-sidebar__mark" aria-hidden="true"><Boxes size={22} strokeWidth={2.25} /></span>
           <span className="admin-sidebar__brand-copy"><strong>SOLOG</strong><small>Administración</small></span>
         </div>
+        <div className="admin-sidebar__account">
+          {sidebarCollapsed ? (
+            <details className="admin-sidebar__popover admin-sidebar__account-popover">
+              <summary aria-label={`Cuenta de ${userName}, ${userRole}`} title={`${userName} · ${userRole}`}>
+                <UserRound aria-hidden="true" size={18} />
+              </summary>
+              <div className="admin-sidebar__popover-panel admin-sidebar__account-menu">
+                <div><strong>{userName}</strong><small>{userRole}</small></div>
+                <button onClick={onLogout} type="button"><LogOut aria-hidden="true" size={17} />Cerrar sesión</button>
+              </div>
+            </details>
+          ) : (
+            <>
+              <span className="admin-sidebar__avatar" aria-hidden="true"><UserRound size={17} /></span>
+              <span className="admin-sidebar__account-copy"><strong>{userName}</strong><small>{userRole}</small></span>
+              <button aria-label="Cerrar sesión" className="admin-sidebar__logout" onClick={onLogout} title="Cerrar sesión" type="button">
+                <LogOut aria-hidden="true" size={17} />
+              </button>
+            </>
+          )}
+        </div>
         <nav className="admin-main-tabs" aria-label="Módulos administrativos">
           {ADMIN_NAVIGATION.map((item) => {
             const ItemIcon = item.icon
@@ -111,27 +132,31 @@ export function AdminLayout({
             )
           })}
         </nav>
+        <div className="admin-sidebar__footer">
+          <PaletteSwitcher collapsed={sidebarCollapsed} variant="sidebar" />
+          <button
+            aria-label={sidebarCollapsed ? 'Expandir navegación administrativa' : 'Contraer navegación administrativa'}
+            className="admin-sidebar__collapse"
+            data-tooltip={sidebarCollapsed ? 'Expandir menú' : undefined}
+            onClick={toggleSidebar}
+            title={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
+            type="button"
+          >
+            {sidebarCollapsed ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
+            <span>Contraer menú</span>
+          </button>
+        </div>
       </aside>
 
       <section className="admin-workspace__main" aria-labelledby="admin-module-title">
         <header className="admin-header">
           <div className="admin-header__identity">
-            <button
-              aria-label={sidebarCollapsed ? 'Expandir navegación administrativa' : 'Colapsar navegación administrativa'}
-              className="admin-header__icon-button"
-              onClick={toggleSidebar}
-              title={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
-              type="button"
-            >
-              {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-            </button>
             <div>
               <h1 id="admin-module-title">{currentModule.label}</h1>
               <p>{currentModule.description}</p>
             </div>
           </div>
           <div className="admin-header__actions">
-            <PaletteSwitcher />
             <button
               aria-label="Refrescar administración"
               className="admin-header__icon-button"
@@ -141,13 +166,6 @@ export function AdminLayout({
               type="button"
             >
               <RefreshCw className={admin.status === 'loading' ? 'icon-spin' : undefined} size={18} />
-            </button>
-            <div className="admin-header__user" aria-label={`${userName}, ${userRole}`}>
-              <span className="admin-header__avatar" aria-hidden="true"><UserRound size={17} /></span>
-              <span><strong>{userName}</strong><small>{userRole}</small></span>
-            </div>
-            <button aria-label="Cerrar sesión" className="admin-header__logout" onClick={onLogout} title="Cerrar sesión" type="button">
-              <LogOut aria-hidden="true" size={18} /><span>Cerrar sesión</span>
             </button>
           </div>
         </header>
