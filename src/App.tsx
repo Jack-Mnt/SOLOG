@@ -1,13 +1,58 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { PageShell } from './components/PageShell'
 import { AuthProvider, useAuth } from './features/auth/AuthContext'
+import { AdminLayout } from './features/solog/admin/AdminLayout'
 import { SologProvider, useSolog } from './features/solog/SologContext'
-import { replaceRoute, resolveTrustedRoute, usePathname } from './lib/router'
-import { AdminPage } from './pages/AdminPage'
+import {
+  isAdminRoute,
+  replaceRoute,
+  resolveTrustedRoute,
+  type AdminRoute,
+  usePathname,
+} from './lib/router'
+import { AdminPosAdjustmentsPage } from './pages/admin.ajuste-pos'
+import { AdminCountsPage } from './pages/admin.conteos'
+import { AdminDifferencesPage } from './pages/admin.diferencias'
+import { AdminDevicesPage } from './pages/admin.dispositivos'
+import { AdminHistoryPage } from './pages/admin.historial'
+import { AdminDashboardPage } from './pages/admin'
 import { CountPage } from './pages/CountPage'
 import { DevicePendingPage } from './pages/DevicePendingPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+
+const AdminIncidentsPage = lazy(() =>
+  import('./pages/admin.incidencias').then((module) => ({
+    default: module.AdminIncidentsPage,
+  })),
+)
+
+const AdminCatalogPage = lazy(() =>
+  import('./pages/admin.catalogo').then((module) => ({
+    default: module.AdminCatalogPage,
+  })),
+)
+
+function getAdminPage(route: AdminRoute): ReactNode {
+  switch (route) {
+    case '/admin':
+      return <AdminDashboardPage />
+    case '/admin/conteos':
+      return <AdminCountsPage />
+    case '/admin/diferencias':
+      return <AdminDifferencesPage />
+    case '/admin/historial':
+      return <AdminHistoryPage />
+    case '/admin/ajuste-pos':
+      return <AdminPosAdjustmentsPage />
+    case '/admin/incidencias':
+      return <AdminIncidentsPage />
+    case '/admin/catalogo':
+      return <AdminCatalogPage />
+    case '/admin/dispositivos':
+      return <AdminDevicesPage />
+  }
+}
 
 function AppContent() {
   const auth = useAuth()
@@ -82,10 +127,19 @@ function AppContent() {
   }
 
   const bootstrap = solog.bootstrap
+  const resolvedRoute = resolveTrustedRoute(bootstrap, pathname)
 
-  switch (resolveTrustedRoute(bootstrap, pathname)) {
-    case '/admin':
-      return <AdminPage bootstrap={bootstrap} onLogout={handleLogout} />
+  if (isAdminRoute(resolvedRoute)) {
+    return (
+      <AdminLayout bootstrap={bootstrap} onLogout={handleLogout}>
+        <Suspense fallback={<div className="empty-state" role="status">Preparando módulo…</div>}>
+          {getAdminPage(resolvedRoute)}
+        </Suspense>
+      </AdminLayout>
+    )
+  }
+
+  switch (resolvedRoute) {
     case '/device-pending':
       return (
         <DevicePendingPage bootstrap={bootstrap} onLogout={handleLogout} />

@@ -1,7 +1,32 @@
 import { useSyncExternalStore } from 'react'
 import type { SologOperationalBootstrap } from '../features/solog/types'
 
-export type AppRoute = '/login' | '/' | '/device-pending' | '/count' | '/admin'
+export type AdminRoute =
+  | '/admin'
+  | '/admin/conteos'
+  | '/admin/diferencias'
+  | '/admin/historial'
+  | '/admin/ajuste-pos'
+  | '/admin/incidencias'
+  | '/admin/catalogo'
+  | '/admin/dispositivos'
+
+export type AppRoute = '/login' | '/' | '/device-pending' | '/count' | AdminRoute
+
+export const ADMIN_ROUTES: AdminRoute[] = [
+  '/admin',
+  '/admin/conteos',
+  '/admin/diferencias',
+  '/admin/historial',
+  '/admin/ajuste-pos',
+  '/admin/incidencias',
+  '/admin/catalogo',
+  '/admin/dispositivos',
+]
+
+export function isAdminRoute(pathname: string): pathname is AdminRoute {
+  return ADMIN_ROUTES.includes(pathname as AdminRoute)
+}
 
 const NAVIGATION_EVENT = 'solog:navigation'
 
@@ -13,7 +38,7 @@ export function resolveTrustedRoute(
     bootstrap.usuario.rol === 'admin' ||
     bootstrap.usuario.rol === 'moderador'
   ) {
-    return '/admin'
+    return isAdminRoute(requestedPath) ? requestedPath : '/admin'
   }
 
   const deviceAuthorized =
