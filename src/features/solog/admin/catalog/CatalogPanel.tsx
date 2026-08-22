@@ -2,7 +2,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpenCheck,
-  RefreshCw,
+  ChevronRight,
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import {
@@ -14,16 +14,16 @@ import type {
   SologCatalogChangeStatus,
   SologCatalogNewProductConfig,
 } from '../../types'
+import {
+  getCatalogChangeLabel,
+  formatCatalogDate,
+} from './catalog-format'
 import { CatalogChangeDetail } from './CatalogChangeDetail'
 import { CatalogFilters } from './CatalogFilters'
 import { CatalogPublicationCard } from './CatalogPublicationCard'
 import { CatalogPublicationDialog } from './CatalogPublicationDialog'
 import { NewProductApprovalForm } from './NewProductApprovalForm'
-import {
-  getCatalogChangeSummary,
-  requiresNewProductConfiguration,
-} from '../catalog-domain'
-import { formatAdminDate } from '../format'
+import { requiresNewProductConfiguration } from '../catalog-domain'
 import {
   CATALOG_CHANGES_PAGE_SIZE,
   useCatalogChanges,
@@ -37,49 +37,62 @@ const STATUS_TABS: SologCatalogChangeStatus[] = [
   'incorporado',
 ]
 
-const COUNT_CARDS = [
-  ['urgentes_pendientes', 'Cambios urgentes'],
-  ['cambios_pendientes', 'Cambios pendientes'],
-  ['aprobado', 'Aprobados'],
-  ['ignorado', 'Ignorados'],
-  ['incorporado', 'Incorporados'],
-] as const
+const EMPTY_MESSAGES: Record<SologCatalogChangeStatus, string> = {
+  pendiente: 'No hay cambios pendientes.',
+  aprobado: 'No hay cambios aprobados para la próxima versión.',
+  ignorado: 'No hay cambios ignorados.',
+  incorporado: 'No hay cambios incorporados con estos filtros.',
+}
 
 function CatalogTable({
   caption,
   rows,
+  showVersion,
   onSelect,
 }: {
   caption: string
   rows: SologCatalogChangeRow[]
+  showVersion?: boolean
   onSelect: (row: SologCatalogChangeRow) => void
 }) {
   if (rows.length === 0) return <div className="empty-state">No hay cambios en esta sección.</div>
   return (
-    <div className="admin-report-table-wrap">
-      <table className="admin-report-table admin-interactive-table">
+    <div className="admin-report-table-wrap catalog-table-wrap">
+      <table className="admin-report-table admin-interactive-table catalog-table">
         <caption>{caption}</caption>
-        <thead><tr><th>Tipo</th><th>Producto / C. interno</th><th>Cambio</th><th>Sedes</th><th>Última detección</th><th>Ocurrencias</th><th>Estado</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Tipo</th><th>Producto</th><th>Cambio</th><th>Sedes</th>
+            <th>Última detección</th><th>Ocurrencias</th>
+            {showVersion ? <th>Versión</th> : null}
+            <th aria-label="Acción" />
+          </tr>
+        </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr
-              key={row.propuesta_fingerprint}
-              onClick={() => onSelect(row)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') onSelect(row)
-              }}
-              role="button"
-              tabIndex={0}
-            >
-              <td>{getSologCatalogChangeTypeLabel(row.tipo)}</td>
-              <td><strong>{row.producto ?? row.catalogo_actual.producto ?? 'Sin producto'}</strong><small>{row.c_interno}</small></td>
-              <td className="admin-change-summary">{getCatalogChangeSummary(row)}</td>
-              <td>{row.sedes.length ? row.sedes.map((site) => site.nombre).join(', ') : 'Sin sedes'}</td>
-              <td>{formatAdminDate(row.last_seen_at)}</td>
-              <td>{row.occurrence_count}</td>
-              <td><span className={`admin-state-badge admin-state-badge--${row.estado}`}>{getSologCatalogChangeStatusLabel(row.estado)}</span></td>
-            </tr>
-          ))}
+          {rows.map((row) => {
+            const product = row.producto ?? row.catalogo_actual.producto ?? 'Sin producto'
+            const changeLabel = getCatalogChangeLabel(row)
+            return (
+              <tr
+                key={row.propuesta_fingerprint}
+                onClick={() => onSelect(row)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') onSelect(row)
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <td>{getSologCatalogChangeTypeLabel(row.tipo)}</td>
+                <td><div className="catalog-product-cell" title={`${product} · ${row.c_interno}`}><strong>{product}</strong><span aria-hidden="true">·</span><small>{row.c_interno}</small></div></td>
+                <td><span className="catalog-change-cell" title={changeLabel}>{changeLabel}</span></td>
+                <td><span className="catalog-sites-cell" title={row.sedes.map((site) => site.nombre).join(' · ')}>{row.sedes.length ? row.sedes.map((site) => site.nombre).join(' · ') : 'Sin sedes'}</span></td>
+                <td>{formatCatalogDate(row.last_seen_at)}</td>
+                <td><strong className="catalog-occurrences">{row.occurrence_count}×</strong></td>
+                {showVersion ? <td>{row.version_aplicada === null ? '—' : `V${row.version_aplicada}`}</td> : null}
+                <td className="catalog-row-action"><ChevronRight aria-hidden="true" size={17} /></td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>
@@ -87,9 +100,11 @@ function CatalogTable({
 }
 
 export function CatalogPanel({
+  currentCatalogVersion,
   refreshOperationalState,
   role,
 }: {
+  currentCatalogVersion: number | null
   refreshOperationalState: () => Promise<void>
   role: 'admin' | 'moderador'
 }) {
@@ -98,9 +113,12 @@ export function CatalogPanel({
   const [configuring, setConfiguring] = useState<SologCatalogChangeRow | null>(null)
   const rows = catalog.response?.rows ?? []
   const counts = catalog.response?.counts ?? {}
-  const splitPending =
-    catalog.appliedFilters.estado === 'pendiente' &&
-    catalog.appliedFilters.seccion === ''
+  const pendingCount = (counts.urgentes_pendientes ?? 0) + (counts.cambios_pendientes ?? 0)
+  const activeStatus = catalog.appliedFilters.estado
+  const splitPending = activeStatus === 'pendiente'
+  const urgentRows = splitPending ? rows.filter((row) => row.seccion === 'urgente') : []
+  const pendingRows = splitPending ? rows.filter((row) => row.seccion === 'pendiente') : []
+
   const handlePublished = useCallback(() => {
     setSelected(null)
     setConfiguring(null)
@@ -111,9 +129,14 @@ export function CatalogPanel({
     void refreshOperationalState()
   }, [catalog, refreshOperationalState])
   const publication = useCatalogPublication({
+    approvedCount: counts.aprobado ?? 0,
+    isAdmin: role === 'admin',
     onPublished: handlePublished,
     onRejected: handlePublicationRejected,
   })
+
+  const getStatusCount = (status: SologCatalogChangeStatus): number =>
+    status === 'pendiente' ? pendingCount : counts[status] ?? 0
 
   const ignoreChange = async (change: SologCatalogChangeRow) => {
     if (!window.confirm('¿Ignorar este cambio?\n\nEsta propuesta exacta dejará de aparecer como pendiente.\n\nSi ConeXion detecta posteriormente un valor diferente para el mismo producto, ese nuevo cambio podrá aparecer nuevamente.')) return
@@ -151,51 +174,53 @@ export function CatalogPanel({
     if (completed) setConfiguring(null)
   }
 
+  const preview = publication.summaryPreview
+  const displayCurrentVersion = preview?.version_actual ?? publication.publishedVersion ?? currentCatalogVersion
+
   return (
-    <section className="content-section admin-module" aria-labelledby="catalog-title">
+    <section className="content-section admin-module catalog-workbench" aria-labelledby="catalog-title">
       <div className="section-heading">
         <div>
           <div className="section-title-row"><span className="section-icon"><BookOpenCheck size={20} /></span><h2 id="catalog-title">Catálogo</h2></div>
-          <p>Propuestas detectadas para una futura versión del catálogo.</p>
+          <p>Revisa, decide y publica los cambios detectados para la siguiente versión.</p>
         </div>
-        <button className="button button--secondary" disabled={catalog.status === 'loading'} onClick={() => void catalog.refresh()} type="button"><RefreshCw className={catalog.status === 'loading' ? 'icon-spin' : undefined} size={17} /> Refrescar</button>
       </div>
 
-      <div className="admin-module-counts admin-module-counts--five">
-        {COUNT_CARDS.map(([key, label]) => <article className={key === 'urgentes_pendientes' ? 'admin-count-card--urgent' : undefined} key={key}><span>{label}</span><strong>{counts[key] ?? 0}</strong></article>)}
+      <div className="catalog-state-chips" role="tablist" aria-label="Estado de cambios de catálogo">
+        {STATUS_TABS.map((status) => (
+          <button aria-selected={catalog.draftFilters.estado === status} className={catalog.draftFilters.estado === status ? 'is-active' : undefined} disabled={catalog.status === 'loading'} key={status} onClick={() => catalog.selectStatus(status)} role="tab" type="button">
+            <span>{getSologCatalogChangeStatusLabel(status)}</span>
+            <strong>{getStatusCount(status)}</strong>
+            {status === 'pendiente' ? <small>{counts.urgentes_pendientes ?? 0} urgentes · {counts.cambios_pendientes ?? 0} cambios</small> : null}
+          </button>
+        ))}
       </div>
-
-      <div className="notice"><strong>Aprobado no significa incorporado.</strong><p>Los cambios aprobados no modifican el catálogo actual; se acumulan hasta que Administración decida crear una nueva versión.</p></div>
 
       <CatalogPublicationCard
         approvedCount={counts.aprobado ?? 0}
+        currentVersion={displayCurrentVersion}
         isAdmin={role === 'admin'}
+        nextVersion={preview?.version_nueva ?? null}
         notice={publication.notice}
         onDismissNotice={publication.dismissNotice}
         onPrepare={() => void publication.prepare()}
         preparing={publication.status === 'preparing' || publication.status === 'publishing'}
       />
 
-      <div className="admin-report-tabs" role="tablist" aria-label="Estado de cambios de catálogo">
-        {STATUS_TABS.map((status) => (
-          <button aria-selected={catalog.draftFilters.estado === status} className={`admin-tab${catalog.draftFilters.estado === status ? ' admin-tab--active' : ''}`} key={status} onClick={() => catalog.selectStatus(status)} role="tab" type="button">{getSologCatalogChangeStatusLabel(status)}</button>
-        ))}
-      </div>
-
       <CatalogFilters filters={catalog.draftFilters} loading={catalog.status === 'loading'} onApply={catalog.applyFilters} onReset={catalog.resetFilters} onUpdate={catalog.updateFilters} />
 
       {catalog.notice ? <div className="notice notice--success" role="status"><strong>{catalog.notice}</strong><button className="text-button" onClick={catalog.dismissNotice}>Cerrar</button></div> : null}
       {catalog.error ? <div className="notice notice--error" role="alert"><strong>No se pudieron cargar los cambios de catálogo</strong><p>{catalog.error}</p></div> : null}
       {catalog.status === 'loading' ? <div className="empty-state" role="status">Consultando cambios de catálogo…</div> : null}
-      {catalog.status === 'ready' && rows.length === 0 ? <div className="empty-state">No hay cambios de catálogo con los filtros seleccionados.</div> : null}
+      {catalog.status === 'ready' && rows.length === 0 ? <div className="empty-state">{EMPTY_MESSAGES[activeStatus]}</div> : null}
 
       {catalog.status === 'ready' && rows.length > 0 && splitPending ? (
         <div className="admin-catalog-groups">
-          <section><h3>Cambios urgentes</h3><CatalogTable caption="Cambios urgentes pendientes" onSelect={setSelected} rows={rows.filter((row) => row.seccion === 'urgente')} /></section>
-          <section><h3>Cambios pendientes</h3><CatalogTable caption="Cambios no urgentes pendientes" onSelect={setSelected} rows={rows.filter((row) => row.seccion === 'pendiente')} /></section>
+          <section><h3>Cambios urgentes <span>· {urgentRows.length}</span></h3><CatalogTable caption="Cambios urgentes pendientes" onSelect={setSelected} rows={urgentRows} /></section>
+          <section><h3>Cambios pendientes <span>· {pendingRows.length}</span></h3><CatalogTable caption="Cambios no urgentes pendientes" onSelect={setSelected} rows={pendingRows} /></section>
         </div>
       ) : null}
-      {catalog.status === 'ready' && rows.length > 0 && !splitPending ? <CatalogTable caption="Cambios de catálogo" onSelect={setSelected} rows={rows} /> : null}
+      {catalog.status === 'ready' && rows.length > 0 && !splitPending ? <CatalogTable caption={`Cambios de catálogo: ${getSologCatalogChangeStatusLabel(activeStatus)}`} onSelect={setSelected} rows={rows} showVersion={activeStatus === 'incorporado'} /> : null}
 
       {catalog.response ? (
         <nav className="admin-report-pagination" aria-label="Paginación de catálogo">
@@ -207,17 +232,7 @@ export function CatalogPanel({
 
       {selected ? <CatalogChangeDetail acting={catalog.actingFingerprint === selected.propuesta_fingerprint} change={selected} onApprove={() => void approveChange(selected)} onClose={() => setSelected(null)} onIgnore={() => void ignoreChange(selected)} /> : null}
       {configuring ? <NewProductApprovalForm change={configuring} key={configuring.propuesta_fingerprint} onClose={() => setConfiguring(null)} onLoadReference={() => void catalog.loadReference()} onSubmit={(config) => void approveNewProduct(configuring, config)} reference={catalog.reference} referenceError={catalog.referenceError} referenceStatus={catalog.referenceStatus} submitting={catalog.actingFingerprint === configuring.propuesta_fingerprint} /> : null}
-      {publication.status !== 'idle' ? (
-        <CatalogPublicationDialog
-          error={publication.error}
-          onClose={publication.resetDialog}
-          onPrepare={() => void publication.prepare()}
-          onPublish={() => void publication.publish()}
-          preview={publication.preview}
-          status={publication.status}
-          validationErrors={publication.validationErrors}
-        />
-      ) : null}
+      {publication.status !== 'idle' ? <CatalogPublicationDialog error={publication.error} onClose={publication.resetDialog} onPrepare={() => void publication.prepare()} onPublish={() => void publication.publish()} preview={publication.preview} status={publication.status} validationErrors={publication.validationErrors} /> : null}
     </section>
   )
 }

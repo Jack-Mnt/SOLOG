@@ -40,7 +40,11 @@ import type {
   SologRevokeDeviceResponse,
 } from './types'
 
-type SologRpcName = 'rpc_solog_state' | 'rpc_solog_count' | 'rpc_solog_admin'
+type SologRpcName =
+  | 'rpc_solog_state'
+  | 'rpc_solog_count'
+  | 'rpc_solog_admin'
+  | 'rpc_solog_catalog'
 type SologPayloadRpcName = 'rpc_solog_control' | 'rpc_solog_control_detalle'
 
 function getClient() {
@@ -163,26 +167,39 @@ export function getCatalogReference() {
   )
 }
 
+export function getSologCatalogReference() {
+  return callSologRpc<SologCatalogReference>(
+    'rpc_solog_catalog',
+    'reference',
+    {},
+  )
+}
+
 export function getCatalogChanges(filters: SologCatalogChangesFilters = {}) {
   return callSologRpc<SologCatalogChangesResponse>(
-    'rpc_solog_admin',
-    'catalog_changes',
+    'rpc_solog_catalog',
+    'changes',
     filters,
   )
 }
 
 export function applyCatalogDecision(input: SologCatalogChangeActionPayload) {
+  const payload = {
+    propuesta_fingerprint: input.propuesta_fingerprint,
+    action: input.decision,
+    ...('config' in input && input.config ? input.config : {}),
+  }
   return callSologRpc<SologCatalogChangeActionResponse>(
-    'rpc_solog_admin',
-    'catalog_change_action',
-    input,
+    'rpc_solog_catalog',
+    'change_action',
+    payload,
   )
 }
 
 export function getCatalogPublicationPreview() {
   return callSologRpc<CatalogPublicationPreview>(
-    'rpc_solog_admin',
-    'catalog_publication_preview',
+    'rpc_solog_catalog',
+    'publication_preview',
     {},
   )
 }

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   getCatalogPublicationPreview,
   publishCatalog,
@@ -23,6 +23,8 @@ export type CatalogPublicationStatus =
   | 'error'
 
 interface UseCatalogPublicationOptions {
+  approvedCount: number
+  isAdmin: boolean
   onPublished: (response: Extract<PublishCatalogResponse, { ok: true }>) => void
   onRejected: () => void
 }
@@ -32,6 +34,8 @@ function getResponseError(code: string): string {
 }
 
 export function useCatalogPublication({
+  approvedCount,
+  isAdmin,
   onPublished,
   onRejected,
 }: UseCatalogPublicationOptions) {
@@ -41,7 +45,36 @@ export function useCatalogPublication({
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [publishedVersion, setPublishedVersion] = useState<number | null>(null)
+  const [summaryPreview, setSummaryPreview] = useState<Extract<CatalogPublicationPreview, { ok: true }> | null>(null)
+  const [summaryApprovedCount, setSummaryApprovedCount] = useState<number | null>(null)
   const requestInProgress = useRef(false)
+  const previewRequest = useRef<Promise<CatalogPublicationPreview> | null>(null)
+
+  const requestPreview = useCallback(() => {
+    if (!previewRequest.current) {
+      previewRequest.current = getCatalogPublicationPreview().finally(() => {
+        previewRequest.current = null
+      })
+    }
+    return previewRequest.current
+  }, [])
+
+  useEffect(() => {
+    if (!isAdmin || approvedCount <= 0 || summaryApprovedCount === approvedCount) return
+    let active = true
+    void requestPreview()
+      .then((response) => {
+        if (!active || !response.ok) return
+        setSummaryPreview(response)
+        setSummaryApprovedCount(approvedCount)
+      })
+      .catch(() => {
+        // El previsualizado visible es auxiliar; prepare() conserva el error funcional.
+      })
+    return () => {
+      active = false
+    }
+  }, [approvedCount, isAdmin, requestPreview, summaryApprovedCount])
 
   const resetDialog = useCallback(() => {
     if (requestInProgress.current) return
@@ -60,7 +93,7 @@ export function useCatalogPublication({
     setError(null)
     setNotice(null)
     try {
-      const response = await getCatalogPublicationPreview()
+      const response = await requestPreview()
       if (!response.ok) {
         if (response.codigo === 'NO_APPROVED_CATALOG_CHANGES') {
           setStatus('idle')
@@ -73,6 +106,8 @@ export function useCatalogPublication({
         return false
       }
       setPreview(response)
+      setSummaryPreview(response)
+      setSummaryApprovedCount(approvedCount)
       setStatus('ready')
       return true
     } catch (previewError) {
@@ -87,7 +122,7 @@ export function useCatalogPublication({
     } finally {
       requestInProgress.current = false
     }
-  }, [])
+  }, [approvedCount, requestPreview])
 
   const publish = useCallback(async () => {
     if (requestInProgress.current || !preview) return false
@@ -104,6 +139,8 @@ export function useCatalogPublication({
         return false
       }
       setPublishedVersion(response.version)
+      setSummaryPreview(null)
+      setSummaryApprovedCount(null)
       setNotice(`Catálogo V${response.version} publicado correctamente.`)
       setPreview(null)
       setStatus('idle')
@@ -131,6 +168,7 @@ export function useCatalogPublication({
     error,
     notice,
     publishedVersion,
+    summaryPreview: summaryApprovedCount === approvedCount ? summaryPreview : null,
     prepare,
     publish,
     resetDialog,

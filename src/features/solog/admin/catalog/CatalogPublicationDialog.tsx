@@ -46,12 +46,7 @@ export function CatalogPublicationDialog({
   if (!preview) {
     return (
       <AdminDialog
-        footer={(
-          <>
-            <button className="button button--secondary" onClick={onClose} type="button">Cerrar</button>
-            {status === 'error' ? <button className="button" onClick={onPrepare} type="button">Preparar nuevamente</button> : null}
-          </>
-        )}
+        footer={status === 'error' ? <button className="button" onClick={onPrepare} type="button">Preparar nuevamente</button> : undefined}
         onClose={onClose}
         title="No se puede crear una nueva versión"
       >

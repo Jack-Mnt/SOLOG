@@ -114,8 +114,8 @@ export function NewProductApprovalForm({
         onClose={onClose}
         title="Revisar aprobación"
       >
-        <div className="notice"><strong>Este producto quedará aprobado para la próxima versión.</strong><p>No se agregará todavía al catálogo actual.</p></div>
-        <dl className="admin-detail-grid">
+        <p className="catalog-detail-message">Este producto quedará aprobado para la próxima versión; todavía no modifica el catálogo actual.</p>
+        <dl className="catalog-context-list">
           <div><dt>C. interno</dt><dd>{change.c_interno}</dd></div>
           <div><dt>Producto</dt><dd>{getCatalogDetectedProduct(change) ?? 'No disponible'}</dd></div>
           <div><dt>Marca</dt><dd>{config.marca}</dd></div>
@@ -128,15 +128,22 @@ export function NewProductApprovalForm({
   }
 
   return (
-    <AdminDialog onClose={onClose} title="Agregar producto" wide>
-      <div className="admin-detected-product">
-        <div><span>C. interno</span><strong>{change.c_interno}</strong></div>
-        <div><span>Producto</span><strong>{getCatalogDetectedProduct(change) ?? 'No disponible'}</strong></div>
-        <div><span>Código de barras</span><strong>{getCatalogDetectedBarcode(change) ?? 'Sin código'}</strong></div>
-        <div><span>Precio</span><strong>{proposedPrice === null ? 'No disponible' : formatAdminCurrency(proposedPrice)}</strong></div>
-        <div><span>Stock detectado</span><strong>{getCatalogDetectedStock(change) ?? 'No disponible'}</strong></div>
+    <AdminDialog className="catalog-new-product-dialog" onClose={onClose} title="Agregar producto" wide>
+      <p className="catalog-detail-message">Producto no presente en el catálogo actual.</p>
+      <div className="catalog-detail-hero catalog-detail-hero--new">
+        <span className="eyebrow">Nuevo producto</span>
+        <strong>{getCatalogDetectedProduct(change) ?? 'Producto no identificado'}</strong>
+        <span>C. interno {change.c_interno}</span>
+      </div>
+      <div className="catalog-new-product-summary">
+        <span>{proposedPrice === null ? 'Precio no disponible' : formatAdminCurrency(proposedPrice)}</span>
+        <span>C. barras {getCatalogDetectedBarcode(change) ?? 'Sin código'}</span>
       </div>
 
+      <div className="catalog-classification-heading">
+        <h3>Clasificación requerida</h3>
+        <p>Completa estos datos antes de aprobar el producto para la próxima versión.</p>
+      </div>
       <form className="admin-new-product-form" onSubmit={handleReview}>
         <label>
           Marca
@@ -170,10 +177,14 @@ export function NewProductApprovalForm({
         ) : null}
         {validationError ? <div className="notice notice--error" role="alert">{validationError}</div> : null}
         <div className="admin-report-filter-actions">
-          <button className="button button--secondary" disabled={submitting} onClick={onClose} type="button">Cancelar</button>
           <button className="button" disabled={submitting || (mode === 'Agrupado' && compatibleGroups.length === 0)} type="submit">Revisar aprobación</button>
         </div>
       </form>
+
+      <details className="catalog-technical-details">
+        <summary>Detalles técnicos</summary>
+        <dl><div><dt>Stock detectado</dt><dd>{getCatalogDetectedStock(change) ?? 'No disponible'}</dd></div></dl>
+      </details>
     </AdminDialog>
   )
 }

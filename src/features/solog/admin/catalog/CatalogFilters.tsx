@@ -1,20 +1,16 @@
 import type { FormEvent } from 'react'
-import { Filter, RotateCcw } from 'lucide-react'
-import {
-  getSologCatalogChangeSectionLabel,
-  getSologCatalogChangeStatusLabel,
-  getSologCatalogChangeTypeLabel,
-} from '../../labels'
-import type {
-  SologCatalogChangeSection,
-  SologCatalogChangeStatus,
-  SologCatalogChangeType,
-} from '../../types'
+import { Filter, RotateCcw, Search } from 'lucide-react'
+import { getSologCatalogChangeTypeLabel } from '../../labels'
+import type { SologCatalogChangeType } from '../../types'
 import type { CatalogDraftFilters } from './useCatalogChanges'
 
-const SECTIONS: SologCatalogChangeSection[] = ['urgente', 'pendiente']
-const TYPES: SologCatalogChangeType[] = ['agregar_producto', 'eliminar_producto', 'nombre', 'precio', 'codigo']
-const STATUSES: SologCatalogChangeStatus[] = ['pendiente', 'aprobado', 'ignorado', 'incorporado']
+const TYPES: SologCatalogChangeType[] = [
+  'agregar_producto',
+  'eliminar_producto',
+  'nombre',
+  'precio',
+  'codigo',
+]
 
 export function CatalogFilters({
   filters,
@@ -35,14 +31,7 @@ export function CatalogFilters({
   }
 
   return (
-    <form className="admin-module-filters admin-module-filters--catalog" onSubmit={handleSubmit}>
-      <label>
-        Sección
-        <select disabled={loading} onChange={(event) => onUpdate({ seccion: event.target.value as CatalogDraftFilters['seccion'] })} value={filters.seccion}>
-          <option value="">Todas las secciones</option>
-          {SECTIONS.map((section) => <option key={section} value={section}>{getSologCatalogChangeSectionLabel(section)}</option>)}
-        </select>
-      </label>
+    <form className="catalog-filters" onSubmit={handleSubmit}>
       <label>
         Tipo
         <select disabled={loading} onChange={(event) => onUpdate({ tipo: event.target.value as CatalogDraftFilters['tipo'] })} value={filters.tipo}>
@@ -50,24 +39,16 @@ export function CatalogFilters({
           {TYPES.map((type) => <option key={type} value={type}>{getSologCatalogChangeTypeLabel(type)}</option>)}
         </select>
       </label>
-      <label>
-        Estado
-        <select disabled={loading} onChange={(event) => onUpdate({ estado: event.target.value as CatalogDraftFilters['estado'] })} value={filters.estado}>
-          <option value="">Todos los estados</option>
-          {STATUSES.map((status) => <option key={status} value={status}>{getSologCatalogChangeStatusLabel(status)}</option>)}
-        </select>
+      <label className="catalog-search">
+        Buscar
+        <span className="catalog-search__control">
+          <Search aria-hidden="true" size={16} />
+          <input disabled={loading} onChange={(event) => onUpdate({ search: event.target.value })} placeholder="Buscar producto o código interno..." type="search" value={filters.search} />
+        </span>
       </label>
-      <label>
-        C. interno
-        <input disabled={loading} inputMode="numeric" min="1" onChange={(event) => onUpdate({ internalCode: event.target.value })} placeholder="20285" step="1" type="number" value={filters.internalCode} />
-      </label>
-      <label>
-        Producto
-        <input disabled={loading} onChange={(event) => onUpdate({ producto: event.target.value })} placeholder="Buscar producto" type="search" value={filters.producto} />
-      </label>
-      <div className="admin-report-filter-actions">
+      <div className="admin-report-filter-actions catalog-filter-actions">
         <button className="button" disabled={loading} type="submit"><Filter size={17} /> Aplicar</button>
-        <button className="button button--secondary" disabled={loading} onClick={onReset} type="button"><RotateCcw size={17} /> Limpiar filtros</button>
+        <button className="button button--secondary" disabled={loading} onClick={onReset} type="button"><RotateCcw size={17} /> Limpiar</button>
       </div>
     </form>
   )

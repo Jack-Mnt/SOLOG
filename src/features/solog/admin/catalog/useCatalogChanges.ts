@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   applyCatalogDecision,
   getCatalogChanges,
-  getCatalogReference,
+  getSologCatalogReference,
 } from '../../api'
 import {
   getSologErrorMessageFromUnknown,
@@ -12,7 +12,6 @@ import type {
   SologCatalogChangeActionPayload,
   SologCatalogChangesFilters,
   SologCatalogChangesResponse,
-  SologCatalogChangeSection,
   SologCatalogChangeStatus,
   SologCatalogChangeType,
   SologCatalogReference,
@@ -21,11 +20,9 @@ import type {
 export const CATALOG_CHANGES_PAGE_SIZE = 50
 
 export interface CatalogDraftFilters {
-  seccion: '' | SologCatalogChangeSection
   tipo: '' | SologCatalogChangeType
-  estado: '' | SologCatalogChangeStatus
-  internalCode: string
-  producto: string
+  estado: SologCatalogChangeStatus
+  search: string
 }
 
 type LoadStatus = 'loading' | 'ready' | 'error'
@@ -33,17 +30,19 @@ type ReferenceStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 function createDefaultFilters(): CatalogDraftFilters {
   return {
-    seccion: '',
     tipo: '',
     estado: 'pendiente',
-    internalCode: '',
-    producto: '',
+    search: '',
   }
 }
 
 function validateFilters(filters: CatalogDraftFilters): string | null {
-  if (filters.internalCode && !/^\d+$/.test(filters.internalCode)) {
-    return 'El código interno debe ser un entero positivo.'
+  const search = filters.search.trim()
+  if (/^\d+$/.test(search)) {
+    const internalCode = Number(search)
+    if (!Number.isSafeInteger(internalCode) || internalCode < 1) {
+      return 'El código interno debe ser un entero positivo válido.'
+    }
   }
   return null
 }
@@ -52,12 +51,13 @@ function createPayload(
   filters: CatalogDraftFilters,
   offset: number,
 ): SologCatalogChangesFilters {
+  const search = filters.search.trim()
+  const isInternalCode = /^\d+$/.test(search)
   return {
-    ...(filters.seccion ? { seccion: filters.seccion } : {}),
     ...(filters.tipo ? { tipo: filters.tipo } : {}),
-    ...(filters.estado ? { estado: filters.estado } : {}),
-    ...(filters.internalCode ? { c_interno: Number(filters.internalCode) } : {}),
-    ...(filters.producto.trim() ? { producto: filters.producto.trim() } : {}),
+    estado: filters.estado,
+    ...(search && isInternalCode ? { c_interno: Number(search) } : {}),
+    ...(search && !isInternalCode ? { producto: search } : {}),
     limit: CATALOG_CHANGES_PAGE_SIZE,
     offset,
   }
@@ -134,11 +134,11 @@ export function useCatalogChanges({
   }, [draftFilters, load])
 
   const resetFilters = useCallback(() => {
-    const defaults = createDefaultFilters()
+    const defaults = { ...createDefaultFilters(), estado: draftFilters.estado }
     setDraftFilters(defaults)
     setNotice(null)
     void load(defaults, 0)
-  }, [load])
+  }, [draftFilters.estado, load])
 
   const selectStatus = useCallback((nextStatus: SologCatalogChangeStatus) => {
     const nextFilters = { ...draftFilters, estado: nextStatus }
@@ -180,7 +180,7 @@ export function useCatalogChanges({
     setReferenceStatus('loading')
     setReferenceError(null)
     try {
-      setReference(await getCatalogReference())
+      setReference(await getSologCatalogReference())
       setReferenceStatus('ready')
       return true
     } catch (loadError) {
