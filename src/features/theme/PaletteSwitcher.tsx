@@ -66,7 +66,7 @@ export function PaletteSwitcher({
       aria-label="Paleta de color"
     >
       <Palette aria-hidden="true" size={18} strokeWidth={2} />
-      {variant === "sidebar"}
+      {variant === "sidebar" ? <span>Apariencia</span> : null}
       {options}
     </div>
   );
