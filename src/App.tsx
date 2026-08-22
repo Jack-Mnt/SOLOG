@@ -12,9 +12,7 @@ import {
 } from './lib/router'
 import { AdminPosAdjustmentsPage } from './pages/admin.ajuste-pos'
 import { AdminCountsPage } from './pages/admin.conteos'
-import { AdminDifferencesPage } from './pages/admin.diferencias'
 import { AdminDevicesPage } from './pages/admin.dispositivos'
-import { AdminHistoryPage } from './pages/admin.historial'
 import { AdminDashboardPage } from './pages/admin'
 import { CountPage } from './pages/CountPage'
 import { DevicePendingPage } from './pages/DevicePendingPage'
@@ -33,16 +31,20 @@ const AdminCatalogPage = lazy(() =>
   })),
 )
 
+const AdminControlPage = lazy(() =>
+  import('./pages/admin.control').then((module) => ({
+    default: module.AdminControlPage,
+  })),
+)
+
 function getAdminPage(route: AdminRoute): ReactNode {
   switch (route) {
     case '/admin':
       return <AdminDashboardPage />
     case '/admin/conteos':
       return <AdminCountsPage />
-    case '/admin/diferencias':
-      return <AdminDifferencesPage />
-    case '/admin/historial':
-      return <AdminHistoryPage />
+    case '/admin/control':
+      return <AdminControlPage />
     case '/admin/ajuste-pos':
       return <AdminPosAdjustmentsPage />
     case '/admin/incidencias':

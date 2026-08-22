@@ -9,20 +9,6 @@ const COUNT_STATES = [
   ['expirado', 'Expirado'],
 ] as const
 
-const DIFFERENCE_STATES = [
-  'pendiente',
-  'probablemente_explicada',
-  'parcialmente_explicada',
-  'persistente',
-  'confirmada_reconteo',
-  'conteos_inconsistentes',
-] as const
-
-const HISTORY_STATES = [
-  'coincide',
-  ...DIFFERENCE_STATES,
-] as const
-
 const POS_ADJUSTMENT_STATES = [
   'parcialmente_explicada',
   'persistente',
@@ -113,52 +99,6 @@ export function AdminReportFilters({
         </label>
       ) : null}
 
-      {reportType === 'differences' ? (
-        <label>
-          Estado
-          <select
-            disabled={loading}
-            onChange={(event) =>
-              onUpdate({
-                differenceState: event.target
-                  .value as AdminReportDraftFilters['differenceState'],
-              })
-            }
-            value={filters.differenceState}
-          >
-            <option value="">Todos los estados</option>
-            {DIFFERENCE_STATES.map((value) => (
-              <option key={value} value={value}>
-                {getSologDifferenceStateLabel(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
-
-      {reportType === 'history' ? (
-        <label>
-          Estado
-          <select
-            disabled={loading}
-            onChange={(event) =>
-              onUpdate({
-                historyState: event.target
-                  .value as AdminReportDraftFilters['historyState'],
-              })
-            }
-            value={filters.historyState}
-          >
-            <option value="">Todos</option>
-            {HISTORY_STATES.map((value) => (
-              <option key={value} value={value}>
-                {getSologDifferenceStateLabel(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
-
       {reportType === 'pos_adjustments' ? (
         <label>
           Estado
@@ -182,7 +122,7 @@ export function AdminReportFilters({
         </label>
       ) : null}
 
-      {reportType === 'history' || reportType === 'pos_adjustments' ? (
+      {reportType === 'pos_adjustments' ? (
         <label>
           Código interno
           <input

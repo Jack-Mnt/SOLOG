@@ -6,12 +6,10 @@ import {
 } from '../errors'
 import type {
   SologAdminCountState,
-  SologAdminDifferenceState,
   SologAdminPosAdjustmentState,
   SologAdminReportPayload,
   SologAdminReportResponse,
   SologAdminReportType,
-  SologDifferenceState,
 } from '../types'
 
 export const ADMIN_REPORT_PAGE_SIZE = 50
@@ -21,8 +19,6 @@ export interface AdminReportDraftFilters {
   dateFrom: string
   dateTo: string
   countState: '' | SologAdminCountState
-  differenceState: '' | SologAdminDifferenceState
-  historyState: '' | SologDifferenceState
   posAdjustmentState: '' | SologAdminPosAdjustmentState
   internalCode: string
 }
@@ -44,15 +40,13 @@ function createDefaultFilters(): AdminReportDraftFilters {
     dateFrom: today,
     dateTo: today,
     countState: '',
-    differenceState: '',
-    historyState: '',
     posAdjustmentState: '',
     internalCode: '',
   }
 }
 
 function usesInternalCode(reportType: SologAdminReportType): boolean {
-  return reportType === 'history' || reportType === 'pos_adjustments'
+  return reportType === 'pos_adjustments'
 }
 
 function getFilterValidationError(
@@ -98,32 +92,9 @@ function createPayload(
     }
   }
 
-  if (reportType === 'differences') {
-    return {
-      report_type: 'differences',
-      ...common,
-      ...(filters.differenceState
-        ? { estado: filters.differenceState }
-        : {}),
-      limit: ADMIN_REPORT_PAGE_SIZE,
-      offset,
-    }
-  }
-
   const internalCode = filters.internalCode
     ? Number(filters.internalCode)
     : undefined
-
-  if (reportType === 'history') {
-    return {
-      report_type: 'history',
-      ...common,
-      ...(filters.historyState ? { estado: filters.historyState } : {}),
-      ...(internalCode ? { c_interno: internalCode } : {}),
-      limit: ADMIN_REPORT_PAGE_SIZE,
-      offset,
-    }
-  }
 
   return {
     report_type: 'pos_adjustments',

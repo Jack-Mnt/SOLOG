@@ -27,12 +27,11 @@ export type SologDifferenceState =
 
 export type SologAdminReportType =
   'counts'
-  | 'differences'
-  | 'history'
   | 'pos_adjustments'
 
+export type SologControlScope = 'resolver' | 'historial'
+
 export type SologAdminCountState = SologSessionState
-export type SologAdminDifferenceState = Exclude<SologDifferenceState, 'coincide'>
 export type SologAdminPosAdjustmentState =
   | 'parcialmente_explicada'
   | 'persistente'
@@ -636,19 +635,6 @@ export type SologAdminReportPayload =
       offset: number
     })
   | (SologAdminReportFilters & {
-      report_type: 'differences'
-      estado?: SologAdminDifferenceState
-      limit: number
-      offset: number
-    })
-  | (SologAdminReportFilters & {
-      report_type: 'history'
-      estado?: SologDifferenceState
-      c_interno?: number
-      limit: number
-      offset: number
-    })
-  | (SologAdminReportFilters & {
       report_type: 'pos_adjustments'
       estado?: SologAdminPosAdjustmentState
       c_interno?: number
@@ -699,8 +685,6 @@ export interface SologAdminObservationRow<
   sku_unico: number | null
 }
 
-export type SologAdminDifferenceRow = SologAdminObservationRow<SologAdminDifferenceState>
-export type SologAdminHistoryRow = SologAdminObservationRow
 export type SologAdminPosAdjustmentRow = SologAdminObservationRow<SologAdminPosAdjustmentState>
 
 export interface SologAdminCountsResponse {
@@ -708,20 +692,6 @@ export interface SologAdminCountsResponse {
   limit: number
   offset: number
   rows: SologAdminCountRow[]
-}
-
-export interface SologAdminDifferencesResponse {
-  report_type: 'differences'
-  limit?: number
-  offset?: number
-  rows: SologAdminDifferenceRow[]
-}
-
-export interface SologAdminHistoryResponse {
-  report_type: 'history'
-  limit?: number
-  offset?: number
-  rows: SologAdminHistoryRow[]
 }
 
 export interface SologAdminPosAdjustmentsResponse {
@@ -733,6 +703,117 @@ export interface SologAdminPosAdjustmentsResponse {
 
 export type SologAdminReportResponse =
   | SologAdminCountsResponse
-  | SologAdminDifferencesResponse
-  | SologAdminHistoryResponse
   | SologAdminPosAdjustmentsResponse
+
+export interface SologControlPayload {
+  sede_id: string
+  date_from: string
+  date_to: string
+  scope: SologControlScope
+  estado?: SologDifferenceState
+  categoria_id?: string
+  search?: string
+  limit: number
+  offset: number
+}
+
+export interface SologControlSummary {
+  total: number
+  coincide: number
+  pendientes: number
+  probablemente_explicadas: number
+  parcialmente_explicadas: number
+  persistentes: number
+  confirmadas_reconteo: number
+  inconsistentes: number
+  por_resolver: number
+}
+
+export interface SologControlRow {
+  detalle_id: string
+  conteo_id: string
+  grupo_id: string
+  grupo: string
+  categoria_id: string
+  categoria: string
+  sede_id: string
+  sede: string
+  usuario_id: string
+  usuario: string
+  stock_teorico: number
+  stock_fisico: number
+  diferencia: number
+  precio: number
+  valor_diferencia: number
+  estado_diferencia: SologDifferenceState
+  contado_at: string
+  snapshot_referencia_id: string
+  snapshot_posterior_id: string | null
+  stock_posterior: number | null
+  reconteo_stock: number | null
+  recontado_at: string | null
+  sku_count: number
+  sku_unico: number | null
+}
+
+export interface SologControlResponse {
+  sede_id: string
+  sede: string
+  date_from: string
+  date_to: string
+  scope: SologControlScope
+  summary: SologControlSummary
+  rows: SologControlRow[]
+  total: number
+  limit: number
+  offset: number
+  server_now: string
+}
+
+export interface SologControlDetailPayload {
+  detalle_id: string
+  limit: number
+  offset: number
+}
+
+export type SologControlDetailCase = Omit<
+  SologControlRow,
+  'sku_count' | 'sku_unico'
+>
+
+export interface SologControlSku {
+  c_interno: number
+  c_barras: string | null
+  producto: string
+  marca: string | null
+  precio: number
+  estado: string
+}
+
+export interface SologControlHistoryRow {
+  detalle_id: string
+  conteo_id: string
+  stock_teorico: number
+  stock_fisico: number
+  diferencia: number
+  valor_diferencia: number
+  estado_diferencia: SologDifferenceState
+  contado_at: string
+  usuario_id: string
+  usuario: string
+  snapshot_referencia_id: string
+  snapshot_posterior_id: string | null
+  stock_posterior: number | null
+  reconteo_stock: number | null
+  recontado_at: string | null
+}
+
+export interface SologControlDetailResponse {
+  detalle: SologControlDetailCase
+  historial: SologControlHistoryRow[]
+  historial_total: number
+  historial_limit: number
+  historial_offset: number
+  skus: SologControlSku[]
+  server_now: string
+}

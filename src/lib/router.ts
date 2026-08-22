@@ -4,8 +4,7 @@ import type { SologOperationalBootstrap } from '../features/solog/types'
 export type AdminRoute =
   | '/admin'
   | '/admin/conteos'
-  | '/admin/diferencias'
-  | '/admin/historial'
+  | '/admin/control'
   | '/admin/ajuste-pos'
   | '/admin/incidencias'
   | '/admin/catalogo'
@@ -16,8 +15,7 @@ export type AppRoute = '/login' | '/' | '/device-pending' | '/count' | AdminRout
 export const ADMIN_ROUTES: AdminRoute[] = [
   '/admin',
   '/admin/conteos',
-  '/admin/diferencias',
-  '/admin/historial',
+  '/admin/control',
   '/admin/ajuste-pos',
   '/admin/incidencias',
   '/admin/catalogo',
@@ -38,6 +36,12 @@ export function resolveTrustedRoute(
     bootstrap.usuario.rol === 'admin' ||
     bootstrap.usuario.rol === 'moderador'
   ) {
+    if (
+      requestedPath === '/admin/diferencias' ||
+      requestedPath === '/admin/historial'
+    ) {
+      return '/admin/control'
+    }
     return isAdminRoute(requestedPath) ? requestedPath : '/admin'
   }
 

@@ -20,6 +20,10 @@ import type {
   SologCatalogChangesFilters,
   SologCatalogChangesResponse,
   SologCatalogReference,
+  SologControlDetailPayload,
+  SologControlDetailResponse,
+  SologControlPayload,
+  SologControlResponse,
   SologCountBatchPayload,
   SologCountBatchResponse,
   SologCountFinishPayload,
@@ -37,6 +41,7 @@ import type {
 } from './types'
 
 type SologRpcName = 'rpc_solog_state' | 'rpc_solog_count' | 'rpc_solog_admin'
+type SologPayloadRpcName = 'rpc_solog_control' | 'rpc_solog_control_detalle'
 
 function getClient() {
   if (!supabase) throw createSologConfigurationError()
@@ -48,6 +53,17 @@ async function callSologRpc<T>(rpcName: SologRpcName, action: string, payload: o
     p_action: action,
     p_payload: payload,
   })
+
+  if (error) throw normalizeSologError(error)
+  if (data === null) throw createSologEmptyResponseError()
+  return data as T
+}
+
+async function callSologPayloadRpc<T>(
+  rpcName: SologPayloadRpcName,
+  payload: object,
+): Promise<T> {
+  const { data, error } = await getClient().rpc(rpcName, { p_payload: payload })
 
   if (error) throw normalizeSologError(error)
   if (data === null) throw createSologEmptyResponseError()
@@ -108,6 +124,17 @@ export function revokeSologDevice(deviceId: string) {
 
 export function getSologAdminReport(input: SologAdminReportPayload) {
   return callSologRpc<SologAdminReportResponse>('rpc_solog_admin', 'report', input)
+}
+
+export function getSologControl(input: SologControlPayload) {
+  return callSologPayloadRpc<SologControlResponse>('rpc_solog_control', input)
+}
+
+export function getSologControlDetail(input: SologControlDetailPayload) {
+  return callSologPayloadRpc<SologControlDetailResponse>(
+    'rpc_solog_control_detalle',
+    input,
+  )
 }
 
 export function getAdminIncidents(filters: SologAdminIncidentsFilters = {}) {

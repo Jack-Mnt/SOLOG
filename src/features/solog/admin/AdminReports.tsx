@@ -1,7 +1,5 @@
 import { AdminCountsReport } from './AdminCountsReport'
-import { AdminDifferencesReport } from './AdminDifferencesReport'
 import { AdminReportFilters } from './AdminReportFilters'
-import { AdminHistoryReport } from './AdminHistoryReport'
 import { AdminPosAdjustmentsReport } from './AdminPosAdjustmentsReport'
 import {
   ADMIN_REPORT_PAGE_SIZE,
@@ -11,8 +9,6 @@ import type { SologAdminReportType, SologAdminSite } from '../types'
 
 const REPORT_LABELS: Record<SologAdminReportType, string> = {
   counts: 'Conteos',
-  differences: 'Diferencias',
-  history: 'Historial',
   pos_adjustments: 'Ajuste POS',
 }
 
@@ -76,15 +72,6 @@ export function AdminReports({
 
       {currentData?.report_type === 'counts' ? (
         <AdminCountsReport report={currentData} />
-      ) : null}
-      {currentData?.report_type === 'differences' ? (
-        <AdminDifferencesReport report={currentData} />
-      ) : null}
-      {currentData?.report_type === 'history' ? (
-        <AdminHistoryReport
-          internalCode={reports.draftFilters.internalCode}
-          report={currentData}
-        />
       ) : null}
       {currentData?.report_type === 'pos_adjustments' ? (
         <AdminPosAdjustmentsReport report={currentData} />
