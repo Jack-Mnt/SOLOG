@@ -1,4 +1,5 @@
 import {
+  ChevronRight,
   CircleGauge,
   ListChecks,
   Search,
@@ -9,7 +10,10 @@ import { useMemo, useState } from 'react'
 import type {
   SologDashboardCoverage,
   SologDashboardResponse,
+  SologDashboardSite,
 } from '../types'
+import { DashboardSiteActivityDrawer } from './DashboardSiteActivityDrawer'
+import { formatDashboardRelativeActivity } from './dashboard-format'
 import { formatAdminDate } from './format'
 
 const dashboardPeriodFormatter = new Intl.DateTimeFormat('es-PE', {
@@ -33,21 +37,6 @@ function CoverageCell({ coverage, label }: { coverage: SologDashboardCoverage; l
   )
 }
 
-function formatRelativeActivity(value: string, serverNow: string): string {
-  const activityTime = new Date(value).getTime()
-  const serverTime = new Date(serverNow).getTime()
-  if (!Number.isFinite(activityTime) || !Number.isFinite(serverTime)) return formatAdminDate(value)
-
-  const elapsedMinutes = Math.max(0, Math.floor((serverTime - activityTime) / 60_000))
-  if (elapsedMinutes < 1) return 'Hace menos de 1 min'
-  if (elapsedMinutes < 60) return `Hace ${elapsedMinutes} min`
-  const elapsedHours = Math.floor(elapsedMinutes / 60)
-  if (elapsedHours < 24) return `Hace ${elapsedHours} h`
-  const elapsedDays = Math.floor(elapsedHours / 24)
-  if (elapsedDays < 7) return `Hace ${elapsedDays} d`
-  return formatAdminDate(value)
-}
-
 export function AdminDashboardLoading() {
   return (
     <div aria-label="Cargando Dashboard" className="admin-dashboard" role="status">
@@ -59,8 +48,15 @@ export function AdminDashboardLoading() {
   )
 }
 
-export function AdminOverview({ dashboard }: { dashboard: SologDashboardResponse }) {
+export function AdminOverview({
+  dashboard,
+  refreshOperationalState,
+}: {
+  dashboard: SologDashboardResponse
+  refreshOperationalState: () => Promise<void>
+}) {
   const [search, setSearch] = useState('')
+  const [selectedSite, setSelectedSite] = useState<SologDashboardSite | null>(null)
   const visibleSites = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase('es')
     if (!normalizedSearch) return dashboard.sedes
@@ -106,10 +102,23 @@ export function AdminOverview({ dashboard }: { dashboard: SologDashboardResponse
           <div className="admin-dashboard-table-wrap">
             <table className="admin-dashboard-table">
               <caption>Estado operativo por sede</caption>
-              <thead><tr><th>Sede</th><th>Cobertura quincenal</th><th>Cobertura hoy</th><th>Diferencias</th><th>Persistentes</th><th>Actividad</th></tr></thead>
+              <thead><tr><th>Sede</th><th>Cobertura quincenal</th><th>Cobertura hoy</th><th>Diferencias</th><th>Persistentes</th><th>Actividad</th><th aria-label="Abrir actividad" /></tr></thead>
               <tbody>
                 {visibleSites.map((site) => (
-                  <tr key={site.sede_id}>
+                  <tr
+                    aria-label={`Ver actividad de conteo de ${site.sede}`}
+                    className="admin-dashboard-site-row"
+                    key={site.sede_id}
+                    onClick={() => setSelectedSite(site)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        setSelectedSite(site)
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
                     <td><strong>{site.sede}</strong></td>
                     <td><CoverageCell coverage={site.cobertura_quincenal} label={`Cobertura quincenal de ${site.sede}`} /></td>
                     <td><CoverageCell coverage={site.cobertura_hoy} label={`Cobertura de hoy de ${site.sede}`} /></td>
@@ -119,11 +128,12 @@ export function AdminOverview({ dashboard }: { dashboard: SologDashboardResponse
                       {site.actividad.sesion_activa ? (
                         <div className="admin-dashboard-state"><span className="admin-dashboard-badge admin-dashboard-badge--success">Contando ahora</span>{site.actividad.sesion_iniciada_at ? <small>Desde {formatAdminDate(site.actividad.sesion_iniciada_at)}</small> : null}</div>
                       ) : site.actividad.ultima_actividad_at ? (
-                        <span className="admin-dashboard-activity">{formatRelativeActivity(site.actividad.ultima_actividad_at, dashboard.server_now)}</span>
+                        <span className="admin-dashboard-activity">{formatDashboardRelativeActivity(site.actividad.ultima_actividad_at, dashboard.server_now)}</span>
                       ) : (
                         <span className="admin-dashboard-badge admin-dashboard-badge--muted">Sin actividad</span>
                       )}
                     </td>
+                    <td className="admin-dashboard-row-action"><ChevronRight aria-hidden="true" size={18} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -131,6 +141,14 @@ export function AdminOverview({ dashboard }: { dashboard: SologDashboardResponse
           </div>
         ) : null}
       </section>
+      {selectedSite ? (
+        <DashboardSiteActivityDrawer
+          key={selectedSite.sede_id}
+          onClose={() => setSelectedSite(null)}
+          refreshOperationalState={refreshOperationalState}
+          site={selectedSite}
+        />
+      ) : null}
     </div>
   )
 }

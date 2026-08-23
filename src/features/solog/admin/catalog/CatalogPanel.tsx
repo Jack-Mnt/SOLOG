@@ -29,6 +29,7 @@ import {
   useCatalogChanges,
 } from './useCatalogChanges'
 import { useCatalogPublication } from './useCatalogPublication'
+import { useCatalogStatus } from './useCatalogStatus'
 
 const STATUS_TABS: SologCatalogChangeStatus[] = [
   'pendiente',
@@ -100,15 +101,19 @@ function CatalogTable({
 }
 
 export function CatalogPanel({
-  currentCatalogVersion,
   refreshOperationalState,
   role,
 }: {
-  currentCatalogVersion: number | null
   refreshOperationalState: () => Promise<void>
   role: 'admin' | 'moderador'
 }) {
   const catalog = useCatalogChanges({ refreshOperationalState })
+  const {
+    data: catalogStatusData,
+    error: catalogStatusError,
+    refresh: refreshCatalogStatus,
+    status: catalogStatusLoadState,
+  } = useCatalogStatus(refreshOperationalState)
   const [selected, setSelected] = useState<SologCatalogChangeRow | null>(null)
   const [configuring, setConfiguring] = useState<SologCatalogChangeRow | null>(null)
   const rows = catalog.response?.rows ?? []
@@ -123,7 +128,8 @@ export function CatalogPanel({
     setSelected(null)
     setConfiguring(null)
     catalog.selectStatus('incorporado')
-  }, [catalog])
+    void refreshCatalogStatus()
+  }, [catalog, refreshCatalogStatus])
   const handlePublicationRejected = useCallback(() => {
     void catalog.refresh()
     void refreshOperationalState()
@@ -172,7 +178,7 @@ export function CatalogPanel({
     if (completed) setConfiguring(null)
   }
 
-  const displayCurrentVersion = publication.publishedVersion ?? currentCatalogVersion
+  const displayCurrentVersion = publication.publishedVersion ?? catalogStatusData?.version_actual ?? null
 
   return (
     <section className="content-section admin-module catalog-workbench" aria-labelledby="catalog-title">
@@ -201,7 +207,10 @@ export function CatalogPanel({
         notice={publication.notice}
         onDismissNotice={publication.dismissNotice}
         onPrepare={() => void publication.prepare()}
+        publishedAt={catalogStatusData?.publicado_at ?? null}
         preparing={publication.status === 'preparing' || publication.status === 'publishing'}
+        statusError={catalogStatusError}
+        statusLoading={catalogStatusLoadState === 'loading'}
       />
 
       <CatalogFilters filters={catalog.draftFilters} loading={catalog.status === 'loading'} onApply={catalog.applyFilters} onReset={catalog.resetFilters} onUpdate={catalog.updateFilters} />

@@ -2,7 +2,6 @@ import {
   BookOpenCheck,
   Boxes,
   LayoutDashboard,
-  ListChecks,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -34,12 +33,6 @@ const ADMIN_NAVIGATION: Array<{
     label: "Dashboard",
     description: "Visión general de la operación",
     icon: LayoutDashboard,
-  },
-  {
-    route: "/admin/conteos",
-    label: "Conteos",
-    description: "Sesiones y resultados de conteo",
-    icon: ListChecks,
   },
   {
     route: "/admin/control",

@@ -1,4 +1,3 @@
-import { AdminCountsReport } from './AdminCountsReport'
 import { AdminReportFilters } from './AdminReportFilters'
 import { AdminPosAdjustmentsReport } from './AdminPosAdjustmentsReport'
 import {
@@ -70,9 +69,6 @@ export function AdminReports({
         </div>
       ) : null}
 
-      {currentData?.report_type === 'counts' ? (
-        <AdminCountsReport report={currentData} />
-      ) : null}
       {currentData?.report_type === 'pos_adjustments' ? (
         <AdminPosAdjustmentsReport report={currentData} />
       ) : null}

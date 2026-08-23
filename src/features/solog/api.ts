@@ -14,12 +14,14 @@ import type {
   SologAdminReportPayload,
   SologAdminReportResponse,
   SologDashboardResponse,
+  SologDashboardSiteActivityResponse,
   SologAuthorizeDeviceResponse,
   SologCatalogChangeActionPayload,
   SologCatalogChangeActionResponse,
   SologCatalogChangesFilters,
   SologCatalogChangesResponse,
   SologCatalogReference,
+  SologCatalogStatus,
   SologControlDetailPayload,
   SologControlDetailResponse,
   SologControlPayload,
@@ -114,6 +116,23 @@ export async function getSologDashboard(): Promise<SologDashboardResponse> {
   return data as SologDashboardResponse
 }
 
+export async function getSologDashboardSiteActivity(
+  sedeId: string,
+  limit = 20,
+): Promise<SologDashboardSiteActivityResponse> {
+  const { data, error } = await getClient().rpc(
+    'rpc_solog_dashboard_site_activity',
+    {
+      p_sede_id: sedeId,
+      p_limit: limit,
+    },
+  )
+
+  if (error) throw normalizeSologError(error)
+  if (data === null) throw createSologEmptyResponseError()
+  return data as SologDashboardSiteActivityResponse
+}
+
 export function authorizeSologDevice(deviceId: string) {
   return callSologRpc<SologAuthorizeDeviceResponse>('rpc_solog_admin', 'authorize_device', {
     device_id: deviceId,
@@ -173,6 +192,10 @@ export function getSologCatalogReference() {
     'reference',
     {},
   )
+}
+
+export function getSologCatalogStatus() {
+  return callSologRpc<SologCatalogStatus>('rpc_solog_catalog', 'status', {})
 }
 
 export function getCatalogChanges(filters: SologCatalogChangesFilters = {}) {

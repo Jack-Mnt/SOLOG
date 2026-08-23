@@ -389,6 +389,35 @@ export interface SologDashboardResponse {
   server_now: string
 }
 
+export type SologDashboardSiteActivityState =
+  | 'activo'
+  | 'finalizado'
+  | 'expirado'
+
+export interface SologDashboardSiteActivitySession {
+  conteo_id: string
+  usuario: string
+  estado: SologDashboardSiteActivityState
+  iniciado_at: string
+  finalizado_at: string | null
+  duracion_segundos: number
+  grupos_registrados: number
+}
+
+export interface SologDashboardSiteActivityResponse {
+  server_now: string
+  sede_id: string
+  sede: string
+  summary: {
+    sesiones_hoy: number
+    grupos_registrados_hoy: number
+    sesion_activa: boolean
+    ultima_actividad_at: string | null
+  }
+  sessions: SologDashboardSiteActivitySession[]
+  limit: number
+}
+
 export type SologAdminIncidentType =
   | 'producto_ausente'
   | 'codigo_interno_invalido'
@@ -575,6 +604,11 @@ export interface SologCatalogReferenceGroup {
 export interface SologCatalogReference {
   categorias: SologCatalogReferenceCategory[]
   grupos: SologCatalogReferenceGroup[]
+}
+
+export interface SologCatalogStatus {
+  version_actual: number | null
+  publicado_at: string | null
 }
 
 export type SologCatalogPublicationSummary = Partial<

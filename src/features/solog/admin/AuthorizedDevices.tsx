@@ -1,6 +1,7 @@
-import { formatAdminDate } from './format'
+import { ShieldOff, TabletSmartphone } from 'lucide-react'
 import type { AdminMutation } from './useAdminSolog'
 import type { SologAdminSite } from '../types'
+import { formatDeviceDate } from './device-format'
 
 export function AuthorizedDevices({
   sites,
@@ -12,41 +13,45 @@ export function AuthorizedDevices({
   onRevoke: (site: SologAdminSite) => void
 }) {
   return (
-    <section className="content-section" aria-labelledby="authorized-title">
+    <section className="content-section admin-devices-section" aria-labelledby="authorized-title">
       <div className="section-heading">
         <div>
           <div className="section-title-row"><span className="section-icon"><TabletSmartphone size={19} /></span><h2 id="authorized-title">Tablets por sede</h2></div>
-          <p>Dispositivos actualmente autorizados por el backend.</p>
+          <p>Una tablet autorizada por sede.</p>
         </div>
       </div>
-      <div className="admin-pending-list">
+      <div className="device-site-list">
         {sites.map((site) => {
           const isRevoking =
             mutation?.action === 'revoke' &&
             mutation.deviceId === site.dispositivo?.id
 
           return (
-            <article className="admin-pending-card" key={site.id}>
-              <div>
-                <h3>{site.nombre}</h3>
-                {site.dispositivo ? (
-                  <dl className="admin-device-details">
-                    <div><dt>Estado</dt><dd>Autorizada</dd></div>
-                    <div><dt>Autorizada desde</dt><dd>{formatAdminDate(site.dispositivo.autorizado_at)}</dd></div>
-                    <div><dt>Último acceso</dt><dd>{formatAdminDate(site.dispositivo.ultimo_acceso_at)}</dd></div>
-                  </dl>
-                ) : (
-                  <p className="admin-device-empty">Sin tablet autorizada</p>
-                )}
+            <article className={`device-site-card${site.dispositivo ? ' device-site-card--authorized' : ''}`} key={site.id}>
+              <div className="device-card-identity">
+                <span className="device-card-icon" aria-hidden="true"><TabletSmartphone size={19} /></span>
+                <div>
+                  <h3>{site.nombre}</h3>
+                  <span className={`device-status-badge${site.dispositivo ? ' device-status-badge--authorized' : ''}`}>
+                    {site.dispositivo ? 'Autorizada' : 'Sin tablet autorizada'}
+                  </span>
+                </div>
               </div>
               {site.dispositivo ? (
-                <button
-                  className="button button--danger"
-                  disabled={mutation !== null}
-                  onClick={() => onRevoke(site)}
-                >
-                  <ShieldOff size={17} /> {isRevoking ? 'Revocando…' : 'Revocar tablet'}
-                </button>
+                <>
+                  <dl className="device-card-facts">
+                    <div><dt>Autorizada desde</dt><dd>{formatDeviceDate(site.dispositivo.autorizado_at)}</dd></div>
+                    <div><dt>Último acceso</dt><dd>{formatDeviceDate(site.dispositivo.ultimo_acceso_at)}</dd></div>
+                  </dl>
+                  <button
+                    className="button button--danger device-card-action"
+                    disabled={mutation !== null}
+                    onClick={() => onRevoke(site)}
+                    type="button"
+                  >
+                    <ShieldOff size={16} /> {isRevoking ? 'Revocando…' : 'Revocar tablet'}
+                  </button>
+                </>
               ) : null}
             </article>
           )
@@ -55,4 +60,3 @@ export function AuthorizedDevices({
     </section>
   )
 }
-import { ShieldOff, TabletSmartphone } from 'lucide-react'

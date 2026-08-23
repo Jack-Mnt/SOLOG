@@ -1,6 +1,7 @@
 import { AuthorizedDevices } from '../features/solog/admin/AuthorizedDevices'
 import { PendingDevices } from '../features/solog/admin/PendingDevices'
 import { useAdminLayout } from '../features/solog/admin/AdminLayoutContext'
+import { ShieldCheck } from 'lucide-react'
 import type { SologAdminSite, SologPendingDevice } from '../features/solog/types'
 
 export function AdminDevicesPage() {
@@ -25,9 +26,16 @@ export function AdminDevicesPage() {
   }
 
   return (
-    <>
+    <div className="devices-workspace">
       <AuthorizedDevices mutation={admin.mutation} onRevoke={handleRevoke} sites={admin.bootstrap.sedes} />
       <PendingDevices devices={admin.bootstrap.dispositivos_pendientes} mutation={admin.mutation} onAuthorize={handleAuthorize} onReject={handleReject} />
-    </>
+      <aside className="device-policy-note" aria-label="Política de tablets por sede">
+        <ShieldCheck aria-hidden="true" size={19} />
+        <div>
+          <strong>Una tablet por sede</strong>
+          <p>Cada sede solo puede tener una tablet autorizada. Si se autoriza una nueva tablet, la anterior será revocada automáticamente.</p>
+        </div>
+      </aside>
+    </div>
   )
 }

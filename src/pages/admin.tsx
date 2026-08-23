@@ -23,5 +23,10 @@ export function AdminDashboardPage() {
     )
   }
 
-  return dashboard.data ? <AdminOverview dashboard={dashboard.data} /> : null
+  return dashboard.data ? (
+    <AdminOverview
+      dashboard={dashboard.data}
+      refreshOperationalState={refreshOperationalState}
+    />
+  ) : null
 }

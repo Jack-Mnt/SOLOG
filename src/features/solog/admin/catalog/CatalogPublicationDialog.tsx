@@ -83,7 +83,6 @@ export function CatalogPublicationDialog({
         <article><span>SKU actuales</span><strong>{preview.sku_actuales}</strong></article>
         <article><span>SKU resultantes</span><strong>{preview.sku_nuevos}</strong></article>
         <article><span>Cambios incluidos</span><strong>{preview.cambios_total}</strong></article>
-        <article><span>Schema</span><strong>V{preview.schema_version}</strong></article>
       </div>
       <section className="admin-detail-section">
         <h3>Desglose de cambios</h3>

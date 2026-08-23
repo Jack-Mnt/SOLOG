@@ -1,4 +1,5 @@
 import { BookPlus, LoaderCircle } from 'lucide-react'
+import { formatCatalogDate } from './catalog-format'
 
 export function CatalogPublicationCard({
   approvedCount,
@@ -6,6 +7,9 @@ export function CatalogPublicationCard({
   nextVersion,
   isAdmin,
   preparing,
+  publishedAt,
+  statusError,
+  statusLoading,
   notice,
   onDismissNotice,
   onPrepare,
@@ -15,6 +19,9 @@ export function CatalogPublicationCard({
   nextVersion: number | null
   isAdmin: boolean
   preparing: boolean
+  publishedAt: string | null
+  statusError: string | null
+  statusLoading: boolean
   notice: string | null
   onDismissNotice: () => void
   onPrepare: () => void
@@ -26,8 +33,14 @@ export function CatalogPublicationCard({
         <p>
           <strong>{approvedCount} {approvedCount === 1 ? 'cambio aprobado' : 'cambios aprobados'}{approvedCount > 0 ? ' listos' : ''}</strong>
           <span aria-hidden="true"> · </span>
-          {currentVersion === null ? 'Versión actual no disponible' : `Actual V${currentVersion}`}
+          {statusLoading && currentVersion === null
+            ? 'Consultando catálogo actual…'
+            : currentVersion === null
+              ? 'Catálogo actual no disponible'
+              : `Catálogo actual V${currentVersion}`}
+          {currentVersion !== null && publishedAt ? ` · Publicado ${formatCatalogDate(publishedAt)}` : null}
         </p>
+        {statusError ? <small className="catalog-publication-strip__error" role="alert">{statusError}</small> : null}
       </div>
       <div className="catalog-publication-strip__action">
         {isAdmin ? (
