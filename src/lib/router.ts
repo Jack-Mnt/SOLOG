@@ -7,6 +7,7 @@ export type AdminRoute =
   | '/admin/ajuste-pos'
   | '/admin/incidencias'
   | '/admin/catalogo'
+  | '/admin/grupos'
   | '/admin/dispositivos'
 
 export type AppRoute = '/login' | '/' | '/device-pending' | '/count' | AdminRoute
@@ -17,6 +18,7 @@ export const ADMIN_ROUTES: AdminRoute[] = [
   '/admin/ajuste-pos',
   '/admin/incidencias',
   '/admin/catalogo',
+  '/admin/grupos',
   '/admin/dispositivos',
 ]
 

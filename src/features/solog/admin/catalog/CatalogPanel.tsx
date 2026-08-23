@@ -50,11 +50,13 @@ function CatalogTable({
   rows,
   showVersion,
   onSelect,
+  relatedChangeIds,
 }: {
   caption: string
   rows: SologCatalogChangeRow[]
   showVersion?: boolean
   onSelect: (row: SologCatalogChangeRow) => void
+  relatedChangeIds?: string[]
 }) {
   if (rows.length === 0) return <div className="empty-state">No hay cambios en esta sección.</div>
   return (
@@ -71,10 +73,11 @@ function CatalogTable({
         </thead>
         <tbody>
           {rows.map((row) => {
-            const product = row.producto ?? row.catalogo_actual.producto ?? 'Sin producto'
+            const entity = row.producto ?? row.catalogo_actual.producto ?? (typeof row.datos.nombre === 'string' ? row.datos.nombre : 'Grupo sin nombre')
             const changeLabel = getCatalogChangeLabel(row)
             return (
               <tr
+                className={row.cambio_id && relatedChangeIds?.includes(row.cambio_id) ? 'catalog-row--related' : undefined}
                 key={row.propuesta_fingerprint}
                 onClick={() => onSelect(row)}
                 onKeyDown={(event) => {
@@ -83,8 +86,8 @@ function CatalogTable({
                 role="button"
                 tabIndex={0}
               >
-                <td>{getSologCatalogChangeTypeLabel(row.tipo)}</td>
-                <td><div className="catalog-product-cell" title={`${product} · ${row.c_interno}`}><strong>{product}</strong><span aria-hidden="true">·</span><small>{row.c_interno}</small></div></td>
+                <td><span className="catalog-type-cell"><strong>{getSologCatalogChangeTypeLabel(row.tipo)}</strong><small>{row.ambito === 'grupo' ? 'Grupo' : 'Producto'}</small></span></td>
+                <td><div className="catalog-product-cell" title={row.c_interno === null ? entity : `${entity} · ${row.c_interno}`}><strong>{entity}</strong>{row.c_interno !== null ? <><span aria-hidden="true">·</span><small>{row.c_interno}</small></> : null}</div></td>
                 <td><span className="catalog-change-cell" title={changeLabel}>{changeLabel}</span></td>
                 <td><span className="catalog-sites-cell" title={row.sedes.map((site) => site.nombre).join(' · ')}>{row.sedes.length ? row.sedes.map((site) => site.nombre).join(' · ') : 'Sin sedes'}</span></td>
                 <td>{formatCatalogDate(row.last_seen_at)}</td>
@@ -116,6 +119,7 @@ export function CatalogPanel({
   } = useCatalogStatus(refreshOperationalState)
   const [selected, setSelected] = useState<SologCatalogChangeRow | null>(null)
   const [configuring, setConfiguring] = useState<SologCatalogChangeRow | null>(null)
+  const [relatedChangeIds, setRelatedChangeIds] = useState<string[]>([])
   const rows = catalog.response?.rows ?? []
   const counts = catalog.response?.counts ?? {}
   const pendingCount = (counts.urgentes_pendientes ?? 0) + (counts.cambios_pendientes ?? 0)
@@ -178,6 +182,23 @@ export function CatalogPanel({
     if (completed) setConfiguring(null)
   }
 
+  const withdrawChange = async (change: SologCatalogChangeRow) => {
+    if (!window.confirm('¿Retirar la aprobación?\n\nEl cambio volverá a Pendiente y no se incorporará mientras no sea aprobado nuevamente.')) return
+    const completed = await catalog.applyDecision({ propuesta_fingerprint: change.propuesta_fingerprint, decision: 'withdraw' })
+    if (completed) setSelected(null)
+  }
+
+  const viewRelatedChanges = (changeIds: string[]) => {
+    setRelatedChangeIds(changeIds)
+    publication.resetDialog()
+    catalog.selectStatus('aprobado')
+  }
+
+  const selectChange = (change: SologCatalogChangeRow) => {
+    setSelected(change)
+    if (change.tipo === 'clasificacion_producto' || change.tipo === 'definicion_grupo') void catalog.loadReference()
+  }
+
   const displayCurrentVersion = publication.publishedVersion ?? catalogStatusData?.version_actual ?? null
 
   return (
@@ -216,17 +237,18 @@ export function CatalogPanel({
       <CatalogFilters filters={catalog.draftFilters} loading={catalog.status === 'loading'} onApply={catalog.applyFilters} onReset={catalog.resetFilters} onUpdate={catalog.updateFilters} />
 
       {catalog.notice ? <div className="notice notice--success" role="status"><strong>{catalog.notice}</strong><button className="text-button" onClick={catalog.dismissNotice}>Cerrar</button></div> : null}
+      {relatedChangeIds.length && activeStatus === 'aprobado' ? <div className="notice" role="status"><strong>Cambios relacionados con el conflicto</strong><p>Las filas disponibles en esta página están resaltadas. IDs involucrados: {relatedChangeIds.length}.</p><button className="text-button" onClick={() => setRelatedChangeIds([])}>Quitar resaltado</button></div> : null}
       {catalog.error ? <div className="notice notice--error" role="alert"><strong>No se pudieron cargar los cambios de catálogo</strong><p>{catalog.error}</p></div> : null}
       {catalog.status === 'loading' ? <div className="empty-state" role="status">Consultando cambios de catálogo…</div> : null}
       {catalog.status === 'ready' && rows.length === 0 ? <div className="empty-state">{EMPTY_MESSAGES[activeStatus]}</div> : null}
 
       {catalog.status === 'ready' && rows.length > 0 && splitPending ? (
         <div className="admin-catalog-groups">
-          <section><h3>Cambios urgentes <span>· {urgentRows.length}</span></h3><CatalogTable caption="Cambios urgentes pendientes" onSelect={setSelected} rows={urgentRows} /></section>
-          <section><h3>Cambios pendientes <span>· {pendingRows.length}</span></h3><CatalogTable caption="Cambios no urgentes pendientes" onSelect={setSelected} rows={pendingRows} /></section>
+          <section><h3>Cambios urgentes <span>· {urgentRows.length}</span></h3><CatalogTable caption="Cambios urgentes pendientes" onSelect={selectChange} rows={urgentRows} relatedChangeIds={relatedChangeIds} /></section>
+          <section><h3>Cambios pendientes <span>· {pendingRows.length}</span></h3><CatalogTable caption="Cambios no urgentes pendientes" onSelect={selectChange} rows={pendingRows} relatedChangeIds={relatedChangeIds} /></section>
         </div>
       ) : null}
-      {catalog.status === 'ready' && rows.length > 0 && !splitPending ? <CatalogTable caption={`Cambios de catálogo: ${getSologCatalogChangeStatusLabel(activeStatus)}`} onSelect={setSelected} rows={rows} showVersion={activeStatus === 'incorporado'} /> : null}
+      {catalog.status === 'ready' && rows.length > 0 && !splitPending ? <CatalogTable caption={`Cambios de catálogo: ${getSologCatalogChangeStatusLabel(activeStatus)}`} onSelect={selectChange} relatedChangeIds={relatedChangeIds} rows={rows} showVersion={activeStatus === 'incorporado'} /> : null}
 
       {catalog.response ? (
         <nav className="admin-report-pagination" aria-label="Paginación de catálogo">
@@ -236,9 +258,9 @@ export function CatalogPanel({
         </nav>
       ) : null}
 
-      {selected ? <CatalogChangeDetail acting={catalog.actingFingerprint === selected.propuesta_fingerprint} change={selected} onApprove={() => void approveChange(selected)} onClose={() => setSelected(null)} onIgnore={() => void ignoreChange(selected)} /> : null}
+      {selected ? <CatalogChangeDetail acting={catalog.actingFingerprint === selected.propuesta_fingerprint} change={selected} onApprove={() => void approveChange(selected)} onClose={() => setSelected(null)} onIgnore={() => void ignoreChange(selected)} onWithdraw={() => void withdrawChange(selected)} reference={catalog.reference} /> : null}
       {configuring ? <NewProductApprovalForm change={configuring} key={configuring.propuesta_fingerprint} onClose={() => setConfiguring(null)} onLoadReference={() => void catalog.loadReference()} onSubmit={(config) => void approveNewProduct(configuring, config)} reference={catalog.reference} referenceError={catalog.referenceError} referenceStatus={catalog.referenceStatus} submitting={catalog.actingFingerprint === configuring.propuesta_fingerprint} /> : null}
-      {publication.status !== 'idle' ? <CatalogPublicationDialog error={publication.error} onClose={publication.resetDialog} onPrepare={() => void publication.prepare()} onPublish={() => void publication.publish()} preview={publication.preview} status={publication.status} validationErrors={publication.validationErrors} /> : null}
+      {publication.status !== 'idle' ? <CatalogPublicationDialog conflicts={publication.conflicts} error={publication.error} onClose={publication.resetDialog} onPrepare={() => void publication.prepare()} onPublish={() => void publication.publish()} onViewRelated={viewRelatedChanges} preview={publication.preview} status={publication.status} validationErrors={publication.validationErrors} /> : null}
     </section>
   )
 }

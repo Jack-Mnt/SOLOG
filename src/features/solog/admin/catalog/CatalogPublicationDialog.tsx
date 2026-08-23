@@ -1,6 +1,6 @@
 import { AlertTriangle, ArrowRight, LoaderCircle, UploadCloud } from 'lucide-react'
 import { getSologCatalogChangeTypeLabel } from '../../labels'
-import type { CatalogPublicationPreview, SologCatalogChangeType } from '../../types'
+import type { CatalogPublicationPreview, SologCatalogChangeType, SologCatalogConflict } from '../../types'
 import { AdminDialog } from '../AdminDialog'
 import type { CatalogPublicationStatus } from './useCatalogPublication'
 
@@ -10,6 +10,8 @@ const SUMMARY_ORDER: SologCatalogChangeType[] = [
   'nombre',
   'precio',
   'codigo',
+  'clasificacion_producto',
+  'definicion_grupo',
 ]
 
 export function CatalogPublicationDialog({
@@ -17,17 +19,21 @@ export function CatalogPublicationDialog({
   preview,
   error,
   validationErrors,
+  conflicts,
   onClose,
   onPrepare,
   onPublish,
+  onViewRelated,
 }: {
   status: Exclude<CatalogPublicationStatus, 'idle'>
   preview: Extract<CatalogPublicationPreview, { ok: true }> | null
   error: string | null
   validationErrors: string[]
+  conflicts: SologCatalogConflict[]
   onClose: () => void
   onPrepare: () => void
   onPublish: () => void
+  onViewRelated: (changeIds: string[]) => void
 }) {
   const busy = status === 'preparing' || status === 'publishing'
 
@@ -54,6 +60,7 @@ export function CatalogPublicationDialog({
           <AlertTriangle size={24} />
           {error ? <p>{error}</p> : null}
           {validationErrors.length > 0 ? <ul>{validationErrors.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul> : null}
+          {conflicts.length > 0 ? <div className="catalog-conflicts"><strong>{conflicts.length} conflicto{conflicts.length === 1 ? '' : 's'} deben resolverse</strong>{conflicts.map((conflict, index) => <article key={`${conflict.codigo}-${conflict.entidad_id ?? index}`}><div><span>{conflict.entidad_tipo ? `${conflict.entidad_tipo} · ${conflict.entidad_id ?? 'sin identificador'}` : 'Validación global'}</span><strong>{conflict.mensaje}</strong><code>{conflict.codigo}</code></div>{conflict.change_ids.length ? <button className="button button--secondary" onClick={() => onViewRelated(conflict.change_ids)} type="button">Ver cambios relacionados</button> : null}</article>)}</div> : null}
         </div>
       </AdminDialog>
     )

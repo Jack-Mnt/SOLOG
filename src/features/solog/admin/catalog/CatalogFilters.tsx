@@ -10,6 +10,8 @@ const TYPES: SologCatalogChangeType[] = [
   'nombre',
   'precio',
   'codigo',
+  'clasificacion_producto',
+  'definicion_grupo',
 ]
 
 export function CatalogFilters({
@@ -31,7 +33,13 @@ export function CatalogFilters({
   }
 
   return (
-    <form className="catalog-filters" onSubmit={handleSubmit}>
+    <form className="catalog-filters catalog-filters--scoped" onSubmit={handleSubmit}>
+      <label>
+        Ámbito
+        <select disabled={loading} onChange={(event) => onUpdate({ ambito: event.target.value as CatalogDraftFilters['ambito'] })} value={filters.ambito}>
+          <option value="">Todos</option><option value="producto">Producto</option><option value="grupo">Grupo</option>
+        </select>
+      </label>
       <label>
         Tipo
         <select disabled={loading} onChange={(event) => onUpdate({ tipo: event.target.value as CatalogDraftFilters['tipo'] })} value={filters.tipo}>
@@ -43,7 +51,7 @@ export function CatalogFilters({
         Buscar
         <span className="catalog-search__control">
           <Search aria-hidden="true" size={16} />
-          <input disabled={loading} onChange={(event) => onUpdate({ search: event.target.value })} placeholder="Buscar producto o código interno..." type="search" value={filters.search} />
+          <input disabled={loading} onChange={(event) => onUpdate({ search: event.target.value })} placeholder="Producto, grupo o código interno…" type="search" value={filters.search} />
         </span>
       </label>
       <div className="admin-report-filter-actions catalog-filter-actions">

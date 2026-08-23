@@ -73,6 +73,8 @@ export function getCatalogDetectedStock(change: SologCatalogChangeRow): number |
 }
 
 export function getCatalogChangeSummary(change: SologCatalogChangeRow): string {
+  if (change.tipo === 'definicion_grupo') return 'Definición futura del grupo'
+  if (change.tipo === 'clasificacion_producto') return 'Clasificación futura del producto'
   if (change.tipo === 'agregar_producto') {
     const price = getCatalogProposedPrice(change)
     const barcode = getCatalogDetectedBarcode(change)

@@ -52,6 +52,8 @@ const CATALOG_CHANGE_TYPE_LABELS: Record<SologCatalogChangeType, string> = {
   nombre: 'Nombre',
   precio: 'Precio',
   codigo: 'Código',
+  clasificacion_producto: 'Clasificación',
+  definicion_grupo: 'Grupo',
 }
 
 const CATALOG_CHANGE_SECTION_LABELS: Record<SologCatalogChangeSection, string> = {
@@ -69,6 +71,7 @@ const CATALOG_CHANGE_STATUS_LABELS: Record<SologCatalogChangeStatus, string> = {
 const CATALOG_DECISION_LABELS: Record<SologCatalogDecision, string> = {
   approve: 'Aprobar',
   ignore: 'Ignorar',
+  withdraw: 'Retirar aprobación',
 }
 
 export function getSologAdminIncidentTypeLabel(

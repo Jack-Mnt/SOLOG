@@ -486,6 +486,10 @@ export type SologCatalogChangeType =
   | 'nombre'
   | 'precio'
   | 'codigo'
+  | 'clasificacion_producto'
+  | 'definicion_grupo'
+
+export type SologCatalogChangeScope = 'producto' | 'grupo'
 
 export type SologCatalogChangeSection = 'urgente' | 'pendiente'
 
@@ -495,7 +499,7 @@ export type SologCatalogChangeStatus =
   | 'ignorado'
   | 'incorporado'
 
-export type SologCatalogDecision = 'approve' | 'ignore'
+export type SologCatalogDecision = 'approve' | 'ignore' | 'withdraw'
 
 export interface SologCatalogChangeSite {
   id: string
@@ -515,10 +519,12 @@ export interface SologCurrentCatalogProduct {
 export interface SologCatalogChangeRow {
   propuesta_fingerprint: string
   cambio_id: string | null
+  ambito: SologCatalogChangeScope
   tipo: SologCatalogChangeType
   seccion: SologCatalogChangeSection
   estado: SologCatalogChangeStatus
-  c_interno: number
+  c_interno: number | null
+  grupo_id: string | null
   producto: string | null
   datos: Record<string, unknown>
   sedes: SologCatalogChangeSite[]
@@ -528,7 +534,7 @@ export interface SologCatalogChangeRow {
   catalogo_actual: SologCurrentCatalogProduct
   aprobado_at: string | null
   ignorado_at: string | null
-  incorporado_at: string | null
+  incorporado_at?: string | null
   version_aplicada: number | null
 }
 
@@ -536,6 +542,7 @@ export interface SologCatalogChangesFilters {
   seccion?: SologCatalogChangeSection
   tipo?: SologCatalogChangeType
   estado?: SologCatalogChangeStatus
+  ambito?: SologCatalogChangeScope
   c_interno?: number
   producto?: string
   limit?: number
@@ -549,6 +556,8 @@ export interface SologCatalogChangeCounts {
   incorporado?: number
   urgentes_pendientes?: number
   cambios_pendientes?: number
+  producto_aprobado?: number
+  grupo_aprobado?: number
   [key: string]: number | undefined
 }
 
@@ -579,6 +588,10 @@ export type SologCatalogChangeActionPayload =
       propuesta_fingerprint: string
       decision: 'approve'
       config?: SologCatalogNewProductConfig
+    }
+  | {
+      propuesta_fingerprint: string
+      decision: 'withdraw'
     }
 
 export interface SologCatalogChangeActionResponse {
@@ -611,6 +624,124 @@ export interface SologCatalogStatus {
   publicado_at: string | null
 }
 
+export type SologGroupProductMode = 'Único' | 'Agrupado' | 'Excluido'
+
+export interface SologAdminGroupProduct {
+  c_interno: number
+  producto: string
+  marca: string | null
+  precio: number
+  estado: SologGroupProductMode
+}
+
+export interface SologGroupRelatedChange {
+  id: string
+  tipo: SologCatalogChangeType
+  ambito: SologCatalogChangeScope
+  estado: 'pendiente' | 'aprobado'
+  c_interno: number | null
+  grupo_id: string | null
+  datos: Record<string, unknown>
+  updated_at: string
+}
+
+export interface SologGroupSummary {
+  id: string
+  nombre: string
+  categoria_id: string
+  categoria: string
+  precio: number
+  activo: boolean
+  tipo: 'Único' | 'Agrupado'
+  sku_count: number
+  integrantes: SologAdminGroupProduct[]
+  propuestas: SologGroupRelatedChange[]
+}
+
+export type SologGroupDetail = SologGroupSummary
+
+export interface SologAdminGroupsFilters {
+  categoria_id?: string
+  precio?: number
+  tipo?: 'Único' | 'Agrupado'
+  buscar?: string
+  limit?: number
+  offset?: number
+}
+
+export interface SologAdminGroupsResponse {
+  rows: SologGroupSummary[]
+  limit: number
+  offset: number
+}
+
+export interface SologGroupProductSearchRow extends SologAdminGroupProduct {
+  categoria_id: string
+  categoria: string
+  grupo_id: string | null
+  grupo: string | null
+  propuesta: null | {
+    id: string
+    estado: 'pendiente' | 'aprobado'
+    datos: Record<string, unknown>
+    propuesta_fingerprint: string
+  }
+}
+
+export interface SologGroupProductsFilters {
+  categoria_id?: string
+  grupo_id?: string
+  estado?: SologGroupProductMode
+  buscar?: string
+  limit?: number
+  offset?: number
+}
+
+export interface SologGroupProductsResponse {
+  rows: SologGroupProductSearchRow[]
+  limit: number
+  offset: number
+}
+
+export type SologGroupChangePayload =
+  | {
+      kind: 'definition'
+      grupo_id?: string
+      nombre: string
+      categoria_id: string
+      precio: number
+    }
+  | {
+      kind: 'classification'
+      c_interno: number
+      estado: 'Único' | 'Excluido'
+      grupo_conteo_id: null
+    }
+  | {
+      kind: 'classification'
+      c_interno: number
+      estado: 'Agrupado'
+      grupo_conteo_id: string
+    }
+
+export interface SologGroupChangeResponse {
+  ok: true
+  codigo: 'GROUP_CHANGE_SAVED'
+  cambio_id: string
+  propuesta_fingerprint: string
+  grupo_id?: string
+  c_interno?: number
+  estado: 'pendiente'
+}
+
+export interface SologCatalogConflict {
+  codigo: string
+  mensaje: string
+  entidad_tipo: 'producto' | 'grupo' | null
+  entidad_id: string | null
+  change_ids: string[]
+}
+
 export type SologCatalogPublicationSummary = Partial<
   Record<SologCatalogChangeType, number>
 > & Record<string, number | undefined>
@@ -628,6 +759,7 @@ export type CatalogPublicationPreview =
       cambios: SologCatalogPublicationSummary
       change_ids: string[]
       productos: Array<Record<string, unknown>>
+      conflictos: SologCatalogConflict[]
       errores: string[]
       puede_publicar: boolean
     }
@@ -635,6 +767,7 @@ export type CatalogPublicationPreview =
       ok: false
       codigo: string
       errores?: string[]
+      conflictos?: SologCatalogConflict[]
       [key: string]: unknown
     }
 

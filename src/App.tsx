@@ -30,6 +30,12 @@ const AdminCatalogPage = lazy(() =>
   })),
 )
 
+const AdminGroupsPage = lazy(() =>
+  import('./pages/admin.grupos').then((module) => ({
+    default: module.AdminGroupsPage,
+  })),
+)
+
 const AdminControlPage = lazy(() =>
   import('./pages/admin.control').then((module) => ({
     default: module.AdminControlPage,
@@ -48,6 +54,8 @@ function getAdminPage(route: AdminRoute): ReactNode {
       return <AdminIncidentsPage />
     case '/admin/catalogo':
       return <AdminCatalogPage />
+    case '/admin/grupos':
+      return <AdminGroupsPage />
     case '/admin/dispositivos':
       return <AdminDevicesPage />
   }

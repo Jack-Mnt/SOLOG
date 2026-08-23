@@ -62,6 +62,22 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_CATALOG_CHANGE_NOT_FOUND',
   'SOLOG_CATALOG_CONFLICT',
   'SOLOG_CATALOG_INCOMPLETE_NEW_PRODUCT',
+  'SOLOG_INVALID_GROUP_FILTER',
+  'SOLOG_INVALID_GROUP_TYPE',
+  'SOLOG_INVALID_GROUP_PRODUCT_FILTER',
+  'SOLOG_INVALID_PRODUCT_MODE',
+  'SOLOG_INVALID_GROUP_CHANGE_KIND',
+  'SOLOG_INVALID_GROUP_DEFINITION',
+  'SOLOG_GROUP_NOT_FOUND',
+  'SOLOG_GROUP_CHANGE_NOOP',
+  'SOLOG_GROUP_PROPOSAL_PREVIOUSLY_IGNORED',
+  'SOLOG_INVALID_PRODUCT_CLASSIFICATION',
+  'SOLOG_PRODUCT_NOT_FOUND',
+  'SOLOG_GROUP_REQUIRED',
+  'SOLOG_INVALID_CATALOG_CHANGE_ID',
+  'SOLOG_INVALID_CATALOG_CHANGE_ACTION',
+  'SOLOG_CATALOG_CHANGE_NOT_APPROVED',
+  'SOLOG_CATALOG_CHANGE_CONFLICT',
 ] as const
 
 export type SologBackendErrorCode =
@@ -81,9 +97,26 @@ export const SOLOG_CATALOG_FUNCTION_ERROR_CODES = [
 export type SologCatalogFunctionErrorCode =
   (typeof SOLOG_CATALOG_FUNCTION_ERROR_CODES)[number]
 
+export const SOLOG_CATALOG_VALIDATION_ERROR_CODES = [
+  'GROUP_PRICE_MISMATCH',
+  'GROUP_CATEGORY_MISMATCH',
+  'INVALID_GROUP_CARDINALITY',
+  'INVALID_UNIQUE_GROUP',
+  'PRODUCT_GROUP_NOT_FOUND',
+  'PRODUCT_DELETE_CLASSIFICATION_CONFLICT',
+  'SKU_DELETE_CLASSIFICATION_CONFLICT',
+  'CATALOG_CHANGE_STALE',
+  'STALE_PRODUCT_CHANGE',
+  'GROUP_NOT_AVAILABLE',
+] as const
+
+export type SologCatalogValidationErrorCode =
+  (typeof SOLOG_CATALOG_VALIDATION_ERROR_CODES)[number]
+
 export type SologErrorCode =
   | SologBackendErrorCode
   | SologCatalogFunctionErrorCode
+  | SologCatalogValidationErrorCode
   | `SOLOG_${string}`
 
 const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
@@ -125,6 +158,22 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
     'La propuesta entra en conflicto con el estado actual del catálogo.',
   SOLOG_CATALOG_INCOMPLETE_NEW_PRODUCT:
     'Completa la marca, categoría, estado y grupo requeridos para aprobar el producto.',
+  SOLOG_INVALID_GROUP_FILTER: 'Uno o más filtros de grupos no son válidos.',
+  SOLOG_INVALID_GROUP_TYPE: 'El tipo de grupo seleccionado no es válido.',
+  SOLOG_INVALID_GROUP_PRODUCT_FILTER: 'La búsqueda de productos no es válida.',
+  SOLOG_INVALID_PRODUCT_MODE: 'La modalidad de conteo seleccionada no es válida.',
+  SOLOG_INVALID_GROUP_CHANGE_KIND: 'El tipo de propuesta estructural no es válido.',
+  SOLOG_INVALID_GROUP_DEFINITION: 'Completa una definición de grupo válida.',
+  SOLOG_GROUP_NOT_FOUND: 'El grupo seleccionado ya no está disponible.',
+  SOLOG_GROUP_CHANGE_NOOP: 'La propuesta no contiene ningún cambio respecto del estado vigente.',
+  SOLOG_GROUP_PROPOSAL_PREVIOUSLY_IGNORED: 'Esta propuesta exacta fue ignorada anteriormente. Modifica el cambio para continuar.',
+  SOLOG_INVALID_PRODUCT_CLASSIFICATION: 'La clasificación propuesta no es válida.',
+  SOLOG_PRODUCT_NOT_FOUND: 'El producto seleccionado ya no está disponible.',
+  SOLOG_GROUP_REQUIRED: 'Selecciona un grupo para la modalidad Agrupado.',
+  SOLOG_INVALID_CATALOG_CHANGE_ID: 'No se pudo identificar el cambio de catálogo.',
+  SOLOG_INVALID_CATALOG_CHANGE_ACTION: 'La acción seleccionada no es válida para este cambio.',
+  SOLOG_CATALOG_CHANGE_NOT_APPROVED: 'El cambio ya no está aprobado. Actualiza la bandeja.',
+  SOLOG_CATALOG_CHANGE_CONFLICT: 'El cambio entra en conflicto con la estructura futura del catálogo.',
   AUTH_REQUIRED: 'Inicia sesión para continuar con la publicación del catálogo.',
   AUTH_INVALID: 'La sesión no es válida. Inicia sesión nuevamente.',
   USER_DISABLED: 'Este usuario está deshabilitado.',
@@ -137,6 +186,16 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
     'No se pudo completar la publicación del catálogo.',
   INVALID_CATALOG_PREVIEW:
     'La propuesta de catálogo ya no es válida. Actualiza la información e inténtalo nuevamente.',
+  GROUP_PRICE_MISMATCH: 'El producto y el grupo propuesto no tienen el mismo precio.',
+  GROUP_CATEGORY_MISMATCH: 'El producto y el grupo propuesto no pertenecen a la misma categoría.',
+  INVALID_GROUP_CARDINALITY: 'La composición futura del grupo no cumple la cardinalidad requerida.',
+  INVALID_UNIQUE_GROUP: 'El grupo unitario propuesto no es válido.',
+  PRODUCT_GROUP_NOT_FOUND: 'El grupo propuesto para el producto no está disponible.',
+  PRODUCT_DELETE_CLASSIFICATION_CONFLICT: 'El producto no puede eliminarse y reclasificarse en la misma versión.',
+  SKU_DELETE_CLASSIFICATION_CONFLICT: 'El producto no puede eliminarse y reclasificarse en la misma versión.',
+  CATALOG_CHANGE_STALE: 'El cambio quedó obsoleto respecto del catálogo publicado actual.',
+  STALE_PRODUCT_CHANGE: 'El cambio quedó obsoleto respecto del catálogo publicado actual.',
+  GROUP_NOT_AVAILABLE: 'El grupo relacionado ya no estará disponible en la versión futura.',
   SOLOG_ACTIVE_COUNT_EXISTS: 'Ya existe un conteo activo en esta sede.',
   SOLOG_COUNT_NOT_AVAILABLE: 'Este conteo ya no está disponible.',
   SOLOG_COUNT_NOT_ACTIVE: 'La sesión de conteo ya no está activa.',
@@ -185,6 +244,7 @@ function extractKnownErrorCode(value: string): SologErrorCode | null {
 
   return (
     SOLOG_CATALOG_FUNCTION_ERROR_CODES.find((code) => value.includes(code)) ??
+    SOLOG_CATALOG_VALIDATION_ERROR_CODES.find((code) => value.includes(code)) ??
     null
   )
 }

@@ -12,6 +12,7 @@ import type { SologErrorCode } from '../../errors'
 import type {
   CatalogPublicationPreview,
   PublishCatalogResponse,
+  SologCatalogConflict,
 } from '../../types'
 
 export type CatalogPublicationStatus =
@@ -38,6 +39,7 @@ export function useCatalogPublication({
   const [status, setStatus] = useState<CatalogPublicationStatus>('idle')
   const [preview, setPreview] = useState<Extract<CatalogPublicationPreview, { ok: true }> | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [conflicts, setConflicts] = useState<SologCatalogConflict[]>([])
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [publishedVersion, setPublishedVersion] = useState<number | null>(null)
@@ -58,6 +60,7 @@ export function useCatalogPublication({
     setStatus('idle')
     setPreview(null)
     setValidationErrors([])
+    setConflicts([])
     setError(null)
   }, [])
 
@@ -67,6 +70,7 @@ export function useCatalogPublication({
     setStatus('preparing')
     setPreview(null)
     setValidationErrors([])
+    setConflicts([])
     setError(null)
     setNotice(null)
     try {
@@ -78,6 +82,7 @@ export function useCatalogPublication({
           return false
         }
         setValidationErrors(response.errores ?? [])
+        setConflicts(response.conflictos ?? [])
         setError(getResponseError(response.codigo))
         setStatus('invalid')
         return false
@@ -138,6 +143,7 @@ export function useCatalogPublication({
     status,
     preview,
     validationErrors,
+    conflicts,
     error,
     notice,
     publishedVersion,

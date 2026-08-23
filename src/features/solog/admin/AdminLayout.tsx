@@ -59,6 +59,12 @@ const ADMIN_NAVIGATION: Array<{
     icon: BookOpenCheck,
   },
   {
+    route: "/admin/grupos",
+    label: "Grupos",
+    description: "Estructura futura de grupos de conteo",
+    icon: Boxes,
+  },
+  {
     route: "/admin/dispositivos",
     label: "Dispositivos",
     description: "Tablets autorizadas y solicitudes",

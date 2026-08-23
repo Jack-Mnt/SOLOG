@@ -1,7 +1,7 @@
 # SOLOG V2 — Contrato técnico Backend ↔ Frontend
 
 **Estado:** vigente  
-**Fecha de sincronización:** 2026-08-21
+**Fecha de sincronización:** 2026-08-23
 **RPC públicas:** `rpc_solog_state`, `rpc_solog_count`, `rpc_solog_admin`
 
 Este documento describe únicamente el contrato V2 consumido por el frontend. V2 es incompatible con V1. El frontend no accede directamente a `inventario` ni replica reglas de negocio del backend.
@@ -127,7 +127,9 @@ El temporizador usa `stock.expira_at`. No produce polling. Al vencer se bloquean
 
 `authorize_device` y `revoke_device` mantienen la administración de tablets. `report` conserva `summary`, `counts`, `differences`, `history` y `pos_adjustments`. El reporte `counts` ya no entrega tipo/categoría y usa estados activo/finalizado/expirado; muestra grupos registrados y snapshot. Las filas de detalle de los demás reportes incluyen su propio `id` y conservan datos de SKU, stock posterior y reconteo.
 
-El frontend ya consume el contrato administrativo de `incidents`, `incident_action`, `catalog_reference`, `catalog_changes`, `catalog_change_action` y `catalog_publication_preview`. La publicación controlada de una versión oficial se ejecuta desde `Admin → Catálogo` mediante `conexion-admin`, únicamente después de un preview válido y solo para un usuario `admin`. El flujo y su semántica `Aprobado ≠ Incorporado` se documentan en [SOLOG_Admin_Incidencias_Catalogo_Contrato_V1.md](SOLOG_Admin_Incidencias_Catalogo_Contrato_V1.md).
+El frontend ya consume el contrato administrativo de `incidents`, `incident_action`, `catalog_reference`, `groups`, `group_products`, `group_change_save`, `catalog_changes`, `catalog_change_action` y `catalog_publication_preview`. Las tres acciones de grupos consultan o preparan cambios estructurales para una versión futura; no modifican el catálogo publicado. `catalog_change_action` admite `withdraw` para devolver una aprobación a Pendiente. El preview puede entregar conflictos estructurados y sigue siendo la autoridad de validación global.
+
+La publicación controlada de una versión oficial se ejecuta desde `Admin → Catálogo` mediante `conexion-admin`, únicamente después de un preview válido y solo para un usuario `admin`. El flujo, los payloads administrativos y su semántica `Aprobado ≠ Incorporado` se documentan en [SOLOG_Admin_Incidencias_Catalogo_Contrato_V1.md](SOLOG_Admin_Incidencias_Catalogo_Contrato_V1.md).
 
 ## 7. Errores relevantes
 

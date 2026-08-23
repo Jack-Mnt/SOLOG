@@ -34,6 +34,12 @@ import type {
   SologCountStartResponse,
   SologGroupsPayload,
   SologGroupsResponse,
+  SologAdminGroupsFilters,
+  SologAdminGroupsResponse,
+  SologGroupProductsFilters,
+  SologGroupProductsResponse,
+  SologGroupChangePayload,
+  SologGroupChangeResponse,
   SologOperationalBootstrap,
   CatalogPublicationPreview,
   PublishCatalogResponse,
@@ -200,8 +206,8 @@ export function getSologCatalogStatus() {
 
 export function getCatalogChanges(filters: SologCatalogChangesFilters = {}) {
   return callSologRpc<SologCatalogChangesResponse>(
-    'rpc_solog_catalog',
-    'changes',
+    'rpc_solog_admin',
+    'catalog_changes',
     filters,
   )
 }
@@ -213,18 +219,30 @@ export function applyCatalogDecision(input: SologCatalogChangeActionPayload) {
     ...('config' in input && input.config ? input.config : {}),
   }
   return callSologRpc<SologCatalogChangeActionResponse>(
-    'rpc_solog_catalog',
-    'change_action',
+    'rpc_solog_admin',
+    'catalog_change_action',
     payload,
   )
 }
 
 export function getCatalogPublicationPreview() {
   return callSologRpc<CatalogPublicationPreview>(
-    'rpc_solog_catalog',
-    'publication_preview',
+    'rpc_solog_admin',
+    'catalog_publication_preview',
     {},
   )
+}
+
+export function getAdminGroups(filters: SologAdminGroupsFilters = {}) {
+  return callSologRpc<SologAdminGroupsResponse>('rpc_solog_admin', 'groups', filters)
+}
+
+export function getAdminGroupProducts(filters: SologGroupProductsFilters = {}) {
+  return callSologRpc<SologGroupProductsResponse>('rpc_solog_admin', 'group_products', filters)
+}
+
+export function saveAdminGroupChange(input: SologGroupChangePayload) {
+  return callSologRpc<SologGroupChangeResponse>('rpc_solog_admin', 'group_change_save', input)
 }
 
 export async function publishCatalog(): Promise<PublishCatalogResponse> {

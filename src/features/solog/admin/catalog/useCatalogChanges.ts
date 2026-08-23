@@ -13,6 +13,7 @@ import type {
   SologCatalogChangesFilters,
   SologCatalogChangesResponse,
   SologCatalogChangeStatus,
+  SologCatalogChangeScope,
   SologCatalogChangeType,
   SologCatalogReference,
 } from '../../types'
@@ -21,6 +22,7 @@ export const CATALOG_CHANGES_PAGE_SIZE = 50
 
 export interface CatalogDraftFilters {
   tipo: '' | SologCatalogChangeType
+  ambito: '' | SologCatalogChangeScope
   estado: SologCatalogChangeStatus
   search: string
 }
@@ -31,6 +33,7 @@ type ReferenceStatus = 'idle' | 'loading' | 'ready' | 'error'
 function createDefaultFilters(): CatalogDraftFilters {
   return {
     tipo: '',
+    ambito: '',
     estado: 'pendiente',
     search: '',
   }
@@ -55,6 +58,7 @@ function createPayload(
   const isInternalCode = /^\d+$/.test(search)
   return {
     ...(filters.tipo ? { tipo: filters.tipo } : {}),
+    ...(filters.ambito ? { ambito: filters.ambito } : {}),
     estado: filters.estado,
     ...(search && isInternalCode ? { c_interno: Number(search) } : {}),
     ...(search && !isInternalCode ? { producto: search } : {}),
@@ -160,7 +164,11 @@ export function useCatalogChanges({
     setNotice(null)
     try {
       await applyCatalogDecision(payload)
-      setNotice(payload.decision === 'approve' ? 'El cambio quedó aprobado para una versión futura.' : 'La propuesta exacta quedó ignorada.')
+      setNotice(payload.decision === 'approve'
+        ? 'El cambio quedó aprobado para una versión futura.'
+        : payload.decision === 'withdraw'
+          ? 'La aprobación se retiró y el cambio volvió a Pendiente.'
+          : 'La propuesta exacta quedó ignorada.')
       await load(appliedFilters, offset)
       return true
     } catch (actionError) {
