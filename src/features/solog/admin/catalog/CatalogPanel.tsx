@@ -129,8 +129,6 @@ export function CatalogPanel({
     void refreshOperationalState()
   }, [catalog, refreshOperationalState])
   const publication = useCatalogPublication({
-    approvedCount: counts.aprobado ?? 0,
-    isAdmin: role === 'admin',
     onPublished: handlePublished,
     onRejected: handlePublicationRejected,
   })
@@ -174,8 +172,7 @@ export function CatalogPanel({
     if (completed) setConfiguring(null)
   }
 
-  const preview = publication.summaryPreview
-  const displayCurrentVersion = preview?.version_actual ?? publication.publishedVersion ?? currentCatalogVersion
+  const displayCurrentVersion = publication.publishedVersion ?? currentCatalogVersion
 
   return (
     <section className="content-section admin-module catalog-workbench" aria-labelledby="catalog-title">
@@ -200,7 +197,7 @@ export function CatalogPanel({
         approvedCount={counts.aprobado ?? 0}
         currentVersion={displayCurrentVersion}
         isAdmin={role === 'admin'}
-        nextVersion={preview?.version_nueva ?? null}
+        nextVersion={null}
         notice={publication.notice}
         onDismissNotice={publication.dismissNotice}
         onPrepare={() => void publication.prepare()}

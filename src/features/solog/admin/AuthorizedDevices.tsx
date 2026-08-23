@@ -23,23 +23,23 @@ export function AuthorizedDevices({
         {sites.map((site) => {
           const isRevoking =
             mutation?.action === 'revoke' &&
-            mutation.deviceId === site.tablet?.id
+            mutation.deviceId === site.dispositivo?.id
 
           return (
             <article className="admin-pending-card" key={site.id}>
               <div>
                 <h3>{site.nombre}</h3>
-                {site.tablet ? (
+                {site.dispositivo ? (
                   <dl className="admin-device-details">
                     <div><dt>Estado</dt><dd>Autorizada</dd></div>
-                    <div><dt>Autorizada</dt><dd>{formatAdminDate(site.tablet.autorizado_at)}</dd></div>
-                    <div><dt>Último acceso</dt><dd>{formatAdminDate(site.tablet.ultimo_acceso_at)}</dd></div>
+                    <div><dt>Autorizada desde</dt><dd>{formatAdminDate(site.dispositivo.autorizado_at)}</dd></div>
+                    <div><dt>Último acceso</dt><dd>{formatAdminDate(site.dispositivo.ultimo_acceso_at)}</dd></div>
                   </dl>
                 ) : (
                   <p className="admin-device-empty">Sin tablet autorizada</p>
                 )}
               </div>
-              {site.tablet ? (
+              {site.dispositivo ? (
                 <button
                   className="button button--danger"
                   disabled={mutation !== null}

@@ -1,11 +1,11 @@
 import { createContext, useContext } from 'react'
-import type { SologOperationalBootstrap } from '../types'
+import type { SologAdminOperationalBootstrap } from '../types'
 import type { useAdminSolog } from './useAdminSolog'
 
 type AdminState = ReturnType<typeof useAdminSolog>
 
 export interface AdminLayoutContextValue {
-  operationalBootstrap: SologOperationalBootstrap
+  operationalBootstrap: SologAdminOperationalBootstrap
   admin: AdminState
   refreshOperationalState: () => Promise<void>
 }

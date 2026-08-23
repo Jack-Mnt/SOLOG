@@ -9,14 +9,14 @@ export function AdminDevicesPage() {
 
   const handleAuthorize = (device: SologPendingDevice) => {
     const site = admin.bootstrap?.sedes.find((candidate) => candidate.id === device.sede_id)
-    if (site?.tablet && !window.confirm(`${site.nombre} ya tiene una tablet autorizada.\n\nAl autorizar este nuevo dispositivo, la tablet anterior será revocada.\n\n¿Continuar?`)) return
+    if (site?.dispositivo && !window.confirm(`${site.nombre} ya tiene una tablet autorizada.\n\nAl autorizar este nuevo dispositivo, la tablet anterior será revocada.\n\n¿Continuar?`)) return
     void admin.authorize(device.id)
   }
 
   const handleRevoke = (site: SologAdminSite) => {
-    if (!site.tablet) return
+    if (!site.dispositivo) return
     if (!window.confirm(`¿Revocar la tablet autorizada de ${site.nombre}?\n\nLa sede no podrá iniciar nuevos conteos desde ese dispositivo.`)) return
-    void admin.revoke(site.tablet.id)
+    void admin.revoke(site.dispositivo.id)
   }
 
   const handleReject = (device: SologPendingDevice) => {

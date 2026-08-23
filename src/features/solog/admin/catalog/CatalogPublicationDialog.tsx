@@ -43,7 +43,7 @@ export function CatalogPublicationDialog({
     )
   }
 
-  if (!preview) {
+  if (!preview || !preview.cambios) {
     return (
       <AdminDialog
         footer={status === 'error' ? <button className="button" onClick={onPrepare} type="button">Preparar nuevamente</button> : undefined}
@@ -81,7 +81,7 @@ export function CatalogPublicationDialog({
       </div>
       <div className="catalog-publication-metrics">
         <article><span>SKU actuales</span><strong>{preview.sku_actuales}</strong></article>
-        <article><span>SKU resultantes</span><strong>{preview.sku_resultantes}</strong></article>
+        <article><span>SKU resultantes</span><strong>{preview.sku_nuevos}</strong></article>
         <article><span>Cambios incluidos</span><strong>{preview.cambios_total}</strong></article>
         <article><span>Schema</span><strong>V{preview.schema_version}</strong></article>
       </div>
@@ -89,7 +89,7 @@ export function CatalogPublicationDialog({
         <h3>Desglose de cambios</h3>
         <dl className="catalog-publication-summary">
           {SUMMARY_ORDER.map((type) => (
-            <div key={type}><dt>{getSologCatalogChangeTypeLabel(type)}</dt><dd>{preview.resumen[type] ?? 0}</dd></div>
+            <div key={type}><dt>{getSologCatalogChangeTypeLabel(type)}</dt><dd>{preview.cambios[type] ?? 0}</dd></div>
           ))}
         </dl>
       </section>

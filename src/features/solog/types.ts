@@ -135,6 +135,13 @@ export interface SologOperationalBootstrap {
   vistas?: SologViewCounts
 }
 
+export type SologAdminOperationalBootstrap = Omit<
+  SologOperationalBootstrap,
+  'stock'
+> & {
+  stock: SologStockState | null
+}
+
 export interface SologGroupProduct {
   c_interno: number
   producto: string
@@ -304,7 +311,7 @@ export interface SologAdminUser {
 export interface SologAuthorizedDevice {
   id: string
   estado: 'autorizado'
-  autorizado_at: string
+  autorizado_at: string | null
   ultimo_acceso_at: string | null
 }
 
@@ -318,7 +325,7 @@ export interface SologAdminActiveSession {
 }
 
 export interface SologAdminSite extends SologSede {
-  tablet: SologAuthorizedDevice | null
+  dispositivo: SologAuthorizedDevice | null
   sesion_activa: SologAdminActiveSession | null
   cobertura_diaria: SologCoverage
   cobertura_quincenal: SologFortnightCoverage
@@ -577,19 +584,23 @@ export type SologCatalogPublicationSummary = Partial<
 export type CatalogPublicationPreview =
   | {
       ok: true
+      codigo: 'CATALOG_PREVIEW_READY'
       version_actual: number
       version_nueva: number
       schema_version: number
       sku_actuales: number
-      sku_resultantes: number
+      sku_nuevos: number
       cambios_total: number
-      resumen: SologCatalogPublicationSummary
-      errores: []
+      cambios: SologCatalogPublicationSummary
+      change_ids: string[]
+      productos: Array<Record<string, unknown>>
+      errores: string[]
+      puede_publicar: boolean
     }
   | {
       ok: false
       codigo: string
-      errores: string[]
+      errores?: string[]
       [key: string]: unknown
     }
 
