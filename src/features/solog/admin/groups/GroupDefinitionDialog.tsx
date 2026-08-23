@@ -23,6 +23,7 @@ export function GroupDefinitionDialog({ group, reference, saving, onClose, onSav
       setValidation('Completa nombre, categoría y un precio válido mayor o igual a cero.')
       return
     }
+    setValidation(null)
     const completed = await onSave({
       kind: 'definition',
       ...(group ? { grupo_id: group.id } : {}),
@@ -40,7 +41,7 @@ export function GroupDefinitionDialog({ group, reference, saving, onClose, onSav
         <p className="helper-text">La propuesta no modifica el catálogo publicado. Se incorporará solo tras aprobarla y publicar una nueva versión.</p>
         <label>Nombre<input disabled={saving} onChange={(event) => setNombre(event.target.value)} required value={nombre} /></label>
         <label>Categoría<select disabled={saving} onChange={(event) => setCategoriaId(event.target.value)} required value={categoriaId}><option value="">Seleccionar…</option>{reference.categorias.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
-        <label>Precio<input disabled={saving} min="0" onChange={(event) => setPrecio(event.target.value)} required step="0.01" type="number" value={precio} /></label>
+        <label>Precio unitario<input disabled={saving} min="0" onChange={(event) => setPrecio(event.target.value)} required step="0.01" type="number" value={precio} /></label>
         {validation ? <div className="notice notice--error" role="alert">{validation}</div> : null}
         <div className="admin-report-filter-actions"><button className="button button--secondary" disabled={saving} onClick={onClose} type="button">Cancelar</button><button className="button" disabled={saving} type="submit">{saving ? <LoaderCircle className="icon-spin" size={17} /> : <Save size={17} />}{saving ? 'Guardando…' : 'Guardar propuesta'}</button></div>
       </form>

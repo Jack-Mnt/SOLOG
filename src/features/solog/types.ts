@@ -651,6 +651,8 @@ export interface SologGroupSummary {
   categoria_id: string
   categoria: string
   precio: number
+  unidades_por_paquete: number | null
+  precio_paquete: number | null
   activo: boolean
   tipo: 'Único' | 'Agrupado'
   sku_count: number
@@ -732,6 +734,21 @@ export interface SologGroupChangeResponse {
   grupo_id?: string
   c_interno?: number
   estado: 'pendiente'
+}
+
+export interface SologGroupValuationSavePayload {
+  grupo_id: string
+  unidades_por_paquete: number | null
+  precio_paquete: number | null
+}
+
+export interface SologGroupValuationSaveResponse {
+  ok: true
+  codigo: 'GROUP_VALUATION_SAVED'
+  grupo_id: string
+  unidades_por_paquete: number | null
+  precio_paquete: number | null
+  updated_at: string
 }
 
 export interface SologCatalogConflict {

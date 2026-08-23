@@ -40,6 +40,8 @@ import type {
   SologGroupProductsResponse,
   SologGroupChangePayload,
   SologGroupChangeResponse,
+  SologGroupValuationSavePayload,
+  SologGroupValuationSaveResponse,
   SologOperationalBootstrap,
   CatalogPublicationPreview,
   PublishCatalogResponse,
@@ -243,6 +245,10 @@ export function getAdminGroupProducts(filters: SologGroupProductsFilters = {}) {
 
 export function saveAdminGroupChange(input: SologGroupChangePayload) {
   return callSologRpc<SologGroupChangeResponse>('rpc_solog_admin', 'group_change_save', input)
+}
+
+export function saveAdminGroupValuation(input: SologGroupValuationSavePayload) {
+  return callSologRpc<SologGroupValuationSaveResponse>('rpc_solog_admin', 'group_valuation_save', input)
 }
 
 export async function publishCatalog(): Promise<PublishCatalogResponse> {

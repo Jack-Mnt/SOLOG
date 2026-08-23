@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getAdminGroups, getCatalogReference, saveAdminGroupChange } from '../../api'
+import { getAdminGroups, getCatalogReference, saveAdminGroupChange, saveAdminGroupValuation } from '../../api'
 import { getSologErrorMessageFromUnknown, isSologApiErrorCode } from '../../errors'
 import type {
   SologAdminGroupsFilters,
   SologAdminGroupsResponse,
   SologCatalogReference,
   SologGroupChangePayload,
+  SologGroupValuationSavePayload,
 } from '../../types'
 
 export const GROUPS_PAGE_SIZE = 50
@@ -39,6 +40,7 @@ export function useAdminGroups(refreshOperationalState: () => Promise<void>) {
   const [notice, setNotice] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [valuationError, setValuationError] = useState<string | null>(null)
   const request = useRef(0)
   const referenceRef = useRef<SologCatalogReference | null>(null)
   const saveInProgress = useRef(false)
@@ -97,6 +99,32 @@ export function useAdminGroups(refreshOperationalState: () => Promise<void>) {
     }
   }, [appliedFilters, load, offset, refreshOperationalState])
 
+  const saveValuation = useCallback(async (valuation: SologGroupValuationSavePayload) => {
+    if (saveInProgress.current) return false
+    saveInProgress.current = true
+    setSaving(true)
+    setValuationError(null)
+    setNotice(null)
+    try {
+      await saveAdminGroupValuation(valuation)
+      setNotice('La valorización del grupo se actualizó correctamente.')
+      await load(appliedFilters, offset)
+      return true
+    } catch (saveError) {
+      if (isSologApiErrorCode(saveError, 'SOLOG_GROUP_VALUATION_NOOP')) {
+        setNotice('La valorización del grupo ya estaba actualizada.')
+        await load(appliedFilters, offset)
+        return true
+      }
+      setValuationError(getSologErrorMessageFromUnknown(saveError))
+      if (isSologApiErrorCode(saveError, 'SOLOG_ADMIN_ROLE_REQUIRED')) await refreshOperationalState()
+      return false
+    } finally {
+      saveInProgress.current = false
+      setSaving(false)
+    }
+  }, [appliedFilters, load, offset, refreshOperationalState])
+
   const applyFilters = () => { setNotice(null); void load(draftFilters, 0) }
   const resetFilters = () => {
     const next = defaults()
@@ -106,8 +134,9 @@ export function useAdminGroups(refreshOperationalState: () => Promise<void>) {
   }
 
   return {
-    draftFilters, response, reference, status, error, notice, offset, saving,
-    setDraftFilters, applyFilters, resetFilters, save,
+    draftFilters, response, reference, status, error, notice, offset, saving, valuationError,
+    setDraftFilters, applyFilters, resetFilters, save, saveValuation,
+    clearValuationError: () => setValuationError(null),
     dismissNotice: () => setNotice(null),
     previousPage: () => void load(appliedFilters, Math.max(0, offset - GROUPS_PAGE_SIZE)),
     nextPage: () => void load(appliedFilters, offset + GROUPS_PAGE_SIZE),
