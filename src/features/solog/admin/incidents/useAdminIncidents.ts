@@ -82,7 +82,8 @@ export function useAdminIncidents({
   const [response, setResponse] =
     useState<SologAdminIncidentsResponse | null>(null)
   const [status, setStatus] = useState<LoadStatus>('loading')
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [page, setPage] = useState(() => ({ offset: 0, contextKey }))
   const [actingId, setActingId] = useState<string | null>(null)
@@ -94,13 +95,14 @@ export function useAdminIncidents({
     async (filters: AdminIncidentDraftFilters, nextOffset: number) => {
       const validationError = validateFilters(filters, sedeId)
       if (validationError) {
-        setError(validationError)
+        setLoadError(validationError)
         setStatus('error')
         return false
       }
       const currentRequest = ++requestVersion.current
       setStatus('loading')
-      setError(null)
+      setLoadError(null)
+      setActionError(null)
       try {
         const next = await getAdminIncidents(
           createPayload(filters, { sedeId, dateFrom, dateTo }, nextOffset),
@@ -111,7 +113,7 @@ export function useAdminIncidents({
         return true
       } catch (loadError) {
         if (currentRequest !== requestVersion.current) return false
-        setError(getSologErrorMessageFromUnknown(loadError))
+        setLoadError(getSologErrorMessageFromUnknown(loadError))
         setStatus('error')
         if (isSologApiErrorCode(loadError, 'SOLOG_ADMIN_ROLE_REQUIRED')) {
           await refreshOperationalState()
@@ -180,7 +182,7 @@ export function useAdminIncidents({
       if (actionInProgress.current) return false
       actionInProgress.current = true
       setActingId(payload.incident_id)
-      setError(null)
+      setActionError(null)
       setNotice(null)
       try {
         await applyAdminIncidentDecision(payload)
@@ -188,7 +190,7 @@ export function useAdminIncidents({
         await load(appliedFilters, effectiveOffset)
         return true
       } catch (actionError) {
-        setError(getSologErrorMessageFromUnknown(actionError))
+        setActionError(getSologErrorMessageFromUnknown(actionError))
         if (isSologApiErrorCode(actionError, 'SOLOG_ADMIN_ROLE_REQUIRED')) {
           await refreshOperationalState()
         }
@@ -205,7 +207,8 @@ export function useAdminIncidents({
     draftFilters,
     response,
     status,
-    error,
+    loadError,
+    actionError,
     notice,
     offset: effectiveOffset,
     actingId,

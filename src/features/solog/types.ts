@@ -460,7 +460,7 @@ export interface SologAdminIncidentsResponse {
 
 export interface SologAdminIncidentActionPayload {
   incident_id: string
-  decision: SologAdminIncidentDecision
+  action: SologAdminIncidentDecision
 }
 
 export interface SologAdminIncidentActionResponse {

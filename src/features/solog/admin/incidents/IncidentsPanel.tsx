@@ -48,7 +48,7 @@ export function IncidentsPanel({
     if (!selected || !window.confirm(DECISION_CONFIRMATIONS[decision])) return;
     const completed = await incidents.applyDecision({
       incident_id: selected.id,
-      decision,
+      action: decision,
     });
     if (completed) setSelected(null);
   };
@@ -93,10 +93,16 @@ export function IncidentsPanel({
           </button>
         </div>
       ) : null}
-      {incidents.error ? (
+      {incidents.loadError ? (
         <div className="notice notice--error" role="alert">
           <strong>No se pudieron cargar las incidencias</strong>
-          <p>{incidents.error}</p>
+          <p>{incidents.loadError}</p>
+        </div>
+      ) : null}
+      {incidents.actionError ? (
+        <div className="notice notice--error" role="alert">
+          <strong>No se pudo aplicar la acción</strong>
+          <p>{incidents.actionError}</p>
         </div>
       ) : null}
       {incidents.status === "loading" ? (

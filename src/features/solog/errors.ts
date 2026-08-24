@@ -55,6 +55,7 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_DETALLE_REQUIRED',
   'SOLOG_DETALLE_NOT_FOUND',
   'SOLOG_INVALID_INCIDENT_ACTION',
+  'SOLOG_INCIDENT_ACTION_NOT_ALLOWED',
   'SOLOG_INVALID_CATALOG_ACTION',
   'SOLOG_CATALOG_CHANGE_NOT_FOUND',
   'SOLOG_CATALOG_CONFLICT',
@@ -144,6 +145,8 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_DETALLE_REQUIRED: 'Selecciona una observación para ver su detalle.',
   SOLOG_DETALLE_NOT_FOUND: 'La observación ya no está disponible.',
   SOLOG_INVALID_INCIDENT_ACTION:
+    'La decisión seleccionada no es válida para esta incidencia.',
+  SOLOG_INCIDENT_ACTION_NOT_ALLOWED:
     'La decisión seleccionada no es válida para esta incidencia.',
   SOLOG_INVALID_CATALOG_ACTION:
     'La decisión seleccionada no es válida para este cambio de catálogo.',
