@@ -8,8 +8,7 @@ import type {
   SologCatalogReferenceCategory,
   SologControlPayload,
   SologControlResponse,
-  SologControlScope,
-  SologDifferenceState,
+  SologControlStateGroup,
 } from '../../types'
 import { useAdminOperationalContext } from '../AdminOperationalContext'
 
@@ -17,8 +16,7 @@ export const SOLOG_CONTROL_PAGE_SIZE = 50
 
 interface ControlQuery {
   contextKey: string
-  scope: SologControlScope
-  estado: '' | SologDifferenceState
+  group: SologControlStateGroup
   categoriaId: string
   search: string
   offset: number
@@ -36,12 +34,13 @@ export function useSologControl({
   const contextKey = `${operational.sedeId}:${operational.dateFrom}:${operational.dateTo}`
   const [query, setQuery] = useState<ControlQuery>(() => ({
     contextKey,
-    scope: 'resolver',
-    estado: '',
+    group: 'problematicos',
     categoriaId: '',
     search: '',
     offset: 0,
   }))
+  const [groupDraft, setGroupDraft] =
+    useState<SologControlStateGroup>('problematicos')
   const [searchDraft, setSearchDraft] = useState('')
   const [response, setResponse] = useState<SologControlResponse | null>(null)
   const [status, setStatus] = useState<LoadStatus>('loading')
@@ -68,8 +67,7 @@ export function useSologControl({
         sede_id: operational.sedeId,
         date_from: operational.dateFrom,
         date_to: operational.dateTo,
-        scope: nextQuery.scope,
-        ...(nextQuery.estado ? { estado: nextQuery.estado } : {}),
+        grupo_estado: nextQuery.group,
         ...(nextQuery.categoriaId ? { categoria_id: nextQuery.categoriaId } : {}),
         ...(nextQuery.search ? { search: nextQuery.search } : {}),
         limit: SOLOG_CONTROL_PAGE_SIZE,
@@ -114,23 +112,14 @@ export function useSologControl({
     }))
   }, [contextKey])
 
-  const selectScope = useCallback((scope: SologControlScope) => {
-    setQuery((current) => ({
-      ...current,
-      contextKey,
-      scope,
-      estado:
-        scope === 'resolver' &&
-        (current.estado === 'coincide' || current.estado === 'probablemente_explicada')
-          ? ''
-          : current.estado,
-      offset: 0,
-    }))
-  }, [contextKey])
+  const selectGroup = useCallback((group: SologControlStateGroup) => {
+    setGroupDraft(group)
+    patchQuery({ group })
+  }, [patchQuery])
 
-  const submitSearch = useCallback(() => {
-    patchQuery({ search: searchDraft.trim() })
-  }, [patchQuery, searchDraft])
+  const submitFilters = useCallback(() => {
+    patchQuery({ group: groupDraft, search: searchDraft.trim() })
+  }, [groupDraft, patchQuery, searchDraft])
 
   const loadCategories = useCallback(async () => {
     if (categoryRequest.current || categoryStatus === 'ready') return
@@ -157,6 +146,7 @@ export function useSologControl({
       dateFrom: operational.dateFrom,
       dateTo: operational.dateTo,
     },
+    groupDraft,
     searchDraft,
     response,
     status,
@@ -164,11 +154,11 @@ export function useSologControl({
     categories,
     categoryStatus,
     categoryError,
+    setGroupDraft,
     setSearchDraft,
-    selectScope,
-    selectState: (estado: '' | SologDifferenceState) => patchQuery({ estado }),
+    selectGroup,
     selectCategory: (categoriaId: string) => patchQuery({ categoriaId }),
-    submitSearch,
+    submitFilters,
     loadCategories,
     retry: () => void load({ ...query, contextKey, offset: effectiveOffset }),
     previousPage: () => setQuery((current) => ({

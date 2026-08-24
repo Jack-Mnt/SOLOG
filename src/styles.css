@@ -4376,7 +4376,6 @@ h1 {
 }
 
 .control-site-chips,
-.control-mode-switch,
 .control-detail-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -4384,7 +4383,6 @@ h1 {
 }
 
 .control-site-chips button,
-.control-mode-switch button,
 .control-detail-tabs button {
   min-height: 36px;
   padding: 7px 12px;
@@ -4403,31 +4401,16 @@ h1 {
 }
 
 .control-site-chips button:hover,
-.control-mode-switch button:hover,
 .control-detail-tabs button:hover {
   color: var(--color-primary);
   border-color: var(--color-primary);
 }
 
 .control-site-chips button.is-active,
-.control-mode-switch button.is-active,
 .control-detail-tabs button.is-active {
   color: var(--color-primary-contrast);
   border-color: transparent;
   background: var(--gradient-brand);
-}
-
-.control-mode-switch {
-  width: fit-content;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--color-surface-secondary);
-}
-
-.control-mode-switch button {
-  min-width: 116px;
-  border-color: transparent;
-  background: transparent;
 }
 
 .control-custom-period {
@@ -4447,7 +4430,7 @@ h1 {
 
 .control-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 7px;
 }
 
@@ -5110,14 +5093,8 @@ h1 {
     flex-wrap: wrap;
   }
 
-  .admin-view-toolbar > .control-mode-switch,
   .admin-view-actions {
     width: 100%;
-  }
-
-  .admin-view-toolbar > .control-mode-switch button {
-    min-width: 0;
-    flex: 1 1 0;
   }
 
   .admin-view-actions {

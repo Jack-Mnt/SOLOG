@@ -25,7 +25,13 @@ export type SologDifferenceState =
   | 'confirmada_reconteo'
   | 'conteos_inconsistentes'
 
-export type SologControlScope = 'resolver' | 'historial'
+export type SologControlStateGroup =
+  | 'problematicos'
+  | 'explicados'
+  | 'inconsistentes'
+  | 'pendientes'
+  | 'coinciden'
+  | 'todos'
 
 export interface SologUser {
   id: string
@@ -809,8 +815,7 @@ export interface SologControlPayload {
   sede_id: string
   date_from: string
   date_to: string
-  scope: SologControlScope
-  estado?: SologDifferenceState
+  grupo_estado?: SologControlStateGroup
   categoria_id?: string
   search?: string
   limit: number
@@ -819,14 +824,11 @@ export interface SologControlPayload {
 
 export interface SologControlSummary {
   total: number
-  coincide: number
-  pendientes: number
-  probablemente_explicadas: number
-  parcialmente_explicadas: number
-  persistentes: number
-  confirmadas_reconteo: number
+  problematicos: number
+  explicados: number
   inconsistentes: number
-  por_resolver: number
+  pendientes: number
+  coinciden: number
 }
 
 export interface SologControlRow {
@@ -861,7 +863,6 @@ export interface SologControlResponse {
   sede: string
   date_from: string
   date_to: string
-  scope: SologControlScope
   summary: SologControlSummary
   rows: SologControlRow[]
   total: number

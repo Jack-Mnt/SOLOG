@@ -11,6 +11,7 @@ import {
 import { getSologDifferenceStateLabel } from "../../labels";
 import type {
   SologControlRow,
+  SologControlStateGroup,
   SologDifferenceState,
 } from "../../types";
 import { formatAdminCurrency, formatSignedInteger } from "../format";
@@ -19,19 +20,17 @@ import { ControlDrawer } from "./ControlDrawer";
 import { SOLOG_CONTROL_PAGE_SIZE, useSologControl } from "./useSologControl";
 import { useSologControlExport } from "./useSologControlExport";
 
-const RESOLVER_STATES: SologDifferenceState[] = [
-  "pendiente",
-  "parcialmente_explicada",
-  "persistente",
-  "confirmada_reconteo",
-  "conteos_inconsistentes",
-];
+type SologControlKpiGroup = Exclude<SologControlStateGroup, "todos">;
 
-const HISTORY_STATES: SologDifferenceState[] = [
-  "coincide",
-  "pendiente",
-  "probablemente_explicada",
-  ...RESOLVER_STATES.slice(1),
+const CONTROL_STATE_GROUPS: Array<{
+  value: SologControlKpiGroup;
+  label: string;
+}> = [
+  { value: "problematicos", label: "Problemáticos" },
+  { value: "explicados", label: "Explicados" },
+  { value: "inconsistentes", label: "Inconsistentes" },
+  { value: "pendientes", label: "Pendientes" },
+  { value: "coinciden", label: "Coinciden" },
 ];
 
 function DifferenceBadge({ state }: { state: SologDifferenceState }) {
@@ -125,8 +124,7 @@ export function ControlPanel({
   const response = control.status === "error" ? null : control.response;
   const rows = response?.rows ?? [];
   const summary = response?.summary;
-  const stateOptions =
-    control.query.scope === "resolver" ? RESOLVER_STATES : HISTORY_STATES;
+
   const pageStart =
     response && response.total > 0 ? control.query.offset + 1 : 0;
   const pageEnd = response
@@ -135,7 +133,7 @@ export function ControlPanel({
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    control.submitSearch();
+    control.submitFilters();
   };
 
   return (
@@ -144,32 +142,6 @@ export function ControlPanel({
       aria-label="Bandeja de Control"
     >
       <div className="admin-view-toolbar">
-        <div
-          className="control-mode-switch"
-          role="group"
-          aria-label="Modo de Control"
-        >
-          <button
-            aria-pressed={control.query.scope === "resolver"}
-            className={
-              control.query.scope === "resolver" ? "is-active" : undefined
-            }
-            onClick={() => control.selectScope("resolver")}
-            type="button"
-          >
-            Por resolver
-          </button>
-          <button
-            aria-pressed={control.query.scope === "historial"}
-            className={
-              control.query.scope === "historial" ? "is-active" : undefined
-            }
-            onClick={() => control.selectScope("historial")}
-            type="button"
-          >
-            Historial
-          </button>
-        </div>
         <div className="admin-view-actions">
           <button
             className="button button--secondary control-export-button"
@@ -193,59 +165,37 @@ export function ControlPanel({
         </div>
       </div>
 
-      {control.query.scope === "resolver" && summary ? (
-        <div className="control-summary" aria-label="Resumen por estado">
-          {(
-            [
-              ["pendiente", "Pendientes", summary.pendientes],
-              ["persistente", "Persistentes", summary.persistentes],
-              [
-                "parcialmente_explicada",
-                "Parcialmente explicadas",
-                summary.parcialmente_explicadas,
-              ],
-              [
-                "conteos_inconsistentes",
-                "Inconsistentes",
-                summary.inconsistentes,
-              ],
-            ] as const
-          ).map(([state, label, value]) => (
+      {summary ? (
+        <div className="control-summary" aria-label="Resumen por grupo de estado">
+          {CONTROL_STATE_GROUPS.map(({ value: group, label }) => (
             <button
-              aria-pressed={control.query.estado === state}
-              className={
-                control.query.estado === state ? "is-active" : undefined
-              }
-              key={state}
-              onClick={() =>
-                control.selectState(control.query.estado === state ? "" : state)
-              }
+              aria-pressed={control.query.group === group}
+              className={control.query.group === group ? "is-active" : undefined}
+              key={group}
+              onClick={() => control.selectGroup(group)}
               type="button"
             >
               <span>{label}</span>
-              <strong>{value}</strong>
+              <strong>{summary[group]}</strong>
             </button>
           ))}
         </div>
       ) : null}
-
       <div className="control-toolbar admin-filter-bar">
         <label className="admin-filter-field admin-filter-field--select">
           Estado
           <select
             onChange={(event) =>
-              control.selectState(
-                event.target.value as "" | SologDifferenceState,
-              )
+              control.setGroupDraft(event.target.value as SologControlStateGroup)
             }
-            value={control.query.estado}
+            value={control.groupDraft}
           >
-            <option value="">Todos los estados</option>
-            {stateOptions.map((state) => (
-              <option key={state} value={state}>
-                {getSologDifferenceStateLabel(state)}
+            {CONTROL_STATE_GROUPS.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
               </option>
             ))}
+            <option value="todos">Todos</option>
           </select>
         </label>
         <label className="admin-filter-field admin-filter-field--select">
