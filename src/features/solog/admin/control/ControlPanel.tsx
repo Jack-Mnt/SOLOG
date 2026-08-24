@@ -143,31 +143,54 @@ export function ControlPanel({
       className="content-section admin-module control-workbench"
       aria-label="Bandeja de Control"
     >
-      <div
-        className="control-mode-switch"
-        role="group"
-        aria-label="Modo de Control"
-      >
-        <button
-          aria-pressed={control.query.scope === "resolver"}
-          className={
-            control.query.scope === "resolver" ? "is-active" : undefined
-          }
-          onClick={() => control.selectScope("resolver")}
-          type="button"
+      <div className="admin-view-toolbar">
+        <div
+          className="control-mode-switch"
+          role="group"
+          aria-label="Modo de Control"
         >
-          Por resolver
-        </button>
-        <button
-          aria-pressed={control.query.scope === "historial"}
-          className={
-            control.query.scope === "historial" ? "is-active" : undefined
-          }
-          onClick={() => control.selectScope("historial")}
-          type="button"
-        >
-          Historial
-        </button>
+          <button
+            aria-pressed={control.query.scope === "resolver"}
+            className={
+              control.query.scope === "resolver" ? "is-active" : undefined
+            }
+            onClick={() => control.selectScope("resolver")}
+            type="button"
+          >
+            Por resolver
+          </button>
+          <button
+            aria-pressed={control.query.scope === "historial"}
+            className={
+              control.query.scope === "historial" ? "is-active" : undefined
+            }
+            onClick={() => control.selectScope("historial")}
+            type="button"
+          >
+            Historial
+          </button>
+        </div>
+        <div className="admin-view-actions">
+          <button
+            className="button button--secondary control-export-button"
+            disabled={exportControl.exporting || !control.query.sedeId}
+            onClick={() =>
+              void exportControl.exportExcel({
+                sede_id: control.query.sedeId,
+                date_from: control.query.dateFrom,
+                date_to: control.query.dateTo,
+              })
+            }
+            type="button"
+          >
+            {exportControl.exporting ? (
+              <LoaderCircle aria-hidden="true" className="icon-spin" size={17} />
+            ) : (
+              <FileSpreadsheet aria-hidden="true" size={17} />
+            )}
+            {exportControl.exporting ? "Generando Excel…" : "Exportar Excel"}
+          </button>
+        </div>
       </div>
 
       {control.query.scope === "resolver" && summary ? (
@@ -206,8 +229,8 @@ export function ControlPanel({
         </div>
       ) : null}
 
-      <div className="control-toolbar">
-        <label>
+      <div className="control-toolbar admin-filter-bar">
+        <label className="admin-filter-field admin-filter-field--select">
           Estado
           <select
             onChange={(event) =>
@@ -225,7 +248,7 @@ export function ControlPanel({
             ))}
           </select>
         </label>
-        <label>
+        <label className="admin-filter-field admin-filter-field--select">
           Categoría
           <select
             onFocus={() => void control.loadCategories()}
@@ -248,10 +271,13 @@ export function ControlPanel({
             </small>
           ) : null}
         </label>
-        <form className="control-search" onSubmit={handleSearch}>
-          <label>
+        <form
+          className="control-search admin-filter-inline-form"
+          onSubmit={handleSearch}
+        >
+          <label className="admin-filter-field admin-filter-search-field">
             Búsqueda
-            <div>
+            <div className="admin-filter-search-control">
               <Search aria-hidden="true" size={17} />
               <input
                 autoComplete="off"
@@ -262,29 +288,10 @@ export function ControlPanel({
               />
             </div>
           </label>
-          <button className="button button--secondary" type="submit">
-            Buscar
+          <button className="button admin-filter-apply" type="submit">
+            Aplicar
           </button>
         </form>
-        <button
-          className="button button--secondary control-export-button"
-          disabled={exportControl.exporting || !control.query.sedeId}
-          onClick={() =>
-            void exportControl.exportExcel({
-              sede_id: control.query.sedeId,
-              date_from: control.query.dateFrom,
-              date_to: control.query.dateTo,
-            })
-          }
-          type="button"
-        >
-          {exportControl.exporting ? (
-            <LoaderCircle aria-hidden="true" className="icon-spin" size={17} />
-          ) : (
-            <FileSpreadsheet aria-hidden="true" size={17} />
-          )}
-          {exportControl.exporting ? "Generando Excel…" : "Exportar Excel"}
-        </button>
       </div>
 
       {exportControl.notice ? (

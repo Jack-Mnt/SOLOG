@@ -8,12 +8,11 @@ import {
   PanelLeftOpen,
   ScanSearch,
   Tablet,
-  TabletSmartphone,
   TriangleAlert,
   UserRound,
   type LucideIcon,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PaletteSwitcher } from "../../theme/PaletteSwitcher";
 import { navigateTo, type AdminRoute, usePathname } from "../../../lib/router";
 import { useSolog } from "../SologContext";
@@ -124,6 +123,7 @@ export function AdminLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     getInitialSidebarState,
   );
+  const workspaceMainRef = useRef<HTMLElement>(null);
   const hasAdminRole =
     bootstrap.usuario.rol === "admin" || bootstrap.usuario.rol === "moderador";
   const admin = useAdminSolog({
@@ -132,6 +132,28 @@ export function AdminLayout({
   });
   const userName = admin.bootstrap?.usuario.nombre ?? bootstrap.usuario.nombre;
   const userRole = admin.bootstrap?.usuario.rol ?? bootstrap.usuario.rol;
+
+  useEffect(() => {
+    const workspaceMain = workspaceMainRef.current;
+    const header = workspaceMain?.querySelector<HTMLElement>(".admin-header");
+    if (!workspaceMain || !header) return;
+
+    const updateHeaderOffset = () => {
+      workspaceMain.style.setProperty(
+        "--admin-header-offset",
+        `${header.getBoundingClientRect().height}px`,
+      );
+    };
+
+    updateHeaderOffset();
+    const observer = new ResizeObserver(updateHeaderOffset);
+    observer.observe(header);
+
+    return () => {
+      observer.disconnect();
+      workspaceMain.style.removeProperty("--admin-header-offset");
+    };
+  }, []);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((current) => {
@@ -260,6 +282,7 @@ export function AdminLayout({
         <section
           className="admin-workspace__main"
           aria-label="Área administrativa"
+          ref={workspaceMainRef}
         >
           <AdminOperationalHeader />
 

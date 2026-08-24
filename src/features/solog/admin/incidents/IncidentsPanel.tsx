@@ -2,7 +2,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ChevronRight,
-  TriangleAlert,
 } from "lucide-react";
 import { useState } from "react";
 import { getSologAdminIncidentTypeLabel } from "../../labels";
@@ -55,25 +54,7 @@ export function IncidentsPanel({
   };
 
   return (
-    <section
-      className="content-section admin-module incidents-workbench"
-      aria-labelledby="incidents-title"
-    >
-      <div className="section-heading">
-        <div>
-          <div className="section-title-row">
-            <span className="section-icon">
-              <TriangleAlert size={20} />
-            </span>
-            <h2 id="incidents-title">Incidencias</h2>
-          </div>
-          <p>
-            Problemas operativos detectados por ConeXion que requieren revisión
-            administrativa.
-          </p>
-        </div>
-      </div>
-
+    <div className="content-section admin-module incidents-workbench">
       <div
         className="incidents-state-chips"
         aria-label="Filtrar por estado"
@@ -221,6 +202,6 @@ export function IncidentsPanel({
           onDecision={(decision) => void handleDecision(decision)}
         />
       ) : null}
-    </section>
+    </div>
   );
 }

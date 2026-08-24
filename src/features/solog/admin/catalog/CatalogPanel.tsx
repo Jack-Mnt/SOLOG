@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   ArrowRight,
-  BookOpenCheck,
   ChevronRight,
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
@@ -202,14 +201,7 @@ export function CatalogPanel({
   const displayCurrentVersion = publication.publishedVersion ?? catalogStatusData?.version_actual ?? null
 
   return (
-    <section className="content-section admin-module catalog-workbench" aria-labelledby="catalog-title">
-      <div className="section-heading">
-        <div>
-          <div className="section-title-row"><span className="section-icon"><BookOpenCheck size={20} /></span><h2 id="catalog-title">Catálogo</h2></div>
-          <p>Revisa, decide y publica los cambios detectados para la siguiente versión.</p>
-        </div>
-      </div>
-
+    <div className="content-section admin-module catalog-workbench">
       <div className="catalog-state-chips" role="tablist" aria-label="Estado de cambios de catálogo">
         {STATUS_TABS.map((status) => (
           <button aria-selected={catalog.draftFilters.estado === status} className={catalog.draftFilters.estado === status ? 'is-active' : undefined} disabled={catalog.status === 'loading'} key={status} onClick={() => catalog.selectStatus(status)} role="tab" type="button">
@@ -261,6 +253,6 @@ export function CatalogPanel({
       {selected ? <CatalogChangeDetail acting={catalog.actingFingerprint === selected.propuesta_fingerprint} change={selected} onApprove={() => void approveChange(selected)} onClose={() => setSelected(null)} onIgnore={() => void ignoreChange(selected)} onWithdraw={() => void withdrawChange(selected)} reference={catalog.reference} /> : null}
       {configuring ? <NewProductApprovalForm change={configuring} key={configuring.propuesta_fingerprint} onClose={() => setConfiguring(null)} onLoadReference={() => void catalog.loadReference()} onSubmit={(config) => void approveNewProduct(configuring, config)} reference={catalog.reference} referenceError={catalog.referenceError} referenceStatus={catalog.referenceStatus} submitting={catalog.actingFingerprint === configuring.propuesta_fingerprint} /> : null}
       {publication.status !== 'idle' ? <CatalogPublicationDialog conflicts={publication.conflicts} error={publication.error} onClose={publication.resetDialog} onPrepare={() => void publication.prepare()} onPublish={() => void publication.publish()} onViewRelated={viewRelatedChanges} preview={publication.preview} status={publication.status} validationErrors={publication.validationErrors} /> : null}
-    </section>
+    </div>
   )
 }
