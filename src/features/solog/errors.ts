@@ -44,10 +44,6 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_RECOUNT_NOT_AVAILABLE',
   'SOLOG_RECOUNT_NOT_ELIGIBLE',
   'SOLOG_RECOUNT_ALREADY_DONE',
-  'SOLOG_REPORT_TYPE_REQUIRED',
-  'SOLOG_INVALID_REPORT_FILTER',
-  'SOLOG_INVALID_DATE_RANGE',
-  'SOLOG_INVALID_REPORT_TYPE',
   'SOLOG_SEDE_REQUIRED',
   'SOLOG_SEDE_NOT_FOUND',
   'SOLOG_INVALID_CONTROL_FILTER',
@@ -136,12 +132,6 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
     'El dispositivo ya no puede revocarse. Se actualizará la administración.',
   SOLOG_ADMIN_ROLE_REQUIRED:
     'Tu usuario ya no tiene permisos para administrar SOLOG.',
-  SOLOG_REPORT_TYPE_REQUIRED: 'Selecciona un reporte para continuar.',
-  SOLOG_INVALID_REPORT_FILTER:
-    'Uno o más filtros del reporte no son válidos.',
-  SOLOG_INVALID_DATE_RANGE:
-    'El rango de fechas no es válido. Revisa Desde y Hasta.',
-  SOLOG_INVALID_REPORT_TYPE: 'El reporte seleccionado no está disponible.',
   SOLOG_SEDE_REQUIRED: 'Selecciona una sede para consultar Control.',
   SOLOG_SEDE_NOT_FOUND: 'La sede seleccionada ya no está disponible.',
   SOLOG_INVALID_CONTROL_FILTER: 'Uno o más filtros de Control no son válidos.',

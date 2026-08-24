@@ -25,18 +25,7 @@ export type SologDifferenceState =
   | 'confirmada_reconteo'
   | 'conteos_inconsistentes'
 
-export type SologAdminReportType =
-  'counts'
-  | 'pos_adjustments'
-
 export type SologControlScope = 'resolver' | 'historial'
-
-export type SologAdminCountState = SologSessionState
-export type SologAdminPosAdjustmentState =
-  | 'parcialmente_explicada'
-  | 'persistente'
-  | 'confirmada_reconteo'
-  | 'conteos_inconsistentes'
 
 export interface SologUser {
   id: string
@@ -815,90 +804,6 @@ export interface SologRevokeDeviceResponse {
   device_id: string
   sede_id: string
 }
-
-export interface SologAdminReportFilters {
-  sede_id?: string
-  date_from: string
-  date_to: string
-}
-
-export type SologAdminReportPayload =
-  | (SologAdminReportFilters & {
-      report_type: 'counts'
-      estado?: SologAdminCountState
-      limit: number
-      offset: number
-    })
-  | (SologAdminReportFilters & {
-      report_type: 'pos_adjustments'
-      estado?: SologAdminPosAdjustmentState
-      c_interno?: number
-      limit: number
-      offset: number
-    })
-
-export interface SologAdminCountRow {
-  conteo_id: string
-  sede_id: string
-  sede: string
-  usuario_id: string
-  usuario: string
-  estado: SologAdminCountState
-  iniciado_at: string
-  expira_at: string
-  finalizado_at: string | null
-  snapshot_referencia_id: string
-  grupos_registrados: number
-}
-
-export interface SologAdminObservationRow<
-  TState extends SologDifferenceState = SologDifferenceState,
-> {
-  id: string
-  conteo_id: string
-  grupo_id: string
-  grupo: string
-  categoria_id: string
-  categoria: string
-  sede_id: string
-  sede: string
-  usuario_id: string
-  usuario: string
-  stock_teorico: number
-  stock_fisico: number
-  diferencia: number
-  precio: number
-  valor_diferencia: number
-  estado_diferencia: TState
-  contado_at: string
-  snapshot_referencia_id: string
-  snapshot_posterior_id: string | null
-  stock_posterior: number | null
-  reconteo_stock: number | null
-  recontado_at: string | null
-  sku_count: number
-  sku_unico: number | null
-}
-
-export type SologAdminPosAdjustmentRow = SologAdminObservationRow<SologAdminPosAdjustmentState>
-
-export interface SologAdminCountsResponse {
-  report_type: 'counts'
-  limit: number
-  offset: number
-  rows: SologAdminCountRow[]
-}
-
-export interface SologAdminPosAdjustmentsResponse {
-  report_type: 'pos_adjustments'
-  limit?: number
-  offset?: number
-  rows: SologAdminPosAdjustmentRow[]
-}
-
-export type SologAdminReportResponse =
-  | SologAdminCountsResponse
-  | SologAdminPosAdjustmentsResponse
 
 export interface SologControlPayload {
   sede_id: string

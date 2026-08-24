@@ -40,4 +40,4 @@ bun run build
 
 El proyecto no define actualmente un script automatizado de tests.
 
-El área `/admin` conserva resumen, dispositivos y los cinco reportes: resumen por período, conteos, diferencias, historial y apoyo para ajuste POS. Ajuste POS es informativo; SOLOG no modifica el POS ni distribuye diferencias entre SKU.
+El área `/admin` organiza Dashboard, Control, Incidencias, Catálogo, Grupos y Dispositivos. Control concentra la trazabilidad y permite exportar el Excel administrativo de ajustes; SOLOG no modifica directamente el POS ni distribuye diferencias entre trabajadores.

@@ -10,7 +10,6 @@ import {
   type AdminRoute,
   usePathname,
 } from './lib/router'
-import { AdminPosAdjustmentsPage } from './pages/admin.ajuste-pos'
 import { AdminDevicesPage } from './pages/admin.dispositivos'
 import { AdminDashboardPage } from './pages/admin'
 import { CountPage } from './pages/CountPage'
@@ -48,8 +47,6 @@ function getAdminPage(route: AdminRoute): ReactNode {
       return <AdminDashboardPage />
     case '/admin/control':
       return <AdminControlPage />
-    case '/admin/ajuste-pos':
-      return <AdminPosAdjustmentsPage />
     case '/admin/incidencias':
       return <AdminIncidentsPage />
     case '/admin/catalogo':

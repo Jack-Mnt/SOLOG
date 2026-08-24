@@ -11,8 +11,6 @@ import type {
   SologAdminIncidentActionResponse,
   SologAdminIncidentsFilters,
   SologAdminIncidentsResponse,
-  SologAdminReportPayload,
-  SologAdminReportResponse,
   SologDashboardResponse,
   SologDashboardSiteActivityResponse,
   SologAuthorizeDeviceResponse,
@@ -156,10 +154,6 @@ export function revokeSologDevice(deviceId: string) {
   return callSologRpc<SologRevokeDeviceResponse>('rpc_solog_admin', 'revoke_device', {
     device_id: deviceId,
   })
-}
-
-export function getSologAdminReport(input: SologAdminReportPayload) {
-  return callSologRpc<SologAdminReportResponse>('rpc_solog_admin', 'report', input)
 }
 
 export function getSologControl(input: SologControlPayload) {

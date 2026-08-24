@@ -13,11 +13,7 @@ const HEADER_BACKGROUND = "#E2E8F0";
 const HEADER_TEXT = "#0F172A";
 const TITLE_BACKGROUND = "#0F172A";
 const TITLE_TEXT = "#FFFFFF";
-const formatMoney = (value: number) =>
-  `S/ ${value.toLocaleString("es-PE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -92,6 +88,12 @@ function getStateLabel(state: SologControlExportRow["estado"]): string {
   return state === "persistente" ? "Persistente" : "Confirmada por reconteo";
 }
 
+function getBalanceInterpretation(balance: number): string {
+  if (balance > 0) return "Faltante neto";
+  if (balance < 0) return "Sobrante neto";
+  return "Sin diferencia neta";
+}
+
 function getSummaryData(response: SologControlExportResponse): SheetData {
   return [
     [
@@ -142,7 +144,7 @@ function getSummaryData(response: SologControlExportResponse): SheetData {
       {
         value: response.balance,
         type: Number,
-        format: MONEY_MAGNITUDE_FORMAT,
+        format: MONEY_FORMAT,
         backgroundColor:
           response.balance > 0
             ? "#FEE2E2"
@@ -159,14 +161,9 @@ function getSummaryData(response: SologControlExportResponse): SheetData {
       },
     ],
     [
-      {},
+      { value: "Interpretación", fontWeight: "bold" },
       {
-        value:
-          response.balance > 0
-            ? `${formatMoney(response.balance)} de descuento a los colaboradores.`
-            : response.balance < 0
-              ? `${formatMoney(response.balance * -1)} a favor de los colaboradores.`
-              : "No existe saldo a favor ni descuento para los colaboradores.",
+        value: getBalanceInterpretation(response.balance),
         textColor: "#475569",
         align: "right",
         wrap: true,
@@ -175,7 +172,8 @@ function getSummaryData(response: SologControlExportResponse): SheetData {
     [
       {},
       {
-        value: "El balance corresponde a faltantes menos sobrantes.",
+        value:
+          "El balance corresponde a faltantes menos sobrantes. SOLOG calcula el monto total de la sede y no distribuye descuentos entre trabajadores.",
         fontStyle: "italic",
         textColor: "#475569",
         wrap: true,

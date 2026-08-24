@@ -382,7 +382,7 @@ export function ControlPanel({
           ) : (
             <FileSpreadsheet aria-hidden="true" size={17} />
           )}
-          {exportControl.exporting ? "Generando Excel…" : "Descargar"}
+          {exportControl.exporting ? "Generando Excel…" : "Exportar Excel"}
         </button>
       </div>
 

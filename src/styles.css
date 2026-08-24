@@ -843,8 +843,7 @@ h1 {
 }
 
 .count-form label,
-.login-form label,
-.admin-report-filters label {
+.login-form label {
   color: var(--color-text-secondary);
   font-size: 0.82rem;
   font-weight: 600;
@@ -857,9 +856,7 @@ h1 {
 }
 
 .count-form input,
-.login-form input,
-.admin-report-filters input,
-.admin-report-filters select {
+.login-form input {
   width: 100%;
   min-height: 48px;
   padding: 10px 12px;
@@ -878,9 +875,7 @@ h1 {
 }
 
 .count-form input:focus,
-.login-form input:focus,
-.admin-report-filters input:focus,
-.admin-report-filters select:focus {
+.login-form input:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px
     color-mix(in srgb, var(--color-primary) 10%, transparent);
@@ -2112,15 +2107,13 @@ h1 {
 }
 
 .admin-site-list,
-.admin-pending-list,
-.admin-pos-list {
+.admin-pending-list {
   display: grid;
   gap: 10px;
 }
 
 .admin-site-card,
-.admin-pending-card,
-.admin-pos-card {
+.admin-pending-card {
   padding: 13px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
@@ -2129,8 +2122,7 @@ h1 {
 }
 
 .admin-site-card__heading,
-.admin-pending-card,
-.admin-pos-heading {
+.admin-pending-card {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -2139,25 +2131,17 @@ h1 {
 
 .admin-site-card h3,
 .admin-site-card__heading p,
-.admin-pending-card h3,
-.admin-pos-heading h3,
-.admin-pos-heading p,
-.admin-pos-heading span,
-.admin-pos-identity p {
+.admin-pending-card h3 {
   margin: 0;
 }
 
 .admin-site-card h3,
-.admin-pending-card h3,
-.admin-pos-heading h3 {
+.admin-pending-card h3 {
   color: var(--color-text-primary);
   font-size: 0.94rem;
 }
 
-.admin-site-card__heading p,
-.admin-pos-heading p,
-.admin-pos-heading div > span,
-.admin-pos-identity p {
+.admin-site-card__heading p {
   margin-top: 3px;
   color: var(--color-text-secondary);
   font-size: 0.76rem;
@@ -2182,8 +2166,7 @@ h1 {
 }
 
 .admin-site-grid span,
-.admin-device-details dt,
-.admin-pos-metrics dt {
+.admin-device-details dt {
   color: var(--color-text-secondary);
   font-size: 0.7rem;
 }
@@ -2460,73 +2443,11 @@ h1 {
   }
 }
 
-.admin-report-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  width: fit-content;
-  margin-bottom: 10px;
-  padding: 5px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface-secondary);
-}
-
-.admin-report-tabs .admin-tab:hover,
-.admin-report-tabs .admin-tab--active {
-  color: var(--color-primary);
-  border-color: var(--color-border);
-  background: var(--color-surface);
-}
-
-.admin-report-filters {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(110px, 1fr));
-  gap: 8px;
-  align-items: end;
-  margin-bottom: 12px;
-  padding: 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface-secondary);
-}
-
-.admin-report-filters label {
-  display: grid;
-  gap: 5px;
-  font-size: 0.72rem;
-}
-
-.admin-report-filters input,
-.admin-report-filters select {
-  min-height: 38px;
-  padding: 7px 9px;
-  border-radius: 9px;
-  font-size: 0.78rem;
-}
-
 .admin-report-filter-actions,
 .admin-report-pagination {
   display: flex;
   align-items: center;
   gap: 7px;
-}
-
-.admin-pos-metrics {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  margin: 10px 0 0;
-}
-
-.admin-pos-metrics {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-.admin-pos-metrics dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-  font-size: 0.78rem;
-  font-weight: 700;
 }
 
 .admin-report-table-wrap {
@@ -2586,15 +2507,6 @@ h1 {
   font-size: 0.76rem;
   font-weight: 600;
 }
-.admin-report-context {
-  margin-bottom: 10px;
-}
-.admin-pos-identity {
-  margin-top: 9px;
-  padding: 8px;
-  border-radius: 8px;
-  background: var(--color-surface-secondary);
-}
 .admin-device-action {
   width: fit-content;
   margin-top: 5px;
@@ -2602,44 +2514,6 @@ h1 {
 
 .admin-module {
   min-width: 0;
-}
-
-.admin-module-counts {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.admin-module-counts--five {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.admin-module-counts article {
-  display: grid;
-  gap: 4px;
-  padding: 11px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface-secondary);
-}
-
-.admin-module-counts span {
-  color: var(--color-text-secondary);
-  font-size: 0.7rem;
-}
-
-.admin-module-counts strong {
-  font-size: 1.2rem;
-}
-
-.admin-module-counts .admin-count-card--urgent {
-  border-color: color-mix(
-    in srgb,
-    var(--color-danger) 36%,
-    var(--color-border)
-  );
-  background: color-mix(in srgb, var(--color-danger) 7%, var(--color-surface));
 }
 
 .admin-module-filters {
@@ -4638,13 +4512,6 @@ h1 {
   .admin-site-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .admin-report-filters {
-    grid-template-columns: repeat(3, minmax(110px, 1fr));
-  }
-  .admin-module-counts,
-  .admin-module-counts--five {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
   .admin-module-filters,
   .admin-module-filters--catalog {
     grid-template-columns: repeat(3, minmax(110px, 1fr));
@@ -4757,9 +4624,6 @@ h1 {
   .finish-bar .button {
     width: 100%;
   }
-  .admin-report-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .incidents-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4780,14 +4644,9 @@ h1 {
   }
   .admin-module-filters,
   .admin-module-filters--catalog,
-  .admin-module-counts,
-  .admin-module-counts--five,
   .admin-detail-grid,
   .admin-detected-product {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .admin-pos-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .admin-dialog__footer {
     flex-wrap: wrap;
@@ -4813,9 +4672,7 @@ h1 {
   .status-grid,
   .status-grid--four,
   .count-summary,
-  .admin-site-grid,
-  .admin-report-filters,
-  .admin-pos-metrics {
+  .admin-site-grid {
     grid-template-columns: 1fr;
   }
   .incidents-filters,
@@ -4841,8 +4698,6 @@ h1 {
   }
   .admin-module-filters,
   .admin-module-filters--catalog,
-  .admin-module-counts,
-  .admin-module-counts--five,
   .admin-detail-grid,
   .admin-detected-product,
   .admin-new-product-form {
@@ -4906,12 +4761,6 @@ h1 {
   .admin-dashboard-search {
     min-width: 0;
     width: 100%;
-  }
-  .admin-report-tabs {
-    width: 100%;
-  }
-  .admin-report-tabs .admin-tab {
-    flex: 1 1 45%;
   }
   .admin-report-filter-actions,
   .admin-report-pagination {

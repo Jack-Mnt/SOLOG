@@ -6,7 +6,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ScanSearch,
-  SlidersHorizontal,
   TabletSmartphone,
   TriangleAlert,
   UserRound,
@@ -39,12 +38,6 @@ const ADMIN_NAVIGATION: Array<{
     label: "Control",
     description: "Seguimiento y trazabilidad del inventario",
     icon: ScanSearch,
-  },
-  {
-    route: "/admin/ajuste-pos",
-    label: "Ajuste POS",
-    description: "Ajustes operativos del punto de venta",
-    icon: SlidersHorizontal,
   },
   {
     route: "/admin/incidencias",
