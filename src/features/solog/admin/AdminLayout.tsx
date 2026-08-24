@@ -1,11 +1,13 @@
 import {
   BookOpenCheck,
   Boxes,
+  Layers,
   LayoutDashboard,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
   ScanSearch,
+  Tablet,
   TabletSmartphone,
   TriangleAlert,
   UserRound,
@@ -17,6 +19,8 @@ import { navigateTo, type AdminRoute, usePathname } from "../../../lib/router";
 import { useSolog } from "../SologContext";
 import type { SologOperationalBootstrap } from "../types";
 import { AdminLayoutContext } from "./AdminLayoutContext";
+import { AdminOperationalHeader } from "./AdminOperationalHeader";
+import { AdminOperationalProvider } from "./AdminOperationalProvider";
 import { useAdminSolog } from "./useAdminSolog";
 
 const SIDEBAR_STORAGE_KEY = "solog:admin-sidebar-collapsed";
@@ -26,44 +30,77 @@ const ADMIN_NAVIGATION: Array<{
   label: string;
   description: string;
   icon: LucideIcon;
+  group: "dashboard" | "operation" | "administration";
 }> = [
   {
     route: "/admin",
     label: "Dashboard",
     description: "Visión general de la operación",
     icon: LayoutDashboard,
+    group: "dashboard",
   },
   {
     route: "/admin/control",
     label: "Control",
     description: "Seguimiento y trazabilidad del inventario",
     icon: ScanSearch,
+    group: "operation",
   },
   {
     route: "/admin/incidencias",
     label: "Incidencias",
     description: "Eventos operativos que requieren revisión",
     icon: TriangleAlert,
+    group: "operation",
   },
   {
     route: "/admin/catalogo",
     label: "Catálogo",
     description: "Cambios y versiones del catálogo",
     icon: BookOpenCheck,
+    group: "administration",
   },
   {
     route: "/admin/grupos",
     label: "Grupos",
-    description: "Estructura futura de grupos de conteo",
-    icon: Boxes,
+    description: "Estructura y valorización de grupos de conteo",
+    icon: Layers,
+    group: "administration",
   },
   {
     route: "/admin/dispositivos",
     label: "Dispositivos",
     description: "Tablets autorizadas y solicitudes",
-    icon: TabletSmartphone,
+    icon: Tablet,
+    group: "administration",
   },
 ];
+
+function AdminNavigationItem({
+  collapsed,
+  item,
+  pathname,
+}: {
+  collapsed: boolean;
+  item: (typeof ADMIN_NAVIGATION)[number];
+  pathname: string;
+}) {
+  const ItemIcon = item.icon;
+  const active = pathname === item.route;
+  return (
+    <button
+      aria-current={active ? "page" : undefined}
+      aria-label={collapsed ? item.label : undefined}
+      className={`admin-tab${active ? " admin-tab--active" : ""}`}
+      onClick={() => navigateTo(item.route)}
+      title={collapsed ? item.label : undefined}
+      type="button"
+    >
+      <ItemIcon aria-hidden="true" size={20} />
+      <span>{item.label}</span>
+    </button>
+  );
+}
 
 function getInitialSidebarState(): boolean {
   try {
@@ -87,9 +124,6 @@ export function AdminLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     getInitialSidebarState,
   );
-  const currentModule =
-    ADMIN_NAVIGATION.find((item) => item.route === pathname) ??
-    ADMIN_NAVIGATION[0];
   const hasAdminRole =
     bootstrap.usuario.rol === "admin" || bootstrap.usuario.rol === "moderador";
   const admin = useAdminSolog({
@@ -152,6 +186,7 @@ export function AdminLayout({
               </span>
               <span className="admin-sidebar__account-copy">
                 <strong>{userName}</strong>
+                <small>{userRole}</small>
               </span>
               <button
                 aria-label="Cerrar sesión"
@@ -166,24 +201,37 @@ export function AdminLayout({
           )}
         </div>
         <nav className="admin-main-tabs" aria-label="Módulos administrativos">
-          {ADMIN_NAVIGATION.map((item) => {
-            const ItemIcon = item.icon;
-            const active = pathname === item.route;
-            return (
-              <button
-                aria-current={active ? "page" : undefined}
-                aria-label={sidebarCollapsed ? item.label : undefined}
-                className={`admin-tab${active ? " admin-tab--active" : ""}`}
+          <AdminNavigationItem
+            collapsed={sidebarCollapsed}
+            item={ADMIN_NAVIGATION[0]}
+            pathname={pathname}
+          />
+          <div className="admin-main-tabs__group">
+            <span className="admin-main-tabs__label">Operación</span>
+            {ADMIN_NAVIGATION.filter((item) => item.group === "operation").map(
+              (item) => (
+                <AdminNavigationItem
+                  collapsed={sidebarCollapsed}
+                  item={item}
+                  key={item.route}
+                  pathname={pathname}
+                />
+              ),
+            )}
+          </div>
+          <div className="admin-main-tabs__group">
+            <span className="admin-main-tabs__label">Administración</span>
+            {ADMIN_NAVIGATION.filter(
+              (item) => item.group === "administration",
+            ).map((item) => (
+              <AdminNavigationItem
+                collapsed={sidebarCollapsed}
+                item={item}
                 key={item.route}
-                onClick={() => navigateTo(item.route)}
-                title={sidebarCollapsed ? item.label : undefined}
-                type="button"
-              >
-                <ItemIcon aria-hidden="true" size={20} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+                pathname={pathname}
+              />
+            ))}
+          </div>
         </nav>
         <div className="admin-sidebar__footer">
           <PaletteSwitcher collapsed={sidebarCollapsed} variant="sidebar" />
@@ -208,66 +256,61 @@ export function AdminLayout({
         </div>
       </aside>
 
-      <section
-        className="admin-workspace__main"
-        aria-labelledby="admin-module-title"
-      >
-        <header className="admin-header">
-          <div className="admin-header__identity">
-            <div>
-              <h1 id="admin-module-title">{currentModule.label}</h1>
-              <p>{currentModule.description}</p>
-            </div>
-          </div>
-        </header>
+      <AdminOperationalProvider sites={admin.bootstrap?.sedes ?? []}>
+        <section
+          className="admin-workspace__main"
+          aria-label="Área administrativa"
+        >
+          <AdminOperationalHeader />
 
-        <div className="admin-workspace__content">
-          {admin.error ? (
-            <div className="notice notice--error admin-message" role="alert">
-              <strong>No se pudo completar la operación</strong>
-              <p>{admin.error}</p>
-            </div>
-          ) : null}
-          {admin.notice ? (
-            <div className="notice notice--success" role="status">
-              <strong>{admin.notice}</strong>
+          <div className="admin-workspace__content">
+            {admin.error ? (
+              <div className="notice notice--error admin-message" role="alert">
+                <strong>No se pudo completar la operación</strong>
+                <p>{admin.error}</p>
+              </div>
+            ) : null}
+            {admin.notice ? (
+              <div className="notice notice--success" role="status">
+                <strong>{admin.notice}</strong>
+                <button
+                  className="text-button"
+                  onClick={admin.dismissNotice}
+                  type="button"
+                >
+                  Cerrar
+                </button>
+              </div>
+            ) : null}
+            {admin.status === "loading" && !admin.bootstrap ? (
+              <div className="notice" role="status">
+                <strong>Cargando administración…</strong>
+                <p>Consultando sedes, cobertura y dispositivos.</p>
+              </div>
+            ) : null}
+            {admin.status === "error" && !admin.bootstrap ? (
               <button
-                className="text-button"
-                onClick={admin.dismissNotice}
+                className="button"
+                onClick={() => void admin.refresh()}
                 type="button"
               >
-                Cerrar
+                Reintentar
               </button>
-            </div>
-          ) : null}
-          {admin.status === "loading" && !admin.bootstrap ? (
-            <div className="notice" role="status">
-              <strong>Cargando administración…</strong>
-              <p>Consultando sedes, cobertura y dispositivos.</p>
-            </div>
-          ) : null}
-          {admin.status === "error" && !admin.bootstrap ? (
-            <button
-              className="button"
-              onClick={() => void admin.refresh()}
-              type="button"
-            >
-              Reintentar
-            </button>
-          ) : null}
-          {admin.bootstrap ? (
-            <AdminLayoutContext.Provider
-              value={{
-                operationalBootstrap: bootstrap,
-                admin,
-                refreshOperationalState: solog.refresh,
-              }}
-            >
-              <div className="admin-content">{children}</div>
-            </AdminLayoutContext.Provider>
-          ) : null}
-        </div>
-      </section>
+            ) : null}
+            {admin.bootstrap ? (
+              <AdminLayoutContext.Provider
+                value={{
+                  operationalBootstrap: bootstrap,
+                  admin,
+                  refreshOperationalState: solog.refresh,
+                }}
+              >
+                <div className="admin-content">{children}</div>
+              </AdminLayoutContext.Provider>
+            ) : null}
+          </div>
+        </section>
+      </AdminOperationalProvider>
     </main>
   );
 }

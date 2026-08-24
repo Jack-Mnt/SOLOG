@@ -1149,6 +1149,24 @@ h1 {
   border-top: 1px solid rgb(255 255 255 / 8%);
 }
 
+.admin-main-tabs__group {
+  display: grid;
+  gap: 3px;
+  margin-top: 9px;
+}
+
+.admin-main-tabs__label {
+  padding: 5px 12px 3px;
+  color: color-mix(in srgb, var(--color-text-inverse) 42%, transparent);
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.11em;
+  line-height: 1;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+
 .admin-sidebar__account {
   min-height: 54px;
   display: flex;
@@ -1270,8 +1288,13 @@ h1 {
 
 .admin-workspace--collapsed .admin-sidebar__brand-copy,
 .admin-workspace--collapsed .admin-tab span,
+.admin-workspace--collapsed .admin-main-tabs__label,
 .admin-workspace--collapsed .admin-sidebar__collapse span {
   display: none;
+}
+
+.admin-workspace--collapsed .admin-main-tabs__group {
+  margin-top: 6px;
 }
 
 .admin-workspace--collapsed .admin-tab {
@@ -1445,12 +1468,12 @@ h1 {
   position: sticky;
   top: 0;
   z-index: 15;
-  min-height: 68px;
+  min-height: 58px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 9px 22px;
+  gap: 14px;
+  padding: 7px 18px;
   color: var(--color-text-inverse);
   background: var(--color-dark-surface-secondary);
   box-shadow:
@@ -1458,32 +1481,156 @@ h1 {
     0 8px 24px rgb(15 23 42 / 8%);
 }
 
-.admin-header__identity {
+.admin-header__global-context {
   display: flex;
   align-items: center;
-}
-
-.admin-header__identity {
-  min-width: 0;
-  gap: 12px;
-}
-
-.admin-header__identity h1,
-.admin-header__identity p {
-  margin: 0;
-}
-
-.admin-header__identity h1 {
+  gap: 8px;
   color: var(--color-text-inverse);
-  font-size: 1.08rem;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  font-size: 0.9rem;
 }
 
-.admin-header__identity p {
-  margin-top: 2px;
-  color: color-mix(in srgb, var(--color-text-inverse) 58%, transparent);
+.admin-header--operational {
+  flex-wrap: wrap;
+}
+
+.admin-header__sites {
+  min-width: 0;
+  width: min(100%, 520px);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(72px, 1fr));
+  gap: 5px;
+}
+
+.admin-header__sites button {
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 9px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 9px;
+  color: color-mix(in srgb, var(--color-text-inverse) 72%, transparent);
+  background: rgb(255 255 255 / 4%);
+  font: inherit;
   font-size: 0.72rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.admin-header__sites button:hover {
+  color: var(--color-text-inverse);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background: var(--color-dark-surface-hover);
+}
+
+.admin-header__sites button.is-active {
+  color: var(--color-primary-contrast);
+  border-color: transparent;
+  background: var(--gradient-brand);
+  box-shadow: 0 5px 14px
+    color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+.admin-header__period {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.admin-header__period > label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: color-mix(in srgb, var(--color-text-inverse) 60%, transparent);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.admin-header__period > select {
+  min-width: 156px;
+  min-height: 34px;
+  padding: 5px 30px 5px 10px;
+  border-color: rgb(255 255 255 / 12%);
+  color: var(--color-text-inverse);
+  background-color: var(--color-dark-surface);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.admin-header__edit-period {
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--color-text-inverse) 70%, transparent);
+  background: transparent;
+  font: inherit;
+  font-size: 0.67rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.admin-header__edit-period:hover {
+  color: var(--color-text-inverse);
+  background: var(--color-dark-surface-hover);
+}
+
+.admin-header__period-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  width: min(330px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-elevated);
+}
+
+.admin-header__period-popover label {
+  display: grid;
+  gap: 5px;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.admin-header__period-popover input {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 8px;
+  font-size: 0.75rem;
+}
+
+.admin-header__period-popover > div,
+.admin-header__period-error {
+  grid-column: 1 / -1;
+}
+
+.admin-header__period-popover > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.admin-header__period-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.7rem;
 }
 
 .admin-workspace__content {
@@ -4522,12 +4669,14 @@ h1 {
   .incidents-search {
     grid-column: span 2;
   }
-  .control-context-bar {
+  .admin-header--operational {
     align-items: stretch;
-    flex-direction: column;
   }
-  .control-period-select select {
-    width: min(100%, 260px);
+  .admin-header__sites {
+    flex: 1 1 520px;
+  }
+  .admin-header__period {
+    flex: 0 1 auto;
   }
   .control-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4583,8 +4732,17 @@ h1 {
   .admin-header {
     padding-inline: 14px;
   }
-  .admin-header__identity p {
-    display: none;
+  .admin-header__sites {
+    width: 100%;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .admin-header__period {
+    width: 100%;
+    margin-left: 0;
+  }
+  .admin-header__period > select {
+    flex: 1 1 auto;
+    min-width: 0;
   }
   .admin-workspace__content {
     padding: 18px 16px 24px;

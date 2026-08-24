@@ -250,7 +250,7 @@ export function CatalogPanel({
       ) : null}
       {catalog.status === 'ready' && rows.length > 0 && !splitPending ? <CatalogTable caption={`Cambios de catálogo: ${getSologCatalogChangeStatusLabel(activeStatus)}`} onSelect={selectChange} relatedChangeIds={relatedChangeIds} rows={rows} showVersion={activeStatus === 'incorporado'} /> : null}
 
-      {catalog.response ? (
+      {catalog.response && rows.length > 0 ? (
         <nav className="admin-report-pagination" aria-label="Paginación de catálogo">
           <button className="button button--secondary" disabled={catalog.offset === 0 || catalog.status === 'loading'} onClick={catalog.previousPage} type="button"><ArrowLeft size={17} /> Anterior</button>
           <span>Página {Math.floor(catalog.offset / CATALOG_CHANGES_PAGE_SIZE) + 1}</span>

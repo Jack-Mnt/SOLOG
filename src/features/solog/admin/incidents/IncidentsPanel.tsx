@@ -9,7 +9,6 @@ import { getSologAdminIncidentTypeLabel } from "../../labels";
 import type {
   SologAdminIncidentDecision,
   SologAdminIncidentRow,
-  SologAdminSite,
 } from "../../types";
 import { IncidentDetail } from "./IncidentDetail";
 import { IncidentFilters } from "./IncidentFilters";
@@ -37,13 +36,11 @@ const COUNT_CARDS = [
 ] as const;
 
 export function IncidentsPanel({
-  sites,
   refreshOperationalState,
 }: {
-  sites: SologAdminSite[];
   refreshOperationalState: () => Promise<void>;
 }) {
-  const incidents = useAdminIncidents({ sites, refreshOperationalState });
+  const incidents = useAdminIncidents({ refreshOperationalState });
   const [selected, setSelected] = useState<SologAdminIncidentRow | null>(null);
   const rows = incidents.response?.rows ?? [];
   const counts = incidents.response?.counts ?? {};
@@ -77,32 +74,6 @@ export function IncidentsPanel({
         </div>
       </div>
 
-      <div className="incidents-context-group">
-        <span className="incidents-context-label">Sede</span>
-        <div
-          className="incidents-site-chips"
-          role="group"
-          aria-label="Seleccionar sede"
-        >
-          {incidents.orderedSites.map((site) => (
-            <button
-              aria-pressed={incidents.draftFilters.sedeId === site.id}
-              className={
-                incidents.draftFilters.sedeId === site.id
-                  ? "is-active"
-                  : undefined
-              }
-              disabled={incidents.status === "loading"}
-              key={site.id}
-              onClick={() => incidents.selectSite(site.id)}
-              type="button"
-            >
-              {site.nombre}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div
         className="incidents-state-chips"
         aria-label="Filtrar por estado"
@@ -126,16 +97,11 @@ export function IncidentsPanel({
       </div>
 
       <IncidentFilters
-        customRange={incidents.customRange}
         filters={incidents.draftFilters}
         loading={incidents.status === "loading"}
         onApply={incidents.applyFilters}
-        onApplyCustomRange={incidents.applyCustomRange}
-        onCustomRangeChange={incidents.setCustomRange}
         onReset={incidents.resetFilters}
-        onSelectPeriod={incidents.selectPeriod}
         onUpdate={incidents.updateFilters}
-        period={incidents.period}
       />
 
       {incidents.notice ? (
@@ -216,7 +182,7 @@ export function IncidentsPanel({
         </div>
       ) : null}
 
-      {incidents.response ? (
+      {incidents.response && rows.length > 0 ? (
         <nav
           className="admin-report-pagination"
           aria-label="Paginación de incidencias"

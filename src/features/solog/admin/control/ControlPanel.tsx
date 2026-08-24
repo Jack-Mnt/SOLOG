@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  CalendarDays,
   ChevronRight,
   FileSpreadsheet,
   LoaderCircle,
@@ -11,24 +10,14 @@ import {
 } from "lucide-react";
 import { getSologDifferenceStateLabel } from "../../labels";
 import type {
-  SologAdminSite,
   SologControlRow,
   SologDifferenceState,
 } from "../../types";
 import { formatAdminCurrency, formatSignedInteger } from "../format";
 import { formatControlDate, getControlDifferenceClass } from "./control-format";
-import type { ControlPeriodPreset } from "./control-period";
 import { ControlDrawer } from "./ControlDrawer";
 import { SOLOG_CONTROL_PAGE_SIZE, useSologControl } from "./useSologControl";
 import { useSologControlExport } from "./useSologControlExport";
-
-const PERIOD_OPTIONS: Array<[ControlPeriodPreset, string]> = [
-  ["today", "Hoy"],
-  ["last_week", "Última semana"],
-  ["current_fortnight", "Quincena actual"],
-  ["previous_fortnight", "Quincena pasada"],
-  ["custom", "Personalizado"],
-];
 
 const RESOLVER_STATES: SologDifferenceState[] = [
   "pendiente",
@@ -126,13 +115,11 @@ function ControlTable({
 }
 
 export function ControlPanel({
-  sites,
   refreshOperationalState,
 }: {
-  sites: SologAdminSite[];
   refreshOperationalState: () => Promise<void>;
 }) {
-  const control = useSologControl({ sites, refreshOperationalState });
+  const control = useSologControl({ refreshOperationalState });
   const exportControl = useSologControlExport();
   const [selectedDetailId, setSelectedDetailId] = useState<string | null>(null);
   const response = control.status === "error" ? null : control.response;
@@ -156,92 +143,6 @@ export function ControlPanel({
       className="content-section admin-module control-workbench"
       aria-label="Bandeja de Control"
     >
-      <div className="control-context-bar">
-        <div className="control-context-group">
-          <span className="control-context-label">Sede</span>
-          <div
-            className="control-site-chips"
-            role="group"
-            aria-label="Seleccionar sede"
-          >
-            {control.orderedSites.map((site) => (
-              <button
-                aria-pressed={control.query.sedeId === site.id}
-                className={
-                  control.query.sedeId === site.id ? "is-active" : undefined
-                }
-                key={site.id}
-                onClick={() => control.selectSite(site.id)}
-                type="button"
-              >
-                {site.nombre}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <label className="control-period-select">
-          <span>
-            <CalendarDays size={15} /> Período
-          </span>
-          <select
-            onChange={(event) =>
-              control.selectPeriod(event.target.value as ControlPeriodPreset)
-            }
-            value={control.period}
-          >
-            {PERIOD_OPTIONS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {control.period === "custom" ? (
-        <div className="control-custom-period">
-          <label>
-            Desde
-            <input
-              onChange={(event) =>
-                control.setCustomRange({
-                  ...control.customRange,
-                  dateFrom: event.target.value,
-                })
-              }
-              type="date"
-              value={control.customRange.dateFrom}
-            />
-          </label>
-          <label>
-            Hasta
-            <input
-              onChange={(event) =>
-                control.setCustomRange({
-                  ...control.customRange,
-                  dateTo: event.target.value,
-                })
-              }
-              type="date"
-              value={control.customRange.dateTo}
-            />
-          </label>
-          <button
-            className="button button--secondary"
-            onClick={control.applyCustomRange}
-            type="button"
-          >
-            Aplicar período
-          </button>
-          {control.validationError ? (
-            <span className="control-validation" role="alert">
-              {control.validationError}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-
       <div
         className="control-mode-switch"
         role="group"
@@ -460,7 +361,7 @@ export function ControlPanel({
         />
       ) : null}
 
-      {response ? (
+      {response && response.total > 0 ? (
         <nav
           className="admin-report-pagination control-pagination"
           aria-label="Paginación de Control"

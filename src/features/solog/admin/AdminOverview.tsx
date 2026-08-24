@@ -2,11 +2,10 @@ import {
   ChevronRight,
   CircleGauge,
   ListChecks,
-  Search,
   ShieldAlert,
   TriangleAlert,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type {
   SologDashboardCoverage,
   SologDashboardResponse,
@@ -55,13 +54,7 @@ export function AdminOverview({
   dashboard: SologDashboardResponse
   refreshOperationalState: () => Promise<void>
 }) {
-  const [search, setSearch] = useState('')
   const [selectedSite, setSelectedSite] = useState<SologDashboardSite | null>(null)
-  const visibleSites = useMemo(() => {
-    const normalizedSearch = search.trim().toLocaleLowerCase('es')
-    if (!normalizedSearch) return dashboard.sedes
-    return dashboard.sedes.filter((site) => site.sede.toLocaleLowerCase('es').includes(normalizedSearch))
-  }, [dashboard.sedes, search])
   const coverage = dashboard.kpis.cobertura_quincenal
   const countedToday = dashboard.kpis.contados_hoy
 
@@ -90,21 +83,16 @@ export function AdminOverview({
       <section className="admin-dashboard-sites" aria-labelledby="sites-title">
         <div className="admin-dashboard-sites__toolbar">
           <div><h2 id="sites-title">Resumen por sede</h2><p>Quincena: {formatPeriodDate(dashboard.periodo.quincena_desde)} – {formatPeriodDate(dashboard.periodo.quincena_hasta)}.</p></div>
-          <label className="admin-dashboard-search">
-            <Search aria-hidden="true" size={17} />
-            <input aria-label="Buscar sede" onChange={(event) => setSearch(event.target.value)} placeholder="Buscar sede" type="search" value={search} />
-          </label>
         </div>
 
         {dashboard.sedes.length === 0 ? <div className="empty-state">No hay sedes disponibles.</div> : null}
-        {dashboard.sedes.length > 0 && visibleSites.length === 0 ? <div className="empty-state">No hay sedes que coincidan con la búsqueda.</div> : null}
-        {visibleSites.length > 0 ? (
+        {dashboard.sedes.length > 0 ? (
           <div className="admin-dashboard-table-wrap">
             <table className="admin-dashboard-table">
               <caption>Estado operativo por sede</caption>
               <thead><tr><th>Sede</th><th>Cobertura quincenal</th><th>Cobertura hoy</th><th>Diferencias</th><th>Persistentes</th><th>Actividad</th><th aria-label="Abrir actividad" /></tr></thead>
               <tbody>
-                {visibleSites.map((site) => (
+                {dashboard.sedes.map((site) => (
                   <tr
                     aria-label={`Ver actividad de conteo de ${site.sede}`}
                     className="admin-dashboard-site-row"
