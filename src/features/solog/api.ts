@@ -24,6 +24,8 @@ import type {
   SologCatalogStatus,
   SologControlDetailPayload,
   SologControlDetailResponse,
+  SologControlExportPayload,
+  SologControlExportResponse,
   SologControlPayload,
   SologControlResponse,
   SologCountBatchPayload,
@@ -55,7 +57,10 @@ type SologRpcName =
   | 'rpc_solog_count'
   | 'rpc_solog_admin'
   | 'rpc_solog_catalog'
-type SologPayloadRpcName = 'rpc_solog_control' | 'rpc_solog_control_detalle'
+type SologPayloadRpcName =
+  | 'rpc_solog_control'
+  | 'rpc_solog_control_detalle'
+  | 'rpc_solog_control_export'
 
 function getClient() {
   if (!supabase) throw createSologConfigurationError()
@@ -164,6 +169,13 @@ export function getSologControl(input: SologControlPayload) {
 export function getSologControlDetail(input: SologControlDetailPayload) {
   return callSologPayloadRpc<SologControlDetailResponse>(
     'rpc_solog_control_detalle',
+    input,
+  )
+}
+
+export function getSologControlExport(input: SologControlExportPayload) {
+  return callSologPayloadRpc<SologControlExportResponse>(
+    'rpc_solog_control_export',
     input,
   )
 }

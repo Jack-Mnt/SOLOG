@@ -4115,16 +4115,30 @@ h1 {
 
 .control-toolbar {
   display: grid;
-  grid-template-columns: minmax(150px, 0.7fr) minmax(170px, 0.85fr) minmax(
-      310px,
-      2fr
-    );
+  grid-template-columns:
+    minmax(150px, 0.7fr)
+    minmax(170px, 0.85fr)
+    minmax(280px, 2fr)
+    auto;
   gap: 8px;
   align-items: start;
   padding: 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   background: var(--color-surface-secondary);
+}
+
+.control-export-button {
+  align-self: end;
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+.control-export-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .control-toolbar small {
@@ -4657,6 +4671,9 @@ h1 {
   .control-search {
     grid-column: 1 / -1;
   }
+  .control-export-button {
+    justify-self: end;
+  }
 }
 
 @media (max-width: 760px) {
@@ -4936,6 +4953,10 @@ h1 {
   .control-search {
     grid-column: auto;
     grid-template-columns: 1fr;
+  }
+  .control-export-button {
+    width: 100%;
+    justify-self: stretch;
   }
   .control-pagination {
     grid-template-columns: 1fr;

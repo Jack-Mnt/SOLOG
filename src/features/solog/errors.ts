@@ -51,6 +51,7 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_SEDE_REQUIRED',
   'SOLOG_SEDE_NOT_FOUND',
   'SOLOG_INVALID_CONTROL_FILTER',
+  'SOLOG_INVALID_CONTROL_EXPORT_FILTER',
   'SOLOG_INVALID_CONTROL_SCOPE',
   'SOLOG_INVALID_CONTROL_STATE',
   'SOLOG_DATE_RANGE_TOO_LARGE',
@@ -144,6 +145,8 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_SEDE_REQUIRED: 'Selecciona una sede para consultar Control.',
   SOLOG_SEDE_NOT_FOUND: 'La sede seleccionada ya no está disponible.',
   SOLOG_INVALID_CONTROL_FILTER: 'Uno o más filtros de Control no son válidos.',
+  SOLOG_INVALID_CONTROL_EXPORT_FILTER:
+    'La sede o el período de exportación no son válidos.',
   SOLOG_INVALID_CONTROL_SCOPE: 'El modo de Control seleccionado no es válido.',
   SOLOG_INVALID_CONTROL_STATE: 'El estado seleccionado no es válido.',
   SOLOG_DATE_RANGE_TOO_LARGE: 'El período no puede superar 366 días.',
@@ -238,6 +241,8 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_CLIENT_NOT_CONFIGURED:
     'SOLOG todavía no tiene configurada la conexión con Supabase.',
   SOLOG_EMPTY_RESPONSE: 'El backend no devolvió una respuesta.',
+  SOLOG_INVALID_CONTROL_EXPORT_RESPONSE:
+    'El backend devolvió datos incompletos para generar el Excel.',
 }
 
 const ERROR_CODE_PATTERN = /SOLOG_[A-Z0-9_]+/

@@ -965,6 +965,45 @@ export interface SologControlResponse {
   server_now: string
 }
 
+export interface SologControlExportPayload {
+  sede_id: string
+  date_from: string
+  date_to: string
+}
+
+export type SologControlExportState =
+  | 'persistente'
+  | 'confirmada_reconteo'
+
+export type SologControlExportGroupType = 'Individual' | 'Agrupado'
+
+export interface SologControlExportRow {
+  fecha: string
+  categoria: string
+  grupo: string
+  tipo: SologControlExportGroupType
+  codigos_internos: number[]
+  teorico: number
+  fisico: number
+  ajuste: number
+  valor_economico: number
+  detalle: string
+  estado: SologControlExportState
+}
+
+export interface SologControlExportResponse {
+  sede_id: string
+  sede: string
+  date_from: string
+  date_to: string
+  registros: number
+  faltantes: number
+  sobrantes: number
+  balance: number
+  rows: SologControlExportRow[]
+  server_now: string
+}
+
 export interface SologControlDetailPayload {
   detalle_id: string
   limit: number
