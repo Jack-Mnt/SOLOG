@@ -5,14 +5,27 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 
-  /* Identidad — Azul eléctrico + Cian */
-  --color-primary: #0066ff;
-  --color-primary-hover: #0059e6;
-  --color-primary-active: #0047b8;
-  --color-primary-bright: #2f80ff;
-  --color-secondary: #00c2ff;
+  /* Identidad SOLOG — fija */
+  --brand-navy: #03184c;
+  --brand-blue: #0a63f8;
+  --brand-green: #10b981;
+
+  /* Apariencia de interfaz — seleccionable */
+  --ui-blue: #0a63f8;
+  --ui-violet: #7a00ff;
+  --ui-green: #10b981;
+  --ui-primary: var(--ui-blue);
+  --ui-secondary: #00c2ff;
+  --ui-accent: #44e1ff;
+
+  /* Aliases de interfaz existentes */
+  --color-primary: var(--ui-primary);
+  --color-primary-hover: #0757df;
+  --color-primary-active: #0647b8;
+  --color-primary-bright: #3880ff;
+  --color-secondary: var(--ui-secondary);
   --color-secondary-hover: #00aee6;
-  --color-accent: #44e1ff;
+  --color-accent: var(--ui-accent);
   --color-primary-soft: #dff3ff;
   --color-primary-subtle: #f0f8ff;
   --color-secondary-soft: #daf8ff;
@@ -26,9 +39,9 @@
   --color-surface-tinted: #f4f8ff;
 
   /* Superficies oscuras */
-  --color-dark-surface: #0a0f1c;
-  --color-dark-surface-secondary: #111827;
-  --color-dark-surface-hover: #1e293b;
+  --color-dark-surface: #071126;
+  --color-dark-surface-secondary: #0d1930;
+  --color-dark-surface-hover: #152541;
 
   /* Texto */
   --color-text-primary: #0f172a;
@@ -39,7 +52,7 @@
   /* Bordes y foco */
   --color-border: #dce3ec;
   --color-border-strong: #cbd5e1;
-  --color-focus: #0066ff;
+  --color-focus: var(--ui-primary);
 
   /* Estados semánticos */
   --color-success: #00c676;
@@ -52,8 +65,12 @@
   --color-info: #0091ff;
   --color-info-soft: #e8f4ff;
 
-  /* Gradientes de identidad */
-  --gradient-brand: linear-gradient(135deg, #0066ff 0%, #00c2ff 100%);
+  /* Gradientes de énfasis de interfaz */
+  --gradient-brand: linear-gradient(
+    135deg,
+    var(--ui-primary) 0%,
+    var(--ui-secondary) 100%
+  );
   --gradient-brand-soft: linear-gradient(
     135deg,
     color-mix(in srgb, var(--color-primary) 12%, white) 0%,
@@ -73,47 +90,38 @@
   --transition-fast: 170ms ease;
 
   /* Swatches */
-  --swatch-blue: #0066ff;
-  --swatch-violet: #7a00ff;
-  --swatch-green: #00c853;
+  --swatch-blue: var(--ui-blue);
+  --swatch-violet: var(--ui-violet);
+  --swatch-green: var(--ui-green);
 }
 
 :root[data-palette="violet"] {
   /* Violeta + Magenta */
-  --color-primary: #7a00ff;
+  --ui-primary: var(--ui-violet);
+  --ui-secondary: #ff00d4;
+  --ui-accent: #ff5ce1;
   --color-primary-hover: #6900dc;
   --color-primary-active: #5700b8;
   --color-primary-bright: #9b4dff;
-  --color-secondary: #ff00d4;
   --color-secondary-hover: #dd00b8;
-  --color-accent: #ff5ce1;
   --color-primary-soft: #f1e5ff;
   --color-primary-subtle: #faf5ff;
   --color-secondary-soft: #ffe8fb;
-  --color-dark-surface: #0f071a;
-  --color-dark-surface-secondary: #1a1030;
-  --color-dark-surface-hover: #2a1b4d;
-  --color-focus: #7a00ff;
-  --gradient-brand: linear-gradient(135deg, #7a00ff 0%, #ff00d4 100%);
 }
 
 :root[data-palette="green"] {
   /* Verde + Cian */
-  --color-primary: #00c853;
-  --color-primary-hover: #00ae48;
-  --color-primary-active: #008f3c;
-  --color-primary-bright: #16db6a;
-  --color-secondary: #00e5ff;
+  --ui-primary: var(--ui-green);
+  --ui-secondary: #00e5ff;
+  --ui-accent: #63f5c2;
+  --color-primary-hover: #0ea574;
+  --color-primary-active: #0b8f63;
+  --color-primary-bright: #34d399;
+  --color-primary-contrast: var(--brand-navy);
   --color-secondary-hover: #00c8df;
-  --color-accent: #63f5c2;
   --color-primary-soft: #ddfbe9;
   --color-primary-subtle: #f0fff6;
   --color-secondary-soft: #ddfbff;
-  --color-dark-surface: #07140e;
-  --color-dark-surface-secondary: #0f2118;
-  --color-dark-surface-hover: #173628;
-  --color-focus: #00c853;
-  --gradient-brand: linear-gradient(135deg, #00c853 0%, #00e5ff 100%);
 }
 
 * {
@@ -1111,23 +1119,24 @@ h1 {
 
 .admin-sidebar__brand {
   height: 68px;
-  display: flex;
-  align-items: center;
-  gap: 11px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 2px;
   padding: 0 8px;
 }
 
-.admin-sidebar__mark {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
-  display: grid;
-  place-items: center;
-  border-radius: 11px;
-  color: var(--color-primary-contrast);
-  background: var(--gradient-brand);
-  box-shadow: 0 8px 20px
-    color-mix(in srgb, var(--color-primary) 24%, transparent);
+.admin-sidebar__logo {
+  width: auto;
+  height: 32px;
+  max-width: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.admin-sidebar__logo--compact {
+  width: 34px;
+  height: 34px;
 }
 
 .admin-sidebar__brand-copy {
@@ -1135,11 +1144,6 @@ h1 {
   display: grid;
   gap: 1px;
   white-space: nowrap;
-}
-
-.admin-sidebar__brand-copy strong {
-  font-size: 0.94rem;
-  letter-spacing: 0.08em;
 }
 
 .admin-sidebar__brand-copy small {
@@ -1302,7 +1306,7 @@ h1 {
 }
 
 .admin-workspace--collapsed .admin-sidebar__brand {
-  justify-content: center;
+  justify-items: center;
   padding-inline: 0;
 }
 
@@ -5402,7 +5406,7 @@ h1 {
     padding-inline: 8px;
   }
   .admin-workspace--collapsed .admin-sidebar__brand {
-    justify-content: center;
+    justify-items: center;
     padding-inline: 0;
   }
   .admin-workspace--collapsed .admin-sidebar__brand-copy,

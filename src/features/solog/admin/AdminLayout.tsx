@@ -1,6 +1,5 @@
 import {
   BookOpenCheck,
-  Boxes,
   Layers,
   LayoutDashboard,
   LogOut,
@@ -173,13 +172,19 @@ export function AdminLayout({
     >
       <aside className="admin-sidebar" aria-label="Navegación administrativa">
         <div className="admin-sidebar__brand" aria-label="SOLOG Administración">
-          <span className="admin-sidebar__mark" aria-hidden="true">
-            <Boxes size={22} strokeWidth={2.25} />
-          </span>
-          <span className="admin-sidebar__brand-copy">
-            <strong>SOLOG</strong>
-            <small>Administración</small>
-          </span>
+          {sidebarCollapsed ? (
+            <img
+              alt="SOLOG"
+              className="admin-sidebar__logo admin-sidebar__logo--compact"
+              src="/favicon-48x48.png"
+            />
+          ) : (
+            <img
+              alt="SOLOG"
+              className="admin-sidebar__logo"
+              src="/Logo_SOLOG.png"
+            />
+          )}
         </div>
         <div className="admin-sidebar__account">
           {sidebarCollapsed ? (
