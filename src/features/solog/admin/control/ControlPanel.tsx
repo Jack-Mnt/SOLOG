@@ -276,7 +276,7 @@ export function ControlPanel({
           onSubmit={handleSearch}
         >
           <label className="admin-filter-field admin-filter-search-field">
-            Búsqueda
+            Buscar
             <div className="admin-filter-search-control">
               <Search aria-hidden="true" size={17} />
               <input
