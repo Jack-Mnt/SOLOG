@@ -288,6 +288,23 @@ export function CatalogPanel({
 
   return (
     <div className="content-section admin-module catalog-workbench">
+      <CatalogPublicationCard
+        approvedCount={counts.aprobado ?? 0}
+        currentVersion={displayCurrentVersion}
+        isAdmin={role === "admin"}
+        nextVersion={null}
+        notice={publication.notice}
+        onDismissNotice={publication.dismissNotice}
+        onPrepare={() => void publication.prepare()}
+        publishedAt={catalogStatusData?.publicado_at ?? null}
+        preparing={
+          publication.status === "preparing" ||
+          publication.status === "publishing"
+        }
+        statusError={catalogStatusError}
+        statusLoading={catalogStatusLoadState === "loading"}
+      />
+
       <div
         className="catalog-state-chips"
         role="tablist"
@@ -310,24 +327,6 @@ export function CatalogPanel({
           </button>
         ))}
       </div>
-
-      <CatalogPublicationCard
-        approvedCount={counts.aprobado ?? 0}
-        currentVersion={displayCurrentVersion}
-        isAdmin={role === "admin"}
-        nextVersion={null}
-        notice={publication.notice}
-        onDismissNotice={publication.dismissNotice}
-        onPrepare={() => void publication.prepare()}
-        publishedAt={catalogStatusData?.publicado_at ?? null}
-        preparing={
-          publication.status === "preparing" ||
-          publication.status === "publishing"
-        }
-        statusError={catalogStatusError}
-        statusLoading={catalogStatusLoadState === "loading"}
-      />
-
       <CatalogFilters
         filters={catalog.draftFilters}
         loading={catalog.status === "loading"}
@@ -335,7 +334,6 @@ export function CatalogPanel({
         onReset={catalog.resetFilters}
         onUpdate={catalog.updateFilters}
       />
-
       {catalog.notice ? (
         <div className="notice notice--success" role="status">
           <strong>{catalog.notice}</strong>

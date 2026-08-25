@@ -121,6 +121,16 @@ export function useSologControl({
     patchQuery({ group: groupDraft, search: searchDraft.trim() })
   }, [groupDraft, patchQuery, searchDraft])
 
+  const resetFilters = useCallback(() => {
+    setGroupDraft('problematicos')
+    setSearchDraft('')
+    patchQuery({
+      group: 'problematicos',
+      categoriaId: '',
+      search: '',
+    })
+  }, [patchQuery])
+
   const loadCategories = useCallback(async () => {
     if (categoryRequest.current || categoryStatus === 'ready') return
     categoryRequest.current = true
@@ -159,6 +169,7 @@ export function useSologControl({
     selectGroup,
     selectCategory: (categoriaId: string) => patchQuery({ categoriaId }),
     submitFilters,
+    resetFilters,
     loadCategories,
     retry: () => void load({ ...query, contextKey, offset: effectiveOffset }),
     previousPage: () => setQuery((current) => ({

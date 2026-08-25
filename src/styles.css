@@ -2999,15 +2999,13 @@ h1 {
   font-weight: 700;
 }
 
-.incidents-site-chips,
-.incidents-state-chips {
+.incidents-site-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.incidents-site-chips button,
-.incidents-state-chips button {
+.incidents-site-chips button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3028,23 +3026,21 @@ h1 {
     background 150ms ease;
 }
 
-.incidents-site-chips button:hover:not(:disabled),
-.incidents-state-chips button:hover:not(:disabled) {
+.incidents-site-chips button:hover:not(:disabled) {
   color: var(--color-primary);
   border-color: var(--color-primary);
 }
 
-.incidents-site-chips button.is-active,
-.incidents-state-chips button.is-active {
+.incidents-site-chips button.is-active {
   color: var(--color-primary-contrast);
   border-color: transparent;
   background: var(--gradient-brand);
 }
 
-.incidents-state-chips strong {
-  color: inherit;
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
+.incidents-state-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
 }
 
 .incidents-filters {
@@ -4428,13 +4424,23 @@ h1 {
   line-height: 1.4;
 }
 
+.control-overview {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
 .control-summary {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  flex: 1 1 720px;
   gap: 7px;
+  min-width: 0;
 }
 
-.control-summary button {
+.admin-selectable-kpis button {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4447,16 +4453,20 @@ h1 {
   background: var(--color-surface-secondary);
   cursor: pointer;
   text-align: left;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease,
+    background 150ms ease;
 }
 
-.control-summary button:hover,
-.control-summary button.is-active {
+.admin-selectable-kpis button:hover:not(:disabled),
+.admin-selectable-kpis button.is-active {
   color: var(--color-primary);
   border-color: var(--color-primary);
   background: var(--color-primary-soft);
 }
 
-.control-summary span {
+.admin-selectable-kpis span {
   overflow: hidden;
   font-size: 0.7rem;
   font-weight: 650;
@@ -4464,9 +4474,10 @@ h1 {
   white-space: nowrap;
 }
 
-.control-summary strong {
+.admin-selectable-kpis strong {
   color: var(--color-text-primary);
   font-size: 1rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .control-toolbar {
@@ -4503,6 +4514,7 @@ h1 {
 .control-search {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  grid-column: 3 / -1;
   gap: 7px;
   align-items: end;
 }
@@ -5177,7 +5189,8 @@ h1 {
   .admin-header__period {
     flex: 0 1 auto;
   }
-  .control-summary {
+  .control-summary,
+  .incidents-state-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .control-toolbar {
@@ -5451,6 +5464,7 @@ h1 {
     width: fit-content;
   }
   .control-summary,
+  .incidents-state-cards,
   .control-toolbar,
   .control-detail-metrics,
   .control-detail-meta {

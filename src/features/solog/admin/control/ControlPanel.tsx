@@ -4,6 +4,7 @@ import {
   ArrowRight,
   ChevronRight,
   FileSpreadsheet,
+  Filter,
   LoaderCircle,
   RotateCcw,
   Search,
@@ -141,7 +142,28 @@ export function ControlPanel({
       className="content-section admin-module control-workbench"
       aria-label="Bandeja de Control"
     >
-      <div className="admin-view-toolbar">
+      <div className="control-overview">
+        {summary ? (
+          <div
+            className="admin-selectable-kpis control-summary"
+            aria-label="Resumen por grupo de estado"
+          >
+            {CONTROL_STATE_GROUPS.map(({ value: group, label }) => (
+              <button
+                aria-pressed={control.query.group === group}
+                className={
+                  control.query.group === group ? "is-active" : undefined
+                }
+                key={group}
+                onClick={() => control.selectGroup(group)}
+                type="button"
+              >
+                <span>{label}</span>
+                <strong>{summary[group]}</strong>
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className="admin-view-actions">
           <button
             className="button button--secondary control-export-button"
@@ -156,7 +178,11 @@ export function ControlPanel({
             type="button"
           >
             {exportControl.exporting ? (
-              <LoaderCircle aria-hidden="true" className="icon-spin" size={17} />
+              <LoaderCircle
+                aria-hidden="true"
+                className="icon-spin"
+                size={17}
+              />
             ) : (
               <FileSpreadsheet aria-hidden="true" size={17} />
             )}
@@ -164,63 +190,7 @@ export function ControlPanel({
           </button>
         </div>
       </div>
-
-      {summary ? (
-        <div className="control-summary" aria-label="Resumen por grupo de estado">
-          {CONTROL_STATE_GROUPS.map(({ value: group, label }) => (
-            <button
-              aria-pressed={control.query.group === group}
-              className={control.query.group === group ? "is-active" : undefined}
-              key={group}
-              onClick={() => control.selectGroup(group)}
-              type="button"
-            >
-              <span>{label}</span>
-              <strong>{summary[group]}</strong>
-            </button>
-          ))}
-        </div>
-      ) : null}
       <div className="control-toolbar admin-filter-bar">
-        <label className="admin-filter-field admin-filter-field--select">
-          Estado
-          <select
-            onChange={(event) =>
-              control.setGroupDraft(event.target.value as SologControlStateGroup)
-            }
-            value={control.groupDraft}
-          >
-            {CONTROL_STATE_GROUPS.map(({ value, label }) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-            <option value="todos">Todos</option>
-          </select>
-        </label>
-        <label className="admin-filter-field admin-filter-field--select">
-          Categoría
-          <select
-            onFocus={() => void control.loadCategories()}
-            onChange={(event) => control.selectCategory(event.target.value)}
-            value={control.query.categoriaId}
-          >
-            <option value="">Todas las categorías</option>
-            {control.categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.nombre}
-              </option>
-            ))}
-          </select>
-          {control.categoryStatus === "loading" ? (
-            <small>Cargando categorías…</small>
-          ) : null}
-          {control.categoryError ? (
-            <small className="control-validation">
-              {control.categoryError}
-            </small>
-          ) : null}
-        </label>
         <form
           className="control-search admin-filter-inline-form"
           onSubmit={handleSearch}
@@ -238,9 +208,60 @@ export function ControlPanel({
               />
             </div>
           </label>
-          <button className="button admin-filter-apply" type="submit">
-            Aplicar
-          </button>
+          <label className="admin-filter-field admin-filter-field--select">
+            Estado
+            <select
+              onChange={(event) =>
+                control.setGroupDraft(
+                  event.target.value as SologControlStateGroup,
+                )
+              }
+              value={control.groupDraft}
+            >
+              {CONTROL_STATE_GROUPS.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+              <option value="todos">Todos</option>
+            </select>
+          </label>
+          <label className="admin-filter-field admin-filter-field--select">
+            Categoría
+            <select
+              onFocus={() => void control.loadCategories()}
+              onChange={(event) => control.selectCategory(event.target.value)}
+              value={control.query.categoriaId}
+            >
+              <option value="">Todas las categorías</option>
+              {control.categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.nombre}
+                </option>
+              ))}
+            </select>
+            {control.categoryStatus === "loading" ? (
+              <small>Cargando categorías…</small>
+            ) : null}
+            {control.categoryError ? (
+              <small className="control-validation">
+                {control.categoryError}
+              </small>
+            ) : null}
+          </label>
+
+          <div className="admin-filter-actions control-filter-actions">
+            <button className="button admin-filter-apply" type="submit">
+              <Filter aria-hidden="true" size={17} /> Aplicar
+            </button>
+            <button
+              className="button button--secondary"
+              onClick={control.resetFilters}
+              type="button"
+            >
+              <RotateCcw aria-hidden="true" size={17} /> Limpiar
+            </button>
+          </div>
         </form>
       </div>
 

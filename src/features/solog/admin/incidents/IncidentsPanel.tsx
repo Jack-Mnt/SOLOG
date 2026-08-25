@@ -56,7 +56,7 @@ export function IncidentsPanel({
   return (
     <div className="content-section admin-module incidents-workbench">
       <div
-        className="incidents-state-chips"
+        className="admin-selectable-kpis incidents-state-cards"
         aria-label="Filtrar por estado"
         role="group"
       >
