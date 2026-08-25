@@ -1,4 +1,4 @@
-import { ArrowRight, LockKeyhole, Mail } from 'lucide-react'
+import { ArrowLeft, ArrowRight, LockKeyhole, Mail } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { PageShell } from '../components/PageShell'
 import { useAuth } from '../features/auth/AuthContext'
@@ -76,6 +76,10 @@ export function LoginPage() {
           </button>
         </form>
       </div>
+      <a className="login-home-link" href="/">
+        <ArrowLeft aria-hidden="true" size={17} />
+        Volver al inicio
+      </a>
     </PageShell>
   )
 }

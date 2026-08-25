@@ -9,7 +9,13 @@ export type AdminRoute =
   | '/admin/grupos'
   | '/admin/dispositivos'
 
-export type AppRoute = '/login' | '/' | '/device-pending' | '/count' | AdminRoute
+export type AppRoute =
+  | '/login'
+  | '/'
+  | '/cajero'
+  | '/device-pending'
+  | '/count'
+  | AdminRoute
 
 export const ADMIN_ROUTES: AdminRoute[] = [
   '/admin',
@@ -51,7 +57,7 @@ export function resolveTrustedRoute(
 
   if (!deviceAuthorized) return '/device-pending'
   if (requestedPath === '/count' && bootstrap.sesion_activa) return '/count'
-  return '/'
+  return '/cajero'
 }
 
 function subscribe(onStoreChange: () => void) {

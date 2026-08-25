@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { PageShell } from './components/PageShell'
 import { AuthProvider, useAuth } from './features/auth/AuthContext'
+import { PublicHomePage } from './features/solog/home/HomePage'
 import { AdminLayout } from './features/solog/admin/AdminLayout'
 import { SologProvider, useSolog } from './features/solog/SologContext'
 import {
@@ -14,8 +15,13 @@ import { AdminDevicesPage } from './pages/admin.dispositivos'
 import { AdminDashboardPage } from './pages/admin'
 import { CountPage } from './pages/CountPage'
 import { DevicePendingPage } from './pages/DevicePendingPage'
-import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+
+const CashierHomePage = lazy(() =>
+  import('./pages/HomePage').then((module) => ({
+    default: module.HomePage,
+  })),
+)
 
 const AdminIncidentsPage = lazy(() =>
   import('./pages/admin.incidencias').then((module) => ({
@@ -63,18 +69,34 @@ function AppContent() {
   const solog = useSolog()
   const pathname = usePathname()
 
+  const publicPanelRoute =
+    auth.status === 'authenticated' &&
+    solog.status === 'ready' &&
+    solog.bootstrap
+      ? solog.bootstrap.usuario.rol === 'admin' ||
+        solog.bootstrap.usuario.rol === 'moderador'
+        ? '/admin'
+        : '/cajero'
+      : undefined
+
   const trustedRoute =
-    auth.status === 'unauthenticated'
-      ? '/login'
-      : solog.status === 'ready' && solog.bootstrap
-        ? resolveTrustedRoute(solog.bootstrap, pathname)
-        : null
+    pathname === '/'
+      ? null
+      : auth.status === 'unauthenticated'
+        ? '/login'
+        : solog.status === 'ready' && solog.bootstrap
+          ? resolveTrustedRoute(solog.bootstrap, pathname)
+          : null
 
   useEffect(() => {
     if (trustedRoute && pathname !== trustedRoute) {
       replaceRoute(trustedRoute)
     }
   }, [pathname, trustedRoute])
+
+  if (pathname === '/') {
+    return <PublicHomePage panelRoute={publicPanelRoute} />
+  }
 
   if (auth.status === 'loading') {
     return (
@@ -150,8 +172,20 @@ function AppContent() {
       )
     case '/count':
       return <CountPage bootstrap={bootstrap} onLogout={handleLogout} />
-    case '/':
-      return <HomePage bootstrap={bootstrap} onLogout={handleLogout} />
+    case '/cajero':
+      return (
+        <Suspense
+          fallback={
+            <PageShell
+              description="Preparando el espacio operativo."
+              eyebrow="SOLOG"
+              title="Cargando panel…"
+            />
+          }
+        >
+          <CashierHomePage bootstrap={bootstrap} onLogout={handleLogout} />
+        </Suspense>
+      )
     case '/login':
       return <LoginPage />
   }

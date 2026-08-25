@@ -6,7 +6,8 @@
   text-rendering: optimizeLegibility;
 
   /* Identidad SOLOG — fija */
-  --brand-navy: #03184c;
+  /*--brand-navy: #03184c;*/
+  --brand-violet: #7a00ff;
   --brand-blue: #0a63f8;
   --brand-green: #10b981;
 
@@ -117,7 +118,7 @@
   --color-primary-hover: #0ea574;
   --color-primary-active: #0b8f63;
   --color-primary-bright: #34d399;
-  --color-primary-contrast: var(--brand-navy);
+  --color-primary-contrast: #03184c;
   --color-secondary-hover: #00c8df;
   --color-primary-soft: #ddfbe9;
   --color-primary-subtle: #f0fff6;
@@ -5489,6 +5490,613 @@ h1 {
   }
 }
 
+/* Home público SOLOG */
+.solog-home {
+  --solog-home-blue: var(--brand-blue);
+  --solog-home-violet: var(--brand-violet);
+  --solog-home-green: var(--brand-green);
+  min-height: 100vh;
+  overflow-x: clip;
+  color: var(--color-text-primary);
+  background:
+    radial-gradient(circle at 8% 10%, rgb(10 99 248 / 6%), transparent 30rem),
+    radial-gradient(circle at 90% 18%, rgb(122 0 255 / 4%), transparent 32rem),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 48%, #ffffff 100%);
+}
+
+.solog-home-container {
+  width: min(calc(100% - 48px), 1240px);
+  margin-inline: auto;
+}
+
+.solog-home-header {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  border-bottom: 1px solid rgb(203 213 225 / 55%);
+  background: rgb(7 17 38 / 75%);
+  backdrop-filter: blur(14px);
+}
+
+.solog-home-header__inner {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.solog-home-brand {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.solog-home-brand img {
+  display: block;
+  width: auto;
+  height: 32px;
+  object-fit: contain;
+}
+
+.solog-home-button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: #ffffff;
+  background: linear-gradient(
+    120deg,
+    var(--solog-home-blue),
+    color-mix(in srgb, var(--solog-home-blue) 72%, var(--solog-home-violet))
+  );
+  box-shadow: 0 8px 20px rgb(10 99 248 / 16%);
+  font-size: 0.84rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast);
+}
+
+.solog-home-button:hover {
+  box-shadow: 0 11px 24px rgb(10 99 248 / 21%);
+  filter: saturate(1.04);
+  transform: translateY(-1px);
+}
+
+.solog-home-button--compact {
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+.solog-home a:focus-visible,
+.login-home-link:focus-visible {
+  outline: 3px solid rgb(10 99 248 / 24%);
+  outline-offset: 3px;
+}
+
+.solog-home-hero {
+  padding: clamp(72px, 8vw, 108px) 0 clamp(72px, 8vw, 104px);
+}
+
+.solog-home-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(380px, 0.92fr);
+  align-items: center;
+  gap: clamp(48px, 7vw, 100px);
+}
+
+.solog-home-hero__content {
+  max-width: 680px;
+  animation: solog-home-reveal 560ms ease-out both;
+}
+
+.solog-home-eyebrow {
+  margin: 0 0 16px;
+  color: var(--solog-home-blue);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.solog-home-hero h1 {
+  max-width: 750px;
+  margin: 0;
+  color: #0b1733;
+  font-size: clamp(3.25rem, 6.2vw, 5.35rem);
+  font-weight: 760;
+  letter-spacing: -0.055em;
+  line-height: 0.99;
+}
+
+.solog-home-hero h1 span {
+  color: var(--solog-home-blue);
+}
+
+.solog-home-hero__promise {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 24px 0 0;
+  color: var(--solog-home-violet);
+  font-size: clamp(1.08rem, 2vw, 1.35rem);
+  font-weight: 750;
+}
+
+.solog-home-hero__promise::before {
+  width: 30px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--solog-home-blue),
+    var(--solog-home-green)
+  );
+  content: "";
+}
+
+.solog-home-hero__description {
+  max-width: 620px;
+  margin: 20px 0 0;
+  color: var(--color-text-secondary);
+  font-size: clamp(1rem, 1.5vw, 1.1rem);
+  line-height: 1.75;
+}
+
+.solog-home-hero__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  margin-top: 30px;
+}
+
+.solog-home-hero__actions small {
+  max-width: 250px;
+  color: var(--color-text-secondary);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.solog-home-symbol {
+  position: relative;
+  width: min(100%, 500px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  isolation: isolate;
+  animation: solog-home-reveal 640ms 80ms ease-out both;
+}
+
+.solog-home-symbol img {
+  position: relative;
+  z-index: 3;
+  width: 55%;
+  height: 55%;
+  object-fit: contain;
+  filter: drop-shadow(0 22px 34px rgb(15 23 42 / 12%));
+}
+
+.solog-home-symbol__halo,
+.solog-home-symbol__ring,
+.solog-home-symbol__particle {
+  position: absolute;
+  pointer-events: none;
+}
+
+.solog-home-symbol__halo {
+  z-index: -1;
+  width: 72%;
+  height: 72%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 34%, rgb(10 99 248 / 13%), transparent 56%),
+    radial-gradient(circle at 70% 68%, rgb(122 0 255 / 9%), transparent 58%),
+    rgb(255 255 255 / 72%);
+  box-shadow: 0 28px 70px rgb(10 99 248 / 8%);
+}
+
+.solog-home-symbol__ring {
+  z-index: -2;
+  border: 1px solid rgb(10 99 248 / 12%);
+  border-radius: 50%;
+}
+
+.solog-home-symbol__ring--outer {
+  width: 94%;
+  height: 94%;
+  border-color: rgb(10 99 248 / 10%);
+}
+
+.solog-home-symbol__ring--inner {
+  width: 78%;
+  height: 78%;
+  border-color: rgb(122 0 255 / 10%);
+}
+
+.solog-home-symbol__ring--outer::before,
+.solog-home-symbol__ring--inner::before {
+  position: absolute;
+  border: 1px solid transparent;
+  border-top-color: rgb(10 99 248 / 18%);
+  border-radius: 50%;
+  content: "";
+  inset: 8%;
+  transform: rotate(34deg);
+}
+
+.solog-home-symbol__ring--inner::before {
+  border-top-color: rgb(16 185 129 / 19%);
+  transform: rotate(-48deg);
+}
+
+.solog-home-symbol__particle {
+  z-index: 4;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 7px currentColor;
+}
+
+.solog-home-symbol__particle--blue {
+  top: 14%;
+  left: 22%;
+  color: rgb(10 99 248 / 7%);
+  background: var(--solog-home-blue);
+}
+
+.solog-home-symbol__particle--violet {
+  right: 11%;
+  bottom: 30%;
+  color: rgb(122 0 255 / 6%);
+  background: var(--solog-home-violet);
+}
+
+.solog-home-symbol__particle--green {
+  bottom: 12%;
+  left: 28%;
+  width: 7px;
+  height: 7px;
+  color: rgb(16 185 129 / 6%);
+  background: var(--solog-home-green);
+}
+
+.solog-home-capabilities {
+  padding: 76px 0 84px;
+  border-block: 1px solid rgb(220 227 236 / 70%);
+  background: rgb(248 250 252 / 76%);
+}
+
+.solog-home-section-heading {
+  max-width: 620px;
+  margin-bottom: 30px;
+}
+
+.solog-home-section-heading h2,
+.solog-home-operation h2,
+.solog-home-final h2 {
+  margin: 0;
+  color: #0b1733;
+  font-size: clamp(1.65rem, 3vw, 2.3rem);
+  letter-spacing: -0.035em;
+  line-height: 1.16;
+}
+
+.solog-home-capabilities__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.solog-home-capability {
+  position: relative;
+  min-width: 0;
+  padding: 26px;
+  overflow: hidden;
+  border: 1px solid rgb(220 227 236 / 86%);
+  border-radius: var(--radius-panel);
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 3%);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.solog-home-capability::before {
+  position: absolute;
+  top: 0;
+  right: 24px;
+  left: 24px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--capability-accent);
+  content: "";
+  opacity: 0.72;
+}
+
+.solog-home-capability:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--capability-accent) 24%,
+    var(--color-border)
+  );
+  box-shadow: 0 12px 28px rgb(15 23 42 / 6%);
+  transform: translateY(-2px);
+}
+
+.solog-home-capability--blue {
+  --capability-accent: var(--solog-home-blue);
+}
+
+.solog-home-capability--violet {
+  --capability-accent: var(--solog-home-violet);
+}
+
+.solog-home-capability--green {
+  --capability-accent: var(--solog-home-green);
+}
+
+.solog-home-capability__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--capability-accent);
+  background: color-mix(in srgb, var(--capability-accent) 8%, white);
+}
+
+.solog-home-capability h3 {
+  margin: 22px 0 9px;
+  color: #0b1733;
+  font-size: 1.05rem;
+}
+
+.solog-home-capability p,
+.solog-home-operation p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.solog-home-operation {
+  padding: 72px 0 38px;
+}
+
+.solog-home-operation__panel {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 28px 30px;
+  border: 1px solid rgb(10 99 248 / 10%);
+  border-radius: var(--radius-panel);
+  background:
+    linear-gradient(110deg, rgb(10 99 248 / 5%), rgb(16 185 129 / 3%)), #ffffff;
+}
+
+.solog-home-operation__icon {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 15px;
+  color: var(--solog-home-blue);
+  background: rgb(10 99 248 / 8%);
+}
+
+.solog-home-operation h2 {
+  margin-bottom: 8px;
+  font-size: clamp(1.25rem, 2.3vw, 1.65rem);
+}
+
+.solog-home-final {
+  padding: 38px 0 78px;
+}
+
+.solog-home-final__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 32px 34px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: #ffffff;
+  box-shadow: var(--shadow-default);
+}
+
+.solog-home-final .solog-home-eyebrow {
+  margin-bottom: 9px;
+}
+
+.solog-home-footer {
+  color: var(--color-text-inverse);
+  background: #071126;
+}
+
+.solog-home-footer__inner {
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 28px;
+}
+
+.solog-home-footer__brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.solog-home-footer__brand img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.solog-home-footer__brand strong {
+  font-size: 0.78rem;
+}
+
+.solog-home-footer p,
+.solog-home-footer small {
+  margin: 0;
+  color: rgb(248 250 252 / 68%);
+  font-size: 0.72rem;
+}
+
+.solog-home-footer p {
+  text-align: center;
+}
+
+.solog-home-footer small {
+  justify-self: end;
+}
+
+.login-home-link {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 20px;
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.login-home-link:hover {
+  color: var(--color-primary);
+}
+
+@keyframes solog-home-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .solog-home-hero__grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .solog-home-hero__content {
+    max-width: 740px;
+  }
+
+  .solog-home-symbol {
+    width: min(72vw, 410px);
+  }
+
+  .solog-home-capabilities__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .solog-home-capability:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .solog-home-container {
+    width: min(calc(100% - 32px), 1240px);
+  }
+
+  .solog-home-header__inner {
+    min-height: 64px;
+    gap: 14px;
+  }
+
+  .solog-home-brand img {
+    height: 28px;
+  }
+
+  .solog-home-button--compact {
+    min-height: 38px;
+    padding-inline: 12px;
+  }
+
+  .solog-home-hero {
+    padding: 58px 0 64px;
+  }
+
+  .solog-home-hero h1 {
+    font-size: clamp(2.55rem, 13vw, 3.5rem);
+  }
+
+  .solog-home-hero__actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .solog-home-symbol {
+    width: min(88vw, 350px);
+  }
+
+  .solog-home-capabilities {
+    padding: 58px 0 64px;
+  }
+
+  .solog-home-capabilities__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .solog-home-capability:last-child {
+    grid-column: auto;
+  }
+
+  .solog-home-operation {
+    padding-top: 56px;
+  }
+
+  .solog-home-operation__panel {
+    align-items: flex-start;
+    padding: 24px;
+  }
+
+  .solog-home-final {
+    padding: 30px 0 60px;
+  }
+
+  .solog-home-final__inner {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 26px;
+  }
+
+  .solog-home-footer__inner {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding-block: 30px;
+  }
+
+  .solog-home-footer p {
+    text-align: left;
+  }
+
+  .solog-home-footer small {
+    justify-self: start;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
