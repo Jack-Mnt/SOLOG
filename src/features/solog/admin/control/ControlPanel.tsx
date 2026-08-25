@@ -15,8 +15,12 @@ import type {
   SologControlStateGroup,
   SologDifferenceState,
 } from "../../types";
-import { formatAdminCurrency, formatSignedInteger } from "../format";
-import { formatControlDate, getControlDifferenceClass } from "./control-format";
+import { formatSignedInteger } from "../format";
+import {
+  formatControlDate,
+  getControlDifferenceClass,
+  getControlVerificationReasonLabel,
+} from "./control-format";
 import { ControlDrawer } from "./ControlDrawer";
 import { SOLOG_CONTROL_PAGE_SIZE, useSologControl } from "./useSologControl";
 import { useSologControlExport } from "./useSologControlExport";
@@ -54,19 +58,17 @@ function ControlTable({
   return (
     <div className="admin-report-table-wrap control-table-wrap">
       <table className="admin-report-table admin-interactive-table control-table">
-        <caption>Observaciones de Control</caption>
+        <caption>Estado operativo vigente por grupo</caption>
         <thead>
           <tr>
-            <th>Fecha</th>
+            <th>Fecha y hora</th>
             <th>Grupo</th>
             <th>Categoría</th>
             <th>Teórico</th>
             <th>Físico</th>
-            <th>Diferencia</th>
-            <th>Valor</th>
+            <th>Diferencia observada</th>
+            <th>Saldo confirmado</th>
             <th>Estado</th>
-            <th>Stock posterior</th>
-            <th>Reconteo</th>
             <th aria-label="Abrir detalle" />
           </tr>
         </thead>
@@ -86,9 +88,7 @@ function ControlTable({
               tabIndex={disabled ? -1 : 0}
             >
               <td>{formatControlDate(row.contado_at)}</td>
-              <td>
-                <strong>{row.grupo}</strong>
-              </td>
+              <td><strong>{row.grupo}</strong></td>
               <td>{row.categoria}</td>
               <td>{row.stock_teorico}</td>
               <td>{row.stock_fisico}</td>
@@ -97,15 +97,24 @@ function ControlTable({
                   {formatSignedInteger(row.diferencia)}
                 </span>
               </td>
-              <td>{formatAdminCurrency(row.valor_diferencia)}</td>
               <td>
-                <DifferenceBadge state={row.estado_diferencia} />
+                {row.diferencia_confirmada === null ? (
+                  "—"
+                ) : (
+                  <span className={getControlDifferenceClass(row.diferencia_confirmada)}>
+                    {formatSignedInteger(row.diferencia_confirmada)}
+                  </span>
+                )}
               </td>
-              <td>{row.stock_posterior ?? "—"}</td>
-              <td>{row.reconteo_stock ?? "—"}</td>
               <td>
-                <ChevronRight aria-hidden="true" size={17} />
+                <div className="control-state-cell">
+                  <DifferenceBadge state={row.estado_diferencia} />
+                  {row.motivo_verificacion ? (
+                    <small>{getControlVerificationReasonLabel(row.motivo_verificacion)}</small>
+                  ) : null}
+                </div>
               </td>
+              <td><ChevronRight aria-hidden="true" size={17} /></td>
             </tr>
           ))}
         </tbody>
@@ -113,7 +122,6 @@ function ControlTable({
     </div>
   );
 }
-
 export function ControlPanel({
   refreshOperationalState,
 }: {

@@ -1661,7 +1661,7 @@ h1 {
 
 .admin-dashboard-kpis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -2059,7 +2059,7 @@ h1 {
 
 .dashboard-activity-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
 }
@@ -4506,7 +4506,7 @@ h1 {
 }
 
 .control-table {
-  min-width: 1080px;
+  min-width: 960px;
 }
 
 .control-table th,
@@ -6557,4 +6557,82 @@ h1 {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+/* Adaptación administrativa SOLOG V3 — observaciones */
+.control-state-cell {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+
+.control-state-cell small {
+  color: var(--color-text-muted);
+  font-size: 0.64rem;
+  font-weight: 650;
+}
+
+.control-observation-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 3px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+  font-size: 0.64rem;
+  font-weight: 750;
+}
+
+.control-observation-badge--seguimiento {
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 32%, var(--color-border));
+  background: var(--color-warning-soft);
+}
+
+.control-observation-badge--reconteo {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+  background: var(--color-primary-soft);
+}
+
+.control-drawer__badges,
+.control-timeline__identity,
+.control-timeline__context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 9px;
+}
+
+.control-drawer__badges {
+  margin-top: 4px;
+}
+
+.control-drawer__badges .control-state-badge {
+  margin: 0;
+}
+
+.control-timeline__identity {
+  min-width: 0;
+}
+
+.control-timeline__marker--seguimiento {
+  background: var(--color-warning);
+  box-shadow: 0 0 0 1px var(--color-warning);
+}
+
+.control-timeline__marker--reconteo {
+  background: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.control-timeline__context {
+  color: var(--color-text-muted);
+  font-size: 0.66rem;
+}
+
+.control-timeline__context span:not(:last-child)::after {
+  margin-left: 9px;
+  content: "·";
 }

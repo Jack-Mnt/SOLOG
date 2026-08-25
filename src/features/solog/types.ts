@@ -93,6 +93,14 @@ export interface SologCoverage {
   porcentaje: number
 }
 
+export interface SologDailyCoverage {
+  grupos_requeridos: number
+  grupos_verificados: number
+  pendientes: number
+  porcentaje: number
+  sin_requerimientos: boolean
+}
+
 export interface SologFortnightCoverage extends SologCoverage {
   completa: boolean
   periodo: 'primera' | 'segunda'
@@ -124,7 +132,7 @@ export interface SologOperationalBootstrap {
   sesion_activa: SologActiveSession | null
   stock: SologStockState
   server_now: string
-  cobertura_diaria: SologCoverage
+  cobertura_diaria: SologDailyCoverage
   cobertura_quincenal: SologFortnightCoverage
   conteo_principal: SologMainCountState
   vistas?: SologViewCounts
@@ -322,7 +330,7 @@ export interface SologAdminActiveSession {
 export interface SologAdminSite extends SologSede {
   dispositivo: SologAuthorizedDevice | null
   sesion_activa: SologAdminActiveSession | null
-  cobertura_diaria: SologCoverage
+  cobertura_diaria: SologDailyCoverage
   cobertura_quincenal: SologFortnightCoverage
 }
 
@@ -348,6 +356,10 @@ export interface SologDashboardCoverage {
   porcentaje: number
 }
 
+export interface SologDashboardDailyCoverage extends SologDashboardCoverage {
+  pendientes: number
+}
+
 export interface SologDashboardActivity {
   ultima_actividad_at: string | null
   sesion_activa: boolean
@@ -359,9 +371,10 @@ export interface SologDashboardSite {
   sede_id: string
   sede: string
   cobertura_quincenal: SologDashboardCoverage
-  cobertura_hoy: SologDashboardCoverage
+  cobertura_hoy: SologDashboardDailyCoverage
   diferencias_pendientes: number
   persistentes: number
+  diferencias_vigentes: number
   actividad: SologDashboardActivity
 }
 
@@ -372,8 +385,11 @@ export interface SologDashboardResponse {
       grupos_contados: number
       sedes_con_actividad: number
     }
+    requeridos_hoy: number
+    verificados_hoy: number
     diferencias_pendientes: number
     persistentes: number
+    diferencias_vigentes: number
   }
   sedes: SologDashboardSite[]
   periodo: {
@@ -396,6 +412,8 @@ export interface SologDashboardSiteActivitySession {
   iniciado_at: string
   finalizado_at: string | null
   duracion_segundos: number
+  observaciones_registradas: number
+  grupos_verificados_distintos: number
   grupos_registrados: number
 }
 
@@ -405,6 +423,8 @@ export interface SologDashboardSiteActivityResponse {
   sede: string
   summary: {
     sesiones_hoy: number
+    observaciones_registradas_hoy: number
+    grupos_verificados_distintos_hoy: number
     grupos_registrados_hoy: number
     sesion_activa: boolean
     ultima_actividad_at: string | null
@@ -811,10 +831,15 @@ export interface SologRevokeDeviceResponse {
   sede_id: string
 }
 
+export type SologControlScope = 'resolver' | 'historial'
+
+export type SologObservationType = 'base' | 'seguimiento' | 'reconteo'
+
 export interface SologControlPayload {
   sede_id: string
   date_from: string
   date_to: string
+  scope: SologControlScope
   grupo_estado?: SologControlStateGroup
   categoria_id?: string
   search?: string
@@ -852,8 +877,14 @@ export interface SologControlRow {
   snapshot_referencia_id: string
   snapshot_posterior_id: string | null
   stock_posterior: number | null
+  tipo_observacion: SologObservationType
+  observacion_origen_id: string | null
+  diferencia_confirmada: number | null
+  confirmado_at: string | null
+  motivo_verificacion: string | null
   reconteo_stock: number | null
   recontado_at: string | null
+  es_observacion_vigente: boolean
   sku_count: number
   sku_unico: number | null
 }
@@ -863,6 +894,8 @@ export interface SologControlResponse {
   sede: string
   date_from: string
   date_to: string
+  scope: SologControlScope
+  grupo_estado: SologControlStateGroup | null
   summary: SologControlSummary
   rows: SologControlRow[]
   total: number
@@ -918,7 +951,7 @@ export interface SologControlDetailPayload {
 
 export type SologControlDetailCase = Omit<
   SologControlRow,
-  'sku_count' | 'sku_unico'
+  'sku_count' | 'sku_unico' | 'es_observacion_vigente'
 >
 
 export interface SologControlSku {
@@ -944,6 +977,11 @@ export interface SologControlHistoryRow {
   snapshot_referencia_id: string
   snapshot_posterior_id: string | null
   stock_posterior: number | null
+  tipo_observacion: SologObservationType
+  observacion_origen_id: string | null
+  diferencia_confirmada: number | null
+  confirmado_at: string | null
+  motivo_verificacion: string | null
   reconteo_stock: number | null
   recontado_at: string | null
 }

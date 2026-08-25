@@ -1,3 +1,5 @@
+import type { SologObservationType } from '../../types'
+
 const controlNumericDate = new Intl.DateTimeFormat('es-PE', {
   day: '2-digit',
   month: '2-digit',
@@ -48,4 +50,25 @@ export function formatControlDate(
 export function getControlDifferenceClass(value: number): string {
   const tone = value < 0 ? 'negative' : value > 0 ? 'positive' : 'zero'
   return `control-difference control-difference--${tone}`
+}
+
+const OBSERVATION_TYPE_LABELS: Record<SologObservationType, string> = {
+  base: 'Base',
+  seguimiento: 'Seguimiento',
+  reconteo: 'Reconteo',
+}
+
+const VERIFICATION_REASON_LABELS: Record<string, string> = {
+  movimiento_posterior: 'Movimiento posterior',
+  parcialmente_explicada: 'Parcialmente explicada',
+  persistente: 'Persistente',
+}
+
+export function getControlObservationTypeLabel(type: SologObservationType): string {
+  return OBSERVATION_TYPE_LABELS[type]
+}
+
+export function getControlVerificationReasonLabel(reason: string | null): string | null {
+  if (!reason) return null
+  return VERIFICATION_REASON_LABELS[reason] ?? reason.replaceAll('_', ' ')
 }

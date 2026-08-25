@@ -262,8 +262,8 @@ export function HomePage({
       {stock.disponible && !smartUnlocked ? <div className="notice"><strong>Completa el conteo total de la {periodLabel.toLowerCase()}.</strong><p>Las vistas inteligentes se habilitarán al llegar al 100 %.</p></div> : null}
       <CoverageCard
         title="Cobertura de hoy"
-        counted={bootstrap.cobertura_diaria.grupos_contados}
-        total={bootstrap.cobertura_diaria.grupos_totales}
+        counted={bootstrap.cobertura_diaria.grupos_verificados}
+        total={bootstrap.cobertura_diaria.grupos_requeridos}
         pending={bootstrap.cobertura_diaria.pendientes}
         percentage={bootstrap.cobertura_diaria.porcentaje}
         icon={CalendarDays}

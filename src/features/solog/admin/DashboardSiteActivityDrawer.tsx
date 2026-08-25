@@ -89,7 +89,8 @@ export function DashboardSiteActivityDrawer({
           {response ? (
             <>
               <dl className="dashboard-activity-summary">
-                <div><dt>Grupos hoy</dt><dd>{response.summary.grupos_registrados_hoy}</dd></div>
+                <div><dt>Observaciones hoy</dt><dd>{response.summary.observaciones_registradas_hoy}</dd></div>
+                <div><dt>Grupos verificados</dt><dd>{response.summary.grupos_verificados_distintos_hoy}</dd></div>
                 <div><dt>Sesiones hoy</dt><dd>{response.summary.sesiones_hoy}</dd></div>
                 <div>
                   <dt>Última actividad</dt>
@@ -118,7 +119,9 @@ export function DashboardSiteActivityDrawer({
                           </div>
                           <strong>{session.usuario}</strong>
                           <p>
-                            {session.grupos_registrados} {session.grupos_registrados === 1 ? 'grupo' : 'grupos'}
+                            {session.observaciones_registradas} {session.observaciones_registradas === 1 ? 'observación' : 'observaciones'}
+                            <span aria-hidden="true"> · </span>
+                            {session.grupos_verificados_distintos} {session.grupos_verificados_distintos === 1 ? 'grupo distinto' : 'grupos distintos'}
                             <span aria-hidden="true"> · </span>
                             <Clock3 aria-hidden="true" size={14} />
                             {formatDashboardDuration(session.duracion_segundos)}

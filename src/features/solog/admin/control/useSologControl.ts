@@ -67,6 +67,7 @@ export function useSologControl({
         sede_id: operational.sedeId,
         date_from: operational.dateFrom,
         date_to: operational.dateTo,
+        scope: 'resolver',
         grupo_estado: nextQuery.group,
         ...(nextQuery.categoriaId ? { categoria_id: nextQuery.categoriaId } : {}),
         ...(nextQuery.search ? { search: nextQuery.search } : {}),

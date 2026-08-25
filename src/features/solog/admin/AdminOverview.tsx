@@ -2,6 +2,7 @@ import {
   ChevronRight,
   CircleGauge,
   ListChecks,
+  Scale,
   ShieldAlert,
   TriangleAlert,
 } from 'lucide-react'
@@ -40,7 +41,7 @@ export function AdminDashboardLoading() {
   return (
     <div aria-label="Cargando Dashboard" className="admin-dashboard" role="status">
       <div className="admin-dashboard-kpis admin-dashboard-skeleton-kpis">
-        {Array.from({ length: 4 }, (_, index) => <span className="admin-dashboard-skeleton" key={index} />)}
+        {Array.from({ length: 5 }, (_, index) => <span className="admin-dashboard-skeleton" key={index} />)}
       </div>
       <span className="admin-dashboard-skeleton admin-dashboard-skeleton--table" />
     </div>
@@ -56,7 +57,9 @@ export function AdminOverview({
 }) {
   const [selectedSite, setSelectedSite] = useState<SologDashboardSite | null>(null)
   const coverage = dashboard.kpis.cobertura_quincenal
-  const countedToday = dashboard.kpis.contados_hoy
+  const verifiedToday = dashboard.kpis.verificados_hoy
+  const requiredToday = dashboard.kpis.requeridos_hoy
+  const activeSites = dashboard.kpis.contados_hoy.sedes_con_actividad
 
   return (
     <div className="admin-dashboard">
@@ -68,7 +71,11 @@ export function AdminOverview({
         </article>
         <article className="admin-dashboard-kpi admin-dashboard-kpi--success">
           <span className="admin-dashboard-kpi__icon"><ListChecks size={19} /></span>
-          <div><span>Contados hoy</span><strong>{countedToday.grupos_contados}</strong><small>{countedToday.sedes_con_actividad} {countedToday.sedes_con_actividad === 1 ? 'sede' : 'sedes'} con actividad</small></div>
+          <div><span>Verificados hoy</span><strong>{verifiedToday} / {requiredToday}</strong><small>seguimiento dinámico · {activeSites} {activeSites === 1 ? 'sede' : 'sedes'} con actividad</small></div>
+        </article>
+        <article className={`admin-dashboard-kpi${dashboard.kpis.diferencias_vigentes > 0 ? ' admin-dashboard-kpi--warning' : ''}`}>
+          <span className="admin-dashboard-kpi__icon"><Scale size={19} /></span>
+          <div><span>Diferencias vigentes</span><strong>{dashboard.kpis.diferencias_vigentes}</strong><small>saldo operativo confirmado</small></div>
         </article>
         <article className={`admin-dashboard-kpi${dashboard.kpis.diferencias_pendientes > 0 ? ' admin-dashboard-kpi--warning' : ''}`}>
           <span className="admin-dashboard-kpi__icon"><TriangleAlert size={19} /></span>
@@ -90,7 +97,7 @@ export function AdminOverview({
           <div className="admin-dashboard-table-wrap">
             <table className="admin-dashboard-table">
               <caption>Estado operativo por sede</caption>
-              <thead><tr><th>Sede</th><th>Cobertura quincenal</th><th>Cobertura hoy</th><th>Diferencias</th><th>Persistentes</th><th>Actividad</th><th aria-label="Abrir actividad" /></tr></thead>
+              <thead><tr><th>Sede</th><th>Cobertura quincenal</th><th>Seguimiento diario</th><th>Vigentes</th><th>Pendientes</th><th>Persistentes</th><th>Actividad</th><th aria-label="Abrir actividad" /></tr></thead>
               <tbody>
                 {dashboard.sedes.map((site) => (
                   <tr
@@ -109,7 +116,8 @@ export function AdminOverview({
                   >
                     <td><strong>{site.sede}</strong></td>
                     <td><CoverageCell coverage={site.cobertura_quincenal} label={`Cobertura quincenal de ${site.sede}`} /></td>
-                    <td><CoverageCell coverage={site.cobertura_hoy} label={`Cobertura de hoy de ${site.sede}`} /></td>
+                    <td><CoverageCell coverage={site.cobertura_hoy} label={`Grupos verificados y requeridos hoy en ${site.sede}`} /></td>
+                    <td><span className={`admin-dashboard-badge admin-dashboard-badge--${site.diferencias_vigentes > 0 ? 'warning' : 'muted'}`}>{site.diferencias_vigentes}</span></td>
                     <td><span className={`admin-dashboard-badge admin-dashboard-badge--${site.diferencias_pendientes > 0 ? 'warning' : 'muted'}`}>{site.diferencias_pendientes}</span></td>
                     <td><span className={`admin-dashboard-badge admin-dashboard-badge--${site.persistentes > 0 ? 'danger' : 'muted'}`}>{site.persistentes}</span></td>
                     <td>
