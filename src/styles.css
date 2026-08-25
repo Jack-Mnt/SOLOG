@@ -851,8 +851,7 @@ h1 {
   margin-top: 16px;
 }
 
-.count-form label,
-.login-form label {
+.count-form label {
   color: var(--color-text-secondary);
   font-size: 0.82rem;
   font-weight: 600;
@@ -864,8 +863,7 @@ h1 {
   gap: 10px;
 }
 
-.count-form input,
-.login-form input {
+.count-form input {
   width: 100%;
   min-height: 48px;
   padding: 10px 12px;
@@ -883,8 +881,7 @@ h1 {
   font-weight: 700;
 }
 
-.count-form input:focus,
-.login-form input:focus {
+.count-form input:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px
     color-mix(in srgb, var(--color-primary) 10%, transparent);
@@ -995,50 +992,6 @@ h1 {
 
 .shell--auth .page-heading {
   max-width: 500px;
-}
-.login-card {
-  max-width: 440px;
-}
-
-.login-intro {
-  margin-bottom: 18px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.login-intro p {
-  margin: 5px 0 0;
-  color: var(--color-text-secondary);
-}
-.login-form {
-  display: grid;
-  gap: 15px;
-}
-.login-form label {
-  display: grid;
-  gap: 7px;
-}
-.login-form .button {
-  width: 100%;
-  margin-top: 4px;
-}
-
-.input-with-icon {
-  position: relative;
-  display: block;
-}
-
-.input-with-icon > svg {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  left: 13px;
-  color: var(--color-text-muted);
-  transform: translateY(-50%);
-}
-
-.input-with-icon input {
-  padding-left: 42px;
 }
 
 .device-pending-panel {
@@ -5490,6 +5443,522 @@ h1 {
   }
 }
 
+/* Login SOLOG */
+.solog-login-shell {
+  --solog-login-blue: var(--brand-blue);
+  --solog-login-violet: var(--brand-violet);
+  --solog-login-green: var(--brand-green);
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+  overflow-x: clip;
+  color: var(--color-text-primary);
+  background: #ffffff;
+}
+
+.solog-login-brand {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 24px;
+  padding: clamp(34px, 5vw, 64px);
+  overflow: hidden;
+  border-right: 1px solid rgb(220 227 236 / 72%);
+  background:
+    radial-gradient(circle at 26% 24%, rgb(10 99 248 / 5%), transparent 25rem),
+    radial-gradient(circle at 78% 54%, rgb(122 0 255 / 4%), transparent 24rem),
+    radial-gradient(
+      circle at 32% 90%,
+      rgb(16 185 129 / 2.5%),
+      transparent 20rem
+    ),
+    #f8fafc;
+}
+
+.solog-login-brand__logo,
+.solog-login-mobile-logo {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+}
+
+.solog-login-brand__logo img,
+.solog-login-mobile-logo img {
+  display: block;
+  width: auto;
+  height: 31px;
+  object-fit: contain;
+}
+
+.solog-login-art {
+  position: relative;
+  width: min(34vw, 430px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  justify-self: center;
+  isolation: isolate;
+  animation: solog-login-reveal 540ms 60ms ease-out both;
+}
+
+.solog-login-art > img {
+  position: relative;
+  z-index: 3;
+  width: 54%;
+  height: 54%;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 30px rgb(15 23 42 / 10%));
+}
+
+.solog-login-art__halo,
+.solog-login-art__ring,
+.solog-login-art__dot {
+  position: absolute;
+  pointer-events: none;
+}
+
+.solog-login-art__halo {
+  z-index: -1;
+  width: 72%;
+  height: 72%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 34%, rgb(10 99 248 / 12%), transparent 58%),
+    radial-gradient(circle at 68% 70%, rgb(122 0 255 / 8%), transparent 58%),
+    rgb(255 255 255 / 76%);
+  box-shadow: 0 26px 60px rgb(10 99 248 / 7%);
+}
+
+.solog-login-art__ring {
+  z-index: -2;
+  border: 1px solid rgb(10 99 248 / 11%);
+  border-radius: 50%;
+}
+
+.solog-login-art__ring--outer {
+  width: 96%;
+  height: 96%;
+}
+
+.solog-login-art__ring--inner {
+  width: 79%;
+  height: 79%;
+  border-color: rgb(122 0 255 / 9%);
+}
+
+.solog-login-art__ring::before {
+  position: absolute;
+  border: 1px solid transparent;
+  border-top-color: rgb(10 99 248 / 16%);
+  border-radius: 50%;
+  content: "";
+  inset: 8%;
+  transform: rotate(32deg);
+}
+
+.solog-login-art__ring--inner::before {
+  border-top-color: rgb(16 185 129 / 17%);
+  transform: rotate(-46deg);
+}
+
+.solog-login-art__dot {
+  z-index: 4;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 7px currentColor;
+}
+
+.solog-login-art__dot--blue {
+  top: 15%;
+  left: 20%;
+  color: rgb(10 99 248 / 7%);
+  background: var(--solog-login-blue);
+}
+
+.solog-login-art__dot--violet {
+  right: 10%;
+  bottom: 31%;
+  color: rgb(122 0 255 / 6%);
+  background: var(--solog-login-violet);
+}
+
+.solog-login-art__dot--green {
+  bottom: 12%;
+  left: 29%;
+  width: 7px;
+  height: 7px;
+  color: rgb(16 185 129 / 6%);
+  background: var(--solog-login-green);
+}
+
+.solog-login-brand__copy {
+  max-width: 460px;
+  animation: solog-login-reveal 500ms ease-out both;
+}
+
+.solog-login-brand__copy h2 {
+  margin: 0 0 10px;
+  color: #0b1733;
+  font-size: clamp(1.45rem, 2.6vw, 2.15rem);
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+
+.solog-login-brand__copy h2::before {
+  width: 30px;
+  height: 3px;
+  display: block;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--solog-login-blue),
+    var(--solog-login-green)
+  );
+  content: "";
+}
+
+.solog-login-brand__copy p {
+  max-width: 430px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.solog-login-access {
+  min-width: 0;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: clamp(36px, 6vw, 76px);
+  background: #ffffff;
+}
+
+.solog-login-panel {
+  width: min(100%, 460px);
+  animation: solog-login-reveal 520ms ease-out both;
+}
+
+.solog-login-mobile-logo,
+.solog-login-mobile-copy {
+  display: none;
+}
+
+.solog-login-heading {
+  margin-bottom: 34px;
+}
+
+.solog-login-heading p {
+  margin: 0 0 11px;
+  color: var(--solog-login-blue);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.solog-login-heading h1 {
+  margin: 0;
+  color: #0b1733;
+  font-size: clamp(2rem, 3.4vw, 2.65rem);
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+.solog-login-heading span {
+  display: block;
+  margin-top: 11px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.solog-login-form {
+  display: grid;
+  gap: 8px;
+}
+
+.solog-login-form label {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.solog-login-control + label {
+  margin-top: 10px;
+}
+
+.solog-login-control {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: #ffffff;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.solog-login-control:focus-within {
+  border-color: var(--solog-login-blue);
+  box-shadow:
+    0 0 0 3px rgb(10 99 248 / 9%),
+    0 0 0 5px rgb(122 0 255 / 3%);
+}
+
+.solog-login-control > svg {
+  position: absolute;
+  left: 14px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.solog-login-control input {
+  width: 100%;
+  height: 48px;
+  min-width: 0;
+  padding: 10px 14px 10px 43px;
+  border: 0;
+  outline: 0;
+  border-radius: inherit;
+  color: var(--color-text-primary);
+  background: transparent;
+  font-size: 0.9rem;
+}
+
+.solog-login-control--password input {
+  padding-right: 46px;
+}
+
+.solog-login-password-toggle {
+  position: absolute;
+  right: 7px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.solog-login-password-toggle:hover {
+  color: var(--solog-login-blue);
+  background: rgb(10 99 248 / 6%);
+}
+
+.solog-login-submit {
+  width: 100%;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 15px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: #ffffff;
+  background: linear-gradient(
+    120deg,
+    var(--solog-login-blue),
+    color-mix(in srgb, var(--solog-login-blue) 74%, var(--solog-login-violet))
+  );
+  box-shadow: 0 8px 20px rgb(10 99 248 / 15%);
+  font-size: 0.86rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.solog-login-submit:hover:not(:disabled) {
+  box-shadow: 0 11px 24px rgb(10 99 248 / 20%);
+  filter: saturate(1.04);
+  transform: translateY(-1px);
+}
+
+.solog-login-submit:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.solog-login-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.solog-login-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  color: var(--color-text-secondary);
+  background: transparent;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.solog-login-text-link:hover {
+  color: var(--solog-login-blue);
+}
+
+.solog-login-recovery {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgb(10 99 248 / 10%);
+  border-radius: 10px;
+  color: var(--color-text-secondary);
+  background: rgb(10 99 248 / 4%);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.solog-login-internal {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 34px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.solog-login-internal span {
+  color: var(--solog-login-green);
+  font-size: 0.72rem;
+}
+
+.solog-login-shell a:focus-visible,
+.solog-login-shell button:focus-visible {
+  outline: 3px solid rgb(10 99 248 / 22%);
+  outline-offset: 3px;
+}
+
+@keyframes solog-login-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 820px) {
+  .solog-login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .solog-login-brand {
+    display: none;
+  }
+
+  .solog-login-access {
+    min-height: 100svh;
+    padding: 36px 24px;
+  }
+
+  .solog-login-mobile-logo {
+    display: inline-flex;
+    margin-bottom: 46px;
+  }
+
+  .solog-login-mobile-copy {
+    display: grid;
+    gap: 5px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .solog-login-mobile-copy strong {
+    color: #0b1733;
+    font-size: 0.82rem;
+  }
+
+  .solog-login-mobile-copy span {
+    max-width: 390px;
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 480px) {
+  .solog-login-access {
+    align-items: start;
+    padding: 28px 20px;
+  }
+
+  .solog-login-mobile-logo {
+    margin-bottom: 38px;
+  }
+
+  .solog-login-mobile-logo img {
+    height: 28px;
+  }
+
+  .solog-login-heading {
+    margin-bottom: 28px;
+  }
+
+  .solog-login-heading h1 {
+    font-size: 2rem;
+  }
+
+  .solog-login-links {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .solog-login-internal {
+    margin-top: 28px;
+  }
+}
+
+@media (max-height: 700px) and (min-width: 821px) {
+  .solog-login-brand {
+    gap: 14px;
+    padding-block: 28px;
+  }
+
+  .solog-login-art {
+    width: min(27vw, 300px);
+  }
+
+  .solog-login-heading {
+    margin-bottom: 24px;
+  }
+
+  .solog-login-internal {
+    margin-top: 22px;
+  }
+}
 /* Home público SOLOG */
 .solog-home {
   --solog-home-blue: var(--brand-blue);
@@ -5575,8 +6044,7 @@ h1 {
   padding: 8px 14px;
 }
 
-.solog-home a:focus-visible,
-.login-home-link:focus-visible {
+.solog-home a:focus-visible {
   outline: 3px solid rgb(10 99 248 / 24%);
   outline-offset: 3px;
 }
@@ -5962,23 +6430,6 @@ h1 {
 
 .solog-home-footer small {
   justify-self: end;
-}
-
-.login-home-link {
-  width: fit-content;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 20px;
-  color: var(--color-text-secondary);
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
-
-.login-home-link:hover {
-  color: var(--color-primary);
 }
 
 @keyframes solog-home-reveal {
