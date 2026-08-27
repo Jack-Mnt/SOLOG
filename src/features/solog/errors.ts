@@ -31,19 +31,29 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_INVALID_BATCH_PAYLOAD',
   'SOLOG_BATCH_TOO_LARGE',
   'SOLOG_INVALID_BATCH_ITEM',
+  'SOLOG_INVALID_OBSERVATION_TYPE',
+  'SOLOG_CLIENT_OBSERVATION_CONFLICT',
   'SOLOG_INVALID_COUNT_TIMESTAMP',
   'SOLOG_DUPLICATE_GROUP_IN_BATCH',
   'SOLOG_GROUP_ALREADY_COVERED_QUINCENA',
   'SOLOG_QUINCENAL_COVERAGE_REQUIRED',
   'SOLOG_GROUP_NOT_AVAILABLE',
   'SOLOG_GROUP_NOT_IN_CATALOG',
+  'SOLOG_GROUP_ALREADY_COVERED',
+  'SOLOG_GROUP_NOT_YET_COVERED',
+  'SOLOG_GROUP_NOT_REQUIRED',
   'SOLOG_GROUP_NOT_ALLOWED_IN_COUNT',
   'SOLOG_USE_RECOUNT_ACTION',
   'SOLOG_VIEW_REQUIRED',
   'SOLOG_INVALID_RECOUNT_PAYLOAD',
   'SOLOG_RECOUNT_NOT_AVAILABLE',
   'SOLOG_RECOUNT_NOT_ELIGIBLE',
+  'SOLOG_RECOUNT_ORIGIN_REQUIRED',
+  'SOLOG_RECOUNT_ORIGIN_STALE',
   'SOLOG_RECOUNT_ALREADY_DONE',
+  'SOLOG_STOCK_UPDATED_BEFORE_COUNT',
+  'SOLOG_LATE_BATCH_WINDOW_EXPIRED',
+  'SOLOG_INVALID_HISTORY_PERIOD',
   'SOLOG_SEDE_REQUIRED',
   'SOLOG_SEDE_NOT_FOUND',
   'SOLOG_INVALID_CONTROL_FILTER',
@@ -211,12 +221,18 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_INVALID_BATCH_PAYLOAD: 'El lote de capturas no es válido.',
   SOLOG_BATCH_TOO_LARGE: 'El lote supera el máximo de 500 capturas.',
   SOLOG_INVALID_BATCH_ITEM: 'Una captura del lote no es válida.',
+  SOLOG_INVALID_OBSERVATION_TYPE: 'El tipo de observación no es válido.',
+  SOLOG_CLIENT_OBSERVATION_CONFLICT:
+    'La observación local entra en conflicto con otra captura ya registrada.',
   SOLOG_INVALID_COUNT_TIMESTAMP:
     'La hora física de una captura no es válida.',
   SOLOG_DUPLICATE_GROUP_IN_BATCH:
     'El lote contiene el mismo grupo más de una vez.',
   SOLOG_GROUP_ALREADY_COVERED_QUINCENA:
     'Uno de los grupos ya estaba cubierto en la quincena. Actualiza la vista antes de reintentar.',
+  SOLOG_GROUP_ALREADY_COVERED: 'El grupo ya fue cubierto en esta quincena.',
+  SOLOG_GROUP_NOT_YET_COVERED: 'El grupo todavía requiere su observación base.',
+  SOLOG_GROUP_NOT_REQUIRED: 'El grupo ya no requiere una nueva verificación.',
   SOLOG_QUINCENAL_COVERAGE_REQUIRED:
     'Completa primero la cobertura quincenal para usar esta vista.',
   SOLOG_GROUP_NOT_ALLOWED_IN_COUNT:
@@ -226,9 +242,18 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_RECOUNT_NOT_AVAILABLE:
     'Este reconteo ya no está disponible.',
   SOLOG_RECOUNT_NOT_ELIGIBLE:
-    'Este grupo ya no requiere conteo detallado.',
+    'Este grupo ya no requiere un reconteo.',
+  SOLOG_RECOUNT_ORIGIN_REQUIRED:
+    'El reconteo no tiene una observación de origen válida.',
+  SOLOG_RECOUNT_ORIGIN_STALE:
+    'Existe una observación más reciente para este grupo.',
   SOLOG_RECOUNT_ALREADY_DONE:
     'Este grupo ya fue recontado.',
+  SOLOG_STOCK_UPDATED_BEFORE_COUNT:
+    'El stock TumiSoft cambió antes de realizar esta captura.',
+  SOLOG_LATE_BATCH_WINDOW_EXPIRED:
+    'Venció el plazo de recuperación para enviar este conteo.',
+  SOLOG_INVALID_HISTORY_PERIOD: 'El período del historial no es válido.',
   SOLOG_INVALID_RECOUNT_GROUP:
     'El backend no devolvió el detalle original necesario para recontar este grupo.',
   SOLOG_CLIENT_NOT_CONFIGURED:

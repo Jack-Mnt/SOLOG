@@ -1,0 +1,111 @@
+import { AlertTriangle, RefreshCw, X } from 'lucide-react'
+import { useEffect } from 'react'
+import type { SologOperationalBootstrap } from '../types'
+import { CajeroConteo } from './cajero.conteo'
+import { CajeroHeader } from './cajero.header'
+import { CajeroHistorial } from './cajero.historial'
+import { CajeroInicio } from './cajero.inicio'
+import { CajeroSeguimiento } from './cajero.seguimiento'
+import {
+  useCajeroSession,
+  type CajeroBlockReason,
+} from './cajero.session'
+import type { CajeroRoute } from './cajero.types'
+
+const BLOCK_MESSAGES: Record<CajeroBlockReason, { title: string; detail: string }> = {
+  expired: {
+    title: 'La referencia de stock venció.',
+    detail: 'No registres nuevas capturas. Envía los conteos pendientes para conservarlos.',
+  },
+  stock_updated: {
+    title: 'Stock TumiSoft actualizado.',
+    detail: 'Envía tu conteo para continuar con una referencia nueva.',
+  },
+  inactive: {
+    title: 'La sesión se bloqueó por inactividad.',
+    detail: 'Los conteos locales se conservan hasta confirmar su envío.',
+  },
+  stock_unavailable: {
+    title: 'La actualización de stock ya no está disponible.',
+    detail: 'No se permiten nuevas capturas con esta referencia.',
+  },
+}
+
+export function Cajero({
+  bootstrap,
+  route,
+  onLogout,
+}: {
+  bootstrap: SologOperationalBootstrap
+  route: CajeroRoute
+  onLogout: () => Promise<void>
+}) {
+  const session = useCajeroSession(onLogout)
+
+  useEffect(() => {
+    void session.checkFreshness(true)
+    // La ruta es el disparador explícito de entrada a vista.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route])
+
+  const blockMessage = session.blockReason
+    ? BLOCK_MESSAGES[session.blockReason]
+    : null
+
+  return (
+    <div className="cajero-shell">
+      <CajeroHeader
+        onLogout={() => void session.logoutSafely()}
+        onSend={() => void session.sendPending()}
+        pendingCount={session.pendingCount}
+        route={route}
+        sede={bootstrap.sede.nombre}
+        sending={session.sending}
+      />
+      <main className="cajero-main">
+        {blockMessage ? (
+          <div className="cajero-alert cajero-alert--warning" role="alert">
+            <AlertTriangle aria-hidden="true" size={22} />
+            <div>
+              <strong>{blockMessage.title}</strong>
+              <p>{blockMessage.detail}</p>
+            </div>
+            {session.pendingCount > 0 ? (
+              <button
+                className="button button--secondary"
+                disabled={session.sending}
+                onClick={() => void session.retrySend()}
+                type="button"
+              >
+                <RefreshCw aria-hidden="true" size={18} /> Reintentar envío
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        {session.error ? (
+          <div className="cajero-alert cajero-alert--error" role="alert">
+            <AlertTriangle aria-hidden="true" size={22} />
+            <p>{session.error}</p>
+            <button
+              aria-label="Cerrar mensaje"
+              className="cajero-alert__dismiss"
+              onClick={session.clearError}
+              type="button"
+            >
+              <X aria-hidden="true" size={18} />
+            </button>
+          </div>
+        ) : null}
+        {route === '/cajero' ? (
+          <CajeroInicio bootstrap={bootstrap} session={session} />
+        ) : route === '/cajero/conteo' ? (
+          <CajeroConteo bootstrap={bootstrap} session={session} />
+        ) : route === '/cajero/seguimiento' ? (
+          <CajeroSeguimiento session={session} />
+        ) : (
+          <CajeroHistorial />
+        )}
+      </main>
+    </div>
+  )
+}

@@ -6,6 +6,7 @@ import { AdminLayout } from './features/solog/admin/AdminLayout'
 import { SologProvider, useSolog } from './features/solog/SologContext'
 import {
   isAdminRoute,
+  isCashierRoute,
   replaceRoute,
   resolveTrustedRoute,
   type AdminRoute,
@@ -13,13 +14,12 @@ import {
 } from './lib/router'
 import { AdminDevicesPage } from './pages/admin.dispositivos'
 import { AdminDashboardPage } from './pages/admin'
-import { CountPage } from './pages/CountPage'
 import { DevicePendingPage } from './pages/DevicePendingPage'
 import { LoginPage } from './pages/LoginPage'
 
-const CashierHomePage = lazy(() =>
-  import('./pages/HomePage').then((module) => ({
-    default: module.HomePage,
+const Cajero = lazy(() =>
+  import('./features/solog/cajero/Cajero').then((module) => ({
+    default: module.Cajero,
   })),
 )
 
@@ -133,8 +133,8 @@ function AppContent() {
     )
   }
 
-  const handleLogout = () => {
-    void auth.logout()
+  const handleLogout = async () => {
+    await auth.logout()
   }
 
   if (solog.status === 'error' || !solog.bootstrap) {
@@ -142,7 +142,7 @@ function AppContent() {
       <PageShell
         description={solog.error ?? 'No se pudo cargar el estado de SOLOG.'}
         eyebrow="SOLOG"
-        onLogout={handleLogout}
+        onLogout={() => void handleLogout()}
         title="No se pudo continuar"
       >
         <button className="button" onClick={() => void solog.refresh()}>
@@ -157,7 +157,7 @@ function AppContent() {
 
   if (isAdminRoute(resolvedRoute)) {
     return (
-      <AdminLayout bootstrap={bootstrap} onLogout={handleLogout}>
+      <AdminLayout bootstrap={bootstrap} onLogout={() => void handleLogout()}>
         <Suspense fallback={<div className="empty-state" role="status">Preparando módulo…</div>}>
           {getAdminPage(resolvedRoute)}
         </Suspense>
@@ -165,30 +165,36 @@ function AppContent() {
     )
   }
 
-  switch (resolvedRoute) {
-    case '/device-pending':
-      return (
-        <DevicePendingPage bootstrap={bootstrap} onLogout={handleLogout} />
-      )
-    case '/count':
-      return <CountPage bootstrap={bootstrap} onLogout={handleLogout} />
-    case '/cajero':
-      return (
-        <Suspense
-          fallback={
-            <PageShell
-              description="Preparando el espacio operativo."
-              eyebrow="SOLOG"
-              title="Cargando panel…"
-            />
-          }
-        >
-          <CashierHomePage bootstrap={bootstrap} onLogout={handleLogout} />
-        </Suspense>
-      )
-    case '/login':
-      return <LoginPage />
+  if (resolvedRoute === '/device-pending') {
+    return (
+      <DevicePendingPage
+        bootstrap={bootstrap}
+        onLogout={() => void handleLogout()}
+      />
+    )
   }
+
+  if (isCashierRoute(resolvedRoute)) {
+    return (
+      <Suspense
+        fallback={
+          <PageShell
+            description="Preparando el espacio operativo."
+            eyebrow="SOLOG"
+            title="Cargando panel…"
+          />
+        }
+      >
+        <Cajero
+          bootstrap={bootstrap}
+          onLogout={handleLogout}
+          route={resolvedRoute}
+        />
+      </Suspense>
+    )
+  }
+
+  return <LoginPage />
 }
 
 function App() {

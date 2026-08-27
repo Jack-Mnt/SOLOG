@@ -6,14 +6,6 @@ export type SologDeviceState =
   | 'autorizado'
   | 'revocado'
 
-export type SologCountView =
-  | 'categoria'
-  | 'stock_cero'
-  | 'cambios_recientes'
-  | 'stock_negativo'
-  | 'contar_detalladamente'
-
-export type SologBatchCountView = Exclude<SologCountView, 'contar_detalladamente'>
 export type SologSessionState = 'activo' | 'finalizado' | 'expirado'
 
 export type SologDifferenceState =
@@ -55,13 +47,14 @@ export interface SologDevice {
 
 export interface SologActiveSession {
   id: string
-  estado: 'activo'
+  estado?: 'activo'
   iniciado_at: string
   expira_at: string
   snapshot_referencia_id: string
   snapshot_referencia_at: string
   snapshot_confirmado_at: string
-  grupos_registrados: number
+  grupos_guardados: number
+  grupos_registrados?: number
 }
 
 export interface SologAvailableStockState {
@@ -94,6 +87,7 @@ export interface SologCoverage {
 }
 
 export interface SologDailyCoverage {
+  fecha: string
   grupos_requeridos: number
   grupos_verificados: number
   pendientes: number
@@ -103,26 +97,36 @@ export interface SologDailyCoverage {
 
 export interface SologFortnightCoverage extends SologCoverage {
   completa: boolean
-  periodo: 'primera' | 'segunda'
+  quincena: 'primera' | 'segunda'
+  desde: string
+  hasta: string
+  periodo?: 'primera' | 'segunda'
 }
 
 export interface SologCategory {
   id: string
   nombre: string
   orden: number
-  pendientes: number
-}
-
-export interface SologViewCounts {
-  stock_cero: number
-  cambios_recientes: number
-  stock_negativo: number
-  contar_detalladamente: number
+  grupos_totales: number
+  grupos_pendientes_quincena: number
+  pendientes?: number
 }
 
 export interface SologMainCountState {
   categorias: SologCategory[]
   stock_cero_pendientes: number
+}
+
+export interface SologOperationalViewState {
+  cantidad: number
+  habilitado: boolean
+}
+
+export interface SologIntelligentViews {
+  seguimiento: SologOperationalViewState
+  cambios_recientes: SologOperationalViewState
+  stock_negativo: SologOperationalViewState
+  contar_detalladamente: SologOperationalViewState
 }
 
 export interface SologOperationalBootstrap {
@@ -135,7 +139,7 @@ export interface SologOperationalBootstrap {
   cobertura_diaria: SologDailyCoverage
   cobertura_quincenal: SologFortnightCoverage
   conteo_principal: SologMainCountState
-  vistas?: SologViewCounts
+  vistas_inteligentes: SologIntelligentViews
 }
 
 export type SologAdminOperationalBootstrap = Omit<
@@ -143,166 +147,6 @@ export type SologAdminOperationalBootstrap = Omit<
   'stock'
 > & {
   stock: SologStockState | null
-}
-
-export interface SologGroupProduct {
-  c_interno: number
-  producto: string
-  marca: string
-}
-
-export interface SologCountGroupBase {
-  grupo_id: string
-  nombre: string
-  categoria_id: string
-  categoria: string
-  precio: number
-  stock_teorico: number
-  productos: SologGroupProduct[]
-  contado: boolean
-}
-
-export interface SologRegularCountGroup extends SologCountGroupBase {
-  detalle_id: null
-  estado_diferencia: null
-  stock_fisico_original: null
-  contado_at_original: null
-}
-
-export interface SologRecountGroup extends SologCountGroupBase {
-  detalle_id: string
-  estado_diferencia: 'parcialmente_explicada' | 'persistente'
-  stock_fisico_original: number
-  contado_at_original: string
-}
-
-export type SologCountGroup = SologRegularCountGroup | SologRecountGroup
-
-export function isSologRecountGroup(group: SologCountGroup): group is SologRecountGroup {
-  return (
-    typeof group.detalle_id === 'string' &&
-    group.detalle_id.length > 0 &&
-    (group.estado_diferencia === 'parcialmente_explicada' ||
-      group.estado_diferencia === 'persistente')
-  )
-}
-
-export interface SologGroupsResponse {
-  conteo_id: string
-  vista: SologCountView
-  snapshot_referencia_id: string
-  snapshot_referencia_at: string
-  server_now?: string
-  grupos: SologCountGroup[]
-}
-
-export type SologGroupsPayload =
-  | { device_token: string; vista: 'categoria'; categoria_id: string }
-  | { device_token: string; vista: Exclude<SologCountView, 'categoria'> }
-
-export interface SologCountStartPayload {
-  device_token: string
-}
-
-export interface SologCountStartResponse {
-  ok: true
-  codigo: 'COUNT_STARTED'
-  conteo_id: string
-  snapshot_referencia_id: string
-  snapshot_referencia_at: string
-  snapshot_confirmado_at: string
-  iniciado_at: string
-  expira_at: string
-  server_now: string
-}
-
-export interface SologBatchItem {
-  grupo_id: string
-  stock_fisico: number
-  contado_at: string
-}
-
-export type SologCountBatchPayload =
-  | {
-      device_token: string
-      conteo_id: string
-      vista: 'categoria'
-      categoria_id: string
-      items: SologBatchItem[]
-    }
-  | {
-      device_token: string
-      conteo_id: string
-      vista: Exclude<SologBatchCountView, 'categoria'>
-      items: SologBatchItem[]
-    }
-
-export interface SologBatchResultItem {
-  detalle_id: string
-  grupo_id: string
-  stock_teorico: number
-  stock_fisico: number
-  diferencia: number
-  precio: number
-  valor_diferencia: number
-  estado_diferencia: SologDifferenceState
-  contado_at: string
-}
-
-export interface SologCountBatchResponse {
-  ok: true
-  codigo: 'COUNT_BATCH_SAVED'
-  conteo_id: string
-  items: SologBatchResultItem[]
-  guardados: number
-  sesion_expirada: boolean
-  server_now: string
-}
-
-export interface SologCountFinishPayload {
-  device_token: string
-  conteo_id: string
-}
-
-export interface SologCountFinishResponse {
-  ok: true
-  codigo: 'COUNT_FINISHED'
-  conteo_id: string
-  estado: 'finalizado'
-  finalizado_at: string
-  server_now?: string
-}
-
-export interface SologRecountPayload {
-  device_token: string
-  conteo_id: string
-  detalle_id: string
-  stock_fisico: number
-  contado_at: string
-}
-
-export interface SologRecountResponse {
-  ok: true
-  codigo: 'RECOUNT_SAVED'
-  conteo_id: string
-  detalle_id: string
-  stock_fisico_original: number
-  reconteo_stock: number
-  estado_diferencia: 'confirmada_reconteo' | 'conteos_inconsistentes'
-  recontado_at: string
-  server_now?: string
-}
-
-export interface SologPendingCapture extends SologBatchItem {
-  local_id: string
-  vista: SologBatchCountView
-  categoria_id?: string
-}
-
-export interface SologPendingQueue {
-  version: 2
-  conteo_id: string
-  items: SologPendingCapture[]
 }
 
 export interface SologAdminUser {

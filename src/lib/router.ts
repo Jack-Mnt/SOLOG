@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import type { CajeroRoute } from '../features/solog/cajero/cajero.types'
 import type { SologOperationalBootstrap } from '../features/solog/types'
 
 export type AdminRoute =
@@ -9,13 +10,7 @@ export type AdminRoute =
   | '/admin/grupos'
   | '/admin/dispositivos'
 
-export type AppRoute =
-  | '/login'
-  | '/'
-  | '/cajero'
-  | '/device-pending'
-  | '/count'
-  | AdminRoute
+export type AppRoute = '/login' | '/' | '/device-pending' | CajeroRoute | AdminRoute
 
 export const ADMIN_ROUTES: AdminRoute[] = [
   '/admin',
@@ -26,8 +21,19 @@ export const ADMIN_ROUTES: AdminRoute[] = [
   '/admin/dispositivos',
 ]
 
+export const CASHIER_ROUTES: CajeroRoute[] = [
+  '/cajero',
+  '/cajero/conteo',
+  '/cajero/seguimiento',
+  '/cajero/historial',
+]
+
 export function isAdminRoute(pathname: string): pathname is AdminRoute {
   return ADMIN_ROUTES.includes(pathname as AdminRoute)
+}
+
+export function isCashierRoute(pathname: string): pathname is CajeroRoute {
+  return CASHIER_ROUTES.includes(pathname as CajeroRoute)
 }
 
 const NAVIGATION_EVENT = 'solog:navigation'
@@ -56,8 +62,8 @@ export function resolveTrustedRoute(
     bootstrap.dispositivo.estado === 'autorizado'
 
   if (!deviceAuthorized) return '/device-pending'
-  if (requestedPath === '/count' && bootstrap.sesion_activa) return '/count'
-  return '/cajero'
+  if (requestedPath === '/count') return '/cajero/conteo'
+  return isCashierRoute(requestedPath) ? requestedPath : '/cajero'
 }
 
 function subscribe(onStoreChange: () => void) {

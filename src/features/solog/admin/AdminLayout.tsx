@@ -11,7 +11,7 @@ import {
   UserRound,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { PaletteSwitcher } from "../../theme/PaletteSwitcher";
 import { navigateTo, type AdminRoute, usePathname } from "../../../lib/router";
 import { useSolog } from "../SologContext";
@@ -119,15 +119,19 @@ export function AdminLayout({
 }) {
   const pathname = usePathname();
   const solog = useSolog();
+  const { refresh: refreshSolog } = solog;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     getInitialSidebarState,
   );
   const workspaceMainRef = useRef<HTMLElement>(null);
+  const refreshOperationalState = useCallback(async () => {
+    await refreshSolog();
+  }, [refreshSolog]);
   const hasAdminRole =
     bootstrap.usuario.rol === "admin" || bootstrap.usuario.rol === "moderador";
   const admin = useAdminSolog({
     enabled: hasAdminRole,
-    refreshOperationalState: solog.refresh,
+    refreshOperationalState,
   });
   const userName = admin.bootstrap?.usuario.nombre ?? bootstrap.usuario.nombre;
   const userRole = admin.bootstrap?.usuario.rol ?? bootstrap.usuario.rol;
@@ -330,7 +334,7 @@ export function AdminLayout({
                 value={{
                   operationalBootstrap: bootstrap,
                   admin,
-                  refreshOperationalState: solog.refresh,
+                  refreshOperationalState,
                 }}
               >
                 <div className="admin-content">{children}</div>

@@ -22,7 +22,7 @@ interface SologContextValue {
   error: string | null
   notice: string | null
   serverOffsetMs: number
-  refresh: (preserveView?: boolean) => Promise<void>
+  refresh: (preserveView?: boolean) => Promise<SologOperationalBootstrap | null>
   updateServerNow: (serverNow: string) => void
   setNotice: (notice: string | null) => void
 }
@@ -73,7 +73,7 @@ export function SologProvider({ children }: { children: ReactNode }) {
       setBootstrap(null)
       setError(null)
       setStatus('idle')
-      return
+      return null
     }
 
     if (!preserveView) setStatus('loading')
@@ -81,13 +81,14 @@ export function SologProvider({ children }: { children: ReactNode }) {
 
     try {
       const nextBootstrap = await loadTrustedBootstrap()
-      if (currentRequest !== requestVersion.current) return
+      if (currentRequest !== requestVersion.current) return null
       setBootstrap(nextBootstrap)
       const nextOffset = getServerOffset(nextBootstrap.server_now)
       if (nextOffset !== null) setServerOffsetMs(nextOffset)
       setStatus('ready')
+      return nextBootstrap
     } catch (bootstrapError) {
-      if (currentRequest !== requestVersion.current) return
+      if (currentRequest !== requestVersion.current) return null
       setBootstrap(null)
       setError(
         bootstrapError instanceof Error
@@ -95,6 +96,7 @@ export function SologProvider({ children }: { children: ReactNode }) {
           : 'No se pudo cargar el estado operativo de SOLOG.',
       )
       setStatus('error')
+      return null
     }
   }, [auth.status])
 

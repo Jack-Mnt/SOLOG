@@ -26,14 +26,6 @@ import type {
   SologControlExportResponse,
   SologControlPayload,
   SologControlResponse,
-  SologCountBatchPayload,
-  SologCountBatchResponse,
-  SologCountFinishPayload,
-  SologCountFinishResponse,
-  SologCountStartPayload,
-  SologCountStartResponse,
-  SologGroupsPayload,
-  SologGroupsResponse,
   SologAdminGroupsFilters,
   SologAdminGroupsResponse,
   SologGroupProductsFilters,
@@ -45,8 +37,6 @@ import type {
   SologOperationalBootstrap,
   CatalogPublicationPreview,
   PublishCatalogResponse,
-  SologRecountPayload,
-  SologRecountResponse,
   SologRevokeDeviceResponse,
 } from './types'
 
@@ -65,7 +55,7 @@ function getClient() {
   return supabase
 }
 
-async function callSologRpc<T>(rpcName: SologRpcName, action: string, payload: object): Promise<T> {
+export async function callSologRpc<T>(rpcName: SologRpcName, action: string, payload: object): Promise<T> {
   const { data, error } = await getClient().rpc(rpcName, {
     p_action: action,
     p_payload: payload,
@@ -93,26 +83,6 @@ export function getSologBootstrap(deviceToken?: string) {
     'bootstrap',
     deviceToken ? { device_token: deviceToken } : {},
   )
-}
-
-export function getSologGroups(input: SologGroupsPayload) {
-  return callSologRpc<SologGroupsResponse>('rpc_solog_state', 'groups', input)
-}
-
-export function startCount(input: SologCountStartPayload) {
-  return callSologRpc<SologCountStartResponse>('rpc_solog_count', 'start', input)
-}
-
-export function saveCountBatch(input: SologCountBatchPayload) {
-  return callSologRpc<SologCountBatchResponse>('rpc_solog_count', 'save_batch', input)
-}
-
-export function finishCount(input: SologCountFinishPayload) {
-  return callSologRpc<SologCountFinishResponse>('rpc_solog_count', 'finish', input)
-}
-
-export function recountSologGroup(input: SologRecountPayload) {
-  return callSologRpc<SologRecountResponse>('rpc_solog_count', 'recount', input)
 }
 
 export function getSologAdminBootstrap() {
