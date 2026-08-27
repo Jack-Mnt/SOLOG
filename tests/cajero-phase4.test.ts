@@ -67,7 +67,7 @@ function observation(
     tipo_observacion: tipo,
     observacion_origen_id: origen,
     display: {
-      vista: tipo === 'auto' ? 'categoria' : 'seguimiento',
+      vista: tipo === 'auto' ? 'categoria' : 'revisar',
       categoria_id: 'category-1',
       grupo: `Grupo ${grupoId}`,
       categoria: 'Bebidas',
@@ -79,7 +79,7 @@ function observation(
   }
 }
 
-describe('Por verificar V3', () => {
+describe('Revisar V3.1', () => {
   test('ordena por motivo y después por antigüedad', () => {
     const groups = [
       group('change', 'movimiento_posterior', '2026-08-26T08:00:00.000Z'),
@@ -139,6 +139,8 @@ describe('Historial V3', () => {
     const base: Omit<CajeroHistoryItem, 'detalle_id' | 'contado_at' | 'diferencia'> = {
       grupo_id: 'group-1',
       grupo: 'Grupo 1',
+      categoria_id: 'category-1',
+      categoria: 'Bebidas',
       tipo_observacion: 'seguimiento',
       stock_teorico: 10,
       stock_fisico: 8,

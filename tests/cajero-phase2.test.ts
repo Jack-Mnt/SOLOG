@@ -163,10 +163,26 @@ describe('aislamiento y rutas Cajero V3', () => {
     expect(readCajeroBuffersForIdentity({ ...base, sede_id: 'site-2' }, storage)).toHaveLength(0)
   })
 
-  test('admite rutas directas y reemplaza la ruta legacy de conteo', () => {
-    const state = bootstrap()
-    expect(resolveTrustedRoute(state, '/cajero/historial')).toBe('/cajero/historial')
-    expect(resolveTrustedRoute(state, '/count')).toBe('/cajero/conteo')
+  test('restringe rutas por etapa y reemplaza nombres legacy', () => {
+    const incomplete = bootstrap()
+    const complete = bootstrap({
+      cobertura_quincenal: {
+        ...bootstrap().cobertura_quincenal,
+        completa: true,
+        grupos_contados: 100,
+        pendientes: 0,
+        porcentaje: 100,
+      },
+    })
+
+    expect(resolveTrustedRoute(incomplete, '/cajero/conteo')).toBe('/cajero/conteo')
+    expect(resolveTrustedRoute(incomplete, '/cajero/historial')).toBe('/cajero')
+    expect(resolveTrustedRoute(incomplete, '/count')).toBe('/cajero/conteo')
+    expect(resolveTrustedRoute(complete, '/cajero/conteo')).toBe('/cajero')
+    expect(resolveTrustedRoute(complete, '/cajero/diario')).toBe('/cajero/diario')
+    expect(resolveTrustedRoute(complete, '/cajero/revisar')).toBe('/cajero/revisar')
+    expect(resolveTrustedRoute(complete, '/cajero/historial')).toBe('/cajero/historial')
+    expect(resolveTrustedRoute(complete, '/cajero/seguimiento')).toBe('/cajero/revisar')
   })
 
   test('un dispositivo pendiente o revocado conserva device-pending', () => {

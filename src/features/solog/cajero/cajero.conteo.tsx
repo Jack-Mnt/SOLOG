@@ -23,7 +23,10 @@ import type {
   CajeroGroupsResponse,
 } from './cajero.types'
 
-type BaseCountView = Exclude<CajeroCountView, 'seguimiento'>
+type BaseCountView = Extract<
+  CajeroCountView,
+  'categoria' | 'stock_cero' | 'stock_negativo'
+>
 
 
 export function CajeroConteo({

@@ -1,15 +1,17 @@
 import {
+  CalendarClock,
   ClipboardList,
   History,
   Home,
   LogOut,
   RefreshCw,
+  SearchCheck,
   Send,
-  ShieldCheck,
 } from 'lucide-react'
 import { PaletteSwitcher } from '../../theme/PaletteSwitcher'
 import { navigateTo } from '../../../lib/router'
 import type { CajeroRoute } from './cajero.types'
+import { isCajeroRouteAvailable } from './cajero.utils'
 
 const NAVIGATION: Array<{
   route: CajeroRoute
@@ -18,7 +20,8 @@ const NAVIGATION: Array<{
 }> = [
   { route: '/cajero', label: 'Inicio', icon: Home },
   { route: '/cajero/conteo', label: 'Conteo', icon: ClipboardList },
-  { route: '/cajero/seguimiento', label: 'Por verificar', icon: ShieldCheck },
+  { route: '/cajero/diario', label: 'Conteo diario', icon: CalendarClock },
+  { route: '/cajero/revisar', label: 'Revisar', icon: SearchCheck },
   { route: '/cajero/historial', label: 'Historial', icon: History },
 ]
 
@@ -27,6 +30,7 @@ export function CajeroHeader({
   sede,
   pendingCount,
   sending,
+  fortnightComplete,
   onSend,
   onLogout,
 }: {
@@ -34,9 +38,14 @@ export function CajeroHeader({
   sede: string
   pendingCount: number
   sending: boolean
+  fortnightComplete: boolean
   onSend: () => void
   onLogout: () => void
 }) {
+  const navigation = NAVIGATION.filter((item) =>
+    isCajeroRouteAvailable(item.route, fortnightComplete),
+  )
+
   return (
     <header className="cajero-header">
       <div className="cajero-header__topline">
@@ -83,7 +92,7 @@ export function CajeroHeader({
         </div>
       </div>
       <nav aria-label="Panel Cajero" className="cajero-nav">
-        {NAVIGATION.map((item) => {
+        {navigation.map((item) => {
           const Icon = item.icon
           const active = route === item.route
           return (

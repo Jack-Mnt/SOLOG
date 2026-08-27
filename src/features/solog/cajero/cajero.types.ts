@@ -7,14 +7,16 @@ import type {
 export type CajeroRoute =
   | '/cajero'
   | '/cajero/conteo'
-  | '/cajero/seguimiento'
+  | '/cajero/diario'
+  | '/cajero/revisar'
   | '/cajero/historial'
 
 export type CajeroCountView =
   | 'categoria'
   | 'stock_cero'
   | 'stock_negativo'
-  | 'seguimiento'
+  | 'conteo_diario'
+  | 'revisar'
 
 export type CajeroObservationType =
   | 'auto'
@@ -37,7 +39,7 @@ export interface CajeroCountGroup {
   categoria: string
   precio: number
   stock_teorico: number
-  productos: CajeroProduct[]
+  productos?: CajeroProduct[]
   detalle_origen_id: string | null
   motivo_seguimiento: string | null
   estado_diferencia: SologDifferenceState | null
@@ -66,6 +68,27 @@ export interface CajeroGroupsResponse {
   grupos: CajeroCountGroup[]
 }
 
+export interface CajeroStatusPayload {
+  device_token: string
+}
+
+export interface CajeroStatusResponse {
+  server_now: string
+  snapshot_actual_id: string | null
+  snapshot_referencia_id: string | null
+  conteo_id: string | null
+  stock_actualizado: boolean
+  cobertura_quincenal_completa: boolean
+  conteo_diario_pendientes: number
+  revisar_pendientes: number
+}
+
+export type CajeroCachedView = 'conteo_diario' | 'revisar'
+
+export interface CajeroGroupsCacheEntry {
+  snapshotId: string | null
+  response: CajeroGroupsResponse
+}
 export interface CajeroStartPayload {
   device_token: string
 }
@@ -166,6 +189,8 @@ export interface CajeroHistoryItem {
   contado_at: string
   grupo_id: string
   grupo: string
+  categoria_id: string
+  categoria: string
   tipo_observacion: Exclude<CajeroObservationType, 'auto'>
   stock_teorico: number
   stock_fisico: number
@@ -173,6 +198,12 @@ export interface CajeroHistoryItem {
   precio: number
   valor_diferencia: number
   estado_diferencia: SologDifferenceState
+}
+
+export interface CajeroCategoryOption {
+  id: string
+  nombre: string
+  count: number
 }
 
 export interface CajeroHistoryResponse {

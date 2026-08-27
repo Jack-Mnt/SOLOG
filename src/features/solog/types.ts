@@ -123,6 +123,8 @@ export interface SologOperationalViewState {
 }
 
 export interface SologIntelligentViews {
+  conteo_diario?: SologOperationalViewState
+  revisar?: SologOperationalViewState
   seguimiento: SologOperationalViewState
   cambios_recientes: SologOperationalViewState
   stock_negativo: SologOperationalViewState

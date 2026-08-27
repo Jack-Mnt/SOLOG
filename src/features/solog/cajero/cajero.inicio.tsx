@@ -4,7 +4,9 @@ import {
   Clock3,
   Database,
   ListChecks,
+  PackageOpen,
   Play,
+  SearchCheck,
   Send,
 } from 'lucide-react'
 import { navigateTo } from '../../../lib/router'
@@ -30,9 +32,11 @@ export function CajeroInicio({
     !bootstrap.sesion_activa &&
     session.pendingCount === 0
   const categories = bootstrap.conteo_principal.categorias
+  const fortnightComplete = session.fortnightComplete
+  const workRoute = fortnightComplete ? '/cajero/diario' : '/cajero/conteo'
 
   const begin = async () => {
-    if (await session.startSession()) navigateTo('/cajero/conteo')
+    if (await session.startSession()) navigateTo(workRoute)
   }
 
   return (
@@ -72,7 +76,7 @@ export function CajeroInicio({
             </small>
           </div>
           {bootstrap.sesion_activa ? (
-            <button className="button" onClick={() => navigateTo('/cajero/conteo')} type="button">
+            <button className="button" onClick={() => navigateTo(workRoute)} type="button">
               <Play aria-hidden="true" size={19} /> Continuar conteo
             </button>
           ) : (
@@ -89,72 +93,102 @@ export function CajeroInicio({
         </div>
       )}
 
-      <div className="cajero-kpis" aria-label="Progreso operativo">
-        <article className="cajero-kpi">
-          <CalendarCheck2 aria-hidden="true" size={21} />
-          <span>Verificados hoy</span>
-          <strong>
-            {bootstrap.cobertura_diaria.grupos_verificados} / {bootstrap.cobertura_diaria.grupos_requeridos}
-          </strong>
-          <small>{bootstrap.cobertura_diaria.pendientes} pendientes hoy</small>
-        </article>
-        <article className="cajero-kpi">
-          <CheckCircle2 aria-hidden="true" size={21} />
-          <span>Cobertura quincenal</span>
-          <strong>
-            {bootstrap.cobertura_quincenal.grupos_contados} / {bootstrap.cobertura_quincenal.grupos_totales}
-          </strong>
-          <small>{bootstrap.cobertura_quincenal.porcentaje}% completado</small>
-        </article>
-        <article className="cajero-kpi">
-          <ListChecks aria-hidden="true" size={21} />
-          <span>Por verificar</span>
-          <strong>{bootstrap.vistas_inteligentes.seguimiento.cantidad}</strong>
-          <small>grupos requieren observación</small>
-        </article>
-        <article className="cajero-kpi">
-          <Send aria-hidden="true" size={21} />
-          <span>Pendientes de envío</span>
-          <strong>{session.pendingCount}</strong>
-          <small>guardados en esta pestaña</small>
-        </article>
-      </div>
+      {fortnightComplete ? (
+        <>
+          <div className="cajero-fortnight-complete" role="status">
+            <CheckCircle2 aria-hidden="true" size={24} />
+            <div>
+              <strong>Conteo quincenal completado</strong>
+              <span>{bootstrap.cobertura_quincenal.grupos_contados} de {bootstrap.cobertura_quincenal.grupos_totales} grupos</span>
+            </div>
+          </div>
+          <div className="cajero-kpis cajero-kpis--complete" aria-label="Trabajo operativo vigente">
+            <button className="cajero-kpi cajero-kpi--action" onClick={() => navigateTo('/cajero/diario')} type="button">
+              <CalendarCheck2 aria-hidden="true" size={21} />
+              <span>Conteo diario</span>
+              <strong>{session.dailyPending}</strong>
+              <small>pendientes</small>
+            </button>
+            <button className="cajero-kpi cajero-kpi--action" onClick={() => navigateTo('/cajero/revisar')} type="button">
+              <SearchCheck aria-hidden="true" size={21} />
+              <span>Revisar</span>
+              <strong>{session.reviewPending}</strong>
+              <small>casos</small>
+            </button>
+            <article className="cajero-kpi">
+              <Send aria-hidden="true" size={21} />
+              <span>Pendientes de envío</span>
+              <strong>{session.pendingCount}</strong>
+              <small>guardados en esta pestaña</small>
+            </article>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="cajero-kpis" aria-label="Progreso operativo">
+            <article className="cajero-kpi">
+              <CalendarCheck2 aria-hidden="true" size={21} />
+              <span>Cobertura quincenal</span>
+              <strong>{bootstrap.cobertura_quincenal.grupos_contados} / {bootstrap.cobertura_quincenal.grupos_totales}</strong>
+              <small>{bootstrap.cobertura_quincenal.porcentaje}% completado</small>
+            </article>
+            <article className="cajero-kpi">
+              <ListChecks aria-hidden="true" size={21} />
+              <span>Pendientes</span>
+              <strong>{bootstrap.cobertura_quincenal.pendientes}</strong>
+              <small>grupos de la quincena</small>
+            </article>
+            <article className="cajero-kpi">
+              <PackageOpen aria-hidden="true" size={21} />
+              <span>Stock 0 pendiente</span>
+              <strong>{bootstrap.conteo_principal.stock_cero_pendientes}</strong>
+              <small>grupos por contar</small>
+            </article>
+            <article className="cajero-kpi">
+              <Send aria-hidden="true" size={21} />
+              <span>Pendientes de envío</span>
+              <strong>{session.pendingCount}</strong>
+              <small>guardados en esta pestaña</small>
+            </article>
+          </div>
 
-      <section className="cajero-progress-panel" aria-labelledby="cajero-category-progress">
-        <div className="cajero-section-heading">
-          <div>
-            <h2 id="cajero-category-progress">Progreso por categoría</h2>
-            <p>La cobertura avanza con cada observación base, exista o no diferencia.</p>
-          </div>
-          <span>{bootstrap.conteo_principal.stock_cero_pendientes} pendientes en Stock 0</span>
-        </div>
-        {categories.length > 0 ? (
-          <div className="cajero-category-progress">
-            {categories.map((category) => {
-              const completed = Math.max(0, category.grupos_totales - category.grupos_pendientes_quincena)
-              const percentage = category.grupos_totales > 0
-                ? Math.round((completed / category.grupos_totales) * 100)
-                : 100
-              return (
-                <button
-                  className="cajero-category-progress__item"
-                  disabled={!bootstrap.sesion_activa || !session.canCapture}
-                  key={category.id}
-                  onClick={() => navigateTo(`/cajero/conteo?categoria=${encodeURIComponent(category.id)}`)}
-                  type="button"
-                >
-                  <span><strong>{category.nombre}</strong><small>{completed} de {category.grupos_totales}</small></span>
-                  <span className="cajero-progress-track" aria-label={`${percentage}% completado`}>
-                    <span style={{ width: `${percentage}%` }} />
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="cajero-muted">No hay categorías pendientes para esta quincena.</p>
-        )}
-      </section>
+          <section className="cajero-progress-panel" aria-labelledby="cajero-category-progress">
+            <div className="cajero-section-heading">
+              <div>
+                <h2 id="cajero-category-progress">Progreso por categoría</h2>
+                <p>La cobertura avanza con cada observación base, exista o no diferencia.</p>
+              </div>
+              <span>{bootstrap.conteo_principal.stock_cero_pendientes} pendientes en Stock 0</span>
+            </div>
+            {categories.length > 0 ? (
+              <div className="cajero-category-progress">
+                {categories.map((category) => {
+                  const completed = Math.max(0, category.grupos_totales - category.grupos_pendientes_quincena)
+                  const percentage = category.grupos_totales > 0
+                    ? Math.round((completed / category.grupos_totales) * 100)
+                    : 100
+                  return (
+                    <button
+                      className="cajero-category-progress__item"
+                      disabled={!bootstrap.sesion_activa || !session.canCapture}
+                      key={category.id}
+                      onClick={() => navigateTo(`/cajero/conteo?categoria=${encodeURIComponent(category.id)}`)}
+                      type="button"
+                    >
+                      <span><strong>{category.nombre}</strong><small>{completed} de {category.grupos_totales}</small></span>
+                      <span className="cajero-progress-track" aria-label={`${percentage}% completado`}>
+                        <span style={{ width: `${percentage}%` }} />
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="cajero-muted">No hay categorías pendientes para esta quincena.</p>
+            )}
+          </section>
+        </>
+      )}
     </section>
   )
 }

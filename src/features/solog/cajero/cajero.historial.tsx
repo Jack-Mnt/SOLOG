@@ -1,17 +1,14 @@
 import { AlertCircle, History, LoaderCircle } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getOrCreateDeviceToken } from '../device'
-import {
-  getSologErrorMessageFromUnknown,
-  isSologApiErrorCode,
-} from '../errors'
-import { useSolog } from '../SologContext'
-import { getCajeroHistory } from './cajero.api'
+import { getSologErrorMessageFromUnknown } from '../errors'
+import type { CajeroSessionController } from './cajero.session'
 import type {
   CajeroHistoryPeriod,
   CajeroHistoryResponse,
 } from './cajero.types'
 import {
+  deriveCajeroCategories,
+  filterCajeroByCategory,
   formatCajeroCurrency,
   getObservationTypeLabel,
   sortHistoryNewestFirst,
@@ -27,41 +24,42 @@ function formatHistoryTime(value: string): string {
   return Number.isNaN(parsed) ? '—' : timeFormatter.format(parsed)
 }
 
-export function CajeroHistorial() {
-  const { refresh, updateServerNow } = useSolog()
+export function CajeroHistorial({ session }: { session: CajeroSessionController }) {
   const [period, setPeriod] = useState<CajeroHistoryPeriod>('hoy')
-  const [history, setHistory] = useState<CajeroHistoryResponse | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [history, setHistory] = useState<CajeroHistoryResponse | null>(() =>
+    session.getCachedHistory('hoy'),
+  )
+  const [loading, setLoading] = useState(history === null)
   const [error, setError] = useState<string | null>(null)
   const requestVersion = useRef(0)
-  const items = useMemo(
-    () => sortHistoryNewestFirst(history?.items ?? []),
-    [history?.items],
-  )
+  const getCachedHistory = session.getCachedHistory
+  const loadCachedHistory = session.loadHistory
 
   const loadHistory = useCallback(async () => {
     const currentRequest = ++requestVersion.current
+    const cached = getCachedHistory(period)
+    if (cached) {
+      setHistory(cached)
+      setLoading(false)
+      setError(null)
+      return
+    }
+
+    setHistory(null)
     setLoading(true)
     setError(null)
     try {
-      const response = await getCajeroHistory({
-        device_token: getOrCreateDeviceToken(),
-        periodo: period,
-      })
+      const response = await loadCachedHistory(period)
       if (currentRequest !== requestVersion.current) return
       setHistory(response)
-      updateServerNow(response.server_now)
     } catch (loadError) {
       if (currentRequest !== requestVersion.current) return
-      setHistory(null)
       setError(getSologErrorMessageFromUnknown(loadError))
-      if (isSologApiErrorCode(loadError, 'SOLOG_DEVICE_NOT_AUTHORIZED')) {
-        await refresh(true)
-      }
     } finally {
       if (currentRequest === requestVersion.current) setLoading(false)
     }
-  }, [period, refresh, updateServerNow])
+  }, [getCachedHistory, loadCachedHistory, period])
 
   useEffect(() => {
     let active = true
@@ -73,6 +71,36 @@ export function CajeroHistorial() {
       requestVersion.current += 1
     }
   }, [loadHistory])
+
+  const items = useMemo(
+    () => sortHistoryNewestFirst(history?.items ?? []),
+    [history?.items],
+  )
+  const categories = useMemo(() => deriveCajeroCategories(items), [items])
+  const effectiveCategoryId =
+    selectedCategoryId !== null &&
+    categories.some((category) => category.id === selectedCategoryId)
+      ? selectedCategoryId
+      : null
+  const visibleItems = useMemo(
+    () => filterCajeroByCategory(items, effectiveCategoryId),
+    [effectiveCategoryId, items],
+  )
+
+  const selectPeriod = (nextPeriod: CajeroHistoryPeriod) => {
+    if (nextPeriod === period) return
+    const nextHistory = getCachedHistory(nextPeriod)
+    if (
+      selectedCategoryId !== null &&
+      (!nextHistory ||
+        !nextHistory.items.some(
+          (item) => item.categoria_id === selectedCategoryId,
+        ))
+    ) {
+      setSelectedCategoryId(null)
+    }
+    setPeriod(nextPeriod)
+  }
 
   return (
     <section className="cajero-module" aria-labelledby="cajero-historial-title">
@@ -90,13 +118,39 @@ export function CajeroHistorial() {
             aria-pressed={period === option}
             className={period === option ? 'is-active' : undefined}
             key={option}
-            onClick={() => setPeriod(option)}
+            onClick={() => selectPeriod(option)}
             type="button"
           >
             {option === 'hoy' ? 'Hoy' : 'Ayer'}
           </button>
         ))}
       </div>
+
+      {history ? (
+        <div className="cajero-category-selector cajero-history-categories" aria-label="Categoría del historial">
+          <button
+            aria-pressed={effectiveCategoryId === null}
+            className={effectiveCategoryId === null ? 'is-active' : undefined}
+            onClick={() => setSelectedCategoryId(null)}
+            type="button"
+          >
+            <strong>Todas</strong>
+            <small>{items.length} observaciones</small>
+          </button>
+          {categories.map((category) => (
+            <button
+              aria-pressed={effectiveCategoryId === category.id}
+              className={effectiveCategoryId === category.id ? 'is-active' : undefined}
+              key={category.id}
+              onClick={() => setSelectedCategoryId(category.id)}
+              type="button"
+            >
+              <strong>{category.nombre}</strong>
+              <small>{category.count} observaciones</small>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {error ? (
         <div className="cajero-alert cajero-alert--error" role="alert">
@@ -107,12 +161,12 @@ export function CajeroHistorial() {
 
       {loading ? (
         <div className="cajero-loading" role="status"><LoaderCircle aria-hidden="true" className="spin" size={24} /> Cargando historial…</div>
-      ) : history && items.length > 0 ? (
+      ) : history && visibleItems.length > 0 ? (
         <div className="cajero-count-table-wrap cajero-history-table-wrap">
           <table className="cajero-count-table cajero-history-table">
             <thead><tr><th>Hora</th><th>Grupo</th><th>Tipo</th><th>TumiSoft</th><th>Conteo</th><th>Diferencia</th><th>Valorizado</th></tr></thead>
             <tbody>
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <tr key={item.detalle_id}>
                   <td data-label="Hora">{formatHistoryTime(item.contado_at)}</td>
                   <td data-label="Grupo"><strong>{item.grupo}</strong></td>
@@ -129,7 +183,10 @@ export function CajeroHistorial() {
       ) : !error ? (
         <div className="cajero-empty-state" role="status">
           <History aria-hidden="true" size={28} />
-          <div><strong>No hay observaciones para {period === 'hoy' ? 'hoy' : 'ayer'}.</strong><p>El historial muestra únicamente capturas confirmadas por SOLOG.</p></div>
+          <div>
+            <strong>{selectedCategoryId === null ? `No hay observaciones para ${period === 'hoy' ? 'hoy' : 'ayer'}.` : 'No hay observaciones en esta categoría.'}</strong>
+            <p>El historial muestra únicamente capturas confirmadas por SOLOG.</p>
+          </div>
         </div>
       ) : null}
     </section>

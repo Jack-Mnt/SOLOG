@@ -10,12 +10,17 @@ import type {
   CajeroHistoryResponse,
   CajeroStartPayload,
   CajeroStartResponse,
+  CajeroStatusPayload,
+  CajeroStatusResponse,
 } from './cajero.types'
 
 export function getCajeroGroups(input: CajeroGroupsPayload) {
   return callSologRpc<CajeroGroupsResponse>('rpc_solog_state', 'groups', input)
 }
 
+export function getCajeroStatus(input: CajeroStatusPayload) {
+  return callSologRpc<CajeroStatusResponse>('rpc_solog_state', 'status', input)
+}
 export function startCajeroSession(input: CajeroStartPayload) {
   return callSologRpc<CajeroStartResponse>('rpc_solog_count', 'start', input)
 }

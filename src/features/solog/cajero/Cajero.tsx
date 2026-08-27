@@ -1,16 +1,19 @@
 import { AlertTriangle, RefreshCw, X } from 'lucide-react'
 import { useEffect } from 'react'
+import { replaceRoute } from '../../../lib/router'
 import type { SologOperationalBootstrap } from '../types'
 import { CajeroConteo } from './cajero.conteo'
+import { CajeroDiario } from './cajero.diario'
 import { CajeroHeader } from './cajero.header'
 import { CajeroHistorial } from './cajero.historial'
 import { CajeroInicio } from './cajero.inicio'
-import { CajeroSeguimiento } from './cajero.seguimiento'
+import { CajeroRevisar } from './cajero.revisar'
 import {
   useCajeroSession,
   type CajeroBlockReason,
 } from './cajero.session'
 import type { CajeroRoute } from './cajero.types'
+import { isCajeroRouteAvailable } from './cajero.utils'
 
 const BLOCK_MESSAGES: Record<CajeroBlockReason, { title: string; detail: string }> = {
   expired: {
@@ -48,6 +51,12 @@ export function Cajero({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route])
 
+  useEffect(() => {
+    if (!isCajeroRouteAvailable(route, session.fortnightComplete)) {
+      replaceRoute('/cajero')
+    }
+  }, [route, session.fortnightComplete])
+
   const blockMessage = session.blockReason
     ? BLOCK_MESSAGES[session.blockReason]
     : null
@@ -55,6 +64,7 @@ export function Cajero({
   return (
     <div className="cajero-shell">
       <CajeroHeader
+        fortnightComplete={session.fortnightComplete}
         onLogout={() => void session.logoutSafely()}
         onSend={() => void session.sendPending()}
         pendingCount={session.pendingCount}
@@ -100,10 +110,12 @@ export function Cajero({
           <CajeroInicio bootstrap={bootstrap} session={session} />
         ) : route === '/cajero/conteo' ? (
           <CajeroConteo bootstrap={bootstrap} session={session} />
-        ) : route === '/cajero/seguimiento' ? (
-          <CajeroSeguimiento session={session} />
+        ) : route === '/cajero/diario' ? (
+          <CajeroDiario session={session} />
+        ) : route === '/cajero/revisar' ? (
+          <CajeroRevisar session={session} />
         ) : (
-          <CajeroHistorial />
+          <CajeroHistorial session={session} />
         )}
       </main>
     </div>

@@ -1,9 +1,22 @@
 import type {
+  CajeroCategoryOption,
   CajeroCountGroup,
   CajeroHistoryItem,
   CajeroObservationType,
+  CajeroRoute,
 } from './cajero.types'
 
+export function isCajeroRouteAvailable(
+  route: CajeroRoute,
+  fortnightComplete: boolean,
+): boolean {
+  if (route === '/cajero') return true
+  return fortnightComplete
+    ? route === '/cajero/diario' ||
+        route === '/cajero/revisar' ||
+        route === '/cajero/historial'
+    : route === '/cajero/conteo'
+}
 export function isValidPhysicalCount(value: number): boolean {
   return Number.isSafeInteger(value) && value >= 0
 }
@@ -114,4 +127,29 @@ export function sortHistoryNewestFirst(
   return [...items].sort(
     (left, right) => Date.parse(right.contado_at) - Date.parse(left.contado_at),
   )
+}
+export function deriveCajeroCategories<
+  T extends { categoria_id: string; categoria: string },
+>(items: readonly T[]): CajeroCategoryOption[] {
+  const categories = new Map<string, CajeroCategoryOption>()
+  for (const item of items) {
+    const current = categories.get(item.categoria_id)
+    if (current) current.count += 1
+    else {
+      categories.set(item.categoria_id, {
+        id: item.categoria_id,
+        nombre: item.categoria,
+        count: 1,
+      })
+    }
+  }
+  return [...categories.values()]
+}
+
+export function filterCajeroByCategory<
+  T extends { categoria_id: string },
+>(items: readonly T[], categoryId: string | null): T[] {
+  return categoryId === null
+    ? [...items]
+    : items.filter((item) => item.categoria_id === categoryId)
 }

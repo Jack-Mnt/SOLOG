@@ -34,7 +34,8 @@ export function CajeroCountTable({
   disabled: boolean;
   onBufferChange: (pendingCount: number) => void;
 }) {
-  const followup = view === "seguimiento";
+  const review = view === "revisar";
+  const daily = view === "conteo_diario";
   useSyncExternalStore(
     subscribeCajeroBufferChanges,
     getCajeroBufferRevision,
@@ -62,7 +63,7 @@ export function CajeroCountTable({
 
   const updateCount = (group: CajeroCountGroup, rawValue: string) => {
     if (!/^\d*$/.test(rawValue)) return;
-    const recount = followup && isCajeroRecountGroup(group);
+    const recount = review && isCajeroRecountGroup(group);
     if (recount && !group.detalle_origen_id) return;
     setDrafts((current) => ({ ...current, [group.grupo_id]: rawValue }));
 
@@ -78,7 +79,7 @@ export function CajeroCountTable({
       grupo_id: group.grupo_id,
       stock_fisico: stockFisico,
       contado_at: new Date().toISOString(),
-      tipo_observacion: followup
+      tipo_observacion: review
         ? recount
           ? "reconteo"
           : "seguimiento"
@@ -113,22 +114,23 @@ export function CajeroCountTable({
   return (
     <div
       className={
-        followup
-          ? "cajero-count-table-wrap cajero-count-table-wrap--followup"
+        review
+          ? "cajero-count-table-wrap cajero-count-table-wrap--review"
           : "cajero-count-table-wrap"
       }
     >
       <table className="cajero-count-table">
         <thead>
           <tr>
-            {followup ? <th>Motivo</th> : null}
+            {review ? <th>Motivo</th> : null}
             <th>Grupo</th>
-            {followup ? <th>Última diferencia</th> : null}
+            {!review && !daily ? <th>Categoría</th> : null}
+            {review ? <th>Última diferencia</th> : null}
             <th>Stock TumiSoft</th>
             <th>Conteo</th>
-            <th>{followup ? "Diferencia actual" : "Diferencia"}</th>
+            <th>{review ? "Diferencia actual" : "Diferencia"}</th>
             <th>Valorizado</th>
-            {!followup ? <th>Estado local</th> : null}
+            {!review && !daily ? <th>Estado local</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -146,7 +148,7 @@ export function CajeroCountTable({
                 : calculateValuation(difference, group.precio);
             const pending = pendingByGroup.get(group.grupo_id);
             const recountMissingOrigin =
-              followup &&
+              review &&
               isCajeroRecountGroup(group) &&
               !group.detalle_origen_id;
             const status = pending?.error ? (
@@ -170,18 +172,18 @@ export function CajeroCountTable({
 
             return (
               <tr key={group.grupo_id}>
-                {followup ? (
+                {review ? (
                   <td data-label="Motivo">
-                    <span className="cajero-followup-reason">
+                    <span className="cajero-review-reason">
                       {getFollowupGroupLabel(group)}
                     </span>
                   </td>
                 ) : null}
                 <td data-label="Grupo">
                   <strong>{group.nombre}</strong>
-                  <small>{group.categoria}</small>
                 </td>
-                {followup ? (
+                {!review && !daily ? <td data-label="Categoría">{group.categoria}</td> : null}
+                {review ? (
                   <td
                     className={
                       group.ultima_diferencia === 0
@@ -205,7 +207,7 @@ export function CajeroCountTable({
                 <td data-label="Conteo">
                   <input
                     aria-describedby={
-                      followup ? `cajero-status-${group.grupo_id}` : undefined
+                      review ? `cajero-status-${group.grupo_id}` : undefined
                     }
                     aria-invalid={
                       pending?.error || recountMissingOrigin ? true : undefined
@@ -229,12 +231,12 @@ export function CajeroCountTable({
                     type="text"
                     value={rawValue}
                   />
-                  {followup ? (
+                  {review ? (
                     <span id={`cajero-status-${group.grupo_id}`}>{status}</span>
                   ) : null}
                 </td>
                 <td
-                  data-label={followup ? "Diferencia actual" : "Diferencia"}
+                  data-label={review ? "Diferencia actual" : "Diferencia"}
                   className={
                     difference === 0
                       ? "is-zero"
@@ -254,7 +256,7 @@ export function CajeroCountTable({
                 <td data-label="Valorizado">
                   {valuation === null ? "—" : formatCajeroCurrency(valuation)}
                 </td>
-                {!followup ? <td data-label="Estado local">{status}</td> : null}
+                {!review && !daily ? <td data-label="Estado local">{status}</td> : null}
               </tr>
             );
           })}

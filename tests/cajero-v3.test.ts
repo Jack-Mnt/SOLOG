@@ -164,7 +164,7 @@ describe('cajero.storage V3', () => {
         observacion_origen_id: '4f3e43cc-2e6d-4cc5-bf9b-50bb58610417',
         display: {
           ...observation('group-2').display,
-          vista: 'seguimiento',
+          vista: 'revisar',
           categoria_id: null,
           motivo_seguimiento: 'conteos_inconsistentes',
         },
@@ -263,7 +263,7 @@ describe('cajero.storage V3', () => {
           tipo_observacion: 'reconteo',
           display: {
             ...observation('group-2').display,
-            vista: 'seguimiento',
+            vista: 'revisar',
           },
         }),
         storage,

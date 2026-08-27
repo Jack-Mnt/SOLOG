@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { CajeroRoute } from '../features/solog/cajero/cajero.types'
+import { isCajeroRouteAvailable } from '../features/solog/cajero/cajero.utils'
 import type { SologOperationalBootstrap } from '../features/solog/types'
 
 export type AdminRoute =
@@ -24,7 +25,8 @@ export const ADMIN_ROUTES: AdminRoute[] = [
 export const CASHIER_ROUTES: CajeroRoute[] = [
   '/cajero',
   '/cajero/conteo',
-  '/cajero/seguimiento',
+  '/cajero/diario',
+  '/cajero/revisar',
   '/cajero/historial',
 ]
 
@@ -62,8 +64,17 @@ export function resolveTrustedRoute(
     bootstrap.dispositivo.estado === 'autorizado'
 
   if (!deviceAuthorized) return '/device-pending'
-  if (requestedPath === '/count') return '/cajero/conteo'
-  return isCashierRoute(requestedPath) ? requestedPath : '/cajero'
+  const fortnightComplete = bootstrap.cobertura_quincenal.completa
+  if (requestedPath === '/count') {
+    return fortnightComplete ? '/cajero' : '/cajero/conteo'
+  }
+  if (requestedPath === '/cajero/seguimiento') {
+    return fortnightComplete ? '/cajero/revisar' : '/cajero'
+  }
+  return isCashierRoute(requestedPath) &&
+    isCajeroRouteAvailable(requestedPath, fortnightComplete)
+    ? requestedPath
+    : '/cajero'
 }
 
 function subscribe(onStoreChange: () => void) {

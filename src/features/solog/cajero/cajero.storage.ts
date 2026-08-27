@@ -56,6 +56,8 @@ function isCountView(value: unknown): boolean {
     value === 'categoria' ||
     value === 'stock_cero' ||
     value === 'stock_negativo' ||
+    value === 'conteo_diario' ||
+    value === 'revisar' ||
     value === 'seguimiento'
   )
 }
@@ -114,10 +116,12 @@ function isPendingObservation(value: unknown): value is CajeroPendingObservation
     item.tipo_observacion === 'reconteo'
       ? isUuid(item.observacion_origen_id)
       : item.observacion_origen_id === null
-  const validViewType =
-    display.vista === 'seguimiento'
-      ? item.tipo_observacion !== 'base'
-      : item.tipo_observacion === 'auto'
+  const reviewView =
+    display.vista === 'revisar' ||
+    (display.vista as string) === 'seguimiento'
+  const validViewType = reviewView
+    ? item.tipo_observacion !== 'base' && item.tipo_observacion !== 'auto'
+    : item.tipo_observacion === 'auto'
 
   return (
     isUuid(item.client_observation_id) &&
@@ -286,17 +290,17 @@ function validateObservationInput(input: CajeroObservationInput): void {
   }
 
   if (
-    input.display.vista !== 'seguimiento' &&
+    input.display.vista !== 'revisar' &&
     input.tipo_observacion !== 'auto'
   ) {
     throw new Error(
-      'Conteo base, Stock 0 y Stock negativo deben usar tipo_observacion auto.',
+      'Conteo base, Conteo diario, Stock 0 y Stock negativo deben usar tipo_observacion auto.',
     )
   }
 
   if (input.tipo_observacion === 'reconteo') {
     if (
-      input.display.vista !== 'seguimiento' ||
+      input.display.vista !== 'revisar' ||
       !isUuid(input.observacion_origen_id)
     ) {
       throw new Error(
