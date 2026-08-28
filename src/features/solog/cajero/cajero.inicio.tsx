@@ -1,57 +1,121 @@
 import {
   CalendarCheck2,
   CheckCircle2,
-  Clock3,
+  CircleAlertIcon,
   Database,
-  ListChecks,
   PackageOpen,
+  Palette,
   Play,
   SearchCheck,
   Send,
-} from 'lucide-react'
-import { navigateTo } from '../../../lib/router'
-import type { SologOperationalBootstrap } from '../types'
-import type { CajeroSessionController } from './cajero.session'
+} from "lucide-react";
+import { navigateTo } from "../../../lib/router";
+import { PaletteSwitcher } from "../../theme/PaletteSwitcher";
+import type { SologOperationalBootstrap } from "../types";
+import type { CajeroSessionController } from "./cajero.session";
 
-const dateTimeFormatter = new Intl.DateTimeFormat('es-PE', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-})
+const STOCK_STALE_AFTER_MS = 2 * 60 * 60 * 1000;
+
+function getStockFreshness(confirmedAt: string, now = Date.now()) {
+  const confirmedAtMs = Date.parse(confirmedAt);
+
+  if (!Number.isFinite(confirmedAtMs)) {
+    return { fresh: false, relativeTime: null };
+  }
+
+  const elapsedMs = Math.max(0, now - confirmedAtMs);
+  if (elapsedMs > STOCK_STALE_AFTER_MS) {
+    return { fresh: false, relativeTime: null };
+  }
+
+  const elapsedMinutes = Math.floor(elapsedMs / 60_000);
+  if (elapsedMinutes < 60) {
+    return { fresh: true, relativeTime: `hace ${elapsedMinutes} min` };
+  }
+
+  const hours = Math.floor(elapsedMinutes / 60);
+  const minutes = elapsedMinutes % 60;
+
+  return {
+    fresh: true,
+    relativeTime:
+      minutes > 0 ? `hace ${hours} h ${minutes} min` : `hace ${hours} h`,
+  };
+}
+
+function pluralize(count: number, singular: string, plural: string) {
+  return count === 1 ? singular : plural;
+}
+
+function PendingSendCard({ session }: { session: CajeroSessionController }) {
+  return (
+    <article
+      className={`cajero-home-metric${session.pendingCount > 0 ? " cajero-home-metric--pending" : ""}`}
+    >
+      <CircleAlertIcon aria-hidden="true" size={23} />
+      <span>Pendientes de envío</span>
+      <strong>{session.pendingCount}</strong>
+      <small>
+        {pluralize(
+          session.pendingCount,
+          "conteo por enviar",
+          "conteos por enviar",
+        )}
+      </small>
+      {session.pendingCount > 0 ? (
+        <button
+          className="button button--secondary cajero-home-metric__send"
+          disabled={session.sending}
+          onClick={() => void session.sendPending()}
+          type="button"
+        >
+          <Send aria-hidden="true" size={18} />
+          {session.sending ? "Enviando…" : "Enviar conteo"}
+        </button>
+      ) : null}
+    </article>
+  );
+}
 
 export function CajeroInicio({
   bootstrap,
   session,
 }: {
-  bootstrap: SologOperationalBootstrap
-  session: CajeroSessionController
+  bootstrap: SologOperationalBootstrap;
+  session: CajeroSessionController;
 }) {
-  const stockAvailable = bootstrap.stock.disponible
+  const stockAvailable = bootstrap.stock.disponible;
+  const stockFreshness = stockAvailable
+    ? getStockFreshness(bootstrap.stock.confirmado_at)
+    : null;
   const canStart =
     stockAvailable &&
     bootstrap.stock.puede_iniciar_conteo &&
     !bootstrap.sesion_activa &&
-    session.pendingCount === 0
-  const categories = bootstrap.conteo_principal.categorias
-  const fortnightComplete = session.fortnightComplete
-  const workRoute = fortnightComplete ? '/cajero/diario' : '/cajero/conteo'
+    session.pendingCount === 0;
+  const fortnightComplete = session.fortnightComplete;
+  const operationalRoute = !fortnightComplete
+    ? "/cajero/conteo"
+    : session.dailyPending > 0
+      ? "/cajero/diario"
+      : session.reviewPending > 0
+        ? "/cajero/revisar"
+        : null;
+  const coverage = bootstrap.cobertura_quincenal;
+  const coveragePercentage = Math.max(0, Math.min(100, coverage.porcentaje));
 
   const begin = async () => {
-    if (await session.startSession()) navigateTo(workRoute)
-  }
+    if (operationalRoute && (await session.startSession()))
+      navigateTo(operationalRoute);
+  };
 
   return (
-    <section className="cajero-module" aria-labelledby="cajero-inicio-title">
-      <div className="cajero-module__heading">
-        <div>
-          <p className="cajero-module__eyebrow">Panel Cajero</p>
-          <h1 id="cajero-inicio-title">Inicio</h1>
-          <p>Tu trabajo operativo en {bootstrap.sede.nombre}.</p>
-        </div>
-        {bootstrap.sesion_activa ? (
-          <span className="cajero-status cajero-status--active">
-            <Clock3 aria-hidden="true" size={18} /> Sesión activa
-          </span>
-        ) : null}
+    <section
+      className="cajero-module cajero-home"
+      aria-labelledby="cajero-inicio-title"
+    >
+      <div className="cajero-home__heading">
+        <h1 id="cajero-inicio-title">Inicio</h1>
       </div>
 
       {!stockAvailable ? (
@@ -59,136 +123,199 @@ export function CajeroInicio({
           <Database aria-hidden="true" size={28} />
           <div>
             <strong>No hay un inventario disponible.</strong>
-            <p>Carga un nuevo inventario desde ConeXion para comenzar un conteo.</p>
+            <p>
+              Carga un nuevo inventario desde ConeXion para comenzar un conteo.
+            </p>
           </div>
         </div>
       ) : (
-        <div className="cajero-session-card">
-          <div>
-            <span>Actualización de stock</span>
-            <strong>{dateTimeFormatter.format(new Date(bootstrap.stock.confirmado_at))}</strong>
-            <small>
-              {bootstrap.sesion_activa
-                ? 'Tu sesión conserva esta referencia TumiSoft.'
-                : bootstrap.stock.puede_iniciar_conteo
-                  ? 'Disponible para iniciar una sesión.'
-                  : 'Disponible solo para consultar; no admite una sesión nueva.'}
-            </small>
+        <section
+          className={`cajero-stock-card${stockFreshness?.fresh ? "" : " cajero-stock-card--stale"}`}
+          aria-labelledby="cajero-stock-title"
+        >
+          <div className="cajero-stock-card__status">
+            <span className="cajero-stock-card__icon" aria-hidden="true">
+              {stockFreshness?.fresh ? (
+                <CheckCircle2 size={23} />
+              ) : (
+                <Database size={23} />
+              )}
+            </span>
+            <div>
+              <h2 id="cajero-stock-title">
+                {stockFreshness?.fresh
+                  ? "Stock actualizado"
+                  : "Stock desactualizado"}
+              </h2>
+              <p>
+                {stockFreshness?.fresh
+                  ? stockFreshness.relativeTime
+                  : "Vuelve a cargar un Excel para continuar conteo."}
+              </p>
+            </div>
           </div>
-          {bootstrap.sesion_activa ? (
-            <button className="button" onClick={() => navigateTo(workRoute)} type="button">
-              <Play aria-hidden="true" size={19} /> Continuar conteo
-            </button>
-          ) : (
-            <button
-              className="button"
-              disabled={!canStart || session.starting}
-              onClick={() => void begin()}
-              type="button"
-            >
-              <Play aria-hidden="true" size={19} />
-              {session.starting ? 'Iniciando…' : 'Iniciar conteo'}
-            </button>
-          )}
-        </div>
+
+          {operationalRoute ? (
+            bootstrap.sesion_activa ? (
+              <button
+                className="button"
+                onClick={() => navigateTo(operationalRoute)}
+                type="button"
+              >
+                <Play aria-hidden="true" size={19} /> Continuar conteo
+              </button>
+            ) : (
+              <button
+                className="button"
+                disabled={!canStart || session.starting}
+                onClick={() => void begin()}
+                type="button"
+              >
+                <Play aria-hidden="true" size={19} />
+                {session.starting ? "Iniciando…" : "Iniciar conteo"}
+              </button>
+            )
+          ) : null}
+        </section>
       )}
 
       {fortnightComplete ? (
         <>
           <div className="cajero-fortnight-complete" role="status">
             <CheckCircle2 aria-hidden="true" size={24} />
-            <div>
-              <strong>Conteo quincenal completado</strong>
-              <span>{bootstrap.cobertura_quincenal.grupos_contados} de {bootstrap.cobertura_quincenal.grupos_totales} grupos</span>
-            </div>
+            <strong>Conteo quincenal completado</strong>
           </div>
-          <div className="cajero-kpis cajero-kpis--complete" aria-label="Trabajo operativo vigente">
-            <button className="cajero-kpi cajero-kpi--action" onClick={() => navigateTo('/cajero/diario')} type="button">
-              <CalendarCheck2 aria-hidden="true" size={21} />
+
+          <div
+            className="cajero-home-metrics cajero-home-metrics--complete"
+            aria-label="Trabajo operativo vigente"
+          >
+            <button
+              aria-label={`Abrir Conteo diario, ${session.dailyPending} ${pluralize(session.dailyPending, "pendiente", "pendientes")}`}
+              className="cajero-home-metric cajero-home-metric--action"
+              onClick={() => navigateTo("/cajero/diario")}
+              type="button"
+            >
+              <CalendarCheck2 aria-hidden="true" size={23} />
               <span>Conteo diario</span>
               <strong>{session.dailyPending}</strong>
-              <small>pendientes</small>
+              <small>
+                {pluralize(session.dailyPending, "pendiente", "pendientes")}
+              </small>
             </button>
-            <button className="cajero-kpi cajero-kpi--action" onClick={() => navigateTo('/cajero/revisar')} type="button">
-              <SearchCheck aria-hidden="true" size={21} />
+            <button
+              aria-label={`Abrir Revisar, ${session.reviewPending} ${pluralize(session.reviewPending, "caso", "casos")}`}
+              className="cajero-home-metric cajero-home-metric--action"
+              onClick={() => navigateTo("/cajero/revisar")}
+              type="button"
+            >
+              <SearchCheck aria-hidden="true" size={23} />
               <span>Revisar</span>
               <strong>{session.reviewPending}</strong>
-              <small>casos</small>
+              <small>{pluralize(session.reviewPending, "caso", "casos")}</small>
             </button>
-            <article className="cajero-kpi">
-              <Send aria-hidden="true" size={21} />
-              <span>Pendientes de envío</span>
-              <strong>{session.pendingCount}</strong>
-              <small>guardados en esta pestaña</small>
-            </article>
+            <PendingSendCard session={session} />
           </div>
         </>
       ) : (
         <>
-          <div className="cajero-kpis" aria-label="Progreso operativo">
-            <article className="cajero-kpi">
-              <CalendarCheck2 aria-hidden="true" size={21} />
+          <section
+            className="cajero-coverage-card"
+            aria-labelledby="cajero-coverage-title"
+          >
+            <div className="cajero-coverage-card__copy">
               <span>Cobertura quincenal</span>
-              <strong>{bootstrap.cobertura_quincenal.grupos_contados} / {bootstrap.cobertura_quincenal.grupos_totales}</strong>
-              <small>{bootstrap.cobertura_quincenal.porcentaje}% completado</small>
-            </article>
-            <article className="cajero-kpi">
-              <ListChecks aria-hidden="true" size={21} />
-              <span>Pendientes</span>
-              <strong>{bootstrap.cobertura_quincenal.pendientes}</strong>
-              <small>grupos de la quincena</small>
-            </article>
-            <article className="cajero-kpi">
-              <PackageOpen aria-hidden="true" size={21} />
-              <span>Stock 0 pendiente</span>
-              <strong>{bootstrap.conteo_principal.stock_cero_pendientes}</strong>
-              <small>grupos por contar</small>
-            </article>
-            <article className="cajero-kpi">
-              <Send aria-hidden="true" size={21} />
-              <span>Pendientes de envío</span>
-              <strong>{session.pendingCount}</strong>
-              <small>guardados en esta pestaña</small>
-            </article>
-          </div>
-
-          <section className="cajero-progress-panel" aria-labelledby="cajero-category-progress">
-            <div className="cajero-section-heading">
-              <div>
-                <h2 id="cajero-category-progress">Progreso por categoría</h2>
-                <p>La cobertura avanza con cada observación base, exista o no diferencia.</p>
-              </div>
-              <span>{bootstrap.conteo_principal.stock_cero_pendientes} pendientes en Stock 0</span>
+              <h2 id="cajero-coverage-title">
+                {coverage.grupos_contados} / {coverage.grupos_totales}
+              </h2>
+              <p>
+                {coverage.pendientes}{" "}
+                {pluralize(
+                  coverage.pendientes,
+                  "grupo pendiente",
+                  "grupos pendientes",
+                )}
+              </p>
             </div>
-            {categories.length > 0 ? (
-              <div className="cajero-category-progress">
-                {categories.map((category) => {
-                  const completed = Math.max(0, category.grupos_totales - category.grupos_pendientes_quincena)
-                  const percentage = category.grupos_totales > 0
-                    ? Math.round((completed / category.grupos_totales) * 100)
-                    : 100
-                  return (
-                    <button
-                      className="cajero-category-progress__item"
-                      disabled={!bootstrap.sesion_activa || !session.canCapture}
-                      key={category.id}
-                      onClick={() => navigateTo(`/cajero/conteo?categoria=${encodeURIComponent(category.id)}`)}
-                      type="button"
-                    >
-                      <span><strong>{category.nombre}</strong><small>{completed} de {category.grupos_totales}</small></span>
-                      <span className="cajero-progress-track" aria-label={`${percentage}% completado`}>
-                        <span style={{ width: `${percentage}%` }} />
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="cajero-muted">No hay categorías pendientes para esta quincena.</p>
-            )}
+            <div
+              className="cajero-progress-ring"
+              role="img"
+              aria-label={`${coveragePercentage}% completado`}
+            >
+              <svg aria-hidden="true" viewBox="0 0 120 120">
+                <circle
+                  className="cajero-progress-ring__track"
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  pathLength="100"
+                />
+                <circle
+                  className="cajero-progress-ring__value"
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  pathLength="100"
+                  strokeDasharray="100"
+                  strokeDashoffset={100 - coveragePercentage}
+                />
+              </svg>
+              <strong>{coveragePercentage}%</strong>
+            </div>
           </section>
+
+          <div className="cajero-home-metrics" aria-label="Resumen operativo">
+            <button
+              aria-label={`Abrir Conteo, ${coverage.pendientes} ${pluralize(coverage.pendientes, "grupo pendiente", "grupos pendientes")}`}
+              className="cajero-home-metric cajero-home-metric--action"
+              onClick={() => navigateTo("/cajero/conteo")}
+              type="button"
+            >
+              <CalendarCheck2 aria-hidden="true" size={23} />
+              <span>Pendientes</span>
+              <strong>{coverage.pendientes}</strong>
+              <small>
+                {pluralize(
+                  coverage.pendientes,
+                  "grupo pendiente",
+                  "grupos pendientes",
+                )}
+              </small>
+            </button>
+            <button
+              aria-label={`Abrir Stock 0, ${bootstrap.conteo_principal.stock_cero_pendientes} ${pluralize(bootstrap.conteo_principal.stock_cero_pendientes, "grupo pendiente", "grupos pendientes")}`}
+              className="cajero-home-metric cajero-home-metric--action"
+              onClick={() => navigateTo("/cajero/conteo")}
+              type="button"
+            >
+              <PackageOpen aria-hidden="true" size={23} />
+              <span>Stock 0</span>
+              <strong>
+                {bootstrap.conteo_principal.stock_cero_pendientes}
+              </strong>
+              <small>
+                {pluralize(
+                  bootstrap.conteo_principal.stock_cero_pendientes,
+                  "grupo pendiente",
+                  "grupos pendientes",
+                )}
+              </small>
+            </button>
+            <PendingSendCard session={session} />
+          </div>
         </>
       )}
+
+      <section
+        className="cajero-home-appearance"
+        aria-labelledby="cajero-appearance-title"
+      >
+        <div>
+          <Palette aria-hidden="true" size={20} />
+          <h2 id="cajero-appearance-title">Apariencia</h2>
+        </div>
+        <PaletteSwitcher variant="home" />
+      </section>
     </section>
-  )
+  );
 }

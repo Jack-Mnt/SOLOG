@@ -8,12 +8,18 @@ const OPTIONS: Array<{ value: SologPalette; label: string }> = [
   { value: "green", label: "Verde" },
 ];
 
+const HOME_LABELS: Record<SologPalette, string> = {
+  blue: "Órbita",
+  violet: "Prisma",
+  green: "Natura",
+};
+
 export function PaletteSwitcher({
   collapsed = false,
   variant = "default",
 }: {
   collapsed?: boolean;
-  variant?: "default" | "sidebar" | "bottom";
+  variant?: "default" | "sidebar" | "home";
 } = {}) {
   const [palette, setPalette] = useState(getStoredPalette);
   const menuRef = useRef<HTMLDetailsElement>(null);
@@ -21,7 +27,7 @@ export function PaletteSwitcher({
   const selectPalette = (nextPalette: SologPalette) => {
     setPalette(nextPalette);
     persistPalette(nextPalette);
-    if (collapsed || variant === "bottom") {
+    if (collapsed) {
       menuRef.current?.removeAttribute("open");
     }
   };
@@ -62,35 +68,28 @@ export function PaletteSwitcher({
     );
   }
 
-  if (variant === "bottom") {
+  if (variant === "home") {
     return (
-      <details className="cajero-appearance" ref={menuRef}>
-        <summary className="cajero-nav__item" title="Apariencia">
-          <Palette aria-hidden="true" size={22} strokeWidth={2} />
-          <span>Apariencia</span>
-        </summary>
-        <div className="cajero-appearance__panel" aria-label="Paleta de color">
-          <strong>Apariencia</strong>
-          {OPTIONS.map((option) => (
-            <button
-              aria-pressed={palette === option.value}
-              className="cajero-appearance__option"
-              key={option.value}
-              onClick={() => selectPalette(option.value)}
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                className={`palette-option palette-option--${option.value}`}
-              />
-              <span>{option.label}</span>
-              {palette === option.value ? (
-                <Check aria-hidden="true" size={16} strokeWidth={3} />
-              ) : null}
-            </button>
-          ))}
-        </div>
-      </details>
+      <div
+        className="cajero-home-appearance__options"
+        aria-label="Paleta de color"
+      >
+        {OPTIONS.map((option) => (
+          <button
+            aria-pressed={palette === option.value}
+            className="cajero-home-appearance__option"
+            key={option.value}
+            onClick={() => selectPalette(option.value)}
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              className={"palette-option palette-option--" + option.value}
+            />
+            <span>{HOME_LABELS[option.value]}</span>
+          </button>
+        ))}
+      </div>
     );
   }
 

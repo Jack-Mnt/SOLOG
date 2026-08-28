@@ -7,7 +7,6 @@ import {
   SearchCheck,
 } from 'lucide-react'
 import { navigateTo } from '../../../lib/router'
-import { PaletteSwitcher } from '../../theme/PaletteSwitcher'
 import type { CajeroRoute } from './cajero.types'
 import { isCajeroRouteAvailable } from './cajero.utils'
 
@@ -87,7 +86,6 @@ export function CajeroBottomNavigation({
             </button>
           )
         })}
-        <PaletteSwitcher variant="bottom" />
       </div>
     </nav>
   )

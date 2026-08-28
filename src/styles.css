@@ -6196,13 +6196,21 @@ h1 {
 
 .control-observation-badge--seguimiento {
   color: var(--color-warning);
-  border-color: color-mix(in srgb, var(--color-warning) 32%, var(--color-border));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 32%,
+    var(--color-border)
+  );
   background: var(--color-warning-soft);
 }
 
 .control-observation-badge--reconteo {
   color: var(--color-primary);
-  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 30%,
+    var(--color-border)
+  );
   background: var(--color-primary-soft);
 }
 
@@ -6331,7 +6339,9 @@ h1 {
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .cajero-header__logout:hover,
@@ -6366,8 +6376,7 @@ h1 {
   margin: 0 auto;
 }
 
-.cajero-nav__inner > .cajero-nav__item,
-.cajero-nav__inner > .cajero-appearance {
+.cajero-nav__inner > .cajero-nav__item {
   min-width: 0;
   flex: 1 1 0;
 }
@@ -6392,7 +6401,9 @@ h1 {
   line-height: 1.1;
   text-align: center;
   cursor: pointer;
-  transition: color var(--transition-fast), background var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .cajero-nav__item > svg {
@@ -6413,10 +6424,12 @@ h1 {
   height: 3px;
   border-radius: 0 0 3px 3px;
   background: var(--gradient-brand);
-  content: '';
+  content: "";
   opacity: 0;
   transform: scaleX(0.55);
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .cajero-nav__item:hover,
@@ -6434,77 +6447,6 @@ h1 {
 .cajero-nav__item.is-active::before {
   opacity: 1;
   transform: scaleX(1);
-}
-
-.cajero-appearance {
-  position: relative;
-}
-
-.cajero-appearance > summary {
-  list-style: none;
-}
-
-.cajero-appearance > summary::-webkit-details-marker {
-  display: none;
-}
-
-.cajero-appearance[open] > summary {
-  color: var(--color-text-inverse);
-  background: rgb(255 255 255 / 6%);
-}
-
-.cajero-appearance__panel {
-  position: absolute;
-  right: 8px;
-  bottom: calc(100% + 10px);
-  width: min(232px, calc(100vw - 24px));
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  color: var(--color-text-primary);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-elevated);
-}
-
-.cajero-appearance__panel > strong {
-  padding: 0.15rem 0.35rem 0.35rem;
-  font-size: 0.78rem;
-}
-
-.cajero-appearance__option {
-  min-height: 46px;
-  display: grid;
-  grid-template-columns: 24px 1fr 18px;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.45rem 0.55rem;
-  border: 0;
-  border-radius: var(--radius-control);
-  color: var(--color-text-primary);
-  background: transparent;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-}
-
-.cajero-appearance__option:hover,
-.cajero-appearance__option:focus-visible,
-.cajero-appearance__option[aria-pressed='true'] {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
-.cajero-appearance__option:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 1px;
-}
-
-.cajero-appearance__option .palette-option {
-  pointer-events: none;
 }
 
 .cajero-main {
@@ -6689,13 +6631,25 @@ h1 {
 }
 
 .cajero-alert--warning {
-  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border));
-  color: color-mix(in srgb, var(--color-warning) 62%, var(--color-text-primary));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border)
+  );
+  color: color-mix(
+    in srgb,
+    var(--color-warning) 62%,
+    var(--color-text-primary)
+  );
   background: var(--color-warning-soft);
 }
 
 .cajero-alert--error {
-  border-color: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 42%,
+    var(--color-border)
+  );
   color: var(--color-danger);
   background: var(--color-danger-soft);
 }
@@ -6718,9 +6672,7 @@ h1 {
   background: rgb(15 23 42 / 7%);
 }
 
-
 @media (max-width: 600px) {
-
   .cajero-module__heading,
   .cajero-session-card,
   .cajero-alert {
@@ -6805,10 +6757,11 @@ h1 {
   align-items: center;
   gap: 0.8rem;
   padding: 0.9rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--color-success) 34%, var(--color-border));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 34%, var(--color-border));
   border-radius: var(--radius-panel);
-  color: var(--color-success);
-  background: var(--color-success-soft);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
 }
 
 .cajero-fortnight-complete > div {
@@ -6875,13 +6828,16 @@ h1 {
   background: var(--color-surface);
   text-align: left;
   cursor: pointer;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .cajero-category-progress__item:not(:disabled):hover,
 .cajero-category-progress__item:not(:disabled):focus-visible {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 10%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary) 10%, transparent);
 }
 
 .cajero-category-progress__item:disabled {
@@ -6943,7 +6899,10 @@ h1 {
   font-size: 0.84rem;
   font-weight: 750;
   cursor: pointer;
-  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .cajero-count-tabs button > span {
@@ -7062,7 +7021,9 @@ h1 {
   font-size: 1rem;
   font-weight: 750;
   text-align: center;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .cajero-count-table input:focus-visible {
@@ -7071,7 +7032,7 @@ h1 {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus) 13%, transparent);
 }
 
-.cajero-count-table input[aria-invalid='true'] {
+.cajero-count-table input[aria-invalid="true"] {
   border-color: var(--color-danger);
 }
 
@@ -7237,7 +7198,7 @@ h1 {
   white-space: nowrap;
 }
 
-.cajero-count-table-wrap--review td[data-label='Conteo'] > span {
+.cajero-count-table-wrap--review td[data-label="Conteo"] > span {
   display: block;
   margin-top: 0.35rem;
 }
@@ -7264,7 +7225,10 @@ h1 {
   font-size: 0.82rem;
   font-weight: 800;
   cursor: pointer;
-  transition: color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .cajero-history-tabs button:hover,
@@ -7302,5 +7266,390 @@ h1 {
   .cajero-count-table-wrap--review .cajero-count-table td:first-child,
   .cajero-history-table td:first-child {
     grid-column: auto;
+  }
+}
+
+/* Panel Cajero — Inicio tablet-first */
+.cajero-home {
+  gap: clamp(0.9rem, 2vw, 1.2rem);
+}
+
+.cajero-home__heading h1 {
+  margin: 0;
+  font-size: clamp(1.55rem, 3vw, 2rem);
+  letter-spacing: -0.035em;
+}
+
+.cajero-stock-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 88px;
+  padding: 1rem 1.15rem;
+  border: 1px solid
+    color-mix(in srgb, var(--color-success) 32%, var(--color-border));
+  border-radius: var(--radius-panel);
+  background:
+    linear-gradient(120deg, var(--color-success-soft), transparent 72%),
+    var(--color-surface);
+  box-shadow: var(--shadow-default);
+}
+
+.cajero-stock-card--stale {
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border)
+  );
+  background:
+    linear-gradient(120deg, var(--color-warning-soft), transparent 72%),
+    var(--color-surface);
+}
+
+.cajero-stock-card__status {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.cajero-stock-card__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.cajero-stock-card--stale .cajero-stock-card__icon {
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.cajero-stock-card h2,
+.cajero-stock-card p {
+  margin: 0;
+}
+
+.cajero-stock-card h2 {
+  font-size: 1rem;
+}
+
+.cajero-stock-card p {
+  margin-top: 0.18rem;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+}
+
+.cajero-stock-card .button {
+  min-height: 48px;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.cajero-coverage-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(1.2rem, 4vw, 2.5rem);
+  min-height: 190px;
+  padding: clamp(1.25rem, 3vw, 1.8rem);
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(
+      circle at 92% 12%,
+      color-mix(in srgb, var(--color-primary) 12%, transparent),
+      transparent 38%
+    ),
+    var(--color-surface);
+  box-shadow: var(--shadow-default);
+}
+
+.cajero-coverage-card__copy {
+  min-width: 0;
+}
+
+.cajero-coverage-card__copy span {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.cajero-coverage-card__copy h2 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(2rem, 6vw, 3.15rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.cajero-coverage-card__copy p {
+  margin: 0.65rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+}
+
+.cajero-progress-ring {
+  width: clamp(116px, 19vw, 148px);
+  aspect-ratio: 1;
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.cajero-progress-ring svg {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.cajero-progress-ring circle {
+  fill: none;
+  stroke-width: 10;
+}
+
+.cajero-progress-ring__track {
+  stroke: color-mix(in srgb, var(--color-primary) 12%, var(--color-border));
+}
+
+.cajero-progress-ring__value {
+  stroke: var(--color-primary);
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--transition-fast);
+}
+
+.cajero-progress-ring strong {
+  color: var(--color-primary);
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+  letter-spacing: -0.035em;
+}
+
+.cajero-home-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.cajero-home-metric {
+  min-width: 0;
+  min-height: 118px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-content: center;
+  gap: 0.25rem 0.7rem;
+  padding: 1.05rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  color: inherit;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-default);
+}
+
+.cajero-home-metric > svg {
+  grid-row: 1 / span 2;
+  color: var(--color-primary);
+}
+
+.cajero-home-metric span,
+.cajero-home-metric small {
+  color: var(--color-text-secondary);
+}
+
+.cajero-home-metric span {
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.cajero-home-metric strong {
+  font-size: 1.65rem;
+  line-height: 1.05;
+}
+
+.cajero-home-metric small {
+  grid-column: 1 / -1;
+  margin-top: 0.35rem;
+  font-size: 0.74rem;
+}
+
+.cajero-home-metric--pending {
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 34%,
+    var(--color-border)
+  );
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-primary) 7%, transparent),
+      transparent 70%
+    ),
+    var(--color-surface);
+}
+
+.cajero-home-metric--action {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.cajero-home-metric--action:hover,
+.cajero-home-metric--action:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-1px);
+}
+
+.cajero-home .cajero-fortnight-complete {
+  min-height: 64px;
+  padding: 0.95rem 1.1rem;
+}
+
+@media (max-width: 899px) {
+  .cajero-home-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cajero-home-metric:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 599px) {
+  .cajero-stock-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cajero-stock-card .button {
+    width: 100%;
+  }
+
+  .cajero-coverage-card {
+    min-height: 168px;
+    padding: 1rem;
+  }
+
+  .cajero-progress-ring {
+    width: 108px;
+  }
+
+  .cajero-home-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .cajero-home-metric:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+
+.cajero-home-metric__send {
+  min-height: 44px;
+  grid-column: 1 / -1;
+  justify-content: center;
+  margin-top: 0.45rem;
+}
+
+.cajero-home-appearance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-default);
+}
+
+.cajero-home-appearance > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--color-text-secondary);
+}
+
+.cajero-home-appearance h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 0.92rem;
+}
+
+.cajero-home-appearance__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.cajero-home-appearance__option {
+  min-width: 104px;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 24px 1fr 16px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.cajero-home-appearance__option:hover,
+.cajero-home-appearance__option:focus-visible,
+.cajero-home-appearance__option[aria-pressed="true"] {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.cajero-home-appearance__option:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.cajero-home-appearance__option .palette-option {
+  pointer-events: none;
+}
+
+@media (max-width: 599px) {
+  .cajero-home-appearance {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cajero-home-appearance__options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cajero-home-appearance__option {
+    min-width: 0;
+    grid-template-columns: 20px 1fr;
+  }
+
+  .cajero-home-appearance__option > svg {
+    display: none;
   }
 }
