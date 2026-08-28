@@ -4,12 +4,10 @@ import {
   History,
   Home,
   LogOut,
-  RefreshCw,
   SearchCheck,
-  Send,
 } from 'lucide-react'
-import { PaletteSwitcher } from '../../theme/PaletteSwitcher'
 import { navigateTo } from '../../../lib/router'
+import { PaletteSwitcher } from '../../theme/PaletteSwitcher'
 import type { CajeroRoute } from './cajero.types'
 import { isCajeroRouteAvailable } from './cajero.utils'
 
@@ -26,72 +24,53 @@ const NAVIGATION: Array<{
 ]
 
 export function CajeroHeader({
-  route,
   sede,
-  pendingCount,
-  sending,
-  fortnightComplete,
-  onSend,
   onLogout,
 }: {
-  route: CajeroRoute
   sede: string
-  pendingCount: number
-  sending: boolean
-  fortnightComplete: boolean
-  onSend: () => void
   onLogout: () => void
 }) {
-  const navigation = NAVIGATION.filter((item) =>
-    isCajeroRouteAvailable(item.route, fortnightComplete),
-  )
-
   return (
     <header className="cajero-header">
       <div className="cajero-header__topline">
         <button
+          aria-label="Ir a Inicio"
           className="cajero-header__brand"
           onClick={() => navigateTo('/cajero')}
           type="button"
         >
           <img alt="SOLOG" src="/Logo_SOLOG.png" />
         </button>
-        <div className="cajero-header__site">
-          <span>Sede</span>
-          <strong>{sede}</strong>
-        </div>
-        <div className="cajero-header__actions">
-          {pendingCount > 0 ? (
-            <span className="cajero-header__pending" role="status">
-              {pendingCount} {pendingCount === 1 ? 'pendiente' : 'pendientes'}
-            </span>
-          ) : null}
-          <button
-            className="button cajero-header__send"
-            disabled={pendingCount === 0 || sending}
-            onClick={onSend}
-            type="button"
-          >
-            {sending ? (
-              <RefreshCw aria-hidden="true" className="spin" size={19} />
-            ) : (
-              <Send aria-hidden="true" size={19} />
-            )}
-            {sending ? 'Enviando…' : 'Enviar conteo'}
-          </button>
-          <PaletteSwitcher />
-          <button
-            aria-label="Cerrar sesión"
-            className="cajero-header__icon-button"
-            onClick={onLogout}
-            title="Cerrar sesión"
-            type="button"
-          >
-            <LogOut aria-hidden="true" size={20} />
-          </button>
-        </div>
+        <strong className="cajero-header__site">PR {sede}</strong>
+        <button
+          aria-label="Cerrar sesión"
+          className="cajero-header__logout"
+          onClick={onLogout}
+          title="Cerrar sesión"
+          type="button"
+        >
+          <LogOut aria-hidden="true" size={21} />
+          <span>Salir</span>
+        </button>
       </div>
-      <nav aria-label="Panel Cajero" className="cajero-nav">
+    </header>
+  )
+}
+
+export function CajeroBottomNavigation({
+  route,
+  fortnightComplete,
+}: {
+  route: CajeroRoute
+  fortnightComplete: boolean
+}) {
+  const navigation = NAVIGATION.filter((item) =>
+    isCajeroRouteAvailable(item.route, fortnightComplete),
+  )
+
+  return (
+    <nav aria-label="Panel Cajero" className="cajero-nav">
+      <div className="cajero-nav__inner">
         {navigation.map((item) => {
           const Icon = item.icon
           const active = route === item.route
@@ -103,12 +82,13 @@ export function CajeroHeader({
               onClick={() => navigateTo(item.route)}
               type="button"
             >
-              <Icon aria-hidden="true" size={20} />
+              <Icon aria-hidden="true" size={22} />
               <span>{item.label}</span>
             </button>
           )
         })}
-      </nav>
-    </header>
+        <PaletteSwitcher variant="bottom" />
+      </div>
+    </nav>
   )
 }

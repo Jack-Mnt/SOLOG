@@ -4,7 +4,7 @@ import { replaceRoute } from '../../../lib/router'
 import type { SologOperationalBootstrap } from '../types'
 import { CajeroConteo } from './cajero.conteo'
 import { CajeroDiario } from './cajero.diario'
-import { CajeroHeader } from './cajero.header'
+import { CajeroBottomNavigation, CajeroHeader } from './cajero.header'
 import { CajeroHistorial } from './cajero.historial'
 import { CajeroInicio } from './cajero.inicio'
 import { CajeroRevisar } from './cajero.revisar'
@@ -64,13 +64,8 @@ export function Cajero({
   return (
     <div className="cajero-shell">
       <CajeroHeader
-        fortnightComplete={session.fortnightComplete}
         onLogout={() => void session.logoutSafely()}
-        onSend={() => void session.sendPending()}
-        pendingCount={session.pendingCount}
-        route={route}
         sede={bootstrap.sede.nombre}
-        sending={session.sending}
       />
       <main className="cajero-main">
         {blockMessage ? (
@@ -118,6 +113,10 @@ export function Cajero({
           <CajeroHistorial session={session} />
         )}
       </main>
+      <CajeroBottomNavigation
+        fortnightComplete={session.fortnightComplete}
+        route={route}
+      />
     </div>
   )
 }

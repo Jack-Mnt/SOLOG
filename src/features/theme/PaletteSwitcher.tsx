@@ -13,15 +13,17 @@ export function PaletteSwitcher({
   variant = "default",
 }: {
   collapsed?: boolean;
-  variant?: "default" | "sidebar";
+  variant?: "default" | "sidebar" | "bottom";
 } = {}) {
   const [palette, setPalette] = useState(getStoredPalette);
-  const collapsedMenu = useRef<HTMLDetailsElement>(null);
+  const menuRef = useRef<HTMLDetailsElement>(null);
 
   const selectPalette = (nextPalette: SologPalette) => {
     setPalette(nextPalette);
     persistPalette(nextPalette);
-    if (collapsed) collapsedMenu.current?.removeAttribute("open");
+    if (collapsed || variant === "bottom") {
+      menuRef.current?.removeAttribute("open");
+    }
   };
 
   const options = (
@@ -46,7 +48,7 @@ export function PaletteSwitcher({
 
   if (variant === "sidebar" && collapsed) {
     return (
-      <details className="admin-sidebar__popover" ref={collapsedMenu}>
+      <details className="admin-sidebar__popover" ref={menuRef}>
         <summary aria-label="Cambiar apariencia" title="Apariencia">
           <Palette aria-hidden="true" size={19} strokeWidth={2} />
         </summary>
@@ -55,6 +57,38 @@ export function PaletteSwitcher({
           aria-label="Paleta de color"
         >
           {options}
+        </div>
+      </details>
+    );
+  }
+
+  if (variant === "bottom") {
+    return (
+      <details className="cajero-appearance" ref={menuRef}>
+        <summary className="cajero-nav__item" title="Apariencia">
+          <Palette aria-hidden="true" size={22} strokeWidth={2} />
+          <span>Apariencia</span>
+        </summary>
+        <div className="cajero-appearance__panel" aria-label="Paleta de color">
+          <strong>Apariencia</strong>
+          {OPTIONS.map((option) => (
+            <button
+              aria-pressed={palette === option.value}
+              className="cajero-appearance__option"
+              key={option.value}
+              onClick={() => selectPalette(option.value)}
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                className={`palette-option palette-option--${option.value}`}
+              />
+              <span>{option.label}</span>
+              {palette === option.value ? (
+                <Check aria-hidden="true" size={16} strokeWidth={3} />
+              ) : null}
+            </button>
+          ))}
         </div>
       </details>
     );
