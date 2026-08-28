@@ -76,7 +76,7 @@ export function isCajeroRecountGroup(group: CajeroCountGroup): boolean {
 export function getFollowupGroupLabel(group: CajeroCountGroup): string {
   return isCajeroRecountGroup(group)
     ? 'Reconteo'
-    : getFollowupReasonLabel(group.motivo_seguimiento)
+    : getFollowupReasonLabel(group.motivo_seguimiento ?? null)
 }
 
 export function getFollowupPriority(reason: string | null): number {
@@ -99,10 +99,10 @@ export function sortFollowupGroups(
     const priority =
       (isCajeroRecountGroup(left)
         ? 2
-        : getFollowupPriority(left.motivo_seguimiento)) -
+        : getFollowupPriority(left.motivo_seguimiento ?? null)) -
       (isCajeroRecountGroup(right)
         ? 2
-        : getFollowupPriority(right.motivo_seguimiento))
+        : getFollowupPriority(right.motivo_seguimiento ?? null))
     if (priority !== 0) return priority
 
     const parsedLeft = left.contado_at_original
@@ -129,21 +129,62 @@ export function sortHistoryNewestFirst(
   )
 }
 export function deriveCajeroCategories<
-  T extends { categoria_id: string; categoria: string },
+  T extends {
+    categoria_id: string
+    categoria: string
+    categoria_orden?: number
+  },
 >(items: readonly T[]): CajeroCategoryOption[] {
   const categories = new Map<string, CajeroCategoryOption>()
   for (const item of items) {
     const current = categories.get(item.categoria_id)
-    if (current) current.count += 1
-    else {
-      categories.set(item.categoria_id, {
+    if (current) {
+      current.count += 1
+    } else {
+      const category: CajeroCategoryOption = {
         id: item.categoria_id,
         nombre: item.categoria,
         count: 1,
-      })
+      }
+      if (typeof item.categoria_orden === 'number') {
+        category.orden = item.categoria_orden
+      }
+      categories.set(item.categoria_id, category)
     }
   }
-  return [...categories.values()]
+
+  return [...categories.values()].sort(
+    (left, right) =>
+      (left.orden ?? Number.MAX_SAFE_INTEGER) -
+      (right.orden ?? Number.MAX_SAFE_INTEGER),
+  )
+}
+
+export type CajeroFortnightView =
+  | 'categoria'
+  | 'stock_cero'
+  | 'stock_negativo'
+
+export function filterCajeroFortnightGroups(
+  groups: readonly CajeroCountGroup[],
+  view: CajeroFortnightView,
+  categoryId: string | null = null,
+): CajeroCountGroup[] {
+  return groups.filter((group) => {
+    if (group.pendiente_quincena !== true) return false
+
+    switch (view) {
+      case 'categoria':
+        return (
+          group.stock_teorico !== 0 &&
+          (categoryId === null || group.categoria_id === categoryId)
+        )
+      case 'stock_cero':
+        return group.stock_cero === true
+      case 'stock_negativo':
+        return group.stock_negativo === true
+    }
+  })
 }
 
 export function filterCajeroByCategory<

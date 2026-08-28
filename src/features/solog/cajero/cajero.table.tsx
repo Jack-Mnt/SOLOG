@@ -84,7 +84,7 @@ export function CajeroCountTable({
           ? "reconteo"
           : "seguimiento"
         : "auto",
-      observacion_origen_id: recount ? group.detalle_origen_id : null,
+      observacion_origen_id: recount ? (group.detalle_origen_id ?? null) : null,
       display: {
         vista: view,
         categoria_id: group.categoria_id,
@@ -92,8 +92,8 @@ export function CajeroCountTable({
         categoria: group.categoria,
         stock_teorico: group.stock_teorico,
         precio: group.precio,
-        ultima_diferencia: group.ultima_diferencia,
-        motivo_seguimiento: group.motivo_seguimiento,
+        ultima_diferencia: group.ultima_diferencia ?? null,
+        motivo_seguimiento: group.motivo_seguimiento ?? null,
       },
     });
     onBufferChange(readCajeroBuffer(scope).items.length);
@@ -116,21 +116,19 @@ export function CajeroCountTable({
       className={
         review
           ? "cajero-count-table-wrap cajero-count-table-wrap--review"
-          : "cajero-count-table-wrap"
+          : "cajero-count-table-wrap cajero-count-table-wrap--entry"
       }
     >
       <table className="cajero-count-table">
         <thead>
           <tr>
             {review ? <th>Motivo</th> : null}
-            <th>Grupo</th>
-            {!review && !daily ? <th>Categoría</th> : null}
+            <th>Nombre</th>
             {review ? <th>Última diferencia</th> : null}
             <th>Stock TumiSoft</th>
             <th>Conteo</th>
             <th>{review ? "Diferencia actual" : "Diferencia"}</th>
             <th>Valorizado</th>
-            {!review && !daily ? <th>Estado local</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -148,9 +146,7 @@ export function CajeroCountTable({
                 : calculateValuation(difference, group.precio);
             const pending = pendingByGroup.get(group.grupo_id);
             const recountMissingOrigin =
-              review &&
-              isCajeroRecountGroup(group) &&
-              !group.detalle_origen_id;
+              review && isCajeroRecountGroup(group) && !group.detalle_origen_id;
             const status = pending?.error ? (
               <span className="cajero-row-status cajero-row-status--error">
                 <AlertCircle aria-hidden="true" size={16} /> Revisar conteo
@@ -179,10 +175,9 @@ export function CajeroCountTable({
                     </span>
                   </td>
                 ) : null}
-                <td data-label="Grupo">
+                <td data-label="Nombre">
                   <strong>{group.nombre}</strong>
                 </td>
-                {!review && !daily ? <td data-label="Categoría">{group.categoria}</td> : null}
                 {review ? (
                   <td
                     className={
@@ -253,10 +248,24 @@ export function CajeroCountTable({
                       ? `+${difference}`
                       : difference}
                 </td>
-                <td data-label="Valorizado">
-                  {valuation === null ? "—" : formatCajeroCurrency(valuation)}
+                <td
+                  className={
+                    difference === 0
+                      ? "is-zero"
+                      : difference === null
+                        ? undefined
+                        : difference < 0
+                          ? "is-negative"
+                          : "is-positive"
+                  }
+                  data-label="Valorizado"
+                >
+                  {valuation === null
+                    ? "—"
+                    : valuation > 0
+                      ? "+" + formatCajeroCurrency(valuation)
+                      : formatCajeroCurrency(valuation)}
                 </td>
-                {!review && !daily ? <td data-label="Estado local">{status}</td> : null}
               </tr>
             );
           })}

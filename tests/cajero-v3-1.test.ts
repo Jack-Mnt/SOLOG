@@ -13,6 +13,7 @@ import type {
 import {
   deriveCajeroCategories,
   filterCajeroByCategory,
+  filterCajeroFortnightGroups,
   isCajeroRouteAvailable,
 } from '../src/features/solog/cajero/cajero.utils'
 
@@ -139,5 +140,75 @@ describe('categorías locales del Panel Cajero', () => {
       { id: 'cervezas', nombre: 'Cervezas', count: 1 },
     ])
     expect(filterCajeroByCategory(items, 'cervezas').map((item) => item.detalle_id)).toEqual(['detail-3'])
+  })
+})
+
+describe('dataset compacto de Conteo quincenal', () => {
+  const group = (
+    id: string,
+    categoryId: string,
+    category: string,
+    order: number,
+    overrides: Partial<CajeroCountGroup> = {},
+  ): CajeroCountGroup => ({
+    grupo_id: id,
+    nombre: "Grupo " + id,
+    categoria_id: categoryId,
+    categoria: category,
+    categoria_orden: order,
+    precio: 2,
+    stock_teorico: 4,
+    pendiente_quincena: true,
+    cubierto_quincena: false,
+    stock_cero: false,
+    stock_negativo: false,
+    ...overrides,
+  })
+
+  test('acepta una sola solicitud sin categoría', () => {
+    const payload: CajeroGroupsPayload = {
+      device_token: 'token',
+      vista: 'conteo',
+    }
+    expect(payload).toEqual({ device_token: 'token', vista: 'conteo' })
+  })
+
+  test('respeta pendiente_quincena y deriva las vistas localmente', () => {
+    const groups = [
+      group('normal', 'bebidas', 'Bebidas', 2),
+      group('zero', 'bodega', 'Bodega', 1, {
+        stock_teorico: 0,
+        stock_cero: true,
+      }),
+      group('negative', 'bebidas', 'Bebidas', 2, {
+        stock_teorico: -3,
+        stock_negativo: true,
+      }),
+      group('covered', 'bodega', 'Bodega', 1, {
+        pendiente_quincena: false,
+        cubierto_quincena: true,
+        stock_cero: true,
+      }),
+    ]
+
+    expect(
+      filterCajeroFortnightGroups(groups, 'categoria').map(
+        (item) => item.grupo_id,
+      ),
+    ).toEqual(['normal', 'negative'])
+    expect(
+      filterCajeroFortnightGroups(groups, 'stock_cero').map(
+        (item) => item.grupo_id,
+      ),
+    ).toEqual(['zero'])
+    expect(
+      filterCajeroFortnightGroups(groups, 'stock_negativo').map(
+        (item) => item.grupo_id,
+      ),
+    ).toEqual(['negative'])
+    expect(deriveCajeroCategories(groups).map((item) => item.id)).toEqual([
+      'bodega',
+      'bebidas',
+    ])
   })
 })

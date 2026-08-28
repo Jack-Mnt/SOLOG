@@ -12,6 +12,7 @@ export type CajeroRoute =
   | '/cajero/historial'
 
 export type CajeroCountView =
+  | 'conteo'
   | 'categoria'
   | 'stock_cero'
   | 'stock_negativo'
@@ -39,12 +40,17 @@ export interface CajeroCountGroup {
   categoria: string
   precio: number
   stock_teorico: number
+  categoria_orden?: number
+  cubierto_quincena?: boolean
+  pendiente_quincena?: boolean
+  stock_cero?: boolean
+  stock_negativo?: boolean
   productos?: CajeroProduct[]
-  detalle_origen_id: string | null
-  motivo_seguimiento: string | null
-  estado_diferencia: SologDifferenceState | null
-  contado_at_original: string | null
-  ultima_diferencia: number | null
+  detalle_origen_id?: string | null
+  motivo_seguimiento?: string | null
+  estado_diferencia?: SologDifferenceState | null
+  contado_at_original?: string | null
+  ultima_diferencia?: number | null
 }
 
 export type CajeroGroupsPayload =
@@ -204,6 +210,7 @@ export interface CajeroCategoryOption {
   id: string
   nombre: string
   count: number
+  orden?: number
 }
 
 export interface CajeroHistoryResponse {
