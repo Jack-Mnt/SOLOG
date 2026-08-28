@@ -1,6 +1,7 @@
 import {
   CalendarCheck2,
   CheckCircle2,
+  ClipboardCheck,
   CircleAlertIcon,
   Database,
   PackageOpen,
@@ -54,14 +55,10 @@ function PendingSendCard({ session }: { session: CajeroSessionController }) {
     >
       <CircleAlertIcon aria-hidden="true" size={23} />
       <span>Pendientes de envío</span>
-      <strong>{session.pendingCount}</strong>
-      <small>
-        {pluralize(
-          session.pendingCount,
-          "conteo por enviar",
-          "conteos por enviar",
-        )}
-      </small>
+      <div className="cajero-home-metric__value">
+        <strong>{session.pendingCount}</strong>
+        <small>{pluralize(session.pendingCount, "conteo", "conteos")}</small>
+      </div>
       {session.pendingCount > 0 ? (
         <button
           className="button button--secondary cajero-home-metric__send"
@@ -182,7 +179,7 @@ export function CajeroInicio({
       {fortnightComplete ? (
         <>
           <div className="cajero-fortnight-complete" role="status">
-            <CheckCircle2 aria-hidden="true" size={24} />
+            <ClipboardCheck aria-hidden="true" size={24} />
             <strong>Conteo quincenal completado</strong>
           </div>
 
@@ -198,10 +195,12 @@ export function CajeroInicio({
             >
               <CalendarCheck2 aria-hidden="true" size={23} />
               <span>Conteo diario</span>
-              <strong>{session.dailyPending}</strong>
-              <small>
-                {pluralize(session.dailyPending, "pendiente", "pendientes")}
-              </small>
+              <div className="cajero-home-metric__value">
+                <strong>{session.dailyPending}</strong>
+                <small>
+                  {pluralize(session.dailyPending, "pendiente", "pendientes")}
+                </small>
+              </div>
             </button>
             <button
               aria-label={`Abrir Revisar, ${session.reviewPending} ${pluralize(session.reviewPending, "caso", "casos")}`}
@@ -211,8 +210,12 @@ export function CajeroInicio({
             >
               <SearchCheck aria-hidden="true" size={23} />
               <span>Revisar</span>
-              <strong>{session.reviewPending}</strong>
-              <small>{pluralize(session.reviewPending, "caso", "casos")}</small>
+              <div className="cajero-home-metric__value">
+                <strong>{session.reviewPending}</strong>
+                <small>
+                  {pluralize(session.reviewPending, "caso", "casos")}
+                </small>
+              </div>
             </button>
             <PendingSendCard session={session} />
           </div>
@@ -273,14 +276,16 @@ export function CajeroInicio({
             >
               <CalendarCheck2 aria-hidden="true" size={23} />
               <span>Pendientes</span>
-              <strong>{coverage.pendientes}</strong>
-              <small>
-                {pluralize(
-                  coverage.pendientes,
-                  "grupo pendiente",
-                  "grupos pendientes",
-                )}
-              </small>
+              <div className="cajero-home-metric__value">
+                <strong>{coverage.pendientes}</strong>
+                <small>
+                  {pluralize(
+                    coverage.pendientes,
+                    "grupo pendiente",
+                    "grupos pendientes",
+                  )}
+                </small>
+              </div>
             </button>
             <button
               aria-label={`Abrir Stock 0, ${bootstrap.conteo_principal.stock_cero_pendientes} ${pluralize(bootstrap.conteo_principal.stock_cero_pendientes, "grupo pendiente", "grupos pendientes")}`}
@@ -290,16 +295,18 @@ export function CajeroInicio({
             >
               <PackageOpen aria-hidden="true" size={23} />
               <span>Stock 0</span>
-              <strong>
-                {bootstrap.conteo_principal.stock_cero_pendientes}
-              </strong>
-              <small>
-                {pluralize(
-                  bootstrap.conteo_principal.stock_cero_pendientes,
-                  "grupo pendiente",
-                  "grupos pendientes",
-                )}
-              </small>
+              <div className="cajero-home-metric__value">
+                <strong>
+                  {bootstrap.conteo_principal.stock_cero_pendientes}
+                </strong>
+                <small>
+                  {pluralize(
+                    bootstrap.conteo_principal.stock_cero_pendientes,
+                    "grupo pendiente",
+                    "grupos pendientes",
+                  )}
+                </small>
+              </div>
             </button>
             <PendingSendCard session={session} />
           </div>
