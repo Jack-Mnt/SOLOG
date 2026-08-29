@@ -5,8 +5,9 @@ import {
   enqueueCajeroObservation,
   getCajeroBufferKey,
   readCajeroBuffer,
+  readCajeroExpressionDrafts,
+  setCajeroExpressionDraft,
   shouldFlushCajeroBufferImmediately,
-  shouldFlushCajeroBufferOnExit,
 } from '../src/features/solog/cajero/cajero.storage'
 import type {
   CajeroBatchResponse,
@@ -221,6 +222,7 @@ describe('cajero.storage V3', () => {
       observation('group-1'),
       storage,
     )
+    setCajeroExpressionDraft(scope, 'group-1', '4 + 4', storage)
     const duplicate = response(
       scope.conteo_id,
       pending.client_observation_id,
@@ -244,6 +246,7 @@ describe('cajero.storage V3', () => {
 
     expect(applied.remaining.items).toHaveLength(0)
     expect(readCajeroBuffer(scope, storage).items).toHaveLength(0)
+    expect(readCajeroExpressionDrafts(scope, storage).items).toHaveLength(0)
   })
   test('impone auto en vistas base y exige origen para reconteo', () => {
     const storage = new MemoryStorage()
@@ -271,11 +274,10 @@ describe('cajero.storage V3', () => {
     ).toThrow()
   })
 
-  test('aplica umbrales 40 y 80', () => {
-    expect(shouldFlushCajeroBufferOnExit(39)).toBe(false)
-    expect(shouldFlushCajeroBufferOnExit(40)).toBe(true)
+  test('aplica únicamente el umbral inmediato de 80', () => {
     expect(shouldFlushCajeroBufferImmediately(79)).toBe(false)
     expect(shouldFlushCajeroBufferImmediately(80)).toBe(true)
+    expect(shouldFlushCajeroBufferImmediately(120)).toBe(true)
   })
 })
 

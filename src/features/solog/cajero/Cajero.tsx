@@ -46,7 +46,7 @@ export function Cajero({
   const session = useCajeroSession(onLogout)
 
   useEffect(() => {
-    void session.checkFreshness(true)
+    void session.checkFreshness()
     // La ruta es el disparador explícito de entrada a vista.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route])

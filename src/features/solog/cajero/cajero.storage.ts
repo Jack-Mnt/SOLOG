@@ -5,18 +5,19 @@ import type {
   CajeroBuffer,
   CajeroBufferIdentity,
   CajeroBufferScope,
+  CajeroExpressionDraftStore,
   CajeroObservationInput,
   CajeroObservationType,
   CajeroPendingObservation,
 } from './cajero.types'
 import { isValidPhysicalCount } from './cajero.utils'
 
-export const CAJERO_BATCH_EXIT_THRESHOLD = 40
 export const CAJERO_BATCH_IMMEDIATE_THRESHOLD = 80
 export const CAJERO_BACKEND_BATCH_LIMIT = 500
 
 const BUFFER_VERSION = 3
 const BUFFER_KEY_PREFIX = 'solog.cajero.buffer.v3'
+const EXPRESSION_KEY_PREFIX = 'solog.cajero.expressions.v1'
 const BUFFER_EVENT = 'solog:cajero-buffer-change'
 let bufferRevision = 0
 const UUID_PATTERN =
@@ -165,6 +166,26 @@ function isBuffer(value: unknown): value is CajeroBuffer {
   )
 }
 
+function isExpressionDraftStore(
+  value: unknown,
+): value is CajeroExpressionDraftStore {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const store = value as Partial<CajeroExpressionDraftStore>
+  return (
+    store.version === 1 &&
+    isScope(store.scope) &&
+    Array.isArray(store.items) &&
+    store.items.every(
+      (item) =>
+        Boolean(item) &&
+        typeof item === 'object' &&
+        !Array.isArray(item) &&
+        isNonEmptyString(item.grupo_id) &&
+        typeof item.expresion === 'string',
+    )
+  )
+}
+
 function scopeSegment(value: string): string {
   return encodeURIComponent(value)
 }
@@ -172,6 +193,20 @@ function scopeSegment(value: string): string {
 export function getCajeroBufferKey(scope: CajeroBufferScope): string {
   return [
     BUFFER_KEY_PREFIX,
+    scope.usuario_id,
+    scope.sede_id,
+    scope.dispositivo_id,
+    scope.conteo_id,
+  ]
+    .map(scopeSegment)
+    .join(':')
+}
+
+export function getCajeroExpressionDraftKey(
+  scope: CajeroBufferScope,
+): string {
+  return [
+    EXPRESSION_KEY_PREFIX,
     scope.usuario_id,
     scope.sede_id,
     scope.dispositivo_id,
@@ -274,8 +309,77 @@ export function clearCajeroBuffer(
   scope: CajeroBufferScope,
   storage?: Storage,
 ): void {
-  getStorage(storage).removeItem(getCajeroBufferKey(scope))
+  const target = getStorage(storage)
+  target.removeItem(getCajeroBufferKey(scope))
+  target.removeItem(getCajeroExpressionDraftKey(scope))
   emitBufferChange(scope)
+}
+
+export function readCajeroExpressionDrafts(
+  scope: CajeroBufferScope,
+  storage?: Storage,
+): CajeroExpressionDraftStore {
+  const empty: CajeroExpressionDraftStore = { version: 1, scope, items: [] }
+
+  try {
+    const raw = getStorage(storage).getItem(getCajeroExpressionDraftKey(scope))
+    if (!raw) return empty
+    const parsed: unknown = JSON.parse(raw)
+    if (
+      !isExpressionDraftStore(parsed) ||
+      !isSameCajeroBufferScope(parsed.scope, scope)
+    ) {
+      return empty
+    }
+    return parsed
+  } catch {
+    return empty
+  }
+}
+
+function writeCajeroExpressionDrafts(
+  store: CajeroExpressionDraftStore,
+  storage?: Storage,
+): void {
+  if (!isExpressionDraftStore(store)) {
+    throw new Error('Los borradores de calculadora no son válidos.')
+  }
+
+  const target = getStorage(storage)
+  const key = getCajeroExpressionDraftKey(store.scope)
+  if (store.items.length === 0) target.removeItem(key)
+  else target.setItem(key, JSON.stringify(store))
+  emitBufferChange(store.scope)
+}
+
+export function setCajeroExpressionDraft(
+  scope: CajeroBufferScope,
+  grupoId: string,
+  expression: string,
+  storage?: Storage,
+): void {
+  if (!isNonEmptyString(grupoId)) {
+    throw new Error('El grupo del borrador no es válido.')
+  }
+
+  const current = readCajeroExpressionDrafts(scope, storage)
+  const items = current.items.filter((item) => item.grupo_id !== grupoId)
+  items.push({ grupo_id: grupoId, expresion: expression })
+  writeCajeroExpressionDrafts({ ...current, items }, storage)
+}
+
+export function removeCajeroExpressionDrafts(
+  scope: CajeroBufferScope,
+  grupoIds: readonly string[],
+  storage?: Storage,
+): void {
+  if (grupoIds.length === 0) return
+  const ids = new Set(grupoIds)
+  const current = readCajeroExpressionDrafts(scope, storage)
+  const items = current.items.filter((item) => !ids.has(item.grupo_id))
+  if (items.length !== current.items.length) {
+    writeCajeroExpressionDrafts({ ...current, items }, storage)
+  }
 }
 
 function validateObservationInput(input: CajeroObservationInput): void {
@@ -370,6 +474,16 @@ export function upsertCajeroObservation(
   return observation
 }
 
+export function saveCajeroLocalCapture(
+  scope: CajeroBufferScope,
+  input: CajeroObservationInput,
+  expression: string,
+  storage?: Storage,
+): CajeroPendingObservation {
+  setCajeroExpressionDraft(scope, input.grupo_id, expression, storage)
+  return upsertCajeroObservation(scope, input, storage)
+}
+
 export function removeCajeroObservation(
   scope: CajeroBufferScope,
   grupoId: string,
@@ -380,10 +494,6 @@ export function removeCajeroObservation(
   if (items.length !== current.items.length) {
     writeCajeroBuffer({ ...current, items }, storage)
   }
-}
-
-export function shouldFlushCajeroBufferOnExit(itemCount: number): boolean {
-  return itemCount >= CAJERO_BATCH_EXIT_THRESHOLD
 }
 
 export function shouldFlushCajeroBufferImmediately(itemCount: number): boolean {
@@ -457,6 +567,9 @@ export function applyCajeroBatchResponse(
   const unassociatedErrors = response.errores.filter(
     (error) => !isNonEmptyString(error.client_observation_id),
   )
+  const confirmedGroupIds = current.items
+    .filter((item) => confirmedIds.has(item.client_observation_id))
+    .map((item) => item.grupo_id)
 
   const items = current.items
     .filter((item) => !confirmedIds.has(item.client_observation_id))
@@ -466,6 +579,7 @@ export function applyCajeroBatchResponse(
     }))
   const remaining: CajeroBuffer = { ...current, items }
   writeCajeroBuffer(remaining, storage)
+  removeCajeroExpressionDrafts(scope, confirmedGroupIds, storage)
 
   return {
     confirmedIds: [...confirmedIds],

@@ -22,7 +22,6 @@ import {
   getCajeroPendingCountForIdentity,
   readCajeroBuffer,
   shouldFlushCajeroBufferImmediately,
-  shouldFlushCajeroBufferOnExit,
 } from './cajero.storage'
 import { CajeroCountTable } from './cajero.table'
 import type {
@@ -57,11 +56,6 @@ export function CajeroConteo({
   const activeCountId = activeScope?.conteo_id ?? null
   const hasActiveSession = Boolean(bootstrap.sesion_activa)
   const handleStockUpdateDetected = session.handleStockUpdateDetected
-  const sessionRef = useRef(session)
-
-  useEffect(() => {
-    sessionRef.current = session
-  }, [session])
 
   const loadGroups = useCallback(async () => {
     if (!hasActiveSession || !activeCountId) {
@@ -100,20 +94,8 @@ export function CajeroConteo({
     }
   }, [loadGroups])
 
-  useEffect(() => () => {
-    const current = sessionRef.current
-    const pending = current.activeScope
-      ? getCajeroPendingCountForIdentity(current.activeScope)
-      : 0
-    if (shouldFlushCajeroBufferOnExit(pending)) void current.sendPending()
-  }, [])
-
   const selectView = (nextId: string) => {
     if (selectedId === nextId) return
-    const pending = session.activeScope
-      ? getCajeroPendingCountForIdentity(session.activeScope)
-      : 0
-    if (shouldFlushCajeroBufferOnExit(pending)) void session.sendPending()
     setSelectedId(nextId)
   }
 

@@ -153,7 +153,7 @@ export interface CajeroSessionController {
   startSession: () => Promise<boolean>
   sendPending: () => Promise<boolean>
   retrySend: () => Promise<boolean>
-  checkFreshness: (autoSend?: boolean) => Promise<CajeroBlockReason | null>
+  checkFreshness: () => Promise<CajeroBlockReason | null>
   logoutSafely: () => Promise<boolean>
   operationalStatus: CajeroStatusResponse | null
   fortnightComplete: boolean
@@ -521,10 +521,9 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
   )
 
   const checkFreshness = useCallback(
-    async (autoSend = false): Promise<CajeroBlockReason | null> => {
+    async (): Promise<CajeroBlockReason | null> => {
       try {
         const { reason } = await fetchOperationalStatus()
-        if (reason && autoSend) void sendPendingInternal(reason)
         return reason
       } catch (statusError) {
         setError(getSologErrorMessageFromUnknown(statusError))
@@ -534,7 +533,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
         return blockReasonRef.current
       }
     },
-    [fetchOperationalStatus, refreshSolog, sendPendingInternal],
+    [fetchOperationalStatus, refreshSolog],
   )
 
   useEffect(() => {
@@ -551,7 +550,6 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       )
       inactivityTimer = setTimeout(() => {
         setBlockReason('inactive')
-        void sendPendingInternal('inactive')
       }, remaining)
     }
     const registerActivity = () => {
@@ -569,7 +567,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       window.removeEventListener('pointerdown', registerActivity)
       window.removeEventListener('keydown', registerActivity)
     }
-  }, [activeScope, blockReason, sendPendingInternal])
+  }, [activeScope, blockReason])
 
   useEffect(() => {
     const session = solog.bootstrap?.sesion_activa
@@ -582,10 +580,9 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     )
     const timer = setTimeout(() => {
       setBlockReason('expired')
-      void sendPendingInternal('expired')
     }, remaining)
     return () => clearTimeout(timer)
-  }, [blockReason, sendPendingInternal, solog.bootstrap?.sesion_activa, solog.serverOffsetMs])
+  }, [blockReason, solog.bootstrap?.sesion_activa, solog.serverOffsetMs])
 
   useEffect(() => {
     const handleReturn = () => {
@@ -593,10 +590,8 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       const scope = activeScopeRef.current
       if (scope && isCajeroInactive(readLastActivity(scope), Date.now())) {
         setBlockReason('inactive')
-        void sendPendingInternal('inactive')
-        return
       }
-      void checkFreshness(true)
+      void checkFreshness()
     }
 
     window.addEventListener('focus', handleReturn)
@@ -605,12 +600,11 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       window.removeEventListener('focus', handleReturn)
       document.removeEventListener('visibilitychange', handleReturn)
     }
-  }, [checkFreshness, sendPendingInternal])
+  }, [checkFreshness])
 
   const handleStockUpdateDetected = useCallback(() => {
     setBlockReason('stock_updated')
-    void sendPendingInternal('stock_updated')
-  }, [sendPendingInternal])
+  }, [])
 
   const startSession = useCallback(async (): Promise<boolean> => {
     if (starting || sendingRef.current) return false
@@ -661,7 +655,6 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
   ])
 
   const logoutSafely = useCallback(async (): Promise<boolean> => {
-    const sent = await sendPendingInternal(blockReasonRef.current)
     const currentIdentity = identityRef.current
     if (
       currentIdentity &&
@@ -669,18 +662,19 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
         (buffer) => buffer.items.length > 0,
       )
     ) {
+      setError('Envía los conteos pendientes antes de cerrar sesión.')
       return false
     }
 
     try {
       await finishActiveSession()
       await onLogout()
-      return sent || pendingCount === 0
+      return true
     } catch (logoutError) {
       setError(getSologErrorMessageFromUnknown(logoutError))
       return false
     }
-  }, [finishActiveSession, onLogout, pendingCount, sendPendingInternal])
+  }, [finishActiveSession, onLogout])
 
   const fortnightComplete =
     operationalStatus?.cobertura_quincenal_completa ??

@@ -1,10 +1,14 @@
 import type {
+  CajeroCalculatorKey,
   CajeroCategoryOption,
   CajeroCountGroup,
+  CajeroExpressionEvaluation,
   CajeroHistoryItem,
   CajeroObservationType,
   CajeroRoute,
 } from './cajero.types'
+
+export const CAJERO_MAX_PHYSICAL_COUNT = 99_999
 
 export function isCajeroRouteAvailable(
   route: CajeroRoute,
@@ -18,7 +22,62 @@ export function isCajeroRouteAvailable(
     : route === '/cajero/conteo'
 }
 export function isValidPhysicalCount(value: number): boolean {
-  return Number.isSafeInteger(value) && value >= 0
+  return (
+    Number.isSafeInteger(value) &&
+    value >= 0 &&
+    value <= CAJERO_MAX_PHYSICAL_COUNT
+  )
+}
+
+export function evaluateCajeroExpression(
+  expression: string,
+): CajeroExpressionEvaluation {
+  const normalized = expression.trim()
+  if (normalized.length === 0) return { status: 'empty', value: null }
+  if (!/^\d+(?:\s*[+×]\s*\d+)*$/.test(normalized)) {
+    return { status: 'incomplete', value: null }
+  }
+
+  const result = normalized.split('+').reduce((sum, term) => {
+    const product = term
+      .split('×')
+      .reduce((current, factor) => current * BigInt(factor.trim()), 1n)
+    return sum + product
+  }, 0n)
+
+  if (result > BigInt(CAJERO_MAX_PHYSICAL_COUNT)) {
+    return { status: 'too_high', value: null }
+  }
+
+  return { status: 'valid', value: Number(result) }
+}
+
+export function applyCajeroCalculatorKey(
+  expression: string,
+  key: CajeroCalculatorKey,
+): string {
+  if (key === 'clear') return ''
+
+  const trimmed = expression.trimEnd()
+  if (key === 'backspace') {
+    if (trimmed.endsWith('+') || trimmed.endsWith('×')) {
+      return trimmed.slice(0, -1).trimEnd()
+    }
+    return trimmed.slice(0, -1)
+  }
+
+  if (key === '+' || key === '×') {
+    if (
+      trimmed.length === 0 ||
+      trimmed.endsWith('+') ||
+      trimmed.endsWith('×')
+    ) {
+      return expression
+    }
+    return `${trimmed} ${key} `
+  }
+
+  return `${expression}${key}`
 }
 
 export function calculateDifference(

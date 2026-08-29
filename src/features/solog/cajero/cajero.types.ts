@@ -27,6 +27,44 @@ export type CajeroObservationType =
 
 export type CajeroHistoryPeriod = 'hoy' | 'ayer'
 
+export type CajeroExpressionStatus =
+  | 'empty'
+  | 'incomplete'
+  | 'valid'
+  | 'too_high'
+
+export interface CajeroExpressionEvaluation {
+  status: CajeroExpressionStatus
+  value: number | null
+}
+
+export type CajeroCalculatorKey =
+  | '0'
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9'
+  | '+'
+  | '×'
+  | 'clear'
+  | 'backspace'
+
+export interface CajeroExpressionDraft {
+  grupo_id: string
+  expresion: string
+}
+
+export interface CajeroExpressionDraftStore {
+  version: 1
+  scope: CajeroBufferScope
+  items: CajeroExpressionDraft[]
+}
+
 export interface CajeroProduct {
   c_interno: number
   producto: string

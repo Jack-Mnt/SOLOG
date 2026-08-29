@@ -35,7 +35,6 @@ export function CajeroCountTable({
   onBufferChange: (pendingCount: number) => void;
 }) {
   const review = view === "revisar";
-  const daily = view === "conteo_diario";
   useSyncExternalStore(
     subscribeCajeroBufferChanges,
     getCajeroBufferRevision,
@@ -133,6 +132,7 @@ export function CajeroCountTable({
         </thead>
         <tbody>
           {groups.map((group, index) => {
+            const lastDifference = group.ultima_diferencia ?? null;
             const rawValue = drafts[group.grupo_id] ?? "";
             const stockFisico = rawValue === "" ? null : Number(rawValue);
             const valid =
@@ -181,21 +181,21 @@ export function CajeroCountTable({
                 {review ? (
                   <td
                     className={
-                      group.ultima_diferencia === 0
+                      lastDifference === 0
                         ? "is-zero"
-                        : group.ultima_diferencia === null
+                        : lastDifference === null
                           ? undefined
-                          : group.ultima_diferencia < 0
+                          : lastDifference < 0
                             ? "is-negative"
                             : "is-positive"
                     }
                     data-label="Última diferencia"
                   >
-                    {group.ultima_diferencia === null
+                    {lastDifference === null
                       ? "—"
-                      : group.ultima_diferencia > 0
-                        ? `+${group.ultima_diferencia}`
-                        : group.ultima_diferencia}
+                      : lastDifference > 0
+                        ? `+${lastDifference}`
+                        : lastDifference}
                   </td>
                 ) : null}
                 <td data-label="Stock TumiSoft">{group.stock_teorico}</td>

@@ -13,7 +13,6 @@ import {
   getCajeroPendingCountForIdentity,
   readCajeroBuffer,
   shouldFlushCajeroBufferImmediately,
-  shouldFlushCajeroBufferOnExit,
 } from './cajero.storage'
 import { CajeroCountTable } from './cajero.table'
 import type {
@@ -193,14 +192,6 @@ export function CajeroOperationalView({
       requestVersion.current += 1
     }
   }, [loadGroups])
-
-  useEffect(() => () => {
-    const current = sessionRef.current
-    const pending = current.activeScope
-      ? getCajeroPendingCountForIdentity(current.activeScope)
-      : 0
-    if (shouldFlushCajeroBufferOnExit(pending)) void current.sendPending()
-  }, [])
 
   const handleBufferChange = () => {
     const pending = activeScope
