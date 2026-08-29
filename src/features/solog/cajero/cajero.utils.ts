@@ -285,33 +285,6 @@ export function filterCajeroFortnightCategoryGroups(
   )
 }
 
-export type CajeroFortnightView =
-  | 'categoria'
-  | 'stock_cero'
-  | 'stock_negativo'
-
-export function filterCajeroFortnightGroups(
-  groups: readonly CajeroCountGroup[],
-  view: CajeroFortnightView,
-  categoryId: string | null = null,
-): CajeroCountGroup[] {
-  return groups.filter((group) => {
-    if (group.pendiente_quincena !== true) return false
-
-    switch (view) {
-      case 'categoria':
-        return (
-          group.stock_teorico !== 0 &&
-          (categoryId === null || group.categoria_id === categoryId)
-        )
-      case 'stock_cero':
-        return group.stock_cero === true
-      case 'stock_negativo':
-        return group.stock_negativo === true
-    }
-  })
-}
-
 export function filterCajeroByCategory<
   T extends { categoria_id: string },
 >(items: readonly T[], categoryId: string | null): T[] {

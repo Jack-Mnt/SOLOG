@@ -2,12 +2,12 @@ import { describe, expect, test } from 'bun:test'
 import {
   applyCajeroBatchResponse,
   buildNextCajeroBatch,
-  enqueueCajeroObservation,
   getCajeroBufferKey,
   readCajeroBuffer,
   readCajeroExpressionDrafts,
   setCajeroExpressionDraft,
   shouldFlushCajeroBufferImmediately,
+  upsertCajeroObservation,
 } from '../src/features/solog/cajero/cajero.storage'
 import type {
   CajeroBatchResponse,
@@ -125,7 +125,7 @@ function response(
 describe('cajero.storage V3', () => {
   test('aísla el buffer por usuario, sede, dispositivo y conteo', () => {
     const storage = new MemoryStorage()
-    enqueueCajeroObservation(scope, observation('group-1'), storage)
+    upsertCajeroObservation(scope, observation('group-1'), storage)
 
     expect(readCajeroBuffer(scope, storage).items).toHaveLength(1)
     for (const field of [
@@ -144,7 +144,7 @@ describe('cajero.storage V3', () => {
 
   test('conserva el client_observation_id al restaurar', () => {
     const storage = new MemoryStorage()
-    const saved = enqueueCajeroObservation(
+    const saved = upsertCajeroObservation(
       scope,
       observation('group-1'),
       storage,
@@ -157,8 +157,8 @@ describe('cajero.storage V3', () => {
 
   test('genera un lote mixto sin campos de vista', () => {
     const storage = new MemoryStorage()
-    enqueueCajeroObservation(scope, observation('group-1'), storage)
-    enqueueCajeroObservation(
+    upsertCajeroObservation(scope, observation('group-1'), storage)
+    upsertCajeroObservation(
       scope,
       observation('group-2', {
         tipo_observacion: 'reconteo',
@@ -184,12 +184,12 @@ describe('cajero.storage V3', () => {
 
   test('conserva solo rechazados después de una respuesta parcial', () => {
     const storage = new MemoryStorage()
-    const saved = enqueueCajeroObservation(
+    const saved = upsertCajeroObservation(
       scope,
       observation('group-1'),
       storage,
     )
-    const rejected = enqueueCajeroObservation(
+    const rejected = upsertCajeroObservation(
       scope,
       observation('group-2'),
       storage,
@@ -217,7 +217,7 @@ describe('cajero.storage V3', () => {
 
   test('elimina una observación confirmada como ya_guardado', () => {
     const storage = new MemoryStorage()
-    const pending = enqueueCajeroObservation(
+    const pending = upsertCajeroObservation(
       scope,
       observation('group-1'),
       storage,
@@ -252,7 +252,7 @@ describe('cajero.storage V3', () => {
     const storage = new MemoryStorage()
 
     expect(() =>
-      enqueueCajeroObservation(
+      upsertCajeroObservation(
         scope,
         observation('group-1', { tipo_observacion: 'base' }),
         storage,
@@ -260,7 +260,7 @@ describe('cajero.storage V3', () => {
     ).toThrow()
 
     expect(() =>
-      enqueueCajeroObservation(
+      upsertCajeroObservation(
         scope,
         observation('group-2', {
           tipo_observacion: 'reconteo',

@@ -5,8 +5,8 @@ import {
   isCajeroInactive,
 } from '../src/features/solog/cajero/cajero.session'
 import {
-  enqueueCajeroObservation,
   readCajeroBuffersForIdentity,
+  upsertCajeroObservation,
 } from '../src/features/solog/cajero/cajero.storage'
 import type {
   CajeroBufferScope,
@@ -155,8 +155,8 @@ describe('aislamiento y rutas Cajero V3', () => {
       sede_id: 'site-1',
       dispositivo_id: 'device-1',
     }
-    enqueueCajeroObservation({ ...base, conteo_id: 'count-1' }, observation(), storage)
-    enqueueCajeroObservation({ ...base, conteo_id: 'count-2' }, observation(), storage)
+    upsertCajeroObservation({ ...base, conteo_id: 'count-1' }, observation(), storage)
+    upsertCajeroObservation({ ...base, conteo_id: 'count-2' }, observation(), storage)
 
     const buffers = readCajeroBuffersForIdentity(base, storage)
     expect(buffers.map((buffer) => buffer.scope.conteo_id)).toEqual(['count-1', 'count-2'])

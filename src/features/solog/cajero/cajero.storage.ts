@@ -74,7 +74,7 @@ function isScope(value: unknown): value is CajeroBufferScope {
   )
 }
 
-export function isSameCajeroBufferIdentity(
+function isSameCajeroBufferIdentity(
   left: CajeroBufferIdentity,
   right: CajeroBufferIdentity,
 ): boolean {
@@ -85,7 +85,7 @@ export function isSameCajeroBufferIdentity(
   )
 }
 
-export function isSameCajeroBufferScope(
+function isSameCajeroBufferScope(
   left: CajeroBufferScope,
   right: CajeroBufferScope,
 ): boolean {
@@ -202,7 +202,7 @@ export function getCajeroBufferKey(scope: CajeroBufferScope): string {
     .join(':')
 }
 
-export function getCajeroExpressionDraftKey(
+function getCajeroExpressionDraftKey(
   scope: CajeroBufferScope,
 ): string {
   return [
@@ -303,16 +303,6 @@ export function writeCajeroBuffer(
     target.setItem(key, JSON.stringify(buffer))
   }
   emitBufferChange(buffer.scope)
-}
-
-export function clearCajeroBuffer(
-  scope: CajeroBufferScope,
-  storage?: Storage,
-): void {
-  const target = getStorage(storage)
-  target.removeItem(getCajeroBufferKey(scope))
-  target.removeItem(getCajeroExpressionDraftKey(scope))
-  emitBufferChange(scope)
 }
 
 export function readCajeroExpressionDrafts(
@@ -416,32 +406,6 @@ function validateObservationInput(input: CajeroObservationInput): void {
       'Solo un reconteo puede conservar observacion_origen_id.',
     )
   }
-}
-
-export function enqueueCajeroObservation(
-  scope: CajeroBufferScope,
-  input: CajeroObservationInput,
-  storage?: Storage,
-): CajeroPendingObservation {
-  validateObservationInput(input)
-
-  const observation: CajeroPendingObservation = {
-    client_observation_id: crypto.randomUUID(),
-    conteo_id: scope.conteo_id,
-    grupo_id: input.grupo_id,
-    stock_fisico: input.stock_fisico,
-    contado_at: input.contado_at,
-    tipo_observacion: input.tipo_observacion,
-    observacion_origen_id: input.observacion_origen_id,
-    display: input.display,
-    error: null,
-  }
-  const current = readCajeroBuffer(scope, storage)
-  writeCajeroBuffer(
-    { ...current, items: [...current.items, observation] },
-    storage,
-  )
-  return observation
 }
 
 export function upsertCajeroObservation(
@@ -589,28 +553,6 @@ export function applyCajeroBatchResponse(
   }
 }
 
-export function subscribeCajeroBuffer(
-  scope: CajeroBufferScope,
-  listener: () => void,
-): () => void {
-  if (typeof window === 'undefined') return () => undefined
-  const key = getCajeroBufferKey(scope)
-  const handleChange = (event: Event) => {
-    if (
-      event instanceof CustomEvent &&
-      typeof event.detail === 'object' &&
-      event.detail !== null &&
-      'key' in event.detail &&
-      event.detail.key !== key
-    ) {
-      return
-    }
-    listener()
-  }
-
-  window.addEventListener(BUFFER_EVENT, handleChange)
-  return () => window.removeEventListener(BUFFER_EVENT, handleChange)
-}
 export function getCajeroBufferRevision(): number {
   return bufferRevision
 }

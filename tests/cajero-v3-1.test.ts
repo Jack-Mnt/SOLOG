@@ -13,7 +13,7 @@ import type {
 import {
   deriveCajeroCategories,
   filterCajeroByCategory,
-  filterCajeroFortnightGroups,
+  filterCajeroFortnightCategoryGroups,
   isCajeroRouteAvailable,
 } from '../src/features/solog/cajero/cajero.utils'
 
@@ -192,17 +192,29 @@ describe('dataset compacto de Conteo quincenal', () => {
     ]
 
     expect(
-      filterCajeroFortnightGroups(groups, 'categoria').map(
+      filterCajeroFortnightCategoryGroups(
+        groups,
+        'positive',
+        'bebidas',
+      ).map(
         (item) => item.grupo_id,
       ),
-    ).toEqual(['normal', 'negative'])
+    ).toEqual(['normal'])
     expect(
-      filterCajeroFortnightGroups(groups, 'stock_cero').map(
+      filterCajeroFortnightCategoryGroups(
+        groups,
+        'zero',
+        'bodega',
+      ).map(
         (item) => item.grupo_id,
       ),
     ).toEqual(['zero'])
     expect(
-      filterCajeroFortnightGroups(groups, 'stock_negativo').map(
+      filterCajeroFortnightCategoryGroups(
+        groups,
+        'negative',
+        'bebidas',
+      ).map(
         (item) => item.grupo_id,
       ),
     ).toEqual(['negative'])
