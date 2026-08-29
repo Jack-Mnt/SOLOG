@@ -401,6 +401,29 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     }
   }, [invalidateOperationalCaches])
 
+  const handleInactivity = useCallback(async (): Promise<void> => {
+    const currentIdentity = identityRef.current
+    const hasPending = currentIdentity
+      ? readCajeroBuffersForIdentity(currentIdentity).some(
+          (buffer) => buffer.items.length > 0,
+        )
+      : false
+
+    if (hasPending) {
+      setBlockReason('inactive')
+      return
+    }
+
+    try {
+      await finishActiveSession()
+      await refreshSolog(true)
+      setBlockReason(null)
+    } catch (inactivityError) {
+      setError(getSologErrorMessageFromUnknown(inactivityError))
+      setBlockReason('inactive')
+    }
+  }, [finishActiveSession, refreshSolog])
+
   const sendPendingInternal = useCallback(
     async (reason: CajeroBlockReason | null = null): Promise<boolean> => {
       if (sendingRef.current) return false
@@ -549,7 +572,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
         CAJERO_INACTIVITY_MS - (Date.now() - lastActivity),
       )
       inactivityTimer = setTimeout(() => {
-        setBlockReason('inactive')
+        void handleInactivity()
       }, remaining)
     }
     const registerActivity = () => {
@@ -567,7 +590,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       window.removeEventListener('pointerdown', registerActivity)
       window.removeEventListener('keydown', registerActivity)
     }
-  }, [activeScope, blockReason])
+  }, [activeScope, blockReason, handleInactivity])
 
   useEffect(() => {
     const session = solog.bootstrap?.sesion_activa
@@ -587,10 +610,13 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
   useEffect(() => {
     const handleReturn = () => {
       if (document.visibilityState !== 'visible') return
+
       const scope = activeScopeRef.current
       if (scope && isCajeroInactive(readLastActivity(scope), Date.now())) {
-        setBlockReason('inactive')
+        void handleInactivity()
+        return
       }
+
       void checkFreshness()
     }
 
@@ -600,7 +626,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       window.removeEventListener('focus', handleReturn)
       document.removeEventListener('visibilitychange', handleReturn)
     }
-  }, [checkFreshness])
+  }, [checkFreshness, handleInactivity])
 
   const handleStockUpdateDetected = useCallback(() => {
     setBlockReason('stock_updated')

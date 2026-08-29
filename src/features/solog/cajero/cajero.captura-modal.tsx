@@ -24,24 +24,17 @@ import type {
 import {
   calculateDifference,
   calculateValuation,
+  formatCajeroDifference,
   formatCajeroCurrency,
+  getCajeroDifferenceClass,
+  getReviewReasonLabel,
+  isCajeroRecountGroup,
 } from './cajero.utils'
 
 export type CajeroCaptureView = Extract<
   CajeroCountView,
-  'categoria' | 'stock_cero' | 'stock_negativo' | 'conteo_diario'
+  'categoria' | 'stock_cero' | 'stock_negativo' | 'conteo_diario' | 'revisar'
 >
-
-function differenceClass(value: number | null): string | undefined {
-  if (value === null) return undefined
-  if (value === 0) return 'is-zero'
-  return value < 0 ? 'is-negative' : 'is-positive'
-}
-
-function formatDifference(value: number | null): string {
-  if (value === null) return '—'
-  return value > 0 ? `+${value}` : String(value)
-}
 
 export function CajeroCaptureModal({
   categoryName,
@@ -49,6 +42,7 @@ export function CajeroCaptureModal({
   scope,
   view,
   disabled,
+  initialGroupId,
   lockedGroupIds,
   onClose,
   onNextCategory,
@@ -59,6 +53,7 @@ export function CajeroCaptureModal({
   scope: CajeroBufferScope
   view: CajeroCaptureView
   disabled: boolean
+  initialGroupId?: string
   lockedGroupIds?: ReadonlySet<string>
   onClose: () => void
   onNextCategory?: () => void
@@ -67,7 +62,11 @@ export function CajeroCaptureModal({
   const titleId = useId()
   const modalRef = useRef<HTMLElement>(null)
   const onCloseRef = useRef(onClose)
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(null)
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(() =>
+    initialGroupId && groups.some((group) => group.grupo_id === initialGroupId)
+      ? initialGroupId
+      : null,
+  )
   useSyncExternalStore(
     subscribeCajeroBufferChanges,
     getCajeroBufferRevision,
@@ -145,14 +144,22 @@ export function CajeroCaptureModal({
 
   const saveActiveGroup = (stockFisico: number) => {
     if (!activeGroup || disabled || lockedGroupIds?.has(activeGroup.grupo_id)) return
+    const recount = view === 'revisar' && isCajeroRecountGroup(activeGroup)
+    if (recount && !activeGroup.detalle_origen_id) return
     saveCajeroLocalCapture(
       scope,
       {
         grupo_id: activeGroup.grupo_id,
         stock_fisico: stockFisico,
         contado_at: new Date().toISOString(),
-        tipo_observacion: 'auto',
-        observacion_origen_id: null,
+        tipo_observacion: view === 'revisar'
+          ? recount
+            ? 'reconteo'
+            : 'seguimiento'
+          : 'auto',
+        observacion_origen_id: recount
+          ? activeGroup.detalle_origen_id ?? null
+          : null,
         display: {
           vista: view,
           categoria_id: activeGroup.categoria_id,
@@ -189,6 +196,7 @@ export function CajeroCaptureModal({
   const activeLocked = activeGroup
     ? disabled || lockedGroupIds?.has(activeGroup.grupo_id) === true
     : disabled
+  const review = view === 'revisar'
 
   return (
     <div
@@ -206,9 +214,13 @@ export function CajeroCaptureModal({
       >
         <header className="cajero-capture-modal__header">
           <button
-            aria-label={activeGroup ? 'Regresar al resumen' : 'Cerrar categoría'}
+            aria-label={activeGroup ? 'Regresar a la lista' : 'Cerrar categoría'}
             className="cajero-capture-modal__icon-button"
-            onClick={() => activeGroup ? setActiveGroupId(null) : onClose()}
+            onClick={() => activeGroup
+              ? review
+                ? onClose()
+                : setActiveGroupId(null)
+              : onClose()}
             type="button"
           >
             <ArrowLeft aria-hidden="true" size={22} />
@@ -235,15 +247,21 @@ export function CajeroCaptureModal({
           {activeGroup ? (
             <div className="cajero-capture-detail">
               <div className="cajero-capture-detail__information">
-                <section className="cajero-capture-detail__card">
+                <section className={`cajero-capture-detail__card${review ? ' cajero-capture-detail__card--review' : ''}`}>
                   <h3>{activeGroup.nombre}</h3>
                   <dl>
                     <div><dt>Stock TumiSoft</dt><dd>{activeGroup.stock_teorico}</dd></div>
                     <div><dt>Conteo</dt><dd>{activePending?.stock_fisico ?? '—'}</dd></div>
-                    <div><dt>Diferencia</dt><dd className={differenceClass(savedDifference)}>{formatDifference(savedDifference)}</dd></div>
+                    {review ? (
+                      <>
+                        <div><dt>Última diferencia</dt><dd className={getCajeroDifferenceClass(activeGroup.ultima_diferencia ?? null)}>{formatCajeroDifference(activeGroup.ultima_diferencia ?? null)}</dd></div>
+                        <div><dt>Motivo</dt><dd>{getReviewReasonLabel(activeGroup.motivo_seguimiento ?? null)}</dd></div>
+                      </>
+                    ) : null}
+                    <div><dt>{review ? 'Diferencia actual' : 'Diferencia'}</dt><dd className={getCajeroDifferenceClass(savedDifference)}>{formatCajeroDifference(savedDifference)}</dd></div>
                     <div>
                       <dt>Valorizado</dt>
-                      <dd className={differenceClass(savedDifference)}>
+                      <dd className={getCajeroDifferenceClass(savedDifference)}>
                         {savedValuation === null
                           ? '—'
                           : savedValuation > 0
@@ -273,7 +291,7 @@ export function CajeroCaptureModal({
                 </button>
                 <button
                   className="button button--secondary"
-                  onClick={() => setActiveGroupId(null)}
+                  onClick={() => review ? onClose() : setActiveGroupId(null)}
                   type="button"
                 >
                   Regresar
@@ -284,7 +302,9 @@ export function CajeroCaptureModal({
                   onClick={navigateNext}
                   type="button"
                 >
-                  {activeIndex === groups.length - 1 ? 'Siguiente categoría' : 'Siguiente'}
+                  {activeIndex === groups.length - 1 && onNextCategory
+                    ? 'Siguiente categoría'
+                    : 'Siguiente'}
                 </button>
               </nav>
             </div>
@@ -308,7 +328,7 @@ export function CajeroCaptureModal({
                     >
                       <strong>{group.nombre}</strong>
                       <span>{group.stock_teorico}</span>
-                      <span className={differenceClass(difference)}>{formatDifference(difference)}</span>
+                      <span className={getCajeroDifferenceClass(difference)}>{formatCajeroDifference(difference)}</span>
                       <span aria-hidden="true">›</span>
                     </button>
                   )

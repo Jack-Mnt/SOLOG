@@ -148,6 +148,19 @@ export function formatCajeroCurrency(value: number): string {
   return cajeroCurrency.format(value)
 }
 
+export function getCajeroDifferenceClass(
+  value: number | null,
+): string | undefined {
+  if (value === null) return undefined
+  if (value === 0) return 'is-zero'
+  return value < 0 ? 'is-negative' : 'is-positive'
+}
+
+export function formatCajeroDifference(value: number | null): string {
+  if (value === null) return '—'
+  return value > 0 ? `+${value}` : String(value)
+}
+
 export function getObservationTypeLabel(
   type: Exclude<CajeroObservationType, 'auto'>,
 ): string {
@@ -170,6 +183,40 @@ export function getFollowupReasonLabel(reason: string | null): string {
     default:
       return 'Verificar diferencia'
   }
+}
+
+export function getReviewReasonLabel(reason: string | null): string {
+  switch (reason) {
+    case 'persistente':
+    case 'conteos_inconsistentes':
+      return 'Confirmar conteo'
+    case 'parcialmente_explicada':
+    case 'movimiento_posterior':
+      return 'Volver a contar'
+    default:
+      return 'Verificar diferencia'
+  }
+}
+
+export type CajeroReviewDifferenceFilter = 'all' | 'positive' | 'negative'
+
+export function toggleCajeroReviewDifferenceFilter(
+  current: CajeroReviewDifferenceFilter,
+  sign: Exclude<CajeroReviewDifferenceFilter, 'all'>,
+): CajeroReviewDifferenceFilter {
+  return current === sign ? 'all' : sign
+}
+
+export function filterCajeroReviewGroups(
+  groups: readonly CajeroCountGroup[],
+  filter: CajeroReviewDifferenceFilter,
+): CajeroCountGroup[] {
+  if (filter === 'all') return [...groups]
+  return groups.filter((group) => {
+    const difference = group.ultima_diferencia
+    if (typeof difference !== 'number') return false
+    return filter === 'positive' ? difference > 0 : difference < 0
+  })
 }
 
 export function isCajeroRecountGroup(group: CajeroCountGroup): boolean {

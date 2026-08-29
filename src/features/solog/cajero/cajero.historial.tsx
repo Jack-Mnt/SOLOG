@@ -1,4 +1,11 @@
-import { AlertCircle, History, LoaderCircle } from 'lucide-react'
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  History,
+  Layers3,
+  LoaderCircle,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import type { CajeroSessionController } from './cajero.session'
@@ -10,6 +17,9 @@ import {
   deriveCajeroCategories,
   filterCajeroByCategory,
   formatCajeroCurrency,
+  formatCajeroDifference,
+  getCajeroCategoryIcon,
+  getCajeroDifferenceClass,
   getObservationTypeLabel,
   sortHistoryNewestFirst,
 } from './cajero.utils'
@@ -24,9 +34,16 @@ function formatHistoryTime(value: string): string {
   return Number.isNaN(parsed) ? '—' : timeFormatter.format(parsed)
 }
 
+function formatHistoryValuation(value: number): string {
+  return `${value > 0 ? '+' : ''}${formatCajeroCurrency(value)}`
+}
+
 export function CajeroHistorial({ session }: { session: CajeroSessionController }) {
   const [period, setPeriod] = useState<CajeroHistoryPeriod>('hoy')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(
+    () => new Set(),
+  )
   const [history, setHistory] = useState<CajeroHistoryResponse | null>(() =>
     session.getCachedHistory('hoy'),
   )
@@ -102,53 +119,69 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
     setPeriod(nextPeriod)
   }
 
+  const toggleExpandedItem = (detailId: string) => {
+    setExpandedItemIds((current) => {
+      const next = new Set(current)
+      if (next.has(detailId)) next.delete(detailId)
+      else next.add(detailId)
+      return next
+    })
+  }
+
   return (
     <section className="cajero-module" aria-labelledby="cajero-historial-title">
-      <div className="cajero-module__heading">
+      <div className="cajero-module__heading cajero-history__heading">
         <div>
-          <p className="cajero-module__eyebrow">Consulta</p>
           <h1 id="cajero-historial-title">Historial</h1>
-          <p>Cada fila es una observación independiente; las diferencias no se acumulan.</p>
+          <p>Registra la realidad</p>
+        </div>
+        <div className="cajero-history-tabs" aria-label="Período del historial" role="group">
+          {(['hoy', 'ayer'] as const).map((option) => (
+            <button
+              aria-pressed={period === option}
+              className={period === option ? 'is-active' : undefined}
+              key={option}
+              onClick={() => selectPeriod(option)}
+              type="button"
+            >
+              {option === 'hoy' ? 'Hoy' : 'Ayer'}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="cajero-history-tabs" aria-label="Período del historial">
-        {(['hoy', 'ayer'] as const).map((option) => (
-          <button
-            aria-pressed={period === option}
-            className={period === option ? 'is-active' : undefined}
-            key={option}
-            onClick={() => selectPeriod(option)}
-            type="button"
-          >
-            {option === 'hoy' ? 'Hoy' : 'Ayer'}
-          </button>
-        ))}
-      </div>
-
       {history ? (
-        <div className="cajero-category-selector cajero-history-categories" aria-label="Categoría del historial">
+        <div className="cajero-selection-grid cajero-history-categories" aria-label="Categoría del historial">
           <button
             aria-pressed={effectiveCategoryId === null}
             className={effectiveCategoryId === null ? 'is-active' : undefined}
             onClick={() => setSelectedCategoryId(null)}
             type="button"
           >
-            <strong>Todas</strong>
-            <small>{items.length} observaciones</small>
+            <Layers3 aria-hidden="true" size={23} />
+            <span>
+              <strong>Todas</strong>
+              <small>{items.length} {items.length === 1 ? 'observación' : 'observaciones'}</small>
+            </span>
           </button>
-          {categories.map((category) => (
-            <button
-              aria-pressed={effectiveCategoryId === category.id}
-              className={effectiveCategoryId === category.id ? 'is-active' : undefined}
-              key={category.id}
-              onClick={() => setSelectedCategoryId(category.id)}
-              type="button"
-            >
-              <strong>{category.nombre}</strong>
-              <small>{category.count} observaciones</small>
-            </button>
-          ))}
+          {categories.map((category) => {
+            const Icon = getCajeroCategoryIcon(category.nombre)
+            return (
+              <button
+                aria-pressed={effectiveCategoryId === category.id}
+                className={effectiveCategoryId === category.id ? 'is-active' : undefined}
+                key={category.id}
+                onClick={() => setSelectedCategoryId(category.id)}
+                type="button"
+              >
+                <Icon aria-hidden="true" size={23} />
+                <span>
+                  <strong>{category.nombre}</strong>
+                  <small>{category.count} {category.count === 1 ? 'observación' : 'observaciones'}</small>
+                </span>
+              </button>
+            )
+          })}
         </div>
       ) : null}
 

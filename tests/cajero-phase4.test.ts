@@ -10,10 +10,15 @@ import type {
   CajeroObservationInput,
 } from '../src/features/solog/cajero/cajero.types'
 import {
+  filterCajeroReviewGroups,
+  formatCajeroDifference,
+  getCajeroDifferenceClass,
   getFollowupGroupLabel,
+  getReviewReasonLabel,
   isCajeroRecountGroup,
   sortFollowupGroups,
   sortHistoryNewestFirst,
+  toggleCajeroReviewDifferenceFilter,
 } from '../src/features/solog/cajero/cajero.utils'
 
 class MemoryStorage implements Storage {
@@ -107,6 +112,44 @@ describe('Revisar V3.1', () => {
     expect(getFollowupGroupLabel(group('change', 'movimiento_posterior', '2026-08-26T08:00:00.000Z'))).toBe('Cambio de stock')
   })
 
+  test('traduce los motivos de Revisar a lenguaje operativo', () => {
+    expect(getReviewReasonLabel('persistente')).toBe('Confirmar conteo')
+    expect(getReviewReasonLabel('conteos_inconsistentes')).toBe('Confirmar conteo')
+    expect(getReviewReasonLabel('parcialmente_explicada')).toBe('Volver a contar')
+    expect(getReviewReasonLabel('movimiento_posterior')).toBe('Volver a contar')
+    expect(getReviewReasonLabel('otro')).toBe('Verificar diferencia')
+    expect(getReviewReasonLabel(null)).toBe('Verificar diferencia')
+  })
+
+  test('alterna el filtro compacto entre todas, positivas y negativas', () => {
+    expect(toggleCajeroReviewDifferenceFilter('all', 'positive')).toBe('positive')
+    expect(toggleCajeroReviewDifferenceFilter('all', 'negative')).toBe('negative')
+    expect(toggleCajeroReviewDifferenceFilter('positive', 'positive')).toBe('all')
+    expect(toggleCajeroReviewDifferenceFilter('negative', 'negative')).toBe('all')
+    expect(toggleCajeroReviewDifferenceFilter('positive', 'negative')).toBe('negative')
+    expect(toggleCajeroReviewDifferenceFilter('negative', 'positive')).toBe('positive')
+  })
+
+  test('filtra por última diferencia, conserva el orden y deja cero solo en Todas', () => {
+    const groups = [
+      { ...group('positive', null, '2026-08-26T08:00:00.000Z'), ultima_diferencia: 3 },
+      { ...group('zero', null, '2026-08-26T09:00:00.000Z'), ultima_diferencia: 0 },
+      { ...group('negative', null, '2026-08-26T10:00:00.000Z'), ultima_diferencia: -2 },
+    ]
+
+    expect(filterCajeroReviewGroups(groups, 'all').map((item) => item.grupo_id)).toEqual([
+      'positive',
+      'zero',
+      'negative',
+    ])
+    expect(filterCajeroReviewGroups(groups, 'positive').map((item) => item.grupo_id)).toEqual([
+      'positive',
+    ])
+    expect(filterCajeroReviewGroups(groups, 'negative').map((item) => item.grupo_id)).toEqual([
+      'negative',
+    ])
+  })
+
   test('crea un lote mixto con auto, seguimiento y reconteo con origen', () => {
     const storage = new MemoryStorage()
     const origin = '4f3e43cc-2e6d-4cc5-bf9b-50bb58610417'
@@ -131,6 +174,48 @@ describe('Revisar V3.1', () => {
         new MemoryStorage(),
       ),
     ).toThrow()
+  })
+
+  test('usa lista compacta y abre directamente el modal compartido', async () => {
+    const source = await Bun.file(
+      'src/features/solog/cajero/cajero.revisar.tsx',
+    ).text()
+
+    expect(source).toContain('<p>Registra la realidad</p>')
+    expect(source).toContain('cajero-review-list')
+    expect(source).toContain('cajero-review-filter')
+    expect(source).toContain('filterCajeroReviewGroups')
+    expect(source).toContain('CajeroCaptureModal')
+    expect(source).toContain('initialGroupId={selectedGroupId}')
+    expect(source).not.toContain('CajeroOperationalView')
+    expect(source).not.toContain('CajeroCountTable')
+    expect(source).not.toContain('<input')
+    expect(source).not.toContain('Motivo</')
+  })
+
+  test('el modal admite Revisar sin ejecutar RPC y conserva su semántica', async () => {
+    const source = await Bun.file(
+      'src/features/solog/cajero/cajero.captura-modal.tsx',
+    ).text()
+
+    expect(source).toContain("'conteo_diario' | 'revisar'")
+    expect(source).toContain('initialGroupId?: string')
+    expect(source).toContain('<dt>Última diferencia</dt>')
+    expect(source).toContain('<dt>Motivo</dt>')
+    expect(source).toContain("? 'reconteo'")
+    expect(source).toContain(": 'seguimiento'")
+    expect(source).not.toContain('sendPending')
+    expect(source).not.toContain('cajero.api')
+  })
+
+  test('formatea la diferencia actual con la semántica visual acordada', () => {
+    expect(formatCajeroDifference(null)).toBe('—')
+    expect(formatCajeroDifference(0)).toBe('0')
+    expect(formatCajeroDifference(-8)).toBe('-8')
+    expect(formatCajeroDifference(1)).toBe('+1')
+    expect(getCajeroDifferenceClass(0)).toBe('is-zero')
+    expect(getCajeroDifferenceClass(-1)).toBe('is-negative')
+    expect(getCajeroDifferenceClass(1)).toBe('is-positive')
   })
 })
 
