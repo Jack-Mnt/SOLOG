@@ -32,6 +32,52 @@ export interface CajeroCategoryCarouselItem {
   icon: LucideIcon
 }
 
+export interface CajeroSelectionGridItem {
+  id: string
+  name: string
+  count: number
+  icon: LucideIcon
+}
+
+export function CajeroSelectionGrid({
+  items,
+  selectedId,
+  onSelect,
+  label,
+}: {
+  items: CajeroSelectionGridItem[]
+  selectedId?: string | null
+  onSelect: (id: string) => void
+  label: string
+}) {
+  return (
+    <div className="cajero-selection-grid" aria-label={label}>
+      {items.map((item) => {
+        const Icon = item.icon
+        const selected = selectedId === item.id
+        return (
+          <button
+            aria-pressed={selected}
+            className={selected ? 'is-active' : undefined}
+            disabled={item.count === 0}
+            key={item.id}
+            onClick={() => onSelect(item.id)}
+            type="button"
+          >
+            <Icon aria-hidden="true" size={23} />
+            <span>
+              <strong>{item.name}</strong>
+              <small>
+                {item.count} {item.count === 1 ? 'pendiente' : 'pendientes'}
+              </small>
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export function CajeroCategoryCarousel({
   items,
   selectedId,
@@ -102,11 +148,16 @@ export function CajeroCategorySummary({
 
 export function CajeroSendBar({
   session,
+  compact = false,
 }: {
   session: CajeroSessionController
+  compact?: boolean
 }) {
   return (
-    <section className="cajero-send-bar" aria-label="Enviar conteos pendientes">
+    <section
+      className={`cajero-send-bar${compact ? ' cajero-send-bar--compact' : ''}`}
+      aria-label="Enviar conteos pendientes"
+    >
       <p>
         <strong>{session.pendingCount}</strong>{' '}
         {session.pendingCount === 1 ? 'conteo por enviar' : 'conteos por enviar'}

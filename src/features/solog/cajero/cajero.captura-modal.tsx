@@ -66,6 +66,7 @@ export function CajeroCaptureModal({
 }) {
   const titleId = useId()
   const modalRef = useRef<HTMLElement>(null)
+  const onCloseRef = useRef(onClose)
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null)
   useSyncExternalStore(
     subscribeCajeroBufferChanges,
@@ -103,6 +104,10 @@ export function CajeroCaptureModal({
     : ''
 
   useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  useEffect(() => {
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const modal = modalRef.current
@@ -112,7 +117,7 @@ export function CajeroCaptureModal({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
-        onClose()
+        onCloseRef.current()
         return
       }
       if (event.key !== 'Tab' || !modal) return
@@ -136,7 +141,7 @@ export function CajeroCaptureModal({
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [onClose])
+  }, [])
 
   const saveActiveGroup = (stockFisico: number) => {
     if (!activeGroup || disabled || lockedGroupIds?.has(activeGroup.grupo_id)) return

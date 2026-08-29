@@ -6,6 +6,7 @@ import type {
   CajeroHistoryItem,
   CajeroObservationType,
   CajeroRoute,
+  CajeroStockType,
 } from './cajero.types'
 
 export const CAJERO_MAX_PHYSICAL_COUNT = 99_999
@@ -216,6 +217,71 @@ export function deriveCajeroCategories<
     (left, right) =>
       (left.orden ?? Number.MAX_SAFE_INTEGER) -
       (right.orden ?? Number.MAX_SAFE_INTEGER),
+  )
+}
+
+export function isCajeroGroupInStockType(
+  group: CajeroCountGroup,
+  type: CajeroStockType,
+): boolean {
+  switch (type) {
+    case 'positive':
+      return group.stock_teorico > 0
+    case 'zero':
+      return group.stock_teorico === 0
+    case 'negative':
+      return group.stock_teorico < 0
+  }
+}
+
+export function deriveCajeroFortnightCategories(
+  groups: readonly CajeroCountGroup[],
+  type: CajeroStockType,
+  excludedGroupIds: ReadonlySet<string> = new Set(),
+): CajeroCategoryOption[] {
+  const categories = new Map<string, CajeroCategoryOption>()
+  for (const group of groups) {
+    if (!isCajeroGroupInStockType(group, type)) continue
+    const pending =
+      group.pendiente_quincena === true &&
+      !excludedGroupIds.has(group.grupo_id)
+    const current = categories.get(group.categoria_id)
+    if (current) {
+      if (pending) current.count += 1
+      continue
+    }
+
+    const category: CajeroCategoryOption = {
+      id: group.categoria_id,
+      nombre: group.categoria,
+      count: pending ? 1 : 0,
+    }
+    if (typeof group.categoria_orden === 'number') {
+      category.orden = group.categoria_orden
+    }
+    categories.set(group.categoria_id, category)
+  }
+
+  return [...categories.values()].sort(
+    (left, right) =>
+      (left.orden ?? Number.MAX_SAFE_INTEGER) -
+        (right.orden ?? Number.MAX_SAFE_INTEGER) ||
+      left.nombre.localeCompare(right.nombre, 'es'),
+  )
+}
+
+export function filterCajeroFortnightCategoryGroups(
+  groups: readonly CajeroCountGroup[],
+  type: CajeroStockType,
+  categoryId: string,
+  excludedGroupIds: ReadonlySet<string> = new Set(),
+): CajeroCountGroup[] {
+  return groups.filter(
+    (group) =>
+      group.categoria_id === categoryId &&
+      group.pendiente_quincena === true &&
+      !excludedGroupIds.has(group.grupo_id) &&
+      isCajeroGroupInStockType(group, type),
   )
 }
 

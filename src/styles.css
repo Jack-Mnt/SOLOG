@@ -8361,3 +8361,148 @@ h1 {
     width: 100%;
   }
 }
+
+/* Panel Cajero — selección por tipo y categoría */
+.cajero-operational__heading--with-action {
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.cajero-send-bar--compact {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.cajero-selection-level {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.cajero-selection-level > h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 0.92rem;
+}
+
+.cajero-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.cajero-selection-level--stock .cajero-selection-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cajero-selection-grid button {
+  min-width: 0;
+  min-height: 84px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-default);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast),
+    transform var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.cajero-selection-grid button > svg {
+  color: var(--color-primary);
+}
+
+.cajero-selection-grid button > span {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.cajero-selection-grid button strong,
+.cajero-selection-grid button small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cajero-selection-grid button strong {
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+}
+
+.cajero-selection-grid button small {
+  color: var(--color-text-secondary);
+  font-size: 0.76rem;
+}
+
+.cajero-selection-grid button:not(:disabled):hover,
+.cajero-selection-grid button:not(:disabled):focus-visible {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.cajero-selection-grid button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.cajero-selection-grid button.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.cajero-selection-grid button.is-active strong {
+  color: var(--color-primary);
+}
+
+.cajero-selection-grid button:disabled {
+  opacity: 0.48;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .cajero-operational__heading--with-action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cajero-send-bar--compact {
+    width: 100%;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .cajero-selection-level--stock .cajero-selection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 460px) {
+  .cajero-selection-grid,
+  .cajero-selection-level--stock .cajero-selection-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cajero-send-bar--compact .button {
+    width: auto;
+  }
+}

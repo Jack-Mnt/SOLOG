@@ -27,6 +27,8 @@ export type CajeroObservationType =
 
 export type CajeroHistoryPeriod = 'hoy' | 'ayer'
 
+export type CajeroStockType = 'positive' | 'zero' | 'negative'
+
 export type CajeroExpressionStatus =
   | 'empty'
   | 'incomplete'
