@@ -240,4 +240,36 @@ describe('Historial V3', () => {
     ]
     expect(sortHistoryNewestFirst(items).map((item) => item.diferencia)).toEqual([0, -3, -2])
   })
+
+  test('usa header compacto, categorías locales y lista expandible múltiple', async () => {
+    const source = await Bun.file(
+      'src/features/solog/cajero/cajero.historial.tsx',
+    ).text()
+
+    expect(source).toContain('<p>Registra la realidad</p>')
+    expect(source).not.toContain('cajero-module__eyebrow')
+    expect(source).not.toContain('Consulta</')
+    expect(source).toContain('cajero-history-tabs')
+    expect(source).toContain('cajero-selection-grid cajero-history-categories')
+    expect(source).toContain('getCajeroCategoryIcon')
+    expect(source).toContain('cajero-history-list')
+    expect(source).not.toContain('cajero-history-table')
+    expect(source).toContain('useState<Set<string>>')
+    expect(source).toContain('expandedItemIds.has(item.detalle_id)')
+    expect(source).toContain("expanded ? '−' : '+'")
+  })
+
+  test('mantiene caché por período y resuelve filtros y expansión sin API', async () => {
+    const source = await Bun.file(
+      'src/features/solog/cajero/cajero.historial.tsx',
+    ).text()
+
+    expect(source).toContain("session.getCachedHistory('hoy')")
+    expect(source).toContain('getCachedHistory(nextPeriod)')
+    expect(source).toContain('filterCajeroByCategory(items, effectiveCategoryId)')
+    expect(source).toContain('setSelectedCategoryId(category.id)')
+    expect(source).toContain('toggleExpandedItem(item.detalle_id)')
+    expect(source).not.toContain('cajero.api')
+    expect(source).not.toContain('supabase')
+  })
 })

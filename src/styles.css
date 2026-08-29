@@ -7697,20 +7697,26 @@ h1 {
   margin-top: 0.35rem;
 }
 
+.cajero-history__heading {
+  align-items: flex-start;
+  flex-direction: row;
+}
+
 .cajero-history-tabs {
   display: inline-flex;
   align-self: flex-start;
-  gap: 0.3rem;
-  padding: 0.25rem;
+  gap: 2px;
+  flex: 0 0 auto;
+  padding: 3px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   background: var(--color-surface-secondary);
 }
 
 .cajero-history-tabs button {
-  min-width: 92px;
-  min-height: 38px;
-  padding: 0.4rem 0.8rem;
+  min-width: 76px;
+  min-height: 44px;
+  padding: 0.45rem 0.8rem;
   border: 0;
   border-radius: calc(var(--radius-control) - 3px);
   color: var(--color-text-secondary);
@@ -7728,21 +7734,161 @@ h1 {
 .cajero-history-tabs button:hover,
 .cajero-history-tabs button:focus-visible {
   color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.cajero-history-tabs button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .cajero-history-tabs button.is-active {
-  color: var(--color-primary);
+  color: var(--color-primary-contrast);
+  background: var(--color-primary);
+  box-shadow: var(--shadow-default);
+}
+
+.cajero-history-list {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
   background: var(--color-surface);
   box-shadow: var(--shadow-default);
 }
 
-.cajero-history-table td:first-child {
-  min-width: 82px;
+.cajero-history-list__head,
+.cajero-history-list__summary {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(90px, 0.28fr) minmax(
+      120px,
+      0.34fr
+    ) 48px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cajero-history-list__head {
+  min-height: 42px;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+}
+
+.cajero-history-list__head span:last-child {
+  text-align: center;
+}
+
+.cajero-history-list__rows article {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cajero-history-list__rows article:last-child {
+  border-bottom: 0;
+}
+
+.cajero-history-list__summary {
+  min-height: 62px;
+  padding: 0.7rem 1rem;
+  color: var(--color-text-secondary);
+  transition: background var(--transition-fast);
+}
+
+.cajero-history-list__rows article.is-expanded .cajero-history-list__summary {
+  background: var(--color-primary-subtle);
+}
+
+.cajero-history-list__summary > strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.cajero-history-table td:nth-child(2) {
-  min-width: 220px;
+.cajero-history-list__summary .is-negative {
+  color: var(--color-danger);
+  font-weight: 800;
+}
+
+.cajero-history-list__summary .is-zero {
+  color: var(--color-success);
+  font-weight: 800;
+}
+
+.cajero-history-list__summary .is-positive {
+  color: var(--ui-blue);
+  font-weight: 800;
+}
+
+.cajero-history-list__summary button {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  justify-self: end;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-primary);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.cajero-history-list__summary button > span {
+  font-size: 1.15rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.cajero-history-list__summary button:hover,
+.cajero-history-list__summary button:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.cajero-history-list__summary button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.cajero-history-list__detail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.15rem 1rem 1rem;
+  background: var(--color-primary-subtle);
+}
+
+.cajero-history-list__detail > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.cajero-history-list__detail dt,
+.cajero-history-list__detail dd {
+  margin: 0;
+}
+
+.cajero-history-list__detail dt {
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+.cajero-history-list__detail dd {
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 @media (max-width: 720px) {
@@ -7757,20 +7903,33 @@ h1 {
     font-size: 0.62rem;
   }
 
-  .cajero-count-table-wrap--review .cajero-count-table td:first-child,
-  .cajero-history-table td:first-child {
+  .cajero-count-table-wrap--review .cajero-count-table td:first-child {
     min-width: 0;
   }
 
-  .cajero-count-table-wrap--review .cajero-count-table td:nth-child(2),
-  .cajero-history-table td:nth-child(2) {
+  .cajero-count-table-wrap--review .cajero-count-table td:nth-child(2) {
     grid-column: 1 / -1;
     min-width: 0;
   }
 
-  .cajero-count-table-wrap--review .cajero-count-table td:first-child,
-  .cajero-history-table td:first-child {
+  .cajero-count-table-wrap--review .cajero-count-table td:first-child {
     grid-column: auto;
+  }
+
+  .cajero-history-list__head,
+  .cajero-history-list__summary {
+    grid-template-columns: minmax(120px, 1fr) 82px 104px 44px;
+    gap: 0.45rem;
+    padding-inline: 0.7rem;
+  }
+
+  .cajero-history-list__head {
+    font-size: 0.62rem;
+  }
+
+  .cajero-history-list__detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-inline: 0.7rem;
   }
 }
 
@@ -7790,6 +7949,32 @@ h1 {
   .cajero-review-list__rows button {
     min-height: 58px;
     font-size: 0.8rem;
+  }
+
+  .cajero-history-tabs button {
+    min-width: 64px;
+    padding-inline: 0.55rem;
+  }
+
+  .cajero-history-list__head,
+  .cajero-history-list__summary {
+    grid-template-columns: minmax(70px, 1fr) 50px 72px 44px;
+    gap: 0.3rem;
+    padding-inline: 0.55rem;
+  }
+
+  .cajero-history-list__head {
+    font-size: 0.55rem;
+    letter-spacing: 0.02em;
+  }
+
+  .cajero-history-list__summary {
+    min-height: 58px;
+    font-size: 0.78rem;
+  }
+
+  .cajero-history-list__summary > strong {
+    font-size: 0.82rem;
   }
 }
 
@@ -8449,4 +8634,8 @@ h1 {
   .cajero-send-bar--compact .button {
     width: auto;
   }
+}
+
+.cajero-history-categories {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }

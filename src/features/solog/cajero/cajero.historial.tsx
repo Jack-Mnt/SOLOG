@@ -1,7 +1,5 @@
 import {
   AlertCircle,
-  ChevronDown,
-  ChevronUp,
   History,
   Layers3,
   LoaderCircle,
@@ -195,23 +193,41 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
       {loading ? (
         <div className="cajero-loading" role="status"><LoaderCircle aria-hidden="true" className="spin" size={24} /> Cargando historial…</div>
       ) : history && visibleItems.length > 0 ? (
-        <div className="cajero-count-table-wrap cajero-history-table-wrap">
-          <table className="cajero-count-table cajero-history-table">
-            <thead><tr><th>Hora</th><th>Grupo</th><th>Tipo</th><th>TumiSoft</th><th>Conteo</th><th>Diferencia</th><th>Valorizado</th></tr></thead>
-            <tbody>
-              {visibleItems.map((item) => (
-                <tr key={item.detalle_id}>
-                  <td data-label="Hora">{formatHistoryTime(item.contado_at)}</td>
-                  <td data-label="Grupo"><strong>{item.grupo}</strong></td>
-                  <td data-label="Tipo"><span className="cajero-observation-type">{getObservationTypeLabel(item.tipo_observacion)}</span></td>
-                  <td data-label="TumiSoft">{item.stock_teorico}</td>
-                  <td data-label="Conteo">{item.stock_fisico}</td>
-                  <td data-label="Diferencia" className={item.diferencia === 0 ? 'is-zero' : item.diferencia < 0 ? 'is-negative' : 'is-positive'}>{item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia}</td>
-                  <td data-label="Valorizado">{formatCajeroCurrency(item.valor_diferencia)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="cajero-history-list">
+          <div className="cajero-history-list__head" aria-hidden="true">
+            <span>Nombre</span><span>Diferencia</span><span>Valorizado</span><span>+</span>
+          </div>
+          <div className="cajero-history-list__rows">
+            {visibleItems.map((item) => {
+              const expanded = expandedItemIds.has(item.detalle_id)
+              const differenceClass = getCajeroDifferenceClass(item.diferencia)
+              return (
+                <article className={expanded ? 'is-expanded' : undefined} key={item.detalle_id}>
+                  <div className="cajero-history-list__summary">
+                    <strong title={item.grupo}>{item.grupo}</strong>
+                    <span className={differenceClass}>{formatCajeroDifference(item.diferencia)}</span>
+                    <span className={differenceClass}>{formatHistoryValuation(item.valor_diferencia)}</span>
+                    <button
+                      aria-expanded={expanded}
+                      aria-label={`${expanded ? 'Contraer' : 'Expandir'} detalle de ${item.grupo}`}
+                      onClick={() => toggleExpandedItem(item.detalle_id)}
+                      type="button"
+                    >
+                      <span aria-hidden="true">{expanded ? '−' : '+'}</span>
+                    </button>
+                  </div>
+                  {expanded ? (
+                    <dl className="cajero-history-list__detail">
+                      <div><dt>Hora</dt><dd>{formatHistoryTime(item.contado_at)}</dd></div>
+                      <div><dt>Tipo</dt><dd><span className="cajero-observation-type">{getObservationTypeLabel(item.tipo_observacion)}</span></dd></div>
+                      <div><dt>Stock TumiSoft</dt><dd>{item.stock_teorico}</dd></div>
+                      <div><dt>Conteo</dt><dd>{item.stock_fisico}</dd></div>
+                    </dl>
+                  ) : null}
+                </article>
+              )
+            })}
+          </div>
         </div>
       ) : !error ? (
         <div className="cajero-empty-state" role="status">
