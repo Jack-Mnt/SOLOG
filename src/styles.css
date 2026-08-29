@@ -3055,9 +3055,7 @@ h1 {
 }
 
 .catalog-filters--scoped {
-  grid-template-columns:
-    minmax(130px, 0.5fr) minmax(170px, 0.7fr) minmax(280px, 1.5fr)
-    auto;
+  grid-template-columns: minmax(280px, 1.5fr) minmax(170px, 0.7fr) auto;
 }
 
 .catalog-type-cell {
@@ -3473,31 +3471,7 @@ h1 {
   font-size: 0.68rem;
 }
 
-.catalog-structural-comparison {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.catalog-structural-comparison > div {
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface-secondary);
-}
-
-.catalog-structural-comparison p {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 8px 0 0;
-  font-size: 0.72rem;
-}
-.catalog-structural-comparison p span {
-  color: var(--color-text-secondary);
-}
-
-/* Grupos — estructura publicada y propuestas futuras */
+/* Grupos — estructura operativa actual */
 .groups-workbench {
   display: grid;
   gap: 12px;
@@ -3511,28 +3485,6 @@ h1 {
 }
 .groups-workbench__toolbar > .button {
   margin-left: auto;
-}
-.groups-legend {
-  display: flex;
-  gap: 18px;
-  color: var(--color-text-secondary);
-  font-size: 0.7rem;
-}
-.groups-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.groups-legend i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-}
-.groups-legend__published {
-  background: var(--color-success);
-}
-.groups-legend__proposed {
-  background: var(--color-warning);
 }
 .groups-filters {
   display: grid;
@@ -3574,10 +3526,6 @@ h1 {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.groups-change-count {
-  color: var(--color-warning);
-  font-weight: 750;
-}
 .group-detail-dialog {
   width: min(860px, 100%);
 }
@@ -3610,8 +3558,7 @@ h1 {
   font-size: 0.68rem;
 }
 .group-members,
-.group-product-results,
-.group-proposals {
+.group-product-results {
   display: grid;
   gap: 6px;
 }
@@ -3641,19 +3588,6 @@ h1 {
 }
 .group-members small,
 .group-product-results small {
-  color: var(--color-text-secondary);
-}
-.group-proposals article {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 4px 10px;
-  padding: 9px;
-  border-left: 3px solid var(--color-warning);
-  background: var(--color-warning-soft);
-}
-.group-proposals small {
-  grid-column: 2;
   color: var(--color-text-secondary);
 }
 .group-current-definition,

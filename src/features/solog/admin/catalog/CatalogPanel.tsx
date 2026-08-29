@@ -75,7 +75,7 @@ function CatalogTable({
               row.catalogo_actual.producto ??
               (typeof row.datos.nombre === "string"
                 ? row.datos.nombre
-                : "Grupo sin nombre");
+                : "Producto sin nombre");
             const changeLabel = getCatalogChangeLabel(row);
             return (
               <tr
@@ -95,9 +95,7 @@ function CatalogTable({
                 <td>
                   <span className="catalog-type-cell">
                     <strong>{getSologCatalogChangeTypeLabel(row.tipo)}</strong>
-                    <small>
-                      {row.ambito === "grupo" ? "Grupo" : "Producto"}
-                    </small>
+                    <small>Producto</small>
                   </span>
                 </td>
                 <td>
@@ -276,11 +274,6 @@ export function CatalogPanel({
 
   const selectChange = (change: SologCatalogChangeRow) => {
     setSelected(change);
-    if (
-      change.tipo === "clasificacion_producto" ||
-      change.tipo === "definicion_grupo"
-    )
-      void catalog.loadReference();
   };
 
   const displayCurrentVersion =
@@ -446,7 +439,6 @@ export function CatalogPanel({
           onClose={() => setSelected(null)}
           onIgnore={() => void ignoreChange(selected)}
           onWithdraw={() => void withdrawChange(selected)}
-          reference={catalog.reference}
         />
       ) : null}
       {configuring ? (

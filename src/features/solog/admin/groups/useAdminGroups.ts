@@ -85,8 +85,18 @@ export function useAdminGroups(refreshOperationalState: () => Promise<void>) {
     setError(null)
     setNotice(null)
     try {
-      await saveAdminGroupChange(change)
-      setNotice('La propuesta estructural quedó pendiente para la próxima versión del catálogo.')
+      const result = await saveAdminGroupChange(change)
+      setNotice(
+        result.codigo === 'GROUP_CREATED'
+          ? 'Grupo creado.'
+          : change.kind === 'definition'
+            ? 'Grupo actualizado.'
+            : change.estado === 'Excluido'
+              ? 'Producto excluido del conteo.'
+              : change.estado === 'Agrupado'
+                ? 'Producto movido al grupo.'
+                : 'Clasificación actualizada.',
+      )
       await load(appliedFilters, offset)
       return true
     } catch (saveError) {

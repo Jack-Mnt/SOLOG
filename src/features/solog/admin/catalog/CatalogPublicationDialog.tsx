@@ -10,8 +10,6 @@ const SUMMARY_ORDER: SologCatalogChangeType[] = [
   'nombre',
   'precio',
   'codigo',
-  'clasificacion_producto',
-  'definicion_grupo',
 ]
 
 export function CatalogPublicationDialog({

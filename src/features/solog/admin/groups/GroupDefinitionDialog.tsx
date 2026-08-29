@@ -35,15 +35,15 @@ export function GroupDefinitionDialog({ group, reference, saving, onClose, onSav
   }
 
   return (
-    <AdminDialog closeDisabled={saving} onClose={onClose} title={group ? 'Proponer cambio de grupo' : 'Nueva definición futura'}>
-      {group ? <div className="group-current-definition"><span>Publicado actualmente</span><strong>{group.nombre}</strong><small>{group.categoria} · {formatAdminCurrency(group.precio)}</small></div> : null}
+    <AdminDialog closeDisabled={saving} onClose={onClose} title={group ? 'Editar grupo' : 'Nuevo grupo'}>
+      {group ? <div className="group-current-definition"><span>Estado actual</span><strong>{group.nombre}</strong><small>{group.categoria} · {formatAdminCurrency(group.precio)}</small></div> : null}
       <form className="group-change-form" id="group-definition-form" onSubmit={(event) => void submit(event)}>
-        <p className="helper-text">La propuesta no modifica el catálogo publicado. Se incorporará solo tras aprobarla y publicar una nueva versión.</p>
         <label>Nombre<input disabled={saving} onChange={(event) => setNombre(event.target.value)} required value={nombre} /></label>
         <label>Categoría<select disabled={saving} onChange={(event) => setCategoriaId(event.target.value)} required value={categoriaId}><option value="">Seleccionar…</option>{reference.categorias.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
-        <label>Precio unitario<input disabled={saving} min="0" onChange={(event) => setPrecio(event.target.value)} required step="0.01" type="number" value={precio} /></label>
+        <label>{group ? 'Precio de referencia' : 'Precio de compatibilidad'}<input disabled={saving || Boolean(group)} min="0" onChange={(event) => setPrecio(event.target.value)} required step="0.01" type="number" value={precio} /></label>
+        {group ? <p className="helper-text">El precio pertenece al catálogo del producto y no se modifica desde Grupos.</p> : null}
         {validation ? <div className="notice notice--error" role="alert">{validation}</div> : null}
-        <div className="admin-report-filter-actions"><button className="button button--secondary" disabled={saving} onClick={onClose} type="button">Cancelar</button><button className="button" disabled={saving} type="submit">{saving ? <LoaderCircle className="icon-spin" size={17} /> : <Save size={17} />}{saving ? 'Guardando…' : 'Guardar propuesta'}</button></div>
+        <div className="admin-report-filter-actions"><button className="button button--secondary" disabled={saving} onClick={onClose} type="button">Cancelar</button><button className="button" disabled={saving} type="submit">{saving ? <LoaderCircle className="icon-spin" size={17} /> : <Save size={17} />}{saving ? 'Guardando…' : group ? 'Guardar cambios' : 'Guardar'}</button></div>
       </form>
     </AdminDialog>
   )

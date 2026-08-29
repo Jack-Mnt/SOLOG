@@ -52,8 +52,6 @@ const CATALOG_CHANGE_TYPE_LABELS: Record<SologCatalogChangeType, string> = {
   nombre: 'Nombre',
   precio: 'Precio',
   codigo: 'Código',
-  clasificacion_producto: 'Clasificación',
-  definicion_grupo: 'Grupo',
 }
 
 const CATALOG_CHANGE_SECTION_LABELS: Record<SologCatalogChangeSection, string> = {

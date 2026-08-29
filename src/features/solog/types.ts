@@ -347,10 +347,8 @@ export type SologCatalogChangeType =
   | 'nombre'
   | 'precio'
   | 'codigo'
-  | 'clasificacion_producto'
-  | 'definicion_grupo'
 
-export type SologCatalogChangeScope = 'producto' | 'grupo'
+export type SologCatalogChangeScope = 'producto'
 
 export type SologCatalogChangeSection = 'urgente' | 'pendiente'
 
@@ -495,17 +493,6 @@ export interface SologAdminGroupProduct {
   estado: SologGroupProductMode
 }
 
-export interface SologGroupRelatedChange {
-  id: string
-  tipo: SologCatalogChangeType
-  ambito: SologCatalogChangeScope
-  estado: 'pendiente' | 'aprobado'
-  c_interno: number | null
-  grupo_id: string | null
-  datos: Record<string, unknown>
-  updated_at: string
-}
-
 export interface SologGroupSummary {
   id: string
   nombre: string
@@ -518,7 +505,6 @@ export interface SologGroupSummary {
   tipo: 'Único' | 'Agrupado'
   sku_count: number
   integrantes: SologAdminGroupProduct[]
-  propuestas: SologGroupRelatedChange[]
 }
 
 export type SologGroupDetail = SologGroupSummary
@@ -543,12 +529,6 @@ export interface SologGroupProductSearchRow extends SologAdminGroupProduct {
   categoria: string
   grupo_id: string | null
   grupo: string | null
-  propuesta: null | {
-    id: string
-    estado: 'pendiente' | 'aprobado'
-    datos: Record<string, unknown>
-    propuesta_fingerprint: string
-  }
 }
 
 export interface SologGroupProductsFilters {
@@ -587,15 +567,28 @@ export type SologGroupChangePayload =
       grupo_conteo_id: string
     }
 
-export interface SologGroupChangeResponse {
-  ok: true
-  codigo: 'GROUP_CHANGE_SAVED'
-  cambio_id: string
-  propuesta_fingerprint: string
-  grupo_id?: string
-  c_interno?: number
-  estado: 'pendiente'
-}
+export type SologGroupChangeResponse =
+  | {
+      ok: true
+      codigo: 'GROUP_CREATED'
+      grupo_id: string
+      aplicado: true
+    }
+  | {
+      ok: true
+      codigo: 'GROUP_CHANGE_SAVED'
+      grupo_id: string
+      aplicado: true
+      sku_afectados?: number
+    }
+  | {
+      ok: true
+      codigo: 'GROUP_CHANGE_SAVED'
+      c_interno: number
+      aplicado: true
+      estado: SologGroupProductMode
+      grupo_id: string | null
+    }
 
 export interface SologGroupValuationSavePayload {
   grupo_id: string

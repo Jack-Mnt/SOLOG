@@ -51,7 +51,6 @@ export function GroupsPanel({
     categoria: group.categoria,
     grupo_id: group.id,
     grupo: group.nombre,
-    propuesta: null,
   });
   const saveAndCloseDetail = async (
     payload: Parameters<typeof groups.save>[0],
@@ -85,16 +84,6 @@ export function GroupsPanel({
   return (
     <div className="content-section admin-module groups-workbench">
       <div className="groups-workbench__toolbar">
-        <div className="groups-legend">
-          <span>
-            <i className="groups-legend__published" />
-            Publicado actual
-          </span>
-          <span>
-            <i className="groups-legend__proposed" />
-            Cambio futuro
-          </span>
-        </div>
         <button
           className="button"
           disabled={!groups.reference}
@@ -102,7 +91,7 @@ export function GroupsPanel({
           type="button"
         >
           <Plus size={17} />
-          Nueva definición
+          Nuevo grupo
         </button>
       </div>
       <form
@@ -208,7 +197,7 @@ export function GroupsPanel({
       {groups.status === "ready" && rows.length ? (
         <div className="admin-report-table-wrap groups-table-wrap">
           <table className="admin-report-table admin-interactive-table groups-table">
-            <caption>Grupos de conteo publicados y propuestas futuras</caption>
+            <caption>Grupos de conteo actuales</caption>
             <thead>
               <tr>
                 <th>Grupo</th>
@@ -216,7 +205,6 @@ export function GroupsPanel({
                 <th>Valorización</th>
                 <th>Productos</th>
                 <th>Estado</th>
-                <th>Cambios</th>
                 <th aria-label="Acción" />
               </tr>
             </thead>
@@ -244,16 +232,6 @@ export function GroupsPanel({
                     >
                       {group.activo ? group.tipo : "Inactivo"}
                     </span>
-                  </td>
-                  <td>
-                    {group.propuestas.length ? (
-                      <span className="groups-change-count">
-                        {group.propuestas.length} futura
-                        {group.propuestas.length === 1 ? "" : "s"}
-                      </span>
-                    ) : (
-                      "Sin cambios"
-                    )}
                   </td>
                   <td className="catalog-row-action">
                     <ChevronRight size={17} />
@@ -309,7 +287,7 @@ export function GroupsPanel({
                 onClick={() => setDefinition(selected)}
               >
                 <Pencil size={17} />
-                Proponer edición
+                Editar grupo
               </button>
             </>
           }
@@ -352,7 +330,7 @@ export function GroupsPanel({
             </article>
           </div>
           <section className="admin-detail-section">
-            <h3>Integrantes publicados</h3>
+            <h3>Integrantes</h3>
             {selected.integrantes.length ? (
               <div className="group-members">
                 {selected.integrantes.map((product) => (
@@ -380,34 +358,8 @@ export function GroupsPanel({
               </div>
             ) : (
               <div className="empty-state">
-                Este grupo no tiene integrantes publicados.
+                Este grupo no tiene integrantes.
               </div>
-            )}
-          </section>
-          <section className="admin-detail-section">
-            <h3>Cambios para próxima versión</h3>
-            {selected.propuestas.length ? (
-              <div className="group-proposals">
-                {selected.propuestas.map((proposal) => (
-                  <article key={proposal.id}>
-                    <span
-                      className={`admin-state-badge admin-state-badge--${proposal.estado}`}
-                    >
-                      {proposal.estado}
-                    </span>
-                    <strong>
-                      {proposal.tipo === "definicion_grupo"
-                        ? "Definición del grupo"
-                        : "Clasificación de producto"}
-                    </strong>
-                    <small>La estructura publicada aún no cambió.</small>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className="helper-text">
-                No hay propuestas pendientes o aprobadas relacionadas.
-              </p>
             )}
           </section>
         </AdminDialog>

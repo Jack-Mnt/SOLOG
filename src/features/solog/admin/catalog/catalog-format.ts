@@ -38,8 +38,6 @@ export function formatCatalogDate(value: string | null): string {
 }
 
 export function getCatalogChangeLabel(change: SologCatalogChangeRow): string {
-  if (change.tipo === 'definicion_grupo') return 'Definición estructural del grupo'
-  if (change.tipo === 'clasificacion_producto') return 'Modalidad o grupo de conteo'
   if (change.tipo === 'agregar_producto') return 'Agregar'
   if (change.tipo === 'eliminar_producto') return 'Eliminar'
 

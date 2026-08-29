@@ -10,8 +10,6 @@ const TYPES: SologCatalogChangeType[] = [
   "nombre",
   "precio",
   "codigo",
-  "clasificacion_producto",
-  "definicion_grupo",
 ];
 
 export function CatalogFilters({
@@ -49,22 +47,6 @@ export function CatalogFilters({
             value={filters.search}
           />
         </span>
-      </label>
-      <label className="admin-filter-field admin-filter-field--select">
-        Ámbito
-        <select
-          disabled={loading}
-          onChange={(event) =>
-            onUpdate({
-              ambito: event.target.value as CatalogDraftFilters["ambito"],
-            })
-          }
-          value={filters.ambito}
-        >
-          <option value="">Todos</option>
-          <option value="producto">Producto</option>
-          <option value="grupo">Grupo</option>
-        </select>
       </label>
       <label className="admin-filter-field admin-filter-field--select">
         Tipo
