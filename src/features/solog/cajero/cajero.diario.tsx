@@ -1,4 +1,4 @@
-import { AlertCircle, CalendarCheck2, LoaderCircle, Tags } from 'lucide-react'
+import { AlertCircle, CalendarCheck2, LoaderCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { CajeroCaptureModal } from './cajero.captura-modal'
@@ -16,6 +16,7 @@ import type { CajeroGroupsResponse } from './cajero.types'
 import {
   deriveCajeroCategories,
   filterCajeroByCategory,
+  getCajeroCategoryIcon,
 } from './cajero.utils'
 
 export function CajeroDiario({ session }: { session: CajeroSessionController }) {
@@ -102,7 +103,7 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
     id: category.id,
     name: category.nombre,
     count: category.count,
-    icon: Tags,
+    icon: getCajeroCategoryIcon(category.nombre),
   }))
   const openCategory = categories.find(
     (category) => category.id === openCategoryId && category.count > 0,
@@ -122,7 +123,7 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
       <div className="cajero-module__heading cajero-operational__heading cajero-operational__heading--with-action">
         <div>
           <h1 id="cajero-conteo-diario-title">Conteo diario</h1>
-          <p>Registra los cambios rutinarios detectados en el Stock TumiSoft.</p>
+          <p>Registra la realidad</p>
         </div>
         <CajeroSendBar compact session={session} />
       </div>

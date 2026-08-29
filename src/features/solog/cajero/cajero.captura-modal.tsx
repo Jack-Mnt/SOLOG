@@ -229,27 +229,31 @@ export function CajeroCaptureModal({
           <strong>{percentage}%</strong>
         </div>
 
-        <div className="cajero-capture-modal__body">
+        <div
+          className={`cajero-capture-modal__body${activeGroup ? ' cajero-capture-modal__body--detail' : ''}`}
+        >
           {activeGroup ? (
             <div className="cajero-capture-detail">
-              <section className="cajero-capture-detail__card">
-                <h3>{activeGroup.nombre}</h3>
-                <dl>
-                  <div><dt>Stock TumiSoft</dt><dd>{activeGroup.stock_teorico}</dd></div>
-                  <div><dt>Conteo</dt><dd>{activePending?.stock_fisico ?? '—'}</dd></div>
-                  <div><dt>Diferencia</dt><dd className={differenceClass(savedDifference)}>{formatDifference(savedDifference)}</dd></div>
-                  <div>
-                    <dt>Valorizado</dt>
-                    <dd className={differenceClass(savedDifference)}>
-                      {savedValuation === null
-                        ? '—'
-                        : savedValuation > 0
-                          ? `+${formatCajeroCurrency(savedValuation)}`
-                          : formatCajeroCurrency(savedValuation)}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
+              <div className="cajero-capture-detail__information">
+                <section className="cajero-capture-detail__card">
+                  <h3>{activeGroup.nombre}</h3>
+                  <dl>
+                    <div><dt>Stock TumiSoft</dt><dd>{activeGroup.stock_teorico}</dd></div>
+                    <div><dt>Conteo</dt><dd>{activePending?.stock_fisico ?? '—'}</dd></div>
+                    <div><dt>Diferencia</dt><dd className={differenceClass(savedDifference)}>{formatDifference(savedDifference)}</dd></div>
+                    <div>
+                      <dt>Valorizado</dt>
+                      <dd className={differenceClass(savedDifference)}>
+                        {savedValuation === null
+                          ? '—'
+                          : savedValuation > 0
+                            ? `+${formatCajeroCurrency(savedValuation)}`
+                            : formatCajeroCurrency(savedValuation)}
+                      </dd>
+                    </div>
+                  </dl>
+                </section>
+              </div>
               <CajeroCalculator
                 disabled={activeLocked}
                 expression={activeExpression}

@@ -1,3 +1,20 @@
+import {
+  Beer,
+  Candy,
+  Cigarette,
+  Coffee,
+  CupSoda,
+  Droplets,
+  GlassWater,
+  IceCreamBowl,
+  Martini,
+  Package,
+  SprayCan,
+  Warehouse,
+  Wine,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react'
 import type {
   CajeroCalculatorKey,
   CajeroCategoryOption,
@@ -10,6 +27,35 @@ import type {
 } from './cajero.types'
 
 export const CAJERO_MAX_PHYSICAL_COUNT = 99_999
+
+const CATEGORY_ICON_RULES: Array<{
+  terms: string[]
+  icon: LucideIcon
+}> = [
+  { terms: ['cerveza'], icon: Beer },
+  { terms: ['gaseosa', 'sin alcohol', 'refresco'], icon: CupSoda },
+  { terms: ['agua'], icon: Droplets },
+  { terms: ['snack', 'golosina', 'dulce'], icon: Candy },
+  { terms: ['cigarro', 'tabaco'], icon: Cigarette },
+  { terms: ['helado'], icon: IceCreamBowl },
+  { terms: ['cuidado personal', 'higiene', 'limpieza'], icon: SprayCan },
+  { terms: ['vino', 'espumante'], icon: Wine },
+  { terms: ['whisky', 'whiskey'], icon: GlassWater },
+  { terms: ['energetica'], icon: Zap },
+  { terms: ['de bar', 'coctel'], icon: Martini },
+  { terms: ['de bodega', 'abarrote'], icon: Warehouse },
+  { terms: ['cafe'], icon: Coffee },
+]
+
+export function getCajeroCategoryIcon(categoryName: string): LucideIcon {
+  const normalized = categoryName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es')
+  return CATEGORY_ICON_RULES.find(({ terms }) =>
+    terms.some((term) => normalized.includes(term))
+  )?.icon ?? Package
+}
 
 export function isCajeroRouteAvailable(
   route: CajeroRoute,

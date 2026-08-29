@@ -77,10 +77,6 @@ export function CajeroSendBar({
       className={`cajero-send-bar${compact ? ' cajero-send-bar--compact' : ''}`}
       aria-label="Enviar conteos pendientes"
     >
-      <p>
-        <strong>{session.pendingCount}</strong>{' '}
-        {session.pendingCount === 1 ? 'conteo por enviar' : 'conteos por enviar'}
-      </p>
       <button
         className="button button--secondary"
         disabled={session.pendingCount === 0 || session.sending}

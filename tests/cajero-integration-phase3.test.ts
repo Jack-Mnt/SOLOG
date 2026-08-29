@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { Beer, CupSoda, Package, Warehouse } from 'lucide-react'
 import {
   buildNextCajeroBatch,
   readCajeroBuffer,
@@ -12,6 +13,7 @@ import type {
 import {
   deriveCajeroFortnightCategories,
   filterCajeroFortnightCategoryGroups,
+  getCajeroCategoryIcon,
 } from '../src/features/solog/cajero/cajero.utils'
 
 class MemoryStorage implements Storage {
@@ -155,5 +157,34 @@ describe('Conteo diario y buffer compartido Fase 3', () => {
     const payload = buildNextCajeroBatch(scope, 'device-token', storage)
     expect(payload?.items).toHaveLength(2)
     expect(JSON.stringify(payload)).not.toContain('expresion')
+  })
+})
+
+describe('corrección visual y ergonómica', () => {
+  test('asigna iconos representativos y conserva fallback genérico', () => {
+    expect(getCajeroCategoryIcon('Cervezas')).toBe(Beer)
+    expect(getCajeroCategoryIcon('Bebidas sin alcohol')).toBe(CupSoda)
+    expect(getCajeroCategoryIcon('De Bodega')).toBe(Warehouse)
+    expect(getCajeroCategoryIcon('Categoría desconocida')).toBe(Package)
+  })
+
+  test('simplifica títulos y envío sin alterar la integración del modal', async () => {
+    const [count, daily, operational, modal, styles] = await Promise.all([
+      Bun.file('src/features/solog/cajero/cajero.conteo.tsx').text(),
+      Bun.file('src/features/solog/cajero/cajero.diario.tsx').text(),
+      Bun.file('src/features/solog/cajero/cajero.operativo.tsx').text(),
+      Bun.file('src/features/solog/cajero/cajero.captura-modal.tsx').text(),
+      Bun.file('src/styles.css').text(),
+    ])
+
+    expect(count).toContain('<p>Registra la realidad</p>')
+    expect(daily).toContain('<p>Registra la realidad</p>')
+    expect(count).not.toContain('>Tipo de stock<')
+    expect(operational).not.toContain('conteos por enviar')
+    expect(modal).toContain('cajero-capture-modal__body--detail')
+    expect(modal).toContain('cajero-capture-detail__information')
+    expect(styles).toContain('background: var(--color-dark-surface-secondary)')
+    expect(styles).toContain('grid-template-columns: repeat(3, minmax(0, 1fr))')
+    expect(styles).toContain('position: sticky')
   })
 })

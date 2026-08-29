@@ -6,7 +6,6 @@ import {
   PackageCheck,
   PackageOpen,
   Play,
-  Tags,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getOrCreateDeviceToken } from '../device'
@@ -31,6 +30,7 @@ import type {
 import {
   deriveCajeroFortnightCategories,
   filterCajeroFortnightCategoryGroups,
+  getCajeroCategoryIcon,
   isCajeroGroupInStockType,
 } from './cajero.utils'
 
@@ -150,7 +150,7 @@ export function CajeroConteo({
     id: category.id,
     name: category.nombre,
     count: category.count,
-    icon: Tags,
+    icon: getCajeroCategoryIcon(category.nombre),
   }))
   const openCategory = categories.find(
     (category) => category.id === openCategoryId && category.count > 0,
@@ -176,15 +176,14 @@ export function CajeroConteo({
       <div className="cajero-module__heading cajero-operational__heading cajero-operational__heading--with-action">
         <div>
           <h1 id="cajero-conteo-title">Conteo</h1>
-          <p>Selecciona un tipo de stock y una categoría para registrar cantidades.</p>
+          <p>Registra la realidad</p>
         </div>
         <CajeroSendBar compact session={session} />
       </div>
 
       {groupsState ? (
         <>
-          <section className="cajero-selection-level cajero-selection-level--stock" aria-labelledby="cajero-stock-type-title">
-            <h2 id="cajero-stock-type-title">Tipo de stock</h2>
+          <section className="cajero-selection-level cajero-selection-level--stock">
             <CajeroSelectionGrid
               items={typeItems}
               label="Tipos de stock"
