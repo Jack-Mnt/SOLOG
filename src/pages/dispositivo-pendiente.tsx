@@ -1,4 +1,4 @@
-import { PageShell } from '../components/PageShell'
+import { PageShell } from '../components/page-shell'
 import type { SologOperationalBootstrap } from '../features/solog/types'
 
 export function DevicePendingPage({

@@ -1,9 +1,9 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
-import { PageShell } from './components/PageShell'
-import { AuthProvider, useAuth } from './features/auth/AuthContext'
-import { PublicHomePage } from './features/solog/home/HomePage'
+import { PageShell } from './components/page-shell'
+import { AuthProvider, useAuth } from './features/auth/context'
+import { PublicHomePage } from './pages/home'
 import { AdminLayout } from './features/solog/admin/AdminLayout'
-import { SologProvider, useSolog } from './features/solog/SologContext'
+import { SologProvider, useSolog } from './features/solog/context'
 import {
   isAdminRoute,
   isCashierRoute,
@@ -13,9 +13,9 @@ import {
   usePathname,
 } from './lib/router'
 import { AdminDevicesPage } from './pages/admin.dispositivos'
-import { AdminDashboardPage } from './pages/admin'
-import { DevicePendingPage } from './pages/DevicePendingPage'
-import { LoginPage } from './pages/LoginPage'
+import { AdminDashboardPage } from './pages/admin.dashboard'
+import { DevicePendingPage } from './pages/dispositivo-pendiente'
+import { LoginPage } from './pages/login'
 
 const Cajero = lazy(() =>
   import('./features/solog/cajero/Cajero').then((module) => ({

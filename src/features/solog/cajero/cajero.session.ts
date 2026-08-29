@@ -11,7 +11,7 @@ import {
   getSologErrorMessageFromUnknown,
   isSologApiErrorCode,
 } from '../errors'
-import { useSolog } from '../SologContext'
+import { useSolog } from '../context'
 import type { SologOperationalBootstrap } from '../types'
 import {
   finishCajeroSession,

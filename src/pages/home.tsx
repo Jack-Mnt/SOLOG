@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
-import { navigateTo } from "../../../lib/router";
+import { navigateTo } from "../lib/router";
 
 type PublicPanelRoute = "/admin" | "/cajero";
 

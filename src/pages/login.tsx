@@ -1,6 +1,6 @@
 import { ArrowLeft, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { useAuth } from "../features/auth/AuthContext";
+import { useAuth } from "../features/auth/context";
 import { getAuthErrorMessage } from "../features/auth/errors";
 
 export function LoginPage() {

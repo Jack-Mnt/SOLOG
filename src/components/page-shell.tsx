@@ -1,6 +1,6 @@
 import { Boxes, LogOut } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { PaletteSwitcher } from '../features/theme/PaletteSwitcher'
+import { PaletteSwitcher } from '../features/theme/palette-switcher'
 
 interface PageShellProps {
   eyebrow: string

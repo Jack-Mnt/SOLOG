@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/plus-jakarta-sans'
-import App from './App'
+import App from './app'
 import { applyPalette, getStoredPalette } from './features/theme/palette'
 import './styles.css'
 

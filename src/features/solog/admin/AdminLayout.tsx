@@ -12,9 +12,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { PaletteSwitcher } from "../../theme/PaletteSwitcher";
+import { PaletteSwitcher } from "../../theme/palette-switcher";
 import { navigateTo, type AdminRoute, usePathname } from "../../../lib/router";
-import { useSolog } from "../SologContext";
+import { useSolog } from "../context";
 import type { SologOperationalBootstrap } from "../types";
 import { AdminLayoutContext } from "./AdminLayoutContext";
 import { AdminOperationalHeader } from "./AdminOperationalHeader";

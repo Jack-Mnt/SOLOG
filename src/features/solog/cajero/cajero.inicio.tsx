@@ -11,7 +11,7 @@ import {
   Send,
 } from "lucide-react";
 import { navigateTo } from "../../../lib/router";
-import { PaletteSwitcher } from "../../theme/PaletteSwitcher";
+import { PaletteSwitcher } from "../../theme/palette-switcher";
 import type { SologOperationalBootstrap } from "../types";
 import type { CajeroSessionController } from "./cajero.session";
 

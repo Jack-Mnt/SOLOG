@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { useAuth } from '../auth/AuthContext'
+import { useAuth } from '../auth/context'
 import { getSologBootstrap } from './api'
 import { getOrCreateDeviceToken } from './device'
 import { SologApiError } from './errors'
