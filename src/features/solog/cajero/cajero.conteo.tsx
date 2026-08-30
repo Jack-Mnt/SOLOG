@@ -12,7 +12,7 @@ import { getOrCreateDeviceToken } from '../device'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import type { SologOperationalBootstrap } from '../types'
 import { getCajeroGroups } from './cajero.api'
-import { CajeroCaptureModal, type CajeroCaptureView } from './cajero.captura-modal'
+import { CajeroCaptureModal, type CajeroCaptureView } from './cajero.captura.dialog'
 import {
   CajeroSelectionGrid,
   CajeroSendBar,

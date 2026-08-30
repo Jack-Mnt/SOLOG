@@ -1,7 +1,7 @@
 import { AlertCircle, CalendarCheck2, LoaderCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
-import { CajeroCaptureModal } from './cajero.captura-modal'
+import { CajeroCaptureModal } from './cajero.captura.dialog'
 import {
   CajeroSelectionGrid,
   CajeroSendBar,

@@ -173,7 +173,7 @@ describe('corrección visual y ergonómica', () => {
       Bun.file('src/features/solog/cajero/cajero.conteo.tsx').text(),
       Bun.file('src/features/solog/cajero/cajero.diario.tsx').text(),
       Bun.file('src/features/solog/cajero/cajero.operativo.tsx').text(),
-      Bun.file('src/features/solog/cajero/cajero.captura-modal.tsx').text(),
+      Bun.file('src/features/solog/cajero/cajero.captura.dialog.tsx').text(),
       Bun.file('src/styles.css').text(),
     ])
 

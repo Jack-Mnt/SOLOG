@@ -18,7 +18,7 @@ import { DevicePendingPage } from './pages/dispositivo-pendiente'
 import { LoginPage } from './pages/login'
 
 const Cajero = lazy(() =>
-  import('./features/solog/cajero/Cajero').then((module) => ({
+  import('./features/solog/cajero/cajero').then((module) => ({
     default: module.Cajero,
   })),
 )

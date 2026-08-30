@@ -104,7 +104,7 @@ describe('Guardar local Fase 2', () => {
 
   test('el modal y la calculadora no importan API ni ejecutan envíos', async () => {
     const files = await Promise.all([
-      Bun.file('src/features/solog/cajero/cajero.captura-modal.tsx').text(),
+      Bun.file('src/features/solog/cajero/cajero.captura.dialog.tsx').text(),
       Bun.file('src/features/solog/cajero/cajero.calculadora.tsx').text(),
     ])
     const source = files.join('\n')

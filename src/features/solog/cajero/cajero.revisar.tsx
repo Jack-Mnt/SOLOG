@@ -14,7 +14,7 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
-import { CajeroCaptureModal } from './cajero.captura-modal'
+import { CajeroCaptureModal } from './cajero.captura.dialog'
 import type { CajeroSessionController } from './cajero.session'
 import {
   getCajeroBufferRevision,

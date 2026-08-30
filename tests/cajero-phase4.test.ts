@@ -195,7 +195,7 @@ describe('Revisar V3.1', () => {
 
   test('el modal admite Revisar sin ejecutar RPC y conserva su semántica', async () => {
     const source = await Bun.file(
-      'src/features/solog/cajero/cajero.captura-modal.tsx',
+      'src/features/solog/cajero/cajero.captura.dialog.tsx',
     ).text()
 
     expect(source).toContain("'conteo_diario' | 'revisar'")
