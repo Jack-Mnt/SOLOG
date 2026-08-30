@@ -1,4 +1,4 @@
-import type { SologDashboardSiteActivityState } from '../types'
+import type { SologDashboardSiteActivityState } from '../../types'
 
 const dashboardActivityDate = new Intl.DateTimeFormat('es-PE', {
   day: '2-digit',

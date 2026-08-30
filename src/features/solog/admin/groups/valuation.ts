@@ -1,4 +1,4 @@
-import { formatAdminCurrency } from '../format'
+import { formatAdminCurrency } from '../admin.format'
 
 export interface GroupValuation {
   precio: number

@@ -15,7 +15,7 @@ import type {
   SologControlStateGroup,
   SologDifferenceState,
 } from "../../types";
-import { formatSignedInteger } from "../format";
+import { formatSignedInteger } from "../admin.format";
 import {
   formatControlDate,
   getControlDifferenceClass,

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getSologDashboard } from '../api'
+import { getSologDashboard } from '../../api'
 import {
   getSologErrorMessageFromUnknown,
   isSologApiErrorCode,
-} from '../errors'
-import type { SologDashboardResponse } from '../types'
+} from '../../errors'
+import type { SologDashboardResponse } from '../../types'
 
 type DashboardStatus = 'loading' | 'ready' | 'error'
 

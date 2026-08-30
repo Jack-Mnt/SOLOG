@@ -1,5 +1,5 @@
 import type { SologCatalogChangeRow } from '../../types'
-import { formatAdminCurrency } from '../format'
+import { formatAdminCurrency } from '../admin.format'
 
 const catalogDate = new Intl.DateTimeFormat('es-PE', {
   day: '2-digit',

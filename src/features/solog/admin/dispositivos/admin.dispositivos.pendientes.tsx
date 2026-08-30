@@ -1,7 +1,7 @@
 import { Check, TabletSmartphone, X } from 'lucide-react'
-import type { AdminMutation } from './useAdminSolog'
-import type { SologPendingDevice } from '../types'
-import { formatDeviceDate } from './device-format'
+import type { AdminMutation } from '../admin.solog.hook'
+import type { SologPendingDevice } from '../../types'
+import { formatDeviceDate } from './admin.dispositivos.format'
 
 export function PendingDevices({
   devices,

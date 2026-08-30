@@ -1,9 +1,9 @@
 import {
   AdminDashboardLoading,
   AdminOverview,
-} from '../features/solog/admin/AdminOverview'
-import { useAdminLayout } from '../features/solog/admin/AdminLayoutContext'
-import { useSologDashboard } from '../features/solog/admin/useSologDashboard'
+} from '../features/solog/admin/dashboard/admin.dashboard.overview'
+import { useAdminLayout } from '../features/solog/admin/admin.layout.context'
+import { useSologDashboard } from '../features/solog/admin/dashboard/admin.dashboard.hook'
 
 export function AdminDashboardPage() {
   const { refreshOperationalState } = useAdminLayout()

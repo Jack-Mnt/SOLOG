@@ -1,7 +1,7 @@
 import { AlertTriangle, ArrowRight, LoaderCircle, UploadCloud } from 'lucide-react'
 import { getSologCatalogChangeTypeLabel } from '../../labels'
 import type { CatalogPublicationPreview, SologCatalogChangeType, SologCatalogConflict } from '../../types'
-import { AdminDialog } from '../AdminDialog'
+import { AdminDialog } from '../admin.dialog'
 import type { CatalogPublicationStatus } from './useCatalogPublication'
 
 const SUMMARY_ORDER: SologCatalogChangeType[] = [

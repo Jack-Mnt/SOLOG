@@ -1,7 +1,7 @@
 import { ShieldOff, TabletSmartphone } from 'lucide-react'
-import type { AdminMutation } from './useAdminSolog'
-import type { SologAdminSite } from '../types'
-import { formatDeviceDate } from './device-format'
+import type { AdminMutation } from '../admin.solog.hook'
+import type { SologAdminSite } from '../../types'
+import { formatDeviceDate } from './admin.dispositivos.format'
 
 export function AuthorizedDevices({
   sites,

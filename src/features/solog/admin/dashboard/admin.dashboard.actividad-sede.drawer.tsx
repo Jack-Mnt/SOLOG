@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 import { Clock3, ListChecks, RotateCcw, X } from 'lucide-react'
-import type { SologDashboardSite } from '../types'
+import type { SologDashboardSite } from '../../types'
 import {
   formatDashboardActivityDate,
   formatDashboardDuration,
   formatDashboardRelativeActivity,
   getDashboardSessionStateLabel,
-} from './dashboard-format'
-import { useSologDashboardSiteActivity } from './useSologDashboardSiteActivity'
+} from './admin.dashboard.format'
+import { useSologDashboardSiteActivity } from './admin.dashboard.actividad-sede.hook'
 
 export function DashboardSiteActivityDrawer({
   site,

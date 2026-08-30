@@ -5,8 +5,8 @@ import type {
   SologCatalogNewProductConfig,
   SologCatalogReference,
 } from '../../types'
-import { AdminDialog } from '../AdminDialog'
-import { formatAdminCurrency } from '../format'
+import { AdminDialog } from '../admin.dialog'
+import { formatAdminCurrency } from '../admin.format'
 import {
   getCatalogDetectedBarcode,
   getCatalogDetectedProduct,

@@ -10,7 +10,7 @@ import { usePathname } from '../../../lib/router'
 import {
   getAdminSiteDisplayName,
   useAdminOperationalContext,
-} from './AdminOperationalContext'
+} from './admin.operational.context'
 import type {
   ControlDateRange,
   ControlPeriodPreset,

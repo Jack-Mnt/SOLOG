@@ -3,8 +3,8 @@ import { ArrowLeft, LoaderCircle, Search, Save } from 'lucide-react'
 import { getAdminGroupProducts } from '../../api'
 import { getSologErrorMessageFromUnknown } from '../../errors'
 import type { SologCatalogReference, SologGroupChangePayload, SologGroupProductSearchRow, SologGroupSummary } from '../../types'
-import { AdminDialog } from '../AdminDialog'
-import { formatAdminCurrency } from '../format'
+import { AdminDialog } from '../admin.dialog'
+import { formatAdminCurrency } from '../admin.format'
 
 export function ProductClassificationDialog({ initialProduct, initialGroup, reference, saving, onClose, onSave }: {
   initialProduct?: SologGroupProductSearchRow | null

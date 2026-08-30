@@ -14,8 +14,8 @@ import type {
   SologGroupProductSearchRow,
   SologGroupSummary,
 } from "../../types";
-import { AdminDialog } from "../AdminDialog";
-import { formatAdminCurrency } from "../format";
+import { AdminDialog } from "../admin.dialog";
+import { formatAdminCurrency } from "../admin.format";
 import { GroupDefinitionDialog } from "./GroupDefinitionDialog";
 import { GroupValuationDialog } from "./GroupValuationDialog";
 import { ProductClassificationDialog } from "./ProductClassificationDialog";

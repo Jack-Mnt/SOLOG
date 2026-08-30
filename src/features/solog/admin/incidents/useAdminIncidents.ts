@@ -10,7 +10,7 @@ import type {
   SologAdminIncidentsResponse,
   SologAdminIncidentType,
 } from '../../types'
-import { useAdminOperationalContext } from '../AdminOperationalContext'
+import { useAdminOperationalContext } from '../admin.operational.context'
 
 export const ADMIN_INCIDENTS_PAGE_SIZE = 50
 

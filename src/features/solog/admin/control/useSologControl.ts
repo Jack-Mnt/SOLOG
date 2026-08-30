@@ -10,7 +10,7 @@ import type {
   SologControlResponse,
   SologControlStateGroup,
 } from '../../types'
-import { useAdminOperationalContext } from '../AdminOperationalContext'
+import { useAdminOperationalContext } from '../admin.operational.context'
 
 export const SOLOG_CONTROL_PAGE_SIZE = 50
 

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getSologDashboardSiteActivity } from '../api'
+import { getSologDashboardSiteActivity } from '../../api'
 import {
   getSologErrorMessageFromUnknown,
   isSologApiErrorCode,
-} from '../errors'
-import type { SologDashboardSiteActivityResponse } from '../types'
+} from '../../errors'
+import type { SologDashboardSiteActivityResponse } from '../../types'
 
 type SiteActivityStatus = 'idle' | 'loading' | 'ready' | 'error'
 

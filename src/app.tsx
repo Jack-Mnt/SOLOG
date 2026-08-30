@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { PageShell } from './components/page-shell'
 import { AuthProvider, useAuth } from './features/auth/context'
 import { PublicHomePage } from './pages/home'
-import { AdminLayout } from './features/solog/admin/AdminLayout'
+import { AdminLayout } from './features/solog/admin/admin.layout'
 import { SologProvider, useSolog } from './features/solog/context'
 import {
   isAdminRoute,

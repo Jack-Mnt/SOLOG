@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { LoaderCircle, Save } from 'lucide-react'
 import type { SologCatalogReference, SologGroupChangePayload, SologGroupSummary } from '../../types'
-import { AdminDialog } from '../AdminDialog'
-import { formatAdminCurrency } from '../format'
+import { AdminDialog } from '../admin.dialog'
+import { formatAdminCurrency } from '../admin.format'
 
 export function GroupDefinitionDialog({ group, reference, saving, onClose, onSave }: {
   group: SologGroupSummary | null

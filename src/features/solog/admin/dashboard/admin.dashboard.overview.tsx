@@ -11,10 +11,10 @@ import type {
   SologDashboardCoverage,
   SologDashboardResponse,
   SologDashboardSite,
-} from '../types'
-import { DashboardSiteActivityDrawer } from './DashboardSiteActivityDrawer'
-import { formatDashboardRelativeActivity } from './dashboard-format'
-import { formatAdminDate } from './format'
+} from '../../types'
+import { DashboardSiteActivityDrawer } from './admin.dashboard.actividad-sede.drawer'
+import { formatDashboardRelativeActivity } from './admin.dashboard.format'
+import { formatAdminDate } from '../admin.format'
 
 const dashboardPeriodFormatter = new Intl.DateTimeFormat('es-PE', {
   day: 'numeric',

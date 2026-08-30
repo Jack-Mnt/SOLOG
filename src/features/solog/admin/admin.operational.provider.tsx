@@ -16,7 +16,7 @@ import {
   getDefaultAdminSiteId,
   orderAdminOperationalSites,
   type AdminOperationalContextValue,
-} from './AdminOperationalContext'
+} from './admin.operational.context'
 
 const STORAGE_KEY = 'solog:admin-operational-context:v1'
 const PERIOD_PRESETS: ControlPeriodPreset[] = [

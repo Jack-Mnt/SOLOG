@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 import type { SologAdminOperationalBootstrap } from '../types'
-import type { useAdminSolog } from './useAdminSolog'
+import type { useAdminSolog } from './admin.solog.hook'
 
 type AdminState = ReturnType<typeof useAdminSolog>
 

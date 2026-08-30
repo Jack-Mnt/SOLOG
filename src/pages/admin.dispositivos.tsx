@@ -1,6 +1,6 @@
-import { AuthorizedDevices } from '../features/solog/admin/AuthorizedDevices'
-import { PendingDevices } from '../features/solog/admin/PendingDevices'
-import { useAdminLayout } from '../features/solog/admin/AdminLayoutContext'
+import { AuthorizedDevices } from '../features/solog/admin/dispositivos/admin.dispositivos.autorizados'
+import { PendingDevices } from '../features/solog/admin/dispositivos/admin.dispositivos.pendientes'
+import { useAdminLayout } from '../features/solog/admin/admin.layout.context'
 import { ShieldCheck } from 'lucide-react'
 import type { SologAdminSite, SologPendingDevice } from '../features/solog/types'
 

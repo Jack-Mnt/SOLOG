@@ -6,8 +6,8 @@ import {
   getSologCatalogDecisionLabel,
 } from '../../labels'
 import type { SologCatalogChangeRow } from '../../types'
-import { AdminDialog } from '../AdminDialog'
-import { formatAdminCurrency } from '../format'
+import { AdminDialog } from '../admin.dialog'
+import { formatAdminCurrency } from '../admin.format'
 import {
   formatCatalogChangeData,
   getCatalogDetectedBarcode,

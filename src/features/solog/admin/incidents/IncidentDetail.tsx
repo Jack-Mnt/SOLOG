@@ -8,7 +8,7 @@ import type {
   SologAdminIncidentDecision,
   SologAdminIncidentRow,
 } from "../../types";
-import { AdminDialog } from "../AdminDialog";
+import { AdminDialog } from "../admin.dialog";
 import {
   canDeleteMissingProduct,
   canIgnoreMissingProduct,

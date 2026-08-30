@@ -9,7 +9,7 @@ import type {
 import {
   formatAdminCurrency,
   formatSignedInteger,
-} from '../format'
+} from '../admin.format'
 import {
   formatControlDate,
   getControlDifferenceClass,

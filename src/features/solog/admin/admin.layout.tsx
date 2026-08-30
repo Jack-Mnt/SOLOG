@@ -16,10 +16,10 @@ import { PaletteSwitcher } from "../../theme/palette-switcher";
 import { navigateTo, type AdminRoute, usePathname } from "../../../lib/router";
 import { useSolog } from "../context";
 import type { SologOperationalBootstrap } from "../types";
-import { AdminLayoutContext } from "./AdminLayoutContext";
-import { AdminOperationalHeader } from "./AdminOperationalHeader";
-import { AdminOperationalProvider } from "./AdminOperationalProvider";
-import { useAdminSolog } from "./useAdminSolog";
+import { AdminLayoutContext } from "./admin.layout.context";
+import { AdminOperationalHeader } from "./admin.operational.header";
+import { AdminOperationalProvider } from "./admin.operational.provider";
+import { useAdminSolog } from "./admin.solog.hook";
 
 const SIDEBAR_STORAGE_KEY = "solog:admin-sidebar-collapsed";
 

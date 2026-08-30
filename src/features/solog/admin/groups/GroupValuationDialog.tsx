@@ -1,8 +1,8 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { LoaderCircle, Save } from 'lucide-react'
 import type { SologGroupSummary, SologGroupValuationSavePayload } from '../../types'
-import { AdminDialog } from '../AdminDialog'
-import { formatAdminCurrency } from '../format'
+import { AdminDialog } from '../admin.dialog'
+import { formatAdminCurrency } from '../admin.format'
 import { formatGroupValuation } from './valuation'
 
 const COMMON_PACKAGE_QUANTITIES = [4, 6, 12, 20] as const
