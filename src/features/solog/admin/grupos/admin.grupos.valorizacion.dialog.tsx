@@ -3,7 +3,7 @@ import { LoaderCircle, Save } from 'lucide-react'
 import type { SologGroupSummary, SologGroupValuationSavePayload } from '../../types'
 import { AdminDialog } from '../admin.dialog'
 import { formatAdminCurrency } from '../admin.format'
-import { formatGroupValuation } from './valuation'
+import { formatGroupValuation } from './admin.grupos.valorizacion'
 
 const COMMON_PACKAGE_QUANTITIES = [4, 6, 12, 20] as const
 type QuantityChoice = (typeof COMMON_PACKAGE_QUANTITIES)[number] | 'other' | null

@@ -1,4 +1,4 @@
-import { IncidentsPanel } from '../features/solog/admin/incidents/IncidentsPanel'
+import { IncidentsPanel } from '../features/solog/admin/incidencias/admin.incidencias.panel'
 import { useAdminLayout } from '../features/solog/admin/admin.layout.context'
 
 export function AdminIncidentsPage() {

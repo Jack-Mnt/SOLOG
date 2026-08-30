@@ -1,5 +1,5 @@
 import { BookPlus, LoaderCircle } from 'lucide-react'
-import { formatCatalogDate } from './catalog-format'
+import { formatCatalogDate } from './admin.catalogo.format'
 
 export function CatalogPublicationCard({
   approvedCount,

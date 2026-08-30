@@ -5,7 +5,7 @@ import type { SologControlExportPayload } from '../../types'
 import {
   downloadControlExport,
   validateControlExportResponse,
-} from './control-export'
+} from './admin.control.export'
 
 type ExportStatus = 'idle' | 'exporting'
 

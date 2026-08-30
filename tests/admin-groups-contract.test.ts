@@ -4,7 +4,7 @@ describe('contrato administrativo de Grupos', () => {
   test('guarda directamente y refresca el estado actual', async () => {
     const [api, hook] = await Promise.all([
       Bun.file('src/features/solog/api.ts').text(),
-      Bun.file('src/features/solog/admin/groups/useAdminGroups.ts').text(),
+      Bun.file('src/features/solog/admin/grupos/admin.grupos.hook.ts').text(),
     ])
 
     expect(api).toContain("'rpc_solog_admin', 'group_change_save'")
@@ -16,9 +16,9 @@ describe('contrato administrativo de Grupos', () => {
 
   test('la UI de Grupos no presenta un workflow de propuestas', async () => {
     const sources = await Promise.all([
-      Bun.file('src/features/solog/admin/groups/GroupsPanel.tsx').text(),
-      Bun.file('src/features/solog/admin/groups/GroupDefinitionDialog.tsx').text(),
-      Bun.file('src/features/solog/admin/groups/ProductClassificationDialog.tsx').text(),
+      Bun.file('src/features/solog/admin/grupos/admin.grupos.panel.tsx').text(),
+      Bun.file('src/features/solog/admin/grupos/admin.grupos.definicion.dialog.tsx').text(),
+      Bun.file('src/features/solog/admin/grupos/admin.grupos.clasificacion-producto.dialog.tsx').text(),
     ])
     const source = sources.join('\n')
 
@@ -33,8 +33,8 @@ describe('separación del Catálogo ConeXion', () => {
   test('expone únicamente los cinco cambios comerciales', async () => {
     const [types, filters, publication] = await Promise.all([
       Bun.file('src/features/solog/types.ts').text(),
-      Bun.file('src/features/solog/admin/catalog/CatalogFilters.tsx').text(),
-      Bun.file('src/features/solog/admin/catalog/CatalogPublicationDialog.tsx').text(),
+      Bun.file('src/features/solog/admin/catalogo/admin.catalogo.filtros.tsx').text(),
+      Bun.file('src/features/solog/admin/catalogo/admin.catalogo.publicacion.dialog.tsx').text(),
     ])
     const structuralTypes = /clasificacion_producto|definicion_grupo/
 

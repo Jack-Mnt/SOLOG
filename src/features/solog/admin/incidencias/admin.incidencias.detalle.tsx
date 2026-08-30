@@ -13,13 +13,13 @@ import {
   canDeleteMissingProduct,
   canIgnoreMissingProduct,
   canReviewIncident,
-} from "../catalog-domain";
+} from "../catalogo/admin.catalogo.domain";
 import {
   abbreviateIdentifier,
   formatIncidentData,
   getSimpleIncidentData,
-} from "./incident-domain";
-import { formatIncidentDate } from "./incident-format";
+} from "./admin.incidencias.domain";
+import { formatIncidentDate } from "./admin.incidencias.format";
 
 export function IncidentDetail({
   incident,

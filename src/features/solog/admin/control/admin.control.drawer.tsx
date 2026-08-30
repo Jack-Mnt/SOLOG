@@ -15,11 +15,11 @@ import {
   getControlDifferenceClass,
   getControlObservationTypeLabel,
   getControlVerificationReasonLabel,
-} from './control-format'
+} from './admin.control.format'
 import {
   SOLOG_CONTROL_HISTORY_PAGE_SIZE,
   useSologControlDetail,
-} from './useSologControlDetail'
+} from './admin.control.detalle.hook'
 
 type DrawerTab = 'detail' | 'products' | 'history'
 

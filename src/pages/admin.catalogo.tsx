@@ -1,4 +1,4 @@
-import { CatalogPanel } from '../features/solog/admin/catalog/CatalogPanel'
+import { CatalogPanel } from '../features/solog/admin/catalogo/admin.catalogo.panel'
 import { useAdminLayout } from '../features/solog/admin/admin.layout.context'
 
 export function AdminCatalogPage() {

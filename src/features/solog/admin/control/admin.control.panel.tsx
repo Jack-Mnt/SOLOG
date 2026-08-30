@@ -20,10 +20,10 @@ import {
   formatControlDate,
   getControlDifferenceClass,
   getControlVerificationReasonLabel,
-} from "./control-format";
-import { ControlDrawer } from "./ControlDrawer";
-import { SOLOG_CONTROL_PAGE_SIZE, useSologControl } from "./useSologControl";
-import { useSologControlExport } from "./useSologControlExport";
+} from "./admin.control.format";
+import { ControlDrawer } from "./admin.control.drawer";
+import { SOLOG_CONTROL_PAGE_SIZE, useSologControl } from "./admin.control.hook";
+import { useSologControlExport } from "./admin.control.export.hook";
 
 type SologControlKpiGroup = Exclude<SologControlStateGroup, "todos">;
 

@@ -14,7 +14,7 @@ import {
 import type {
   ControlDateRange,
   ControlPeriodPreset,
-} from './control/control-period'
+} from './control/admin.control.period'
 
 const PERIOD_OPTIONS: Array<[ControlPeriodPreset, string]> = [
   ['today', 'Hoy'],

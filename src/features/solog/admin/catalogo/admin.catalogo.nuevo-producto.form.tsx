@@ -12,7 +12,7 @@ import {
   getCatalogDetectedProduct,
   getCatalogDetectedStock,
   getCatalogProposedPrice,
-} from '../catalog-domain'
+} from './admin.catalogo.domain'
 
 type ProductMode = '' | 'Único' | 'Agrupado' | 'Excluido'
 

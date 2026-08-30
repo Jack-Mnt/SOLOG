@@ -3,7 +3,7 @@ import type { SologAdminSite } from '../types'
 import type {
   ControlDateRange,
   ControlPeriodPreset,
-} from './control/control-period'
+} from './control/admin.control.period'
 
 const SITE_ORDER = ['cutervo', 'huaca', 'divino', 'unidad', 'casuarinas'] as const
 

@@ -2,7 +2,7 @@ import type { FormEvent } from "react";
 import { Filter, RotateCcw, Search } from "lucide-react";
 import { getSologCatalogChangeTypeLabel } from "../../labels";
 import type { SologCatalogChangeType } from "../../types";
-import type { CatalogDraftFilters } from "./useCatalogChanges";
+import type { CatalogDraftFilters } from "./admin.catalogo.cambios.hook";
 
 const TYPES: SologCatalogChangeType[] = [
   "agregar_producto",

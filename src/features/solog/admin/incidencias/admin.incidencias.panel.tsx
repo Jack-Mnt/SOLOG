@@ -9,14 +9,14 @@ import type {
   SologAdminIncidentDecision,
   SologAdminIncidentRow,
 } from "../../types";
-import { IncidentDetail } from "./IncidentDetail";
-import { IncidentFilters } from "./IncidentFilters";
-import { formatIncidentDate } from "./incident-format";
+import { IncidentDetail } from "./admin.incidencias.detalle";
+import { IncidentFilters } from "./admin.incidencias.filtros";
+import { formatIncidentDate } from "./admin.incidencias.format";
 import {
   ADMIN_INCIDENTS_PAGE_SIZE,
   type AdminIncidentState,
   useAdminIncidents,
-} from "./useAdminIncidents";
+} from "./admin.incidencias.hook";
 
 const DECISION_CONFIRMATIONS: Record<SologAdminIncidentDecision, string> = {
   reviewed:

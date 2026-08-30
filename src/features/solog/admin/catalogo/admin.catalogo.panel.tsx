@@ -9,19 +9,19 @@ import type {
   SologCatalogChangeStatus,
   SologCatalogNewProductConfig,
 } from "../../types";
-import { getCatalogChangeLabel, formatCatalogDate } from "./catalog-format";
-import { CatalogChangeDetail } from "./CatalogChangeDetail";
-import { CatalogFilters } from "./CatalogFilters";
-import { CatalogPublicationCard } from "./CatalogPublicationCard";
-import { CatalogPublicationDialog } from "./CatalogPublicationDialog";
-import { NewProductApprovalForm } from "./NewProductApprovalForm";
-import { requiresNewProductConfiguration } from "../catalog-domain";
+import { getCatalogChangeLabel, formatCatalogDate } from "./admin.catalogo.format";
+import { CatalogChangeDetail } from "./admin.catalogo.cambio.detalle";
+import { CatalogFilters } from "./admin.catalogo.filtros";
+import { CatalogPublicationCard } from "./admin.catalogo.publicacion.card";
+import { CatalogPublicationDialog } from "./admin.catalogo.publicacion.dialog";
+import { NewProductApprovalForm } from "./admin.catalogo.nuevo-producto.form";
+import { requiresNewProductConfiguration } from "./admin.catalogo.domain";
 import {
   CATALOG_CHANGES_PAGE_SIZE,
   useCatalogChanges,
-} from "./useCatalogChanges";
-import { useCatalogPublication } from "./useCatalogPublication";
-import { useCatalogStatus } from "./useCatalogStatus";
+} from "./admin.catalogo.cambios.hook";
+import { useCatalogPublication } from "./admin.catalogo.publicacion.hook";
+import { useCatalogStatus } from "./admin.catalogo.estado.hook";
 
 const STATUS_TABS: SologCatalogChangeStatus[] = [
   "pendiente",

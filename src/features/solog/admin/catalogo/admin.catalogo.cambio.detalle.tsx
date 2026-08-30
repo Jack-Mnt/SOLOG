@@ -13,12 +13,12 @@ import {
   getCatalogDetectedBarcode,
   getCatalogDetectedProduct,
   getCatalogProposedPrice,
-} from '../catalog-domain'
+} from './admin.catalogo.domain'
 import {
   formatCatalogDate,
   getCatalogChangeFieldLabel,
   getCatalogChangeLabel,
-} from './catalog-format'
+} from './admin.catalogo.format'
 
 function nullableCurrency(value: number | null): string {
   return value === null ? 'No disponible' : formatAdminCurrency(value)

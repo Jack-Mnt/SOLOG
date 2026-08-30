@@ -2,7 +2,7 @@ import { AlertTriangle, ArrowRight, LoaderCircle, UploadCloud } from 'lucide-rea
 import { getSologCatalogChangeTypeLabel } from '../../labels'
 import type { CatalogPublicationPreview, SologCatalogChangeType, SologCatalogConflict } from '../../types'
 import { AdminDialog } from '../admin.dialog'
-import type { CatalogPublicationStatus } from './useCatalogPublication'
+import type { CatalogPublicationStatus } from './admin.catalogo.publicacion.hook'
 
 const SUMMARY_ORDER: SologCatalogChangeType[] = [
   'agregar_producto',

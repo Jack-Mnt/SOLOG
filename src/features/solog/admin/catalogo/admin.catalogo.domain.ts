@@ -1,8 +1,8 @@
 import type {
   SologAdminIncidentRow,
   SologCatalogChangeRow,
-} from '../types'
-import { formatAdminCurrency } from './admin.format'
+} from '../../types'
+import { formatAdminCurrency } from '../admin.format'
 
 export function isUrgentCatalogChange(
   change: Pick<SologCatalogChangeRow, 'seccion'>,

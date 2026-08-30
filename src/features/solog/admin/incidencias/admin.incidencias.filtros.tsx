@@ -2,7 +2,7 @@ import type { FormEvent } from "react";
 import { Filter, RotateCcw, Search } from "lucide-react";
 import { getSologAdminIncidentTypeLabel } from "../../labels";
 import type { SologAdminIncidentType } from "../../types";
-import type { AdminIncidentDraftFilters } from "./useAdminIncidents";
+import type { AdminIncidentDraftFilters } from "./admin.incidencias.hook";
 
 const INCIDENT_TYPES: SologAdminIncidentType[] = [
   "producto_ausente",

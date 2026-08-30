@@ -10,7 +10,7 @@ import {
   type ControlDateRange,
   type ControlPeriodPreset,
   validateControlDateRange,
-} from './control/control-period'
+} from './control/admin.control.period'
 import {
   AdminOperationalContext,
   getDefaultAdminSiteId,

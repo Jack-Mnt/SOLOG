@@ -16,11 +16,11 @@ import type {
 } from "../../types";
 import { AdminDialog } from "../admin.dialog";
 import { formatAdminCurrency } from "../admin.format";
-import { GroupDefinitionDialog } from "./GroupDefinitionDialog";
-import { GroupValuationDialog } from "./GroupValuationDialog";
-import { ProductClassificationDialog } from "./ProductClassificationDialog";
-import { GROUPS_PAGE_SIZE, useAdminGroups } from "./useAdminGroups";
-import { formatGroupValuation, getGroupValuationLines } from "./valuation";
+import { GroupDefinitionDialog } from "./admin.grupos.definicion.dialog";
+import { GroupValuationDialog } from "./admin.grupos.valorizacion.dialog";
+import { ProductClassificationDialog } from "./admin.grupos.clasificacion-producto.dialog";
+import { GROUPS_PAGE_SIZE, useAdminGroups } from "./admin.grupos.hook";
+import { formatGroupValuation, getGroupValuationLines } from "./admin.grupos.valorizacion";
 
 export function GroupsPanel({
   refreshOperationalState,
