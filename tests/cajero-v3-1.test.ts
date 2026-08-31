@@ -21,10 +21,9 @@ function groups(view: 'conteo_diario' | 'revisar', snapshotId = 'snapshot-1'): C
   return {
     conteo_id: 'count-1',
     vista: view,
-    snapshot_referencia_id: snapshotId,
-    snapshot_referencia_at: '2026-08-27T08:00:00.000Z',
     snapshot_actual_id: snapshotId,
-    stock_actualizado: false,
+    snapshot_actual_at: '2026-08-26T10:00:00Z',
+    server_now: '2026-08-26T10:01:00Z',
     grupos: [],
   }
 }
@@ -92,10 +91,8 @@ describe('categorías locales del Panel Cajero', () => {
     precio: 2,
     stock_teorico: 4,
     detalle_origen_id: null,
-    motivo_seguimiento: null,
     estado_diferencia: null,
     contado_at_original: null,
-    ultima_diferencia: null,
   })
 
   test('deriva solo categorías presentes y conserva el orden estable del payload', () => {
@@ -121,13 +118,15 @@ describe('categorías locales del Panel Cajero', () => {
       grupo: 'Grupo 1',
       categoria_id: 'snacks',
       categoria: 'Snacks',
-      tipo_observacion: 'base',
       stock_teorico: 10,
       stock_fisico: 8,
       diferencia: -2,
       precio: 3,
       valor_diferencia: -6,
-      estado_diferencia: 'pendiente',
+      estado_diferencia: 'Recontar',
+      stock_posterior: null,
+      stock_reconteo: null,
+      recontado_at: null,
     }
     const items = [
       base,
@@ -158,7 +157,6 @@ describe('dataset compacto de Conteo quincenal', () => {
     categoria_orden: order,
     precio: 2,
     stock_teorico: 4,
-    pendiente_quincena: true,
     cubierto_quincena: false,
     stock_cero: false,
     stock_negativo: false,
@@ -173,7 +171,7 @@ describe('dataset compacto de Conteo quincenal', () => {
     expect(payload).toEqual({ device_token: 'token', vista: 'conteo' })
   })
 
-  test('respeta pendiente_quincena y deriva las vistas localmente', () => {
+  test('respeta cubierto_quincena y deriva las vistas localmente', () => {
     const groups = [
       group('normal', 'bebidas', 'Bebidas', 2),
       group('zero', 'bodega', 'Bodega', 1, {
@@ -185,7 +183,6 @@ describe('dataset compacto de Conteo quincenal', () => {
         stock_negativo: true,
       }),
       group('covered', 'bodega', 'Bodega', 1, {
-        pendiente_quincena: false,
         cubierto_quincena: true,
         stock_cero: true,
       }),

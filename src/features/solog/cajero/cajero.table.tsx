@@ -1,3 +1,5 @@
+import { CajeroCaptureModal } from "./cajero.captura.dialog";
+import type { CajeroSessionController } from "./cajero.session";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
@@ -16,25 +18,26 @@ import {
   calculateDifference,
   calculateValuation,
   formatCajeroCurrency,
-  getFollowupGroupLabel,
-  isCajeroRecountGroup,
   isValidPhysicalCount,
 } from "./cajero.utils";
 
 export function CajeroCountTable({
   groups,
+  session,
   scope,
   view,
   disabled,
   onBufferChange,
 }: {
   groups: CajeroCountGroup[];
+  session: CajeroSessionController;
   scope: CajeroBufferScope;
   view: CajeroCountView;
   disabled: boolean;
   onBufferChange: (pendingCount: number) => void;
 }) {
   const review = view === "revisar";
+  const [reviewGroup, setReviewGroup] = useState<CajeroCountGroup | null>(null);
   useSyncExternalStore(
     subscribeCajeroBufferChanges,
     getCajeroBufferRevision,
@@ -62,8 +65,7 @@ export function CajeroCountTable({
 
   const updateCount = (group: CajeroCountGroup, rawValue: string) => {
     if (!/^\d*$/.test(rawValue)) return;
-    const recount = review && isCajeroRecountGroup(group);
-    if (recount && !group.detalle_origen_id) return;
+    if (disabled || view === "revisar") return;
     setDrafts((current) => ({ ...current, [group.grupo_id]: rawValue }));
 
     if (rawValue === "") {
@@ -77,13 +79,7 @@ export function CajeroCountTable({
     upsertCajeroObservation(scope, {
       grupo_id: group.grupo_id,
       stock_fisico: stockFisico,
-      contado_at: new Date().toISOString(),
-      tipo_observacion: review
-        ? recount
-          ? "reconteo"
-          : "seguimiento"
-        : "auto",
-      observacion_origen_id: recount ? (group.detalle_origen_id ?? null) : null,
+      contado_at: session.captureTimestamp(),
       display: {
         vista: view,
         categoria_id: group.categoria_id,
@@ -91,8 +87,6 @@ export function CajeroCountTable({
         categoria: group.categoria,
         stock_teorico: group.stock_teorico,
         precio: group.precio,
-        ultima_diferencia: group.ultima_diferencia ?? null,
-        motivo_seguimiento: group.motivo_seguimiento ?? null,
       },
     });
     onBufferChange(readCajeroBuffer(scope).items.length);
@@ -146,7 +140,7 @@ export function CajeroCountTable({
                 : calculateValuation(difference, group.precio);
             const pending = pendingByGroup.get(group.grupo_id);
             const recountMissingOrigin =
-              review && isCajeroRecountGroup(group) && !group.detalle_origen_id;
+              review && !group.detalle_origen_id;
             const status = pending?.error ? (
               <span className="cajero-row-status cajero-row-status--error">
                 <AlertCircle aria-hidden="true" size={16} /> Revisar conteo
@@ -171,7 +165,7 @@ export function CajeroCountTable({
                 {review ? (
                   <td data-label="Motivo">
                     <span className="cajero-review-reason">
-                      {getFollowupGroupLabel(group)}
+                      Recontar
                     </span>
                   </td>
                 ) : null}
@@ -200,7 +194,7 @@ export function CajeroCountTable({
                 ) : null}
                 <td data-label="Stock TumiSoft">{group.stock_teorico}</td>
                 <td data-label="Conteo">
-                  <input
+                  {review ? <button className="button button--secondary" disabled={disabled || recountMissingOrigin} type="button" onClick={() => setReviewGroup(group)}>Recontar</button> : <input
                     aria-describedby={
                       review ? `cajero-status-${group.grupo_id}` : undefined
                     }
@@ -225,7 +219,7 @@ export function CajeroCountTable({
                     step="1"
                     type="text"
                     value={rawValue}
-                  />
+                  />}
                   {review ? (
                     <span id={`cajero-status-${group.grupo_id}`}>{status}</span>
                   ) : null}
@@ -271,6 +265,7 @@ export function CajeroCountTable({
           })}
         </tbody>
       </table>
+      {reviewGroup ? <CajeroCaptureModal categoryName="Revisar" groups={[reviewGroup]} scope={scope} session={session} view="revisar" disabled={disabled} initialGroupId={reviewGroup.grupo_id} onClose={() => setReviewGroup(null)} onObservationSaved={() => undefined} /> : null}
     </div>
   );
 }

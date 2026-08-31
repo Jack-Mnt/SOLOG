@@ -11,26 +11,15 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { CajeroCaptureModal } from './cajero.captura.dialog'
 import type { CajeroSessionController } from './cajero.session'
+import type { CajeroCountGroup, CajeroGroupsResponse } from './cajero.types'
 import {
-  getCajeroBufferRevision,
-  getCajeroPendingCountForIdentity,
-  readCajeroBuffer,
-  shouldFlushCajeroBufferImmediately,
-  subscribeCajeroBufferChanges,
-} from './cajero.storage'
-import type { CajeroGroupsResponse } from './cajero.types'
-import {
-  calculateDifference,
   formatCajeroDifference,
   filterCajeroReviewGroups,
   getCajeroDifferenceClass,
-  isCajeroRecountGroup,
-  sortFollowupGroups,
   toggleCajeroReviewDifferenceFilter,
   type CajeroReviewDifferenceFilter,
 } from './cajero.utils'
@@ -40,7 +29,7 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
   const [groupsState, setGroupsState] = useState<CajeroGroupsResponse | null>(cached)
   const [loading, setLoading] = useState(cached === null)
   const [error, setError] = useState<string | null>(null)
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<CajeroCountGroup | null>(null)
   const [differenceFilter, setDifferenceFilter] =
     useState<CajeroReviewDifferenceFilter>('all')
   const requestVersion = useRef(0)
@@ -48,11 +37,6 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
   const activeScope = session.activeScope
   const loadOperationalGroups = session.loadOperationalGroups
 
-  useSyncExternalStore(
-    subscribeCajeroBufferChanges,
-    getCajeroBufferRevision,
-    () => 0,
-  )
 
   useEffect(() => {
     sessionRef.current = session
@@ -90,35 +74,16 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
       active = false
       requestVersion.current += 1
     }
-  }, [loadGroups])
+  }, [loadGroups, session.cacheRevision])
 
   const groups = useMemo(
-    () => sortFollowupGroups(groupsState?.grupos ?? []),
+    () => groupsState?.grupos ?? [],
     [groupsState?.grupos],
   )
   const visibleGroups = useMemo(
     () => filterCajeroReviewGroups(groups, differenceFilter),
     [differenceFilter, groups],
   )
-  const buffer = activeScope ? readCajeroBuffer(activeScope) : null
-  const pendingByGroup = useMemo(
-    () => new Map(buffer?.items.map((item) => [item.grupo_id, item]) ?? []),
-    [buffer?.items],
-  )
-  const lockedGroupIds = useMemo(
-    () => new Set(
-      groups
-        .filter((group) => isCajeroRecountGroup(group) && !group.detalle_origen_id)
-        .map((group) => group.grupo_id),
-    ),
-    [groups],
-  )
-
-  const handleObservationSaved = () => {
-    if (!activeScope) return
-    const pending = getCajeroPendingCountForIdentity(activeScope)
-    if (shouldFlushCajeroBufferImmediately(pending)) void session.sendPending()
-  }
 
   if (!activeScope) {
     return (
@@ -199,18 +164,15 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
           </div>
           <div className="cajero-review-list__rows">
             {visibleGroups.map((group) => {
-              const pending = pendingByGroup.get(group.grupo_id)
-              const currentDifference = pending
-                ? calculateDifference(pending.stock_fisico, group.stock_teorico)
-                : null
+              const currentDifference = null
               const lastDifference = group.ultima_diferencia ?? null
 
               return (
                 <button
                   aria-label={`Revisar ${group.nombre}`}
-                  className={pending ? 'is-counted' : undefined}
-                  key={group.grupo_id}
-                  onClick={() => setSelectedGroupId(group.grupo_id)}
+                  key={group.detalle_origen_id ?? group.grupo_id}
+                  disabled={!group.detalle_origen_id || !session.canCapture}
+                  onClick={() => setSelectedGroup(group)}
                   type="button"
                 >
                   <strong>{group.nombre}</strong>
@@ -244,16 +206,17 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
         </div>
       ) : null}
 
-      {selectedGroupId ? (
+      {selectedGroup ? (
         <CajeroCaptureModal
           categoryName="Revisar"
           disabled={!session.canCapture}
-          groups={visibleGroups}
-          initialGroupId={selectedGroupId}
-          lockedGroupIds={lockedGroupIds}
-          onClose={() => setSelectedGroupId(null)}
-          onObservationSaved={handleObservationSaved}
+          groups={[selectedGroup]}
+          initialGroupId={selectedGroup.grupo_id}
+          key={selectedGroup.detalle_origen_id}
+          onClose={() => setSelectedGroup(null)}
+          onObservationSaved={() => undefined}
           scope={activeScope}
+          session={session}
           view="revisar"
         />
       ) : null}

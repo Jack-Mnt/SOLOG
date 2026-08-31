@@ -48,6 +48,9 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_INVALID_RECOUNT_PAYLOAD',
   'SOLOG_RECOUNT_NOT_AVAILABLE',
   'SOLOG_RECOUNT_NOT_ELIGIBLE',
+  'SOLOG_RECOUNT_ALREADY_SAVED',
+  'SOLOG_OPERATIONAL_PERIOD_NOT_STARTED',
+  'SOLOG_EXPIRED_SESSION_SUPERSEDED',
   'SOLOG_RECOUNT_ORIGIN_REQUIRED',
   'SOLOG_RECOUNT_ORIGIN_STALE',
   'SOLOG_RECOUNT_ALREADY_DONE',
@@ -239,6 +242,12 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
     'Completa primero la cobertura quincenal para usar esta vista.',
   SOLOG_GROUP_NOT_ALLOWED_IN_COUNT:
     'Este grupo no pertenece al conteo activo.',
+  SOLOG_RECOUNT_ALREADY_SAVED:
+    'El reconteo ya fue guardado. Actualiza Revisar para consultar su estado.',
+  SOLOG_OPERATIONAL_PERIOD_NOT_STARTED:
+    'El período operativo todavía no ha comenzado.',
+  SOLOG_EXPIRED_SESSION_SUPERSEDED:
+    'Otra sesión comenzó en esta sede. Los pendientes de la sesión expirada se conservan, pero ya no pueden enviarse ni reasignarse a una nueva sesión.',
   SOLOG_INVALID_RECOUNT_PAYLOAD:
     'Los datos del reconteo no son válidos.',
   SOLOG_RECOUNT_NOT_AVAILABLE:

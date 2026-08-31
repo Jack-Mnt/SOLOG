@@ -37,8 +37,6 @@ function observation(stockFisico: number, contadoAt: string): CajeroObservationI
     grupo_id: 'group-1',
     stock_fisico: stockFisico,
     contado_at: contadoAt,
-    tipo_observacion: 'auto',
-    observacion_origen_id: null,
     display: {
       vista: 'categoria',
       categoria_id: 'category-1',
@@ -46,8 +44,6 @@ function observation(stockFisico: number, contadoAt: string): CajeroObservationI
       categoria: 'Bebidas',
       stock_teorico: 10,
       precio: 3.5,
-      ultima_diferencia: null,
-      motivo_seguimiento: null,
     },
   }
 }

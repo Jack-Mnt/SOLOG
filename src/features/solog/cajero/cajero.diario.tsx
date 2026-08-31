@@ -66,7 +66,7 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
       active = false
       requestVersion.current += 1
     }
-  }, [loadGroups])
+  }, [loadGroups, session.cacheRevision])
 
   const handleObservationSaved = () => {
     const pending = activeScope
@@ -94,10 +94,7 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
     )
   }
 
-  const confirmedIds = new Set(session.confirmedGroupIds)
-  const groups = (groupsState?.grupos ?? []).filter(
-    (group) => !confirmedIds.has(group.grupo_id),
-  )
+  const groups = groupsState?.grupos ?? []
   const categories = deriveCajeroCategories(groups)
   const categoryItems: CajeroSelectionGridItem[] = categories.map((category) => ({
     id: category.id,
@@ -169,11 +166,11 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
           disabled={!session.canCapture}
           groups={modalGroups}
           key={openCategory.id}
-          lockedGroupIds={confirmedIds}
           onClose={() => setOpenCategoryId(null)}
           onNextCategory={nextCategory ? () => setOpenCategoryId(nextCategory.id) : undefined}
           onObservationSaved={handleObservationSaved}
           scope={activeScope}
+          session={session}
           view="conteo_diario"
         />
       ) : null}

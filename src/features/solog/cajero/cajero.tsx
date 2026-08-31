@@ -17,12 +17,8 @@ import { isCajeroRouteAvailable } from './cajero.utils'
 
 const BLOCK_MESSAGES: Record<CajeroBlockReason, { title: string; detail: string }> = {
   expired: {
-    title: 'La referencia de stock venció.',
-    detail: 'No registres nuevas capturas. Envía los conteos pendientes para conservarlos.',
-  },
-  stock_updated: {
-    title: 'Stock TumiSoft actualizado.',
-    detail: 'Envía tu conteo para continuar con una referencia nueva.',
+    title: 'La sesión de conteo venció.',
+    detail: 'No registres nuevas capturas. Puedes intentar enviar los pendientes con su sesión y fecha originales.',
   },
   inactive: {
     title: 'La sesión se bloqueó por inactividad.',

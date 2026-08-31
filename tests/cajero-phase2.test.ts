@@ -43,9 +43,6 @@ function bootstrap(
       id: 'count-1',
       iniciado_at: '2026-08-26T14:00:00.000Z',
       expira_at: '2026-08-26T16:00:00.000Z',
-      snapshot_referencia_id: 'snapshot-1',
-      snapshot_referencia_at: '2026-08-26T13:55:00.000Z',
-      snapshot_confirmado_at: '2026-08-26T13:56:00.000Z',
       grupos_guardados: 0,
     },
     stock: {
@@ -53,8 +50,6 @@ function bootstrap(
       snapshot_id: 'snapshot-1',
       snapshot_at: '2026-08-26T13:55:00.000Z',
       confirmado_at: '2026-08-26T13:56:00.000Z',
-      expira_at: '2026-08-26T16:00:00.000Z',
-      version_catalogo: 3,
       puede_iniciar_conteo: true,
     },
     server_now: '2026-08-26T15:00:00.000Z',
@@ -72,16 +67,14 @@ function bootstrap(
       pendientes: 80,
       porcentaje: 20,
       completa: false,
-      quincena: 'segunda',
+      inaugurada: true,
       desde: '2026-08-16',
       hasta: '2026-08-31',
     },
     conteo_principal: { categorias: [], stock_cero_pendientes: 0 },
     vistas_inteligentes: {
-      seguimiento: { cantidad: 0, habilitado: true },
-      cambios_recientes: { cantidad: 0, habilitado: false },
-      stock_negativo: { cantidad: 0, habilitado: true },
-      contar_detalladamente: { cantidad: 0, habilitado: false },
+      conteo_diario: { cantidad: 0, habilitado: false },
+      revisar: { cantidad: 0, habilitado: false },
     },
     ...overrides,
   }
@@ -92,8 +85,6 @@ function observation(): CajeroObservationInput {
     grupo_id: 'group-1',
     stock_fisico: 2,
     contado_at: '2026-08-26T14:30:00.000Z',
-    tipo_observacion: 'auto',
-    observacion_origen_id: null,
     display: {
       vista: 'stock_cero',
       categoria_id: 'category-1',
@@ -101,8 +92,6 @@ function observation(): CajeroObservationInput {
       categoria: 'Bebidas',
       stock_teorico: 0,
       precio: 4,
-      ultima_diferencia: null,
-      motivo_seguimiento: null,
     },
   }
 }
@@ -122,7 +111,7 @@ describe('ciclo de sesión Cajero V3', () => {
         }),
         NOW,
       ),
-    ).toBe('stock_updated')
+    ).toBeNull()
   })
 
   test('modela sin snapshot sin convertir fechas nulas', () => {
@@ -133,8 +122,6 @@ describe('ciclo de sesión Cajero V3', () => {
         snapshot_id: null,
         snapshot_at: null,
         confirmado_at: null,
-        expira_at: null,
-        version_catalogo: null,
         puede_iniciar_conteo: false,
       },
     })

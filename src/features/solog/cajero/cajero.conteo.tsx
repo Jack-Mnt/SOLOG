@@ -8,10 +8,8 @@ import {
   Play,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getOrCreateDeviceToken } from '../device'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import type { SologOperationalBootstrap } from '../types'
-import { getCajeroGroups } from './cajero.api'
 import { CajeroCaptureModal, type CajeroCaptureView } from './cajero.captura.dialog'
 import {
   CajeroSelectionGrid,
@@ -61,7 +59,7 @@ export function CajeroConteo({
   const activeScope = session.activeScope
   const activeCountId = activeScope?.conteo_id ?? null
   const hasActiveSession = Boolean(bootstrap.sesion_activa)
-  const handleStockUpdateDetected = session.handleStockUpdateDetected
+  const loadOperationalGroups = session.loadOperationalGroups
 
   const loadGroups = useCallback(async () => {
     if (!hasActiveSession || !activeCountId) {
@@ -73,13 +71,9 @@ export function CajeroConteo({
     setLoading(true)
     setError(null)
     try {
-      const response = await getCajeroGroups({
-        device_token: getOrCreateDeviceToken(),
-        vista: 'conteo',
-      })
+      const response = await loadOperationalGroups('conteo')
       if (currentRequest !== requestVersion.current) return
       setGroupsState(response)
-      if (response.stock_actualizado) handleStockUpdateDetected()
     } catch (loadError) {
       if (currentRequest !== requestVersion.current) return
       setGroupsState(null)
@@ -87,7 +81,7 @@ export function CajeroConteo({
     } finally {
       if (currentRequest === requestVersion.current) setLoading(false)
     }
-  }, [activeCountId, handleStockUpdateDetected, hasActiveSession])
+  }, [activeCountId, loadOperationalGroups, hasActiveSession])
 
   useEffect(() => {
     let active = true
@@ -98,7 +92,7 @@ export function CajeroConteo({
       active = false
       requestVersion.current += 1
     }
-  }, [loadGroups])
+  }, [loadGroups, session.cacheRevision])
 
   const handleObservationSaved = () => {
     const pending = session.activeScope
@@ -127,15 +121,12 @@ export function CajeroConteo({
   }
 
   const groups = groupsState?.grupos ?? []
-  const confirmedIds = new Set(session.confirmedGroupIds)
   const typeItems: CajeroSelectionGridItem[] = STOCK_TYPES.map((type) => ({
     id: type.id,
     name: type.name,
     icon: type.icon,
     count: groups.filter(
       (group) =>
-        group.pendiente_quincena === true &&
-        !confirmedIds.has(group.grupo_id) &&
         isCajeroGroupInStockType(group, type.id),
     ).length,
   }))
@@ -144,7 +135,7 @@ export function CajeroConteo({
       ? selectedType
       : (typeItems.find((item) => item.count > 0)?.id as CajeroStockType | undefined) ?? null
   const categories = effectiveType
-    ? deriveCajeroFortnightCategories(groups, effectiveType, confirmedIds)
+    ? deriveCajeroFortnightCategories(groups, effectiveType)
     : []
   const categoryItems: CajeroSelectionGridItem[] = categories.map((category) => ({
     id: category.id,
@@ -160,7 +151,6 @@ export function CajeroConteo({
         groups,
         effectiveType,
         openCategory.id,
-        confirmedIds,
       )
     : []
   const openCategoryIndex = openCategory
@@ -237,11 +227,11 @@ export function CajeroConteo({
           disabled={!session.canCapture}
           groups={modalGroups}
           key={`${effectiveType}:${openCategory.id}`}
-          lockedGroupIds={confirmedIds}
           onClose={() => setOpenCategoryId(null)}
           onNextCategory={nextCategory ? () => setOpenCategoryId(nextCategory.id) : undefined}
           onObservationSaved={handleObservationSaved}
           scope={activeScope}
+          session={session}
           view={modalView}
         />
       ) : null}

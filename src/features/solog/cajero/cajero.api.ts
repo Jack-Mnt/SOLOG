@@ -1,5 +1,9 @@
 import { callSologRpc } from '../api'
 import type {
+  CajeroRecountStartPayload,
+  CajeroRecountStartResponse,
+  CajeroRecountPayload,
+  CajeroRecountResponse,
   CajeroBatchPayload,
   CajeroBatchResponse,
   CajeroFinishPayload,
@@ -35,4 +39,12 @@ export function finishCajeroSession(input: CajeroFinishPayload) {
 
 export function getCajeroHistory(input: CajeroHistoryPayload) {
   return callSologRpc<CajeroHistoryResponse>('rpc_solog_count', 'history', input)
+}
+
+export function startCajeroRecount(input: CajeroRecountStartPayload) {
+  return callSologRpc<CajeroRecountStartResponse>('rpc_solog_count', 'recount_start', input)
+}
+
+export function saveCajeroRecount(input: CajeroRecountPayload) {
+  return callSologRpc<CajeroRecountResponse>('rpc_solog_count', 'recount', input)
 }

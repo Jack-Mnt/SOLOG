@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, PackageSearch, RotateCcw, X } from 'lucide-react'
-import { getSologDifferenceStateLabel } from '../../labels'
+import { getSologDifferenceStateClass, getSologDifferenceStateLabel } from '../../labels'
 import type {
   SologControlDetailResponse,
   SologControlHistoryRow,
@@ -25,7 +25,7 @@ type DrawerTab = 'detail' | 'products' | 'history'
 
 function DifferenceBadge({ state }: { state: SologControlDetailResponse['detalle']['estado_diferencia'] }) {
   return (
-    <span className={`control-state-badge control-state-badge--${state}`}>
+    <span className={`control-state-badge control-state-badge--${getSologDifferenceStateClass(state)}`}>
       {getSologDifferenceStateLabel(state)}
     </span>
   )

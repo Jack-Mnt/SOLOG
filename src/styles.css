@@ -4119,21 +4119,18 @@ h1 {
   font-weight: 750;
 }
 
-.control-state-badge--coincide,
-.control-state-badge--probablemente_explicada {
+.control-state-badge--coincide {
   color: var(--color-success);
   background: var(--color-success-soft);
 }
 
-.control-state-badge--pendiente,
-.control-state-badge--parcialmente_explicada {
+.control-state-badge--recontar {
   color: var(--color-warning);
   background: var(--color-warning-soft);
 }
 
-.control-state-badge--persistente,
-.control-state-badge--confirmada_reconteo,
-.control-state-badge--conteos_inconsistentes {
+.control-state-badge--confirmada,
+.control-state-badge--inconsistente {
   color: var(--color-danger);
   background: var(--color-danger-soft);
 }

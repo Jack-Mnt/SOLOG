@@ -9,7 +9,7 @@ import {
   RotateCcw,
   Search,
 } from "lucide-react";
-import { getSologDifferenceStateLabel } from "../../labels";
+import { getSologDifferenceStateClass, getSologDifferenceStateLabel } from "../../labels";
 import type {
   SologControlRow,
   SologControlStateGroup,
@@ -40,7 +40,7 @@ const CONTROL_STATE_GROUPS: Array<{
 
 function DifferenceBadge({ state }: { state: SologDifferenceState }) {
   return (
-    <span className={`control-state-badge control-state-badge--${state}`}>
+    <span className={`control-state-badge control-state-badge--${getSologDifferenceStateClass(state)}`}>
       {getSologDifferenceStateLabel(state)}
     </span>
   );

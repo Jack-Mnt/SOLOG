@@ -9,6 +9,7 @@ import {
 import { getOrCreateDeviceToken } from '../device'
 import {
   getSologErrorMessageFromUnknown,
+  SologApiError,
   isSologApiErrorCode,
 } from '../errors'
 import { useSolog } from '../context'
@@ -20,15 +21,21 @@ import {
   getCajeroStatus,
   saveCajeroBatch,
   startCajeroSession,
+  startCajeroRecount,
+  saveCajeroRecount,
 } from './cajero.api'
 import {
   applyCajeroBatchResponse,
+  blockSupersededCajeroBuffer,
+  discardLegacyCajeroBuffers,
   buildNextCajeroBatch,
   getCajeroBufferRevision,
   readCajeroBuffersForIdentity,
   subscribeCajeroBufferChanges,
 } from './cajero.storage'
 import type {
+  CajeroRecountStartResponse,
+  CajeroRecountResponse,
   CajeroBufferIdentity,
   CajeroBufferScope,
   CajeroCachedView,
@@ -44,7 +51,6 @@ const ACTIVITY_KEY_PREFIX = 'solog.cajero.activity.v3'
 
 export type CajeroBlockReason =
   | 'expired'
-  | 'stock_updated'
   | 'inactive'
   | 'stock_unavailable'
 
@@ -55,9 +61,6 @@ export function getCajeroSessionBlockReason(
   const session = bootstrap.sesion_activa
   if (!session) return null
   if (!bootstrap.stock.disponible) return 'stock_unavailable'
-  if (bootstrap.stock.snapshot_id !== session.snapshot_referencia_id) {
-    return 'stock_updated'
-  }
 
   const expiration = Date.parse(session.expira_at)
   return !Number.isNaN(expiration) && now >= expiration ? 'expired' : null
@@ -72,14 +75,6 @@ export function getCajeroStatusBlockReason(
   if (!session) return null
   if (!bootstrap.stock.disponible || status.snapshot_actual_id === null) {
     return 'stock_unavailable'
-  }
-  if (
-    status.stock_actualizado ||
-    status.snapshot_actual_id !== status.snapshot_referencia_id ||
-    (status.snapshot_referencia_id !== null &&
-      status.snapshot_referencia_id !== session.snapshot_referencia_id)
-  ) {
-    return 'stock_updated'
   }
 
   const expiration = Date.parse(session.expira_at)
@@ -98,6 +93,19 @@ export function shouldInvalidateCajeroCaches(
 ): boolean {
   return Object.values(caches).some((entry) => entry.snapshotId !== snapshotId)
 }
+export function isCurrentCajeroResponse(
+  requestedScope: CajeroBufferScope | null,
+  currentScope: CajeroBufferScope | null,
+  requestedGeneration: number,
+  currentGeneration: number,
+): boolean {
+  return requestedGeneration === currentGeneration &&
+    requestedScope?.usuario_id === currentScope?.usuario_id &&
+    requestedScope?.sede_id === currentScope?.sede_id &&
+    requestedScope?.dispositivo_id === currentScope?.dispositivo_id &&
+    requestedScope?.conteo_id === currentScope?.conteo_id
+}
+
 export function isCajeroInactive(lastActivity: number, now: number): boolean {
   return now - lastActivity >= CAJERO_INACTIVITY_MS
 }
@@ -159,13 +167,15 @@ export interface CajeroSessionController {
   fortnightComplete: boolean
   dailyPending: number
   reviewPending: number
-  confirmedGroupIds: string[]
+  cacheRevision: number
+  captureTimestamp: () => string
+  beginRecount: (detalleId: string) => Promise<CajeroRecountStartResponse>
+  saveRecount: (detalleId: string, physical: number, timestamp: string) => Promise<CajeroRecountResponse>
   getCachedOperationalGroups: (view: CajeroCachedView) => CajeroGroupsResponse | null
   loadOperationalGroups: (view: CajeroCachedView) => Promise<CajeroGroupsResponse | null>
   invalidateOperationalCaches: () => void
   getCachedHistory: (period: CajeroHistoryPeriod) => CajeroHistoryResponse | null
   loadHistory: (period: CajeroHistoryPeriod) => Promise<CajeroHistoryResponse>
-  handleStockUpdateDetected: () => void
   clearError: () => void
 }
 
@@ -207,12 +217,12 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const [starting, setStarting] = useState(false)
-  const [confirmedGroups, setConfirmedGroups] = useState<{
-    conteoId: string | null
-    ids: string[]
-  }>({ conteoId: null, ids: [] })
+  const [cacheRevision, setCacheRevision] = useState(0)
   const [operationalStatus, setOperationalStatus] = useState<CajeroStatusResponse | null>(null)
   const sendingRef = useRef(false)
+  const generationRef = useRef(0)
+  const latestStatusRef = useRef<CajeroStatusResponse | null>(null)
+  const recountsRef = useRef(new Map<string, Promise<CajeroRecountStartResponse>>())
   const statusRequestRef = useRef<Promise<CajeroStatusResponse> | null>(null)
   const stageRefreshRef = useRef<Promise<SologOperationalBootstrap | null> | null>(null)
   const operationalCachesRef = useRef<Partial<Record<CajeroCachedView, CajeroGroupsCacheEntry>>>({})
@@ -236,13 +246,34 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
   }, [blockReason])
 
   const invalidateOperationalCaches = useCallback(() => {
+    generationRef.current += 1
     operationalCachesRef.current = {}
+    historyCachesRef.current = {}
+    historyRequestsRef.current = {}
+    statusRequestRef.current = null
+    setCacheRevision((current) => current + 1)
   }, [])
 
-  const fetchOperationalStatus = useCallback(async (): Promise<{
+  useEffect(() => {
+    discardLegacyCajeroBuffers()
+  }, [])
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      invalidateOperationalCaches()
+      latestStatusRef.current = null
+      statusRequestRef.current = null
+      setOperationalStatus(null)
+      recountsRef.current.clear()
+    })
+  }, [activeScope?.conteo_id, identity?.usuario_id, identity?.sede_id, identity?.dispositivo_id, invalidateOperationalCaches])
+
+  const fetchOperationalStatus = useCallback(async function fetchStatus(): Promise<{
     status: CajeroStatusResponse
     reason: CajeroBlockReason | null
-  }> => {
+  }> {
+    const requestedScope = activeScopeRef.current
+    const requestedGeneration = generationRef.current
     let request = statusRequestRef.current
     if (!request) {
       request = getCajeroStatus({ device_token: getOrCreateDeviceToken() })
@@ -250,15 +281,26 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     }
 
     try {
-      const status = await request
+      let status = await request
+      if (!isCurrentCajeroResponse(requestedScope, activeScopeRef.current, 0, 0)) {
+        throw new Error('La sesión cambió durante la consulta de estado.')
+      }
+      if (requestedGeneration !== generationRef.current) return fetchStatus()
+      // Una respuesta anterior no puede reinstalar el snapshot ni los contadores viejos.
+      const latest = latestStatusRef.current
+      if (latest && Date.parse(latest.server_now) > Date.parse(status.server_now)) status = latest
+      latestStatusRef.current = status
       updateServerNow(status.server_now)
       setOperationalStatus(status)
 
       if (
-        shouldInvalidateCajeroCaches(
-          operationalCachesRef.current,
-          status.snapshot_actual_id,
-        )
+        (latest && (
+          latest.snapshot_actual_id !== status.snapshot_actual_id ||
+          latest.conteo_id !== status.conteo_id ||
+          latest.conteo_diario_pendientes !== status.conteo_diario_pendientes ||
+          latest.revisar_pendientes !== status.revisar_pendientes
+        )) ||
+        shouldInvalidateCajeroCaches(operationalCachesRef.current, status.snapshot_actual_id)
       ) {
         invalidateOperationalCaches()
       }
@@ -266,8 +308,9 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       let bootstrap = bootstrapRef.current
       if (
         bootstrap &&
-        bootstrap.cobertura_quincenal.completa !==
-          status.cobertura_quincenal_completa
+        (bootstrap.cobertura_quincenal.completa !== status.cobertura_quincenal_completa ||
+          bootstrap.stock.snapshot_id !== status.snapshot_actual_id ||
+          (bootstrap.sesion_activa?.id ?? null) !== status.conteo_id)
       ) {
         invalidateOperationalCaches()
         let refreshRequest = stageRefreshRef.current
@@ -321,23 +364,27 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       )
       if (cached) return cached
 
+      const generation = generationRef.current
+      const scope = activeScopeRef.current
       const response = await getCajeroGroups({
         device_token: getOrCreateDeviceToken(),
         vista: view,
       })
-      if (response.stock_actualizado) {
-        setBlockReason('stock_updated')
+      if (!isCurrentCajeroResponse(scope, activeScopeRef.current, generation, generationRef.current)) return null
+      if (response.conteo_id !== scope?.conteo_id) return null
+      if (response.snapshot_actual_id !== status.snapshot_actual_id) {
         invalidateOperationalCaches()
+        void fetchOperationalStatus().catch((statusError: unknown) => setError(getSologErrorMessageFromUnknown(statusError)))
         return null
       }
-
+      updateServerNow(response.server_now)
       operationalCachesRef.current[view] = {
-        snapshotId: status.snapshot_actual_id,
+        snapshotId: response.snapshot_actual_id,
         response,
       }
       return response
     },
-    [fetchOperationalStatus, invalidateOperationalCaches],
+    [fetchOperationalStatus, invalidateOperationalCaches, updateServerNow],
   )
   const getCachedHistory = useCallback(
     (period: CajeroHistoryPeriod): CajeroHistoryResponse | null =>
@@ -350,6 +397,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       const cached = historyCachesRef.current[period]
       if (cached) return cached
 
+      const generation = generationRef.current
       let request = historyRequestsRef.current[period]
       if (!request) {
         request = getCajeroHistory({
@@ -361,6 +409,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
 
       try {
         const response = await request
+        if (generation !== generationRef.current) throw new Error('La vista cambió durante la consulta. Actualiza el historial.')
         historyCachesRef.current[period] = response
         updateServerNow(response.server_now)
         return response
@@ -432,47 +481,45 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       setError(null)
 
       try {
-        const statusCheck = await fetchOperationalStatus()
-        if (statusCheck.reason) {
-          reason = reason ?? statusCheck.reason
-          setBlockReason(reason)
-        }
-
+        // El envío de pendientes no exige una sesión activa ni snapshot actual.
+        // La elegibilidad temporal corresponde al backend y a la sesión original.
         const currentIdentity = identityRef.current
         if (!currentIdentity) return false
         const currentBuffers = readCajeroBuffersForIdentity(currentIdentity)
         let allConfirmed = true
 
         for (const buffer of currentBuffers) {
+          if (buffer.envio_bloqueado) {
+            setError(getSologErrorMessageFromUnknown(new SologApiError(buffer.envio_bloqueado)))
+            allConfirmed = false
+            continue
+          }
           let payload = buildNextCajeroBatch(
             buffer.scope,
             getOrCreateDeviceToken(),
           )
           while (payload) {
-            const response = await saveCajeroBatch(payload)
+            let response
+            try {
+              response = await saveCajeroBatch(payload)
+            } catch (sendError) {
+              if (isSologApiErrorCode(sendError, 'SOLOG_EXPIRED_SESSION_SUPERSEDED')) {
+                blockSupersededCajeroBuffer(buffer.scope)
+              }
+              throw sendError
+            }
             updateServerNow(response.server_now)
             if (response.guardados > 0 || response.ya_guardados > 0) {
               invalidateOperationalCaches()
             }
-            if (response.stock_actualizado || response.requiere_nueva_sesion) {
-              reason = 'stock_updated'
-              setBlockReason('stock_updated')
-            } else if (response.sesion_expirada) {
-              reason = 'expired'
-              setBlockReason('expired')
-            }
             const application = applyCajeroBatchResponse(buffer.scope, response)
-            const confirmedGroupIds = [...new Set(response.items.map((item) => item.grupo_id))]
-            if (confirmedGroupIds.length > 0) {
-              setConfirmedGroups((current) => ({
-                conteoId: buffer.scope.conteo_id,
-                ids: current.conteoId === buffer.scope.conteo_id
-                  ? [...new Set([...current.ids, ...confirmedGroupIds])]
-                  : confirmedGroupIds,
-              }))
+            if (response.errores.some((item) => item.codigo === 'SOLOG_EXPIRED_SESSION_SUPERSEDED')) {
+              blockSupersededCajeroBuffer(buffer.scope)
+              throw new SologApiError('SOLOG_EXPIRED_SESSION_SUPERSEDED')
             }
             if (
-              application.remaining.items.length > 0 ||
+              application.rejectedIds.length > 0 ||
+              application.confirmedIds.length === 0 ||
               application.unassociatedErrors.length > 0
             ) {
               allConfirmed = false
@@ -486,33 +533,18 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
         }
 
         if (!allConfirmed) {
-          setError('Algunos conteos no pudieron enviarse. Revisa y reintenta el envío.')
+          setError((current) => current ?? 'Algunos conteos no pudieron enviarse. Revisa y reintenta el envío.')
+          await fetchOperationalStatus()
+          await refreshSolog(true)
           return false
         }
 
-        if (reason === 'inactive' || reason === 'stock_updated') {
+        if (reason === 'inactive') {
           await finishActiveSession()
-          const afterFinish = await refreshSolog(true)
-          if (
-            reason === 'stock_updated' &&
-            afterFinish?.stock.disponible &&
-            afterFinish.stock.puede_iniciar_conteo &&
-            !afterFinish.sesion_activa
-          ) {
-            const started = await startCajeroSession({
-              device_token: getOrCreateDeviceToken(),
-            })
-            updateServerNow(started.server_now)
-            await refreshSolog(true)
-          }
-          solog.setNotice(
-            reason === 'inactive'
-              ? 'Conteo enviado. La sesión se cerró por inactividad.'
-              : 'Conteo enviado. Puedes continuar con el stock actualizado.',
-          )
-        } else if (reason === 'expired') {
-          await refreshSolog(true)
+          solog.setNotice('Conteo enviado. La sesión se cerró por inactividad.')
         }
+        await refreshSolog(true)
+        await fetchOperationalStatus()
 
         return true
       } catch (sendError) {
@@ -603,9 +635,10 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     )
     const timer = setTimeout(() => {
       setBlockReason('expired')
+      void refreshSolog(true)
     }, remaining)
     return () => clearTimeout(timer)
-  }, [blockReason, solog.bootstrap?.sesion_activa, solog.serverOffsetMs])
+  }, [blockReason, refreshSolog, solog.bootstrap?.sesion_activa, solog.serverOffsetMs])
 
   useEffect(() => {
     const handleReturn = () => {
@@ -628,9 +661,93 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     }
   }, [checkFreshness, handleInactivity])
 
-  const handleStockUpdateDetected = useCallback(() => {
-    setBlockReason('stock_updated')
+  const captureTimestamp = useCallback((): string => {
+    const bootstrap = bootstrapRef.current
+    const now = Date.now() + serverOffsetRef.current
+    if (!bootstrap?.sesion_activa || getCajeroSessionBlockReason(bootstrap, now) ||
+        blockReasonRef.current || sendingRef.current) {
+      throw new Error('La sesión no permite nuevas capturas. Los pendientes conservan su fecha original.')
+    }
+    return new Date(now).toISOString()
   }, [])
+
+  const beginRecount = useCallback(async (detalleId: string): Promise<CajeroRecountStartResponse> => {
+    captureTimestamp()
+    const scope = activeScopeRef.current
+    if (!scope || !detalleId) throw new Error('No hay una sesión o detalle para recontar.')
+    const key = scope.conteo_id + ':' + detalleId
+    let request = recountsRef.current.get(key)
+    const isNewRequest = !request
+    if (!request) {
+      request = startCajeroRecount({
+        device_token: getOrCreateDeviceToken(),
+        conteo_id: scope.conteo_id,
+        detalle_id: detalleId,
+      })
+      recountsRef.current.set(key, request)
+    }
+    try {
+      const response = await request
+      if (activeScopeRef.current?.conteo_id !== scope.conteo_id ||
+          response.conteo_id !== scope.conteo_id || response.detalle_id !== detalleId) {
+        throw new Error('La respuesta de reconteo no pertenece a la sesión y detalle actuales.')
+      }
+      if (isNewRequest) {
+        updateServerNow(response.server_now)
+        serverOffsetRef.current = Date.parse(response.server_now) - Date.now()
+      }
+      return response
+    } catch (recountError) {
+      recountsRef.current.delete(key)
+      throw recountError
+    }
+  }, [captureTimestamp, updateServerNow])
+
+  const saveRecount = useCallback(async (
+    detalleId: string, physical: number, timestamp: string,
+  ): Promise<CajeroRecountResponse> => {
+    captureTimestamp()
+    const scope = activeScopeRef.current
+    if (!scope) throw new Error('No hay sesión activa para recontar.')
+    const key = scope.conteo_id + ':' + detalleId
+    const started = recountsRef.current.get(key)
+    if (!started) throw new Error('Debes iniciar este reconteo antes de guardarlo.')
+    const reference = await started
+    captureTimestamp()
+    if (!isCurrentCajeroResponse(scope, activeScopeRef.current, 0, 0)) {
+      throw new Error('La sesión cambió antes de guardar el reconteo.')
+    }
+    if (sendingRef.current) throw new Error('Hay un envío en curso.')
+    sendingRef.current = true
+    setSending(true)
+    try {
+      const response = await saveCajeroRecount({
+        device_token: getOrCreateDeviceToken(),
+        conteo_id: scope.conteo_id,
+        detalle_id: detalleId,
+        stock_fisico: physical,
+        contado_at: timestamp,
+      })
+      if (response.conteo_id !== scope.conteo_id || response.detalle_id !== detalleId ||
+          response.snapshot_reconteo_id !== reference.snapshot_reconteo_id) {
+        throw new Error('La respuesta no corresponde al reconteo iniciado.')
+      }
+      recountsRef.current.delete(key)
+      invalidateOperationalCaches()
+      // La respuesta guardada es definitiva, aunque falle luego una actualización visual.
+      void refreshSolog(true)
+      void fetchOperationalStatus().catch((refreshError: unknown) => setError(getSologErrorMessageFromUnknown(refreshError)))
+      return response
+    } catch (recountError) {
+      recountsRef.current.delete(key)
+      invalidateOperationalCaches()
+      // No repetir recount automáticamente: volver a consultar elegibilidad/reanudar.
+      throw recountError
+    } finally {
+      sendingRef.current = false
+      setSending(false)
+    }
+  }, [captureTimestamp, fetchOperationalStatus, invalidateOperationalCaches, refreshSolog])
 
   const startSession = useCallback(async (): Promise<boolean> => {
     if (starting || sendingRef.current) return false
@@ -713,12 +830,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
   const reviewPending =
     operationalStatus?.revisar_pendientes ??
     solog.bootstrap?.vistas_inteligentes.revisar?.cantidad ??
-    solog.bootstrap?.vistas_inteligentes.seguimiento.cantidad ??
     0
-  const confirmedGroupIds =
-    confirmedGroups.conteoId === activeScope?.conteo_id
-      ? confirmedGroups.ids
-      : []
   return {
     activeScope,
     blockReason,
@@ -733,7 +845,10 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     fortnightComplete,
     dailyPending,
     reviewPending,
-    confirmedGroupIds,
+    cacheRevision,
+    captureTimestamp,
+    beginRecount,
+    saveRecount,
     getCachedOperationalGroups,
     loadOperationalGroups,
     invalidateOperationalCaches,
@@ -746,7 +861,6 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     retrySend: () => sendPendingInternal(blockReasonRef.current),
     checkFreshness,
     logoutSafely,
-    handleStockUpdateDetected,
     clearError: () => setError(null),
   }
 }

@@ -9,13 +9,14 @@ import type {
 } from './types'
 
 const DIFFERENCE_STATE_LABELS: Record<SologDifferenceState, string> = {
-  coincide: 'Coincide',
-  pendiente: 'Pendiente',
-  probablemente_explicada: 'Probablemente explicada',
-  parcialmente_explicada: 'Parcialmente explicada',
-  persistente: 'Persistente',
-  confirmada_reconteo: 'Confirmada por reconteo',
-  conteos_inconsistentes: 'Conteos inconsistentes',
+  Coincide: 'Coincide',
+  Recontar: 'Recontar',
+  Confirmada: 'Confirmada',
+  Inconsistente: 'Inconsistente',
+}
+
+export function getSologDifferenceStateClass(state: SologDifferenceState): string {
+  return state.toLowerCase()
 }
 
 export function getSologDifferenceStateLabel(

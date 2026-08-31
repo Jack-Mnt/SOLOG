@@ -19,11 +19,7 @@ export type CajeroCountView =
   | 'conteo_diario'
   | 'revisar'
 
-export type CajeroObservationType =
-  | 'auto'
-  | 'base'
-  | 'seguimiento'
-  | 'reconteo'
+export type CajeroBackendView = 'conteo' | 'conteo_diario' | 'revisar'
 
 export type CajeroHistoryPeriod = 'hoy' | 'ayer'
 
@@ -82,36 +78,32 @@ export interface CajeroCountGroup {
   stock_teorico: number
   categoria_orden?: number
   cubierto_quincena?: boolean
-  pendiente_quincena?: boolean
   stock_cero?: boolean
   stock_negativo?: boolean
   productos?: CajeroProduct[]
+  snapshot_actual_id?: string | null
+  estado_stock?: 'Contado' | 'Cambio_reciente'
+  stock_posterior?: number | null
+  primer_snapshot_posterior_id?: string | null
+  snapshot_reconteo_id?: string | null
   detalle_origen_id?: string | null
-  motivo_seguimiento?: string | null
   estado_diferencia?: SologDifferenceState | null
   contado_at_original?: string | null
   ultima_diferencia?: number | null
 }
 
-export type CajeroGroupsPayload =
-  | {
-      device_token: string
-      vista: 'categoria'
-      categoria_id: string
-    }
-  | {
-      device_token: string
-      vista: Exclude<CajeroCountView, 'categoria'>
-    }
+export interface CajeroGroupsPayload {
+  device_token: string
+  vista: CajeroBackendView
+}
 
 export interface CajeroGroupsResponse {
   conteo_id: string
-  vista: CajeroCountView
-  snapshot_referencia_id: string
-  snapshot_referencia_at: string
+  vista: CajeroBackendView
   snapshot_actual_id: string | null
-  stock_actualizado: boolean
+  snapshot_actual_at: string | null
   grupos: CajeroCountGroup[]
+  server_now: string
 }
 
 export interface CajeroStatusPayload {
@@ -119,17 +111,17 @@ export interface CajeroStatusPayload {
 }
 
 export interface CajeroStatusResponse {
+  ok: true
+  codigo: 'CASHIER_STATUS'
   server_now: string
   snapshot_actual_id: string | null
-  snapshot_referencia_id: string | null
   conteo_id: string | null
-  stock_actualizado: boolean
   cobertura_quincenal_completa: boolean
   conteo_diario_pendientes: number
   revisar_pendientes: number
 }
 
-export type CajeroCachedView = 'conteo_diario' | 'revisar'
+export type CajeroCachedView = CajeroBackendView
 
 export interface CajeroGroupsCacheEntry {
   snapshotId: string | null
@@ -143,8 +135,8 @@ export interface CajeroStartResponse {
   ok: true
   codigo: 'COUNT_STARTED'
   conteo_id: string
-  snapshot_referencia_id: string
-  snapshot_referencia_at: string
+  snapshot_actual_id: string
+  snapshot_actual_at: string
   snapshot_confirmado_at: string
   iniciado_at: string
   expira_at: string
@@ -156,8 +148,6 @@ export interface CajeroBatchItem {
   grupo_id: string
   stock_fisico: number
   contado_at: string
-  tipo_observacion: CajeroObservationType
-  observacion_origen_id: string | null
 }
 
 export interface CajeroBatchPayload {
@@ -173,14 +163,11 @@ export interface CajeroBatchSavedItem {
   resultado: CajeroBatchItemResult
   detalle_id: string
   grupo_id: string
-  tipo_observacion: Exclude<CajeroObservationType, 'auto'>
   stock_teorico: number
   stock_fisico: number
   diferencia: number
-  precio: number
-  valor_diferencia: number
   estado_diferencia: SologDifferenceState
-  diferencia_confirmada: number | null
+  snapshot_referencia_id?: string
   contado_at: string
 }
 
@@ -188,7 +175,7 @@ export interface CajeroBatchRejectedItem {
   client_observation_id: string | null
   grupo_id: string | null
   codigo: string
-  detalle?: string
+  detalle?: string | null
 }
 
 export interface CajeroBatchResponse {
@@ -203,9 +190,6 @@ export interface CajeroBatchResponse {
   guardados: number
   ya_guardados: number
   rechazados: number
-  sesion_expirada: boolean
-  stock_actualizado: boolean
-  requiere_nueva_sesion: boolean
   server_now: string
 }
 
@@ -218,7 +202,6 @@ export interface CajeroFinishResponse {
   ok: true
   codigo: 'COUNT_FINISHED'
   conteo_id: string
-  estado: 'finalizado'
   grupos_guardados: number
   cobertura_diaria: SologDailyCoverage
   cobertura_quincenal: SologFortnightCoverage
@@ -231,13 +214,15 @@ export interface CajeroHistoryPayload {
 }
 
 export interface CajeroHistoryItem {
+  stock_posterior: number | null
+  stock_reconteo: number | null
+  recontado_at: string | null
   detalle_id: string
   contado_at: string
   grupo_id: string
   grupo: string
   categoria_id: string
   categoria: string
-  tipo_observacion: Exclude<CajeroObservationType, 'auto'>
   stock_teorico: number
   stock_fisico: number
   diferencia: number
@@ -274,14 +259,12 @@ export interface CajeroBufferScope extends CajeroBufferIdentity {
 }
 
 export interface CajeroObservationDisplayData {
-  vista: CajeroCountView
+  vista: Exclude<CajeroCountView, 'revisar'>
   categoria_id: string | null
   grupo: string
   categoria: string
   stock_teorico: number
   precio: number
-  ultima_diferencia: number | null
-  motivo_seguimiento: string | null
 }
 
 export interface CajeroPendingObservation extends CajeroBatchItem {
@@ -294,13 +277,47 @@ export interface CajeroObservationInput {
   grupo_id: string
   stock_fisico: number
   contado_at: string
-  tipo_observacion: CajeroObservationType
-  observacion_origen_id: string | null
   display: CajeroObservationDisplayData
 }
 
 export interface CajeroBuffer {
-  version: 3
+  version: 4
+  envio_bloqueado?: 'SOLOG_EXPIRED_SESSION_SUPERSEDED'
   scope: CajeroBufferScope
   items: CajeroPendingObservation[]
+}
+
+export interface CajeroRecountStartPayload {
+  device_token: string
+  conteo_id: string
+  detalle_id: string
+}
+
+export interface CajeroRecountStartResponse {
+  ok: true
+  codigo: 'RECOUNT_STARTED'
+  conteo_id: string
+  detalle_id: string
+  snapshot_reconteo_id: string
+  stock_teorico_reconteo: number
+  server_now: string
+}
+
+export interface CajeroRecountPayload extends CajeroRecountStartPayload {
+  stock_fisico: number
+  contado_at: string
+}
+
+export interface CajeroRecountResponse {
+  ok: true
+  codigo: 'RECOUNT_SAVED'
+  conteo_id: string
+  detalle_id: string
+  snapshot_reconteo_id: string
+  stock_teorico_reconteo: number
+  stock_reconteo: number
+  diferencia_reconteo: number
+  diferencia: number
+  estado_diferencia: Exclude<SologDifferenceState, 'Recontar'>
+  recontado_at: string
 }

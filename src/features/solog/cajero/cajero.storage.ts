@@ -1,4 +1,5 @@
 import type {
+  CajeroRecountPayload,
   CajeroBatchPayload,
   CajeroBatchRejectedItem,
   CajeroBatchResponse,
@@ -7,7 +8,6 @@ import type {
   CajeroBufferScope,
   CajeroExpressionDraftStore,
   CajeroObservationInput,
-  CajeroObservationType,
   CajeroPendingObservation,
 } from './cajero.types'
 import { isValidPhysicalCount } from './cajero.utils'
@@ -15,8 +15,8 @@ import { isValidPhysicalCount } from './cajero.utils'
 export const CAJERO_BATCH_IMMEDIATE_THRESHOLD = 80
 export const CAJERO_BACKEND_BATCH_LIMIT = 500
 
-const BUFFER_VERSION = 3
-const BUFFER_KEY_PREFIX = 'solog.cajero.buffer.v3'
+const BUFFER_VERSION = 4
+const BUFFER_KEY_PREFIX = 'solog.cajero.buffer.v4'
 const EXPRESSION_KEY_PREFIX = 'solog.cajero.expressions.v1'
 const BUFFER_EVENT = 'solog:cajero-buffer-change'
 let bufferRevision = 0
@@ -43,23 +43,13 @@ function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === 'string'
 }
 
-function isObservationType(value: unknown): value is CajeroObservationType {
-  return (
-    value === 'auto' ||
-    value === 'base' ||
-    value === 'seguimiento' ||
-    value === 'reconteo'
-  )
-}
-
 function isCountView(value: unknown): boolean {
   return (
+    value === 'conteo' ||
     value === 'categoria' ||
     value === 'stock_cero' ||
     value === 'stock_negativo' ||
-    value === 'conteo_diario' ||
-    value === 'revisar' ||
-    value === 'seguimiento'
+    value === 'conteo_diario'
   )
 }
 
@@ -103,7 +93,7 @@ function isRejectedItem(value: unknown): value is CajeroBatchRejectedItem {
       isNonEmptyString(error.client_observation_id)) &&
     (error.grupo_id === null || isNonEmptyString(error.grupo_id)) &&
     isNonEmptyString(error.codigo) &&
-    (error.detalle === undefined || typeof error.detalle === 'string')
+    (error.detalle === undefined || error.detalle === null || typeof error.detalle === 'string')
   )
 }
 
@@ -113,17 +103,6 @@ function isPendingObservation(value: unknown): value is CajeroPendingObservation
   const display = item.display
   if (!display || typeof display !== 'object' || Array.isArray(display)) return false
 
-  const validOrigin =
-    item.tipo_observacion === 'reconteo'
-      ? isUuid(item.observacion_origen_id)
-      : item.observacion_origen_id === null
-  const reviewView =
-    display.vista === 'revisar' ||
-    (display.vista as string) === 'seguimiento'
-  const validViewType = reviewView
-    ? item.tipo_observacion !== 'base' && item.tipo_observacion !== 'auto'
-    : item.tipo_observacion === 'auto'
-
   return (
     isUuid(item.client_observation_id) &&
     isNonEmptyString(item.conteo_id) &&
@@ -132,9 +111,6 @@ function isPendingObservation(value: unknown): value is CajeroPendingObservation
     isValidPhysicalCount(item.stock_fisico) &&
     isNonEmptyString(item.contado_at) &&
     !Number.isNaN(Date.parse(item.contado_at)) &&
-    isObservationType(item.tipo_observacion) &&
-    validOrigin &&
-    validViewType &&
     isCountView(display.vista) &&
     isNullableString(display.categoria_id) &&
     isNonEmptyString(display.grupo) &&
@@ -143,10 +119,6 @@ function isPendingObservation(value: unknown): value is CajeroPendingObservation
     Number.isSafeInteger(display.stock_teorico) &&
     typeof display.precio === 'number' &&
     Number.isFinite(display.precio) &&
-    (display.ultima_diferencia === null ||
-      (typeof display.ultima_diferencia === 'number' &&
-        Number.isSafeInteger(display.ultima_diferencia))) &&
-    isNullableString(display.motivo_seguimiento) &&
     (item.error === null || isRejectedItem(item.error))
   )
 }
@@ -156,6 +128,7 @@ function isBuffer(value: unknown): value is CajeroBuffer {
   const buffer = value as Partial<CajeroBuffer>
   return (
     buffer.version === BUFFER_VERSION &&
+    (buffer.envio_bloqueado === undefined || buffer.envio_bloqueado === 'SOLOG_EXPIRED_SESSION_SUPERSEDED') &&
     isScope(buffer.scope) &&
     Array.isArray(buffer.items) &&
     buffer.items.every(
@@ -378,33 +351,9 @@ function validateObservationInput(input: CajeroObservationInput): void {
     !isValidPhysicalCount(input.stock_fisico) ||
     !isNonEmptyString(input.contado_at) ||
     Number.isNaN(Date.parse(input.contado_at)) ||
-    !isObservationType(input.tipo_observacion)
+    !isCountView(input.display.vista)
   ) {
-    throw new Error('La observación local no es válida.')
-  }
-
-  if (
-    input.display.vista !== 'revisar' &&
-    input.tipo_observacion !== 'auto'
-  ) {
-    throw new Error(
-      'Conteo base, Conteo diario, Stock 0 y Stock negativo deben usar tipo_observacion auto.',
-    )
-  }
-
-  if (input.tipo_observacion === 'reconteo') {
-    if (
-      input.display.vista !== 'revisar' ||
-      !isUuid(input.observacion_origen_id)
-    ) {
-      throw new Error(
-        'Un reconteo requiere un observacion_origen_id válido del backend.',
-      )
-    }
-  } else if (input.observacion_origen_id !== null) {
-    throw new Error(
-      'Solo un reconteo puede conservar observacion_origen_id.',
-    )
+    throw new Error('La observación local no es válida. Los reconteos no pertenecen al batch normal.')
   }
 }
 
@@ -415,6 +364,7 @@ export function upsertCajeroObservation(
 ): CajeroPendingObservation {
   validateObservationInput(input)
   const current = readCajeroBuffer(scope, storage)
+  if (current.envio_bloqueado) throw new Error('La sesión original fue reemplazada; sus pendientes no pueden modificarse ni reasignarse.')
   const existing = current.items.find((item) => item.grupo_id === input.grupo_id)
   const observation: CajeroPendingObservation = {
     client_observation_id: existing?.client_observation_id ?? crypto.randomUUID(),
@@ -422,8 +372,6 @@ export function upsertCajeroObservation(
     grupo_id: input.grupo_id,
     stock_fisico: input.stock_fisico,
     contado_at: existing?.contado_at ?? input.contado_at,
-    tipo_observacion: input.tipo_observacion,
-    observacion_origen_id: input.observacion_origen_id,
     display: input.display,
     error: null,
   }
@@ -470,6 +418,7 @@ export function buildNextCajeroBatch(
   storage?: Storage,
 ): CajeroBatchPayload | null {
   const buffer = readCajeroBuffer(scope, storage)
+  if (buffer.envio_bloqueado) throw new Error('SOLOG_EXPIRED_SESSION_SUPERSEDED: los pendientes conservan su sesión original y no pueden reenviarse.')
   if (buffer.items.length === 0) return null
 
   return {
@@ -483,15 +432,11 @@ export function buildNextCajeroBatch(
           grupo_id,
           stock_fisico,
           contado_at,
-          tipo_observacion,
-          observacion_origen_id,
         }) => ({
           client_observation_id,
           grupo_id,
           stock_fisico,
           contado_at,
-          tipo_observacion,
-          observacion_origen_id,
         }),
       ),
   }
@@ -563,4 +508,57 @@ export function subscribeCajeroBufferChanges(
   if (typeof window === 'undefined') return () => undefined
   window.addEventListener(BUFFER_EVENT, listener)
   return () => window.removeEventListener(BUFFER_EVENT, listener)
+}
+
+export function blockSupersededCajeroBuffer(scope: CajeroBufferScope, storage?: Storage): void {
+  const current = readCajeroBuffer(scope, storage)
+  writeCajeroBuffer({ ...current, envio_bloqueado: 'SOLOG_EXPIRED_SESSION_SUPERSEDED' }, storage)
+}
+
+// Solo versiones incompatibles de Cajero; nunca descartar pendientes V4.
+export function discardLegacyCajeroBuffers(storage?: Storage): void {
+  const target = getStorage(storage)
+  const keys: string[] = []
+  for (let index = 0; index < target.length; index += 1) {
+    const key = target.key(index)
+    if (key && /^solog\.cajero\.buffer\.v[123]:/.test(key)) keys.push(key)
+  }
+  keys.forEach((key) => target.removeItem(key))
+}
+
+function getRecountDraftKey(scope: CajeroBufferScope, detalleId: string): string {
+  return getCajeroBufferKey(scope).replace('buffer.v4', 'recount.v1') + ':' + encodeURIComponent(detalleId)
+}
+
+export function readCajeroRecountAttempt(
+  scope: CajeroBufferScope, detalleId: string, storage?: Storage,
+): Omit<CajeroRecountPayload, 'device_token'> | null {
+  const raw = getStorage(storage).getItem(getRecountDraftKey(scope, detalleId))
+  if (!raw) return null
+  try {
+    const value = JSON.parse(raw) as Partial<CajeroRecountPayload>
+    return value.conteo_id === scope.conteo_id && value.detalle_id === detalleId &&
+      typeof value.stock_fisico === 'number' && isValidPhysicalCount(value.stock_fisico) &&
+      typeof value.contado_at === 'string' && !Number.isNaN(Date.parse(value.contado_at))
+      ? { conteo_id: value.conteo_id, detalle_id: detalleId, stock_fisico: value.stock_fisico, contado_at: value.contado_at }
+      : null
+  } catch { return null }
+}
+
+export function saveCajeroRecountAttempt(
+  scope: CajeroBufferScope, detalleId: string, physical: number, timestamp: string, storage?: Storage,
+): Omit<CajeroRecountPayload, 'device_token'> {
+  const existing = readCajeroRecountAttempt(scope, detalleId, storage)
+  if (existing) return existing
+  if (!isValidPhysicalCount(physical) || Number.isNaN(Date.parse(timestamp))) {
+    throw new Error('La captura de reconteo no es válida.')
+  }
+  const value = { conteo_id: scope.conteo_id, detalle_id: detalleId, stock_fisico: physical, contado_at: timestamp }
+  getStorage(storage).setItem(getRecountDraftKey(scope, detalleId), JSON.stringify(value))
+  return value
+}
+
+export function removeCajeroRecountAttempt(scope: CajeroBufferScope, detalleId: string, storage?: Storage): void {
+  getStorage(storage).removeItem(getRecountDraftKey(scope, detalleId))
+  removeCajeroExpressionDrafts(scope, ['recount:' + detalleId], storage)
 }

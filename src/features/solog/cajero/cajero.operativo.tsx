@@ -154,7 +154,7 @@ export function CajeroOperationalView({
       active = false
       requestVersion.current += 1
     }
-  }, [loadGroups])
+  }, [loadGroups, session.cacheRevision])
 
   const handleBufferChange = () => {
     const pending = activeScope
@@ -219,6 +219,7 @@ export function CajeroOperationalView({
           key={`${groupsState.conteo_id}:${view}`}
           onBufferChange={handleBufferChange}
           scope={activeScope}
+          session={session}
           view={view}
         />
       ) : groupsState && !error ? (

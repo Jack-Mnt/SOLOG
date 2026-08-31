@@ -21,7 +21,6 @@ import type {
   CajeroCountGroup,
   CajeroExpressionEvaluation,
   CajeroHistoryItem,
-  CajeroObservationType,
   CajeroRoute,
   CajeroStockType,
 } from './cajero.types'
@@ -161,43 +160,6 @@ export function formatCajeroDifference(value: number | null): string {
   return value > 0 ? `+${value}` : String(value)
 }
 
-export function getObservationTypeLabel(
-  type: Exclude<CajeroObservationType, 'auto'>,
-): string {
-  switch (type) {
-    case 'base':
-      return 'Base'
-    case 'seguimiento':
-      return 'Seguimiento'
-    case 'reconteo':
-      return 'Reconteo'
-  }
-}
-
-export function getFollowupReasonLabel(reason: string | null): string {
-  switch (reason) {
-    case 'conteos_inconsistentes':
-      return 'Reconteo'
-    case 'movimiento_posterior':
-      return 'Cambio de stock'
-    default:
-      return 'Verificar diferencia'
-  }
-}
-
-export function getReviewReasonLabel(reason: string | null): string {
-  switch (reason) {
-    case 'persistente':
-    case 'conteos_inconsistentes':
-      return 'Confirmar conteo'
-    case 'parcialmente_explicada':
-    case 'movimiento_posterior':
-      return 'Volver a contar'
-    default:
-      return 'Verificar diferencia'
-  }
-}
-
 export type CajeroReviewDifferenceFilter = 'all' | 'positive' | 'negative'
 
 export function toggleCajeroReviewDifferenceFilter(
@@ -216,61 +178,6 @@ export function filterCajeroReviewGroups(
     const difference = group.ultima_diferencia
     if (typeof difference !== 'number') return false
     return filter === 'positive' ? difference > 0 : difference < 0
-  })
-}
-
-export function isCajeroRecountGroup(group: CajeroCountGroup): boolean {
-  return (
-    group.motivo_seguimiento === 'conteos_inconsistentes' ||
-    group.estado_diferencia === 'conteos_inconsistentes'
-  )
-}
-
-export function getFollowupGroupLabel(group: CajeroCountGroup): string {
-  return isCajeroRecountGroup(group)
-    ? 'Reconteo'
-    : getFollowupReasonLabel(group.motivo_seguimiento ?? null)
-}
-
-export function getFollowupPriority(reason: string | null): number {
-  switch (getFollowupReasonLabel(reason)) {
-    case 'Verificar diferencia':
-      return 1
-    case 'Reconteo':
-      return 2
-    case 'Cambio de stock':
-      return 3
-    default:
-      return 1
-  }
-}
-
-export function sortFollowupGroups(
-  groups: readonly CajeroCountGroup[],
-): CajeroCountGroup[] {
-  return [...groups].sort((left, right) => {
-    const priority =
-      (isCajeroRecountGroup(left)
-        ? 2
-        : getFollowupPriority(left.motivo_seguimiento ?? null)) -
-      (isCajeroRecountGroup(right)
-        ? 2
-        : getFollowupPriority(right.motivo_seguimiento ?? null))
-    if (priority !== 0) return priority
-
-    const parsedLeft = left.contado_at_original
-      ? Date.parse(left.contado_at_original)
-      : Number.NaN
-    const parsedRight = right.contado_at_original
-      ? Date.parse(right.contado_at_original)
-      : Number.NaN
-    const leftTime = Number.isNaN(parsedLeft)
-      ? Number.POSITIVE_INFINITY
-      : parsedLeft
-    const rightTime = Number.isNaN(parsedRight)
-      ? Number.POSITIVE_INFINITY
-      : parsedRight
-    return leftTime - rightTime
   })
 }
 
@@ -336,7 +243,7 @@ export function deriveCajeroFortnightCategories(
   for (const group of groups) {
     if (!isCajeroGroupInStockType(group, type)) continue
     const pending =
-      group.pendiente_quincena === true &&
+      group.cubierto_quincena !== true &&
       !excludedGroupIds.has(group.grupo_id)
     const current = categories.get(group.categoria_id)
     if (current) {
@@ -372,7 +279,7 @@ export function filterCajeroFortnightCategoryGroups(
   return groups.filter(
     (group) =>
       group.categoria_id === categoryId &&
-      group.pendiente_quincena === true &&
+      group.cubierto_quincena !== true &&
       !excludedGroupIds.has(group.grupo_id) &&
       isCajeroGroupInStockType(group, type),
   )

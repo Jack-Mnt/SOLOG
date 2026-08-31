@@ -38,8 +38,6 @@ function observation(grupoId: string): CajeroObservationInput {
     grupo_id: grupoId,
     stock_fisico: 8,
     contado_at: '2026-08-29T10:00:00.000Z',
-    tipo_observacion: 'auto',
-    observacion_origen_id: null,
     display: {
       vista: 'categoria',
       categoria_id: 'category-1',
@@ -47,8 +45,6 @@ function observation(grupoId: string): CajeroObservationInput {
       categoria: 'Bebidas',
       stock_teorico: 10,
       precio: 3.5,
-      ultima_diferencia: null,
-      motivo_seguimiento: null,
     },
   }
 }
@@ -118,14 +114,10 @@ describe('expresiones locales Cajero Fase 1', () => {
         resultado: 'guardado',
         detalle_id: 'detail-1',
         grupo_id: 'group-1',
-        tipo_observacion: 'base',
         stock_teorico: 10,
         stock_fisico: 8,
         diferencia: -2,
-        precio: 3.5,
-        valor_diferencia: -7,
-        estado_diferencia: 'pendiente',
-        diferencia_confirmada: null,
+        estado_diferencia: 'Recontar',
         contado_at: '2026-08-29T10:00:00.000Z',
       }],
       errores: [{
@@ -136,9 +128,6 @@ describe('expresiones locales Cajero Fase 1', () => {
       guardados: 1,
       ya_guardados: 0,
       rechazados: 1,
-      sesion_expirada: false,
-      stock_actualizado: false,
-      requiere_nueva_sesion: false,
       server_now: '2026-08-29T10:01:00.000Z',
     }
 

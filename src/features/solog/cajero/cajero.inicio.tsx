@@ -147,7 +147,7 @@ export function CajeroInicio({
               <p>
                 {stockFreshness?.fresh
                   ? stockFreshness.relativeTime
-                  : "Vuelve a cargar un Excel para continuar conteo."}
+                  : "La antigüedad del inventario es informativa; puedes continuar si la sesión está activa."}
               </p>
             </div>
           </div>

@@ -17,7 +17,6 @@ import type {
 import {
   calculateDifference,
   calculateValuation,
-  getFollowupReasonLabel,
 } from '../src/features/solog/cajero/cajero.utils'
 
 class MemoryStorage implements Storage {
@@ -63,8 +62,6 @@ function observation(
     grupo_id: grupoId,
     stock_fisico: 8,
     contado_at: '2026-08-26T10:04:00-05:00',
-    tipo_observacion: 'auto',
-    observacion_origen_id: null,
     display: {
       vista: 'categoria',
       categoria_id: 'category-1',
@@ -72,8 +69,6 @@ function observation(
       categoria: 'Bebidas',
       stock_teorico: 10,
       precio: 3.5,
-      ultima_diferencia: null,
-      motivo_seguimiento: null,
     },
     ...overrides,
   }
@@ -94,14 +89,10 @@ function response(
         resultado: 'guardado',
         detalle_id: 'detail-1',
         grupo_id: 'group-1',
-        tipo_observacion: 'base',
         stock_teorico: 10,
         stock_fisico: 8,
         diferencia: -2,
-        precio: 3.5,
-        valor_diferencia: -7,
-        estado_diferencia: 'pendiente',
-        diferencia_confirmada: null,
+        estado_diferencia: 'Recontar',
         contado_at: '2026-08-26T10:04:00-05:00',
       },
     ],
@@ -115,9 +106,6 @@ function response(
     guardados: 1,
     ya_guardados: 0,
     rechazados: 1,
-    sesion_expirada: false,
-    stock_actualizado: false,
-    requiere_nueva_sesion: false,
     server_now: '2026-08-26T10:05:00-05:00',
   }
 }
@@ -155,19 +143,16 @@ describe('cajero.storage V3', () => {
     )
   })
 
-  test('genera un lote mixto sin campos de vista', () => {
+  test('genera un lote normal con cuatro campos por observación', () => {
     const storage = new MemoryStorage()
     upsertCajeroObservation(scope, observation('group-1'), storage)
     upsertCajeroObservation(
       scope,
       observation('group-2', {
-        tipo_observacion: 'reconteo',
-        observacion_origen_id: '4f3e43cc-2e6d-4cc5-bf9b-50bb58610417',
         display: {
           ...observation('group-2').display,
-          vista: 'revisar',
+          vista: 'conteo_diario',
           categoria_id: null,
-          motivo_seguimiento: 'conteos_inconsistentes',
         },
       }),
       storage,
@@ -175,9 +160,8 @@ describe('cajero.storage V3', () => {
 
     const batch = buildNextCajeroBatch(scope, 'device-token', storage)
     expect(batch?.items).toHaveLength(2)
-    expect(batch?.items.map((item) => item.tipo_observacion)).toEqual([
-      'auto',
-      'reconteo',
+    expect(Object.keys(batch!.items[0]!).sort()).toEqual([
+      'client_observation_id', 'contado_at', 'grupo_id', 'stock_fisico',
     ])
     expect(batch).not.toHaveProperty('vista')
   })
@@ -248,30 +232,11 @@ describe('cajero.storage V3', () => {
     expect(readCajeroBuffer(scope, storage).items).toHaveLength(0)
     expect(readCajeroExpressionDrafts(scope, storage).items).toHaveLength(0)
   })
-  test('impone auto en vistas base y exige origen para reconteo', () => {
-    const storage = new MemoryStorage()
-
-    expect(() =>
-      upsertCajeroObservation(
-        scope,
-        observation('group-1', { tipo_observacion: 'base' }),
-        storage,
-      ),
-    ).toThrow()
-
-    expect(() =>
-      upsertCajeroObservation(
-        scope,
-        observation('group-2', {
-          tipo_observacion: 'reconteo',
-          display: {
-            ...observation('group-2').display,
-            vista: 'revisar',
-          },
-        }),
-        storage,
-      ),
-    ).toThrow()
+  test('rechaza Revisar como captura normal', () => {
+    const input = observation('group-1')
+    expect(() => upsertCajeroObservation(scope, {
+      ...input, display: { ...input.display, vista: 'revisar' as never },
+    }, new MemoryStorage())).toThrow()
   })
 
   test('aplica únicamente el umbral inmediato de 80', () => {
@@ -287,13 +252,4 @@ describe('cajero.utils V3', () => {
     expect(calculateValuation(-2, 3.5)).toBe(-7)
   })
 
-  test('traduce motivos técnicos a términos operativos', () => {
-    expect(getFollowupReasonLabel('persistente')).toBe(
-      'Verificar diferencia',
-    )
-    expect(getFollowupReasonLabel('conteos_inconsistentes')).toBe('Reconteo')
-    expect(getFollowupReasonLabel('movimiento_posterior')).toBe(
-      'Cambio de stock',
-    )
-  })
 })

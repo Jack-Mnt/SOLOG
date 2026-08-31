@@ -8,14 +8,7 @@ export type SologDeviceState =
 
 export type SologSessionState = 'activo' | 'finalizado' | 'expirado'
 
-export type SologDifferenceState =
-  | 'coincide'
-  | 'pendiente'
-  | 'probablemente_explicada'
-  | 'parcialmente_explicada'
-  | 'persistente'
-  | 'confirmada_reconteo'
-  | 'conteos_inconsistentes'
+export type SologDifferenceState = 'Coincide' | 'Recontar' | 'Confirmada' | 'Inconsistente'
 
 export type SologControlStateGroup =
   | 'problematicos'
@@ -47,14 +40,9 @@ export interface SologDevice {
 
 export interface SologActiveSession {
   id: string
-  estado?: 'activo'
   iniciado_at: string
   expira_at: string
-  snapshot_referencia_id: string
-  snapshot_referencia_at: string
-  snapshot_confirmado_at: string
   grupos_guardados: number
-  grupos_registrados?: number
 }
 
 export interface SologAvailableStockState {
@@ -62,8 +50,6 @@ export interface SologAvailableStockState {
   snapshot_id: string
   snapshot_at: string
   confirmado_at: string
-  expira_at: string
-  version_catalogo: number
   puede_iniciar_conteo: boolean
 }
 
@@ -72,8 +58,6 @@ export interface SologUnavailableStockState {
   snapshot_id: null
   snapshot_at: null
   confirmado_at: null
-  expira_at: null
-  version_catalogo: null
   puede_iniciar_conteo: false
 }
 
@@ -97,10 +81,9 @@ export interface SologDailyCoverage {
 
 export interface SologFortnightCoverage extends SologCoverage {
   completa: boolean
-  quincena: 'primera' | 'segunda'
+  inaugurada: boolean
   desde: string
   hasta: string
-  periodo?: 'primera' | 'segunda'
 }
 
 export interface SologCategory {
@@ -123,12 +106,8 @@ export interface SologOperationalViewState {
 }
 
 export interface SologIntelligentViews {
-  conteo_diario?: SologOperationalViewState
-  revisar?: SologOperationalViewState
-  seguimiento: SologOperationalViewState
-  cambios_recientes: SologOperationalViewState
-  stock_negativo: SologOperationalViewState
-  contar_detalladamente: SologOperationalViewState
+  conteo_diario: SologOperationalViewState
+  revisar: SologOperationalViewState
 }
 
 export interface SologOperationalBootstrap {

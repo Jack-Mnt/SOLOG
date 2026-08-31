@@ -49,7 +49,6 @@ function group(
     categoria_orden: order,
     precio: 3.5,
     stock_teorico: stock,
-    pendiente_quincena: pending,
     cubierto_quincena: !pending,
     stock_cero: stock === 0,
     stock_negativo: stock < 0,
@@ -65,8 +64,6 @@ function observation(
     grupo_id: grupoId,
     stock_fisico: 8,
     contado_at: '2026-08-29T14:00:00.000Z',
-    tipo_observacion: 'auto',
-    observacion_origen_id: null,
     display: {
       vista: view,
       categoria_id: categoryId,
@@ -74,8 +71,6 @@ function observation(
       categoria: `Categoría ${categoryId}`,
       stock_teorico: 10,
       precio: 3.5,
-      ultima_diferencia: null,
-      motivo_seguimiento: null,
     },
   }
 }
@@ -97,7 +92,7 @@ describe('Conteo quincenal Fase 3', () => {
     expect(deriveCajeroFortnightCategories(groups, 'negative')[0]?.count).toBe(1)
   })
 
-  test('filtra siempre por pendiente_quincena, tipo y categoría', () => {
+  test('filtra siempre por cubierto_quincena, tipo y categoría', () => {
     expect(
       filterCajeroFortnightCategoryGroups(
         groups,
@@ -118,8 +113,8 @@ describe('Conteo quincenal Fase 3', () => {
     const source = await Bun.file(
       'src/features/solog/cajero/cajero.conteo.tsx',
     ).text()
-    expect(source.match(/getCajeroGroups\(/g)).toHaveLength(1)
-    expect(source).toContain("vista: 'conteo'")
+    expect(source.match(/loadOperationalGroups\('conteo'\)/g)).toHaveLength(1)
+    expect(source).toContain("loadOperationalGroups('conteo')")
     expect(source).not.toContain("vista: 'categoria'")
     expect(source).toContain('CajeroSelectionGrid')
     expect(source).toContain('CajeroCaptureModal')

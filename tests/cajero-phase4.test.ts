@@ -13,10 +13,6 @@ import {
   filterCajeroReviewGroups,
   formatCajeroDifference,
   getCajeroDifferenceClass,
-  getFollowupGroupLabel,
-  getReviewReasonLabel,
-  isCajeroRecountGroup,
-  sortFollowupGroups,
   sortHistoryNewestFirst,
   toggleCajeroReviewDifferenceFilter,
 } from '../src/features/solog/cajero/cajero.utils'
@@ -40,9 +36,9 @@ const scope: CajeroBufferScope = {
 
 function group(
   id: string,
-  motivo: string | null,
+  _motivo: string | null,
   contadoAt: string,
-  estado: CajeroCountGroup['estado_diferencia'] = 'pendiente',
+  estado: CajeroCountGroup['estado_diferencia'] = 'Recontar',
 ): CajeroCountGroup {
   return {
     grupo_id: id,
@@ -53,74 +49,21 @@ function group(
     stock_teorico: 10,
     productos: [],
     detalle_origen_id: '4f3e43cc-2e6d-4cc5-bf9b-50bb58610417',
-    motivo_seguimiento: motivo,
     estado_diferencia: estado,
     contado_at_original: contadoAt,
     ultima_diferencia: -2,
   }
 }
 
-function observation(
-  grupoId: string,
-  tipo: CajeroObservationInput['tipo_observacion'],
-  origen: string | null,
-): CajeroObservationInput {
+function observation(grupoId: string): CajeroObservationInput {
   return {
-    grupo_id: grupoId,
-    stock_fisico: 8,
-    contado_at: '2026-08-26T10:04:00.000Z',
-    tipo_observacion: tipo,
-    observacion_origen_id: origen,
-    display: {
-      vista: tipo === 'auto' ? 'categoria' : 'revisar',
-      categoria_id: 'category-1',
-      grupo: `Grupo ${grupoId}`,
-      categoria: 'Bebidas',
-      stock_teorico: 10,
-      precio: 4,
-      ultima_diferencia: -2,
-      motivo_seguimiento: tipo === 'reconteo' ? 'conteos_inconsistentes' : null,
-    },
+    grupo_id: grupoId, stock_fisico: 8, contado_at: '2026-08-26T10:04:00.000Z',
+    display: { vista: 'categoria', categoria_id: 'category-1', grupo: grupoId,
+      categoria: 'Bebidas', stock_teorico: 10, precio: 4 },
   }
 }
 
-describe('Revisar V3.1', () => {
-  test('ordena por motivo y después por antigüedad', () => {
-    const groups = [
-      group('change', 'movimiento_posterior', '2026-08-26T08:00:00.000Z'),
-      group('recount', 'conteos_inconsistentes', '2026-08-26T07:00:00.000Z'),
-      group('difference-new', 'persistente', '2026-08-26T09:00:00.000Z'),
-      group('difference-old', 'parcialmente_explicada', '2026-08-26T06:00:00.000Z'),
-    ]
-    expect(sortFollowupGroups(groups).map((item) => item.grupo_id)).toEqual([
-      'difference-old',
-      'difference-new',
-      'recount',
-      'change',
-    ])
-  })
-
-  test('traduce motivos y reconoce reconteo desde el estado backend', () => {
-    const recount = group(
-      'recount',
-      null,
-      '2026-08-26T07:00:00.000Z',
-      'conteos_inconsistentes',
-    )
-    expect(isCajeroRecountGroup(recount)).toBe(true)
-    expect(getFollowupGroupLabel(recount)).toBe('Reconteo')
-    expect(getFollowupGroupLabel(group('change', 'movimiento_posterior', '2026-08-26T08:00:00.000Z'))).toBe('Cambio de stock')
-  })
-
-  test('traduce los motivos de Revisar a lenguaje operativo', () => {
-    expect(getReviewReasonLabel('persistente')).toBe('Confirmar conteo')
-    expect(getReviewReasonLabel('conteos_inconsistentes')).toBe('Confirmar conteo')
-    expect(getReviewReasonLabel('parcialmente_explicada')).toBe('Volver a contar')
-    expect(getReviewReasonLabel('movimiento_posterior')).toBe('Volver a contar')
-    expect(getReviewReasonLabel('otro')).toBe('Verificar diferencia')
-    expect(getReviewReasonLabel(null)).toBe('Verificar diferencia')
-  })
-
+describe('Revisar Motor V3', () => {
   test('alterna el filtro compacto entre todas, positivas y negativas', () => {
     expect(toggleCajeroReviewDifferenceFilter('all', 'positive')).toBe('positive')
     expect(toggleCajeroReviewDifferenceFilter('all', 'negative')).toBe('negative')
@@ -150,30 +93,13 @@ describe('Revisar V3.1', () => {
     ])
   })
 
-  test('crea un lote mixto con auto, seguimiento y reconteo con origen', () => {
+  test('Revisar no puede almacenar reconteos en el batch normal', () => {
     const storage = new MemoryStorage()
-    const origin = '4f3e43cc-2e6d-4cc5-bf9b-50bb58610417'
-    upsertCajeroObservation(scope, observation('base', 'auto', null), storage)
-    upsertCajeroObservation(scope, observation('followup', 'seguimiento', null), storage)
-    upsertCajeroObservation(scope, observation('recount', 'reconteo', origin), storage)
-
-    const batch = buildNextCajeroBatch(scope, 'device-token', storage)
-    expect(batch?.items.map((item) => item.tipo_observacion)).toEqual([
-      'auto',
-      'seguimiento',
-      'reconteo',
-    ])
-    expect(batch?.items[2]?.observacion_origen_id).toBe(origin)
-  })
-
-  test('rechaza reconteo sin observacion_origen_id', () => {
-    expect(() =>
-      upsertCajeroObservation(
-        scope,
-        observation('recount', 'reconteo', null),
-        new MemoryStorage(),
-      ),
-    ).toThrow()
+    const input = observation('recount')
+    expect(() => upsertCajeroObservation(scope, {
+      ...input, display: { ...input.display, vista: 'revisar' as never },
+    }, storage)).toThrow()
+    expect(buildNextCajeroBatch(scope, 'device-token', storage)).toBeNull()
   })
 
   test('usa lista compacta y abre directamente el modal compartido', async () => {
@@ -186,14 +112,14 @@ describe('Revisar V3.1', () => {
     expect(source).toContain('cajero-review-filter')
     expect(source).toContain('filterCajeroReviewGroups')
     expect(source).toContain('CajeroCaptureModal')
-    expect(source).toContain('initialGroupId={selectedGroupId}')
+    expect(source).toContain('initialGroupId={selectedGroup.grupo_id}')
     expect(source).not.toContain('CajeroOperationalView')
     expect(source).not.toContain('CajeroCountTable')
     expect(source).not.toContain('<input')
     expect(source).not.toContain('Motivo</')
   })
 
-  test('el modal admite Revisar sin ejecutar RPC y conserva su semántica', async () => {
+  test('el modal delega el reconteo al controlador sin usar el batch', async () => {
     const source = await Bun.file(
       'src/features/solog/cajero/cajero.captura.dialog.tsx',
     ).text()
@@ -202,8 +128,9 @@ describe('Revisar V3.1', () => {
     expect(source).toContain('initialGroupId?: string')
     expect(source).toContain('<dt>Última diferencia</dt>')
     expect(source).toContain('<dt>Motivo</dt>')
-    expect(source).toContain("? 'reconteo'")
-    expect(source).toContain(": 'seguimiento'")
+    expect(source).toContain('beginRecount(detailId)')
+    expect(source).toContain('session.saveRecount(detailId, payload.stock_fisico, payload.contado_at)')
+    expect(source).toContain('result?.diferencia')
     expect(source).not.toContain('sendPending')
     expect(source).not.toContain('cajero.api')
   })
@@ -226,12 +153,14 @@ describe('Historial V3', () => {
       grupo: 'Grupo 1',
       categoria_id: 'category-1',
       categoria: 'Bebidas',
-      tipo_observacion: 'seguimiento',
+      stock_posterior: null,
+      stock_reconteo: null,
+      recontado_at: null,
       stock_teorico: 10,
       stock_fisico: 8,
       precio: 4,
       valor_diferencia: -8,
-      estado_diferencia: 'pendiente',
+      estado_diferencia: 'Recontar',
     }
     const items: CajeroHistoryItem[] = [
       { ...base, detalle_id: 'one', contado_at: '2026-08-26T10:00:00.000Z', diferencia: -2 },

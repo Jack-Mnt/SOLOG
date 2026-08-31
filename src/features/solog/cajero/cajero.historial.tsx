@@ -5,6 +5,7 @@ import {
   LoaderCircle,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getSologDifferenceStateClass, getSologDifferenceStateLabel } from '../labels'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import type { CajeroSessionController } from './cajero.session'
 import type {
@@ -18,7 +19,6 @@ import {
   formatCajeroDifference,
   getCajeroCategoryIcon,
   getCajeroDifferenceClass,
-  getObservationTypeLabel,
   sortHistoryNewestFirst,
 } from './cajero.utils'
 
@@ -85,7 +85,7 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
       active = false
       requestVersion.current += 1
     }
-  }, [loadHistory])
+  }, [loadHistory, session.cacheRevision])
 
   const items = useMemo(
     () => sortHistoryNewestFirst(history?.items ?? []),
@@ -219,9 +219,12 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
                   {expanded ? (
                     <dl className="cajero-history-list__detail">
                       <div><dt>Hora</dt><dd>{formatHistoryTime(item.contado_at)}</dd></div>
-                      <div><dt>Tipo</dt><dd><span className="cajero-observation-type">{getObservationTypeLabel(item.tipo_observacion)}</span></dd></div>
+                      <div><dt>Estado</dt><dd><span className={`control-state-badge control-state-badge--${getSologDifferenceStateClass(item.estado_diferencia)}`}>{getSologDifferenceStateLabel(item.estado_diferencia)}</span></dd></div>
                       <div><dt>Stock TumiSoft</dt><dd>{item.stock_teorico}</dd></div>
                       <div><dt>Conteo</dt><dd>{item.stock_fisico}</dd></div>
+                      <div><dt>Stock posterior</dt><dd>{item.stock_posterior ?? '—'}</dd></div>
+                      <div><dt>Reconteo</dt><dd>{item.stock_reconteo ?? '—'}</dd></div>
+                      <div><dt>Hora de reconteo</dt><dd>{item.recontado_at ? formatHistoryTime(item.recontado_at) : '—'}</dd></div>
                     </dl>
                   ) : null}
                 </article>
