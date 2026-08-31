@@ -23,19 +23,17 @@ export function useSologControlDetail({
   const [error, setError] = useState<string | null>(null)
   const requestVersion = useRef(0)
 
-  const load = useCallback(async (selectedId: string, nextOffset: number) => {
+  const load = useCallback(async (selectedId: string) => {
     const currentRequest = ++requestVersion.current
     setStatus('loading')
     setError(null)
     try {
       const nextResponse = await getSologControlDetail({
         detalle_id: selectedId,
-        limit: SOLOG_CONTROL_HISTORY_PAGE_SIZE,
-        offset: nextOffset,
       })
       if (currentRequest !== requestVersion.current) return
       setResponse(nextResponse)
-      setOffset(nextOffset)
+      setOffset(0)
       setStatus('ready')
     } catch (loadError) {
       if (currentRequest !== requestVersion.current) return
@@ -50,7 +48,7 @@ export function useSologControlDetail({
   useEffect(() => {
     let active = true
     queueMicrotask(() => {
-      if (active) void load(detailId, 0)
+      if (active) void load(detailId)
     })
     return () => {
       active = false
@@ -61,18 +59,18 @@ export function useSologControlDetail({
   return {
     offset,
     response,
+    historyRows: response?.historial.slice(offset, offset + SOLOG_CONTROL_HISTORY_PAGE_SIZE) ?? [],
     status,
     error,
     retry: () => {
-      void load(detailId, offset)
+      void load(detailId)
     },
     previousPage: () => {
-      const nextOffset = Math.max(0, offset - SOLOG_CONTROL_HISTORY_PAGE_SIZE)
-      void load(detailId, nextOffset)
+      setOffset((current) => Math.max(0, current - SOLOG_CONTROL_HISTORY_PAGE_SIZE))
     },
     nextPage: () => {
-      const nextOffset = offset + SOLOG_CONTROL_HISTORY_PAGE_SIZE
-      void load(detailId, nextOffset)
+      setOffset((current) => current + SOLOG_CONTROL_HISTORY_PAGE_SIZE < (response?.historial.length ?? 0)
+        ? current + SOLOG_CONTROL_HISTORY_PAGE_SIZE : current)
     },
   }
 }

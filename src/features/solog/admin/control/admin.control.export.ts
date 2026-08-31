@@ -33,10 +33,11 @@ function isExportRow(value: unknown): value is SologControlExportRow {
     value.codigos_internos.every((code) => Number.isInteger(code)) &&
     isFiniteNumber(value.teorico) &&
     isFiniteNumber(value.fisico) &&
+    (value.reconteo === null || isFiniteNumber(value.reconteo)) &&
     isFiniteNumber(value.ajuste) &&
     isFiniteNumber(value.valor_economico) &&
-    typeof value.detalle === "string" &&
-    (value.estado === "persistente" || value.estado === "confirmada_reconteo")
+    typeof value.detalle_id === "string" &&
+    value.estado === "Confirmada"
   );
 }
 
@@ -82,10 +83,6 @@ function getLimaCalendarDate(value: string): Date {
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     Number(parts.find((item) => item.type === type)?.value);
   return new Date(part("year"), part("month") - 1, part("day"));
-}
-
-function getStateLabel(state: SologControlExportRow["estado"]): string {
-  return state === "persistente" ? "Persistente" : "Confirmada por reconteo";
 }
 
 function getBalanceInterpretation(balance: number): string {
@@ -191,9 +188,10 @@ function getAdjustmentsData(rows: SologControlExportRow[]): SheetData {
     "Códigos internos",
     "Teórico",
     "Físico",
+    "Reconteo",
     "Ajuste",
     "Valor económico",
-    "Detalle",
+    "Detalle ID",
     "Estado",
   ].map((value) => ({
     value,
@@ -224,10 +222,11 @@ function getAdjustmentsData(rows: SologControlExportRow[]): SheetData {
       },
       { value: row.teorico, type: Number, format: INTEGER_FORMAT },
       { value: row.fisico, type: Number, format: INTEGER_FORMAT },
+      row.reconteo === null ? '—' : { value: row.reconteo, type: Number, format: INTEGER_FORMAT },
       { value: row.ajuste, type: Number, format: SIGNED_INTEGER_FORMAT },
       { value: row.valor_economico, type: Number, format: MONEY_FORMAT },
-      { value: row.detalle, wrap: true },
-      getStateLabel(row.estado),
+      { value: row.detalle_id, wrap: true },
+      row.estado,
     ]),
   ];
 }
@@ -272,6 +271,7 @@ export async function downloadControlExport(
           { width: 34 },
           { width: 14 },
           { width: 28 },
+          { width: 11 },
           { width: 11 },
           { width: 11 },
           { width: 11 },

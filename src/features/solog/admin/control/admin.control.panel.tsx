@@ -19,24 +19,11 @@ import { formatSignedInteger } from "../admin.format";
 import {
   formatControlDate,
   getControlDifferenceClass,
-  getControlVerificationReasonLabel,
+  CONTROL_STATE_GROUPS,
 } from "./admin.control.format";
 import { ControlDrawer } from "./admin.control.drawer";
 import { SOLOG_CONTROL_PAGE_SIZE, useSologControl } from "./admin.control.hook";
 import { useSologControlExport } from "./admin.control.export.hook";
-
-type SologControlKpiGroup = Exclude<SologControlStateGroup, "todos">;
-
-const CONTROL_STATE_GROUPS: Array<{
-  value: SologControlKpiGroup;
-  label: string;
-}> = [
-  { value: "problematicos", label: "Problemáticos" },
-  { value: "explicados", label: "Explicados" },
-  { value: "inconsistentes", label: "Inconsistentes" },
-  { value: "pendientes", label: "Pendientes" },
-  { value: "coinciden", label: "Coinciden" },
-];
 
 function DifferenceBadge({ state }: { state: SologDifferenceState }) {
   return (
@@ -66,8 +53,8 @@ function ControlTable({
             <th>Categoría</th>
             <th>Teórico</th>
             <th>Físico</th>
-            <th>Diferencia observada</th>
-            <th>Saldo confirmado</th>
+            <th>Reconteo</th>
+            <th>Diferencia</th>
             <th>Estado</th>
             <th aria-label="Abrir detalle" />
           </tr>
@@ -92,26 +79,15 @@ function ControlTable({
               <td>{row.categoria}</td>
               <td>{row.stock_teorico}</td>
               <td>{row.stock_fisico}</td>
+              <td>{row.stock_reconteo ?? '—'}</td>
               <td>
                 <span className={getControlDifferenceClass(row.diferencia)}>
                   {formatSignedInteger(row.diferencia)}
                 </span>
               </td>
               <td>
-                {row.diferencia_confirmada === null ? (
-                  "—"
-                ) : (
-                  <span className={getControlDifferenceClass(row.diferencia_confirmada)}>
-                    {formatSignedInteger(row.diferencia_confirmada)}
-                  </span>
-                )}
-              </td>
-              <td>
                 <div className="control-state-cell">
                   <DifferenceBadge state={row.estado_diferencia} />
-                  {row.motivo_verificacion ? (
-                    <small>{getControlVerificationReasonLabel(row.motivo_verificacion)}</small>
-                  ) : null}
                 </div>
               </td>
               <td><ChevronRight aria-hidden="true" size={17} /></td>
@@ -156,7 +132,7 @@ export function ControlPanel({
             className="admin-selectable-kpis control-summary"
             aria-label="Resumen por grupo de estado"
           >
-            {CONTROL_STATE_GROUPS.map(({ value: group, label }) => (
+            {CONTROL_STATE_GROUPS.map(({ value: group, label, summaryKey }) => (
               <button
                 aria-pressed={control.query.group === group}
                 className={
@@ -167,7 +143,7 @@ export function ControlPanel({
                 type="button"
               >
                 <span>{label}</span>
-                <strong>{summary[group]}</strong>
+                <strong>{summary[summaryKey]}</strong>
               </button>
             ))}
           </div>
@@ -231,7 +207,6 @@ export function ControlPanel({
                   {label}
                 </option>
               ))}
-              <option value="todos">Todos</option>
             </select>
           </label>
           <label className="admin-filter-field admin-filter-field--select">

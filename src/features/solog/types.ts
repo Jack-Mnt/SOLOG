@@ -11,10 +11,9 @@ export type SologSessionState = 'activo' | 'finalizado' | 'expirado'
 export type SologDifferenceState = 'Coincide' | 'Recontar' | 'Confirmada' | 'Inconsistente'
 
 export type SologControlStateGroup =
-  | 'problematicos'
-  | 'explicados'
+  | 'recontar'
+  | 'confirmadas'
   | 'inconsistentes'
-  | 'pendientes'
   | 'coinciden'
   | 'todos'
 
@@ -181,15 +180,11 @@ export interface SologDashboardCoverage {
   porcentaje: number
 }
 
-export interface SologDashboardDailyCoverage extends SologDashboardCoverage {
-  pendientes: number
-}
+export type SologDashboardDailyCoverage = SologDailyCoverage
 
 export interface SologDashboardActivity {
   ultima_actividad_at: string | null
   sesion_activa: boolean
-  sesion_iniciada_at: string | null
-  sesion_expira_at: string | null
 }
 
 export interface SologDashboardSite {
@@ -197,9 +192,9 @@ export interface SologDashboardSite {
   sede: string
   cobertura_quincenal: SologDashboardCoverage
   cobertura_hoy: SologDashboardDailyCoverage
-  diferencias_pendientes: number
-  persistentes: number
-  diferencias_vigentes: number
+  recontar: number
+  confirmadas: number
+  inconsistentes: number
   actividad: SologDashboardActivity
 }
 
@@ -208,13 +203,10 @@ export interface SologDashboardResponse {
     cobertura_quincenal: SologDashboardCoverage
     contados_hoy: {
       grupos_contados: number
-      sedes_con_actividad: number
     }
-    requeridos_hoy: number
-    verificados_hoy: number
-    diferencias_pendientes: number
-    persistentes: number
-    diferencias_vigentes: number
+    recontar: number
+    confirmadas: number
+    inconsistentes: number
   }
   sedes: SologDashboardSite[]
   periodo: {
@@ -239,7 +231,6 @@ export interface SologDashboardSiteActivitySession {
   duracion_segundos: number
   observaciones_registradas: number
   grupos_verificados_distintos: number
-  grupos_registrados: number
 }
 
 export interface SologDashboardSiteActivityResponse {
@@ -250,7 +241,6 @@ export interface SologDashboardSiteActivityResponse {
     sesiones_hoy: number
     observaciones_registradas_hoy: number
     grupos_verificados_distintos_hoy: number
-    grupos_registrados_hoy: number
     sesion_activa: boolean
     ultima_actividad_at: string | null
   }
@@ -651,8 +641,6 @@ export interface SologRevokeDeviceResponse {
 
 export type SologControlScope = 'resolver' | 'historial'
 
-export type SologObservationType = 'base' | 'seguimiento' | 'reconteo'
-
 export interface SologControlPayload {
   sede_id: string
   date_from: string
@@ -667,11 +655,10 @@ export interface SologControlPayload {
 
 export interface SologControlSummary {
   total: number
-  problematicos: number
-  explicados: number
+  recontar: number
+  confirmadas: number
   inconsistentes: number
-  pendientes: number
-  coinciden: number
+  coincide: number
 }
 
 export interface SologControlRow {
@@ -693,18 +680,13 @@ export interface SologControlRow {
   estado_diferencia: SologDifferenceState
   contado_at: string
   snapshot_referencia_id: string
+  primer_snapshot_posterior_id: string | null
   snapshot_posterior_id: string | null
   stock_posterior: number | null
-  tipo_observacion: SologObservationType
-  observacion_origen_id: string | null
-  diferencia_confirmada: number | null
-  confirmado_at: string | null
-  motivo_verificacion: string | null
-  reconteo_stock: number | null
+  snapshot_reconteo_id: string | null
+  stock_reconteo: number | null
   recontado_at: string | null
   es_observacion_vigente: boolean
-  sku_count: number
-  sku_unico: number | null
 }
 
 export interface SologControlResponse {
@@ -728,9 +710,7 @@ export interface SologControlExportPayload {
   date_to: string
 }
 
-export type SologControlExportState =
-  | 'persistente'
-  | 'confirmada_reconteo'
+export type SologControlExportState = 'Confirmada'
 
 export type SologControlExportGroupType = 'Individual' | 'Agrupado'
 
@@ -742,9 +722,10 @@ export interface SologControlExportRow {
   codigos_internos: number[]
   teorico: number
   fisico: number
+  reconteo: number | null
   ajuste: number
   valor_economico: number
-  detalle: string
+  detalle_id: string
   estado: SologControlExportState
 }
 
@@ -763,13 +744,11 @@ export interface SologControlExportResponse {
 
 export interface SologControlDetailPayload {
   detalle_id: string
-  limit: number
-  offset: number
 }
 
 export type SologControlDetailCase = Omit<
   SologControlRow,
-  'sku_count' | 'sku_unico' | 'es_observacion_vigente'
+  'categoria_id' | 'es_observacion_vigente'
 >
 
 export interface SologControlSku {
@@ -790,17 +769,12 @@ export interface SologControlHistoryRow {
   valor_diferencia: number
   estado_diferencia: SologDifferenceState
   contado_at: string
-  usuario_id: string
-  usuario: string
   snapshot_referencia_id: string
+  primer_snapshot_posterior_id: string | null
   snapshot_posterior_id: string | null
   stock_posterior: number | null
-  tipo_observacion: SologObservationType
-  observacion_origen_id: string | null
-  diferencia_confirmada: number | null
-  confirmado_at: string | null
-  motivo_verificacion: string | null
-  reconteo_stock: number | null
+  snapshot_reconteo_id: string | null
+  stock_reconteo: number | null
   recontado_at: string | null
 }
 
@@ -808,8 +782,6 @@ export interface SologControlDetailResponse {
   detalle: SologControlDetailCase
   historial: SologControlHistoryRow[]
   historial_total: number
-  historial_limit: number
-  historial_offset: number
   skus: SologControlSku[]
   server_now: string
 }

@@ -34,13 +34,13 @@ export function useSologControl({
   const contextKey = `${operational.sedeId}:${operational.dateFrom}:${operational.dateTo}`
   const [query, setQuery] = useState<ControlQuery>(() => ({
     contextKey,
-    group: 'problematicos',
+    group: 'recontar',
     categoriaId: '',
     search: '',
     offset: 0,
   }))
   const [groupDraft, setGroupDraft] =
-    useState<SologControlStateGroup>('problematicos')
+    useState<SologControlStateGroup>('recontar')
   const [searchDraft, setSearchDraft] = useState('')
   const [response, setResponse] = useState<SologControlResponse | null>(null)
   const [status, setStatus] = useState<LoadStatus>('loading')
@@ -123,10 +123,10 @@ export function useSologControl({
   }, [groupDraft, patchQuery, searchDraft])
 
   const resetFilters = useCallback(() => {
-    setGroupDraft('problematicos')
+    setGroupDraft('recontar')
     setSearchDraft('')
     patchQuery({
-      group: 'problematicos',
+      group: 'recontar',
       categoriaId: '',
       search: '',
     })

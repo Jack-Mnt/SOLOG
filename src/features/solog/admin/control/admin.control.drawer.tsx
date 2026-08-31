@@ -4,7 +4,6 @@ import { getSologDifferenceStateClass, getSologDifferenceStateLabel } from '../.
 import type {
   SologControlDetailResponse,
   SologControlHistoryRow,
-  SologObservationType,
 } from '../../types'
 import {
   formatAdminCurrency,
@@ -13,8 +12,6 @@ import {
 import {
   formatControlDate,
   getControlDifferenceClass,
-  getControlObservationTypeLabel,
-  getControlVerificationReasonLabel,
 } from './admin.control.format'
 import {
   SOLOG_CONTROL_HISTORY_PAGE_SIZE,
@@ -31,33 +28,24 @@ function DifferenceBadge({ state }: { state: SologControlDetailResponse['detalle
   )
 }
 
-function ObservationBadge({ type }: { type: SologObservationType }) {
+function SnapshotReferences({ row }: { row: SologControlHistoryRow }) {
   return (
-    <span className={`control-observation-badge control-observation-badge--${type}`}>
-      {getControlObservationTypeLabel(type)}
-    </span>
-  )
-}
-
-function ConfirmedDifference({ value }: { value: number | null }) {
-  if (value === null) return <>Sin confirmar</>
-  return (
-    <span className={getControlDifferenceClass(value)}>
-      {formatSignedInteger(value)}
-    </span>
+    <>
+      <div><dt>Snapshot de referencia</dt><dd>{row.snapshot_referencia_id}</dd></div>
+      {row.primer_snapshot_posterior_id ? <div><dt>Primer snapshot posterior</dt><dd>{row.primer_snapshot_posterior_id}</dd></div> : null}
+      {row.snapshot_posterior_id ? <div><dt>Último snapshot posterior</dt><dd>{row.snapshot_posterior_id}</dd></div> : null}
+      {row.snapshot_reconteo_id ? <div><dt>Snapshot de reconteo</dt><dd>{row.snapshot_reconteo_id}</dd></div> : null}
+    </>
   )
 }
 
 function ObservationTimelineItem({ row }: { row: SologControlHistoryRow }) {
-  const reason = getControlVerificationReasonLabel(row.motivo_verificacion)
-
   return (
     <li>
-      <span className={`control-timeline__marker control-timeline__marker--${row.tipo_observacion}`} aria-hidden="true" />
+      <span className="control-timeline__marker" aria-hidden="true" />
       <div className="control-timeline__entry">
         <div className="control-timeline__heading">
           <div className="control-timeline__identity">
-            <ObservationBadge type={row.tipo_observacion} />
             <time dateTime={row.contado_at}>{formatControlDate(row.contado_at, 'text')}</time>
           </div>
           <DifferenceBadge state={row.estado_diferencia} />
@@ -65,15 +53,18 @@ function ObservationTimelineItem({ row }: { row: SologControlHistoryRow }) {
         <div className="control-timeline__values">
           <span>Teórico <strong>{row.stock_teorico}</strong></span>
           <span>Físico <strong>{row.stock_fisico}</strong></span>
-          <span>Diferencia observada <strong className={getControlDifferenceClass(row.diferencia)}>{formatSignedInteger(row.diferencia)}</strong></span>
-          <span>Saldo confirmado <strong><ConfirmedDifference value={row.diferencia_confirmada} /></strong></span>
+          {row.stock_posterior !== null ? <span>Posterior <strong>{row.stock_posterior}</strong></span> : null}
+          <span>Reconteo <strong>{row.stock_reconteo ?? '—'}</strong></span>
+          <span>Diferencia <strong className={getControlDifferenceClass(row.diferencia)}>{formatSignedInteger(row.diferencia)}</strong></span>
         </div>
-        <div className="control-timeline__context">
-          <span>{row.usuario}</span>
-          {reason ? <span>{reason}</span> : null}
-          {row.confirmado_at ? <span>Confirmada {formatControlDate(row.confirmado_at, 'text')}</span> : null}
-          {row.observacion_origen_id ? <span>Deriva de una observación anterior</span> : null}
-        </div>
+        {row.recontado_at ? (
+          <div className="control-timeline__context">
+            <span>Recontado {formatControlDate(row.recontado_at, 'text')}</span>
+          </div>
+        ) : null}
+        <dl className="control-detail-meta">
+          <SnapshotReferences row={row} />
+        </dl>
       </div>
     </li>
   )
@@ -116,7 +107,6 @@ export function ControlDrawer({
                 <strong>{formatAdminCurrency(response.detalle.precio)}</strong>
                 <span>{response.detalle.categoria}</span>
                 <div className="control-drawer__badges">
-                  <ObservationBadge type={response.detalle.tipo_observacion} />
                   <DifferenceBadge state={response.detalle.estado_diferencia} />
                 </div>
               </>
@@ -168,27 +158,21 @@ export function ControlDrawer({
                   <dl className="control-detail-metrics">
                     <div><dt>Teórico</dt><dd>{response.detalle.stock_teorico}</dd></div>
                     <div><dt>Físico</dt><dd>{response.detalle.stock_fisico}</dd></div>
-                    <div><dt>Diferencia observada</dt><dd><span className={getControlDifferenceClass(response.detalle.diferencia)}>{formatSignedInteger(response.detalle.diferencia)}</span></dd></div>
-                    <div><dt>Saldo confirmado</dt><dd><ConfirmedDifference value={response.detalle.diferencia_confirmada} /></dd></div>
+                    <div><dt>Reconteo</dt><dd>{response.detalle.stock_reconteo ?? '—'}</dd></div>
+                    <div><dt>Diferencia</dt><dd><span className={getControlDifferenceClass(response.detalle.diferencia)}>{formatSignedInteger(response.detalle.diferencia)}</span></dd></div>
                   </dl>
                   <dl className="control-detail-meta">
-                    <div><dt>Tipo de observación</dt><dd>{getControlObservationTypeLabel(response.detalle.tipo_observacion)}</dd></div>
                     <div><dt>Fecha y hora</dt><dd>{formatControlDate(response.detalle.contado_at, 'text')}</dd></div>
                     <div><dt>Usuario</dt><dd>{response.detalle.usuario}</dd></div>
                     <div><dt>Sede</dt><dd>{response.detalle.sede}</dd></div>
-                    <div><dt>Valor observado</dt><dd>{formatAdminCurrency(response.detalle.valor_diferencia)}</dd></div>
-                    {response.detalle.motivo_verificacion ? (
-                      <div><dt>Motivo de verificación</dt><dd>{getControlVerificationReasonLabel(response.detalle.motivo_verificacion)}</dd></div>
-                    ) : null}
-                    {response.detalle.confirmado_at ? (
-                      <div><dt>Confirmada</dt><dd>{formatControlDate(response.detalle.confirmado_at, 'text')}</dd></div>
+                    <div><dt>Valor de diferencia</dt><dd>{formatAdminCurrency(response.detalle.valor_diferencia)}</dd></div>
+                    {response.detalle.recontado_at ? (
+                      <div><dt>Fecha de reconteo</dt><dd>{formatControlDate(response.detalle.recontado_at, 'text')}</dd></div>
                     ) : null}
                     {response.detalle.stock_posterior !== null ? (
                       <div><dt>Stock posterior</dt><dd>{response.detalle.stock_posterior}</dd></div>
                     ) : null}
-                    {response.detalle.observacion_origen_id ? (
-                      <div><dt>Relación</dt><dd>Deriva de una observación anterior</dd></div>
-                    ) : null}
+                    <SnapshotReferences row={response.detalle} />
                   </dl>
                 </div>
               ) : null}
@@ -214,9 +198,9 @@ export function ControlDrawer({
 
               {tab === 'history' ? (
                 <section className="control-history" aria-busy={detail.status === 'loading'}>
-                  {response.historial.length ? (
+                  {detail.historyRows.length ? (
                     <ol className="control-timeline" aria-label="Cronología de observaciones físicas del grupo">
-                      {response.historial.map((row) => (
+                      {detail.historyRows.map((row) => (
                         <ObservationTimelineItem key={row.detalle_id} row={row} />
                       ))}
                     </ol>
@@ -224,7 +208,7 @@ export function ControlDrawer({
 
                   <nav className="admin-report-pagination" aria-label="Paginación de observaciones del grupo">
                     <button className="button button--secondary" disabled={detail.offset === 0 || detail.status === 'loading'} onClick={detail.previousPage} type="button"><ArrowLeft size={16} /> Anterior</button>
-                    <span>{response.historial_total === 0 ? '0' : `${detail.offset + 1}–${Math.min(detail.offset + response.historial.length, response.historial_total)}`} de {response.historial_total}</span>
+                    <span>{response.historial_total === 0 ? '0' : `${detail.offset + 1}–${Math.min(detail.offset + detail.historyRows.length, response.historial_total)}`} de {response.historial_total}</span>
                     <button className="button button--secondary" disabled={detail.offset + SOLOG_CONTROL_HISTORY_PAGE_SIZE >= response.historial_total || detail.status === 'loading'} onClick={detail.nextPage} type="button">Siguiente <ArrowRight size={16} /></button>
                   </nav>
                 </section>

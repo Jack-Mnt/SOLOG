@@ -1,4 +1,4 @@
-import type { SologObservationType } from '../../types'
+import type { SologControlStateGroup, SologControlSummary } from '../../types'
 
 const controlNumericDate = new Intl.DateTimeFormat('es-PE', {
   day: '2-digit',
@@ -52,23 +52,15 @@ export function getControlDifferenceClass(value: number): string {
   return `control-difference control-difference--${tone}`
 }
 
-const OBSERVATION_TYPE_LABELS: Record<SologObservationType, string> = {
-  base: 'Base',
-  seguimiento: 'Seguimiento',
-  reconteo: 'Reconteo',
-}
-
-const VERIFICATION_REASON_LABELS: Record<string, string> = {
-  movimiento_posterior: 'Movimiento posterior',
-  parcialmente_explicada: 'Parcialmente explicada',
-  persistente: 'Persistente',
-}
-
-export function getControlObservationTypeLabel(type: SologObservationType): string {
-  return OBSERVATION_TYPE_LABELS[type]
-}
-
-export function getControlVerificationReasonLabel(reason: string | null): string | null {
-  if (!reason) return null
-  return VERIFICATION_REASON_LABELS[reason] ?? reason.replaceAll('_', ' ')
-}
+// Las claves de filtro no son siempre las claves del resumen RPC.
+export const CONTROL_STATE_GROUPS: Array<{
+  value: SologControlStateGroup
+  label: string
+  summaryKey: keyof SologControlSummary
+}> = [
+  { value: 'recontar', label: 'Recontar', summaryKey: 'recontar' },
+  { value: 'confirmadas', label: 'Confirmada', summaryKey: 'confirmadas' },
+  { value: 'inconsistentes', label: 'Inconsistente', summaryKey: 'inconsistentes' },
+  { value: 'coinciden', label: 'Coincide', summaryKey: 'coincide' },
+  { value: 'todos', label: 'Todos', summaryKey: 'total' },
+]

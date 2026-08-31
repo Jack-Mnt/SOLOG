@@ -9,12 +9,12 @@ import {
 import { useState } from 'react'
 import type {
   SologDashboardCoverage,
+  SologDashboardDailyCoverage,
   SologDashboardResponse,
   SologDashboardSite,
 } from '../../types'
 import { DashboardSiteActivityDrawer } from './admin.dashboard.actividad-sede.drawer'
 import { formatDashboardRelativeActivity } from './admin.dashboard.format'
-import { formatAdminDate } from '../admin.format'
 
 const dashboardPeriodFormatter = new Intl.DateTimeFormat('es-PE', {
   day: 'numeric',
@@ -28,10 +28,12 @@ function formatPeriodDate(value: string): string {
   return Number.isNaN(date.getTime()) ? value : dashboardPeriodFormatter.format(date)
 }
 
-function CoverageCell({ coverage, label }: { coverage: SologDashboardCoverage; label: string }) {
+function CoverageCell({ coverage, label }: { coverage: SologDashboardCoverage | SologDashboardDailyCoverage; label: string }) {
+  const counted = 'grupos_verificados' in coverage ? coverage.grupos_verificados : coverage.grupos_contados
+  const total = 'grupos_requeridos' in coverage ? coverage.grupos_requeridos : coverage.grupos_totales
   return (
-    <div aria-label={`${label}: ${coverage.grupos_contados} de ${coverage.grupos_totales}, ${coverage.porcentaje}%`} className="admin-dashboard-coverage">
-      <div><strong>{coverage.grupos_contados} / {coverage.grupos_totales}</strong><span>{coverage.porcentaje}%</span></div>
+    <div aria-label={`${label}: ${counted} de ${total}, ${coverage.porcentaje}%`} className="admin-dashboard-coverage">
+      <div><strong>{counted} / {total}</strong><span>{coverage.porcentaje}%</span></div>
       <progress aria-label={label} max="100" value={coverage.porcentaje}>{coverage.porcentaje}%</progress>
     </div>
   )
@@ -57,9 +59,7 @@ export function AdminOverview({
 }) {
   const [selectedSite, setSelectedSite] = useState<SologDashboardSite | null>(null)
   const coverage = dashboard.kpis.cobertura_quincenal
-  const verifiedToday = dashboard.kpis.verificados_hoy
-  const requiredToday = dashboard.kpis.requeridos_hoy
-  const activeSites = dashboard.kpis.contados_hoy.sedes_con_actividad
+  const countedToday = dashboard.kpis.contados_hoy.grupos_contados
 
   return (
     <div className="admin-dashboard">
@@ -71,19 +71,19 @@ export function AdminOverview({
         </article>
         <article className="admin-dashboard-kpi admin-dashboard-kpi--success">
           <span className="admin-dashboard-kpi__icon"><ListChecks size={19} /></span>
-          <div><span>Verificados hoy</span><strong>{verifiedToday} / {requiredToday}</strong><small>seguimiento dinámico · {activeSites} {activeSites === 1 ? 'sede' : 'sedes'} con actividad</small></div>
+          <div><span>Contados hoy</span><strong>{countedToday}</strong><small>grupos contados hoy</small></div>
         </article>
-        <article className={`admin-dashboard-kpi${dashboard.kpis.diferencias_vigentes > 0 ? ' admin-dashboard-kpi--warning' : ''}`}>
+        <article className={`admin-dashboard-kpi${dashboard.kpis.recontar > 0 ? ' admin-dashboard-kpi--warning' : ''}`}>
           <span className="admin-dashboard-kpi__icon"><Scale size={19} /></span>
-          <div><span>Diferencias vigentes</span><strong>{dashboard.kpis.diferencias_vigentes}</strong><small>saldo operativo confirmado</small></div>
+          <div><span>Por recontar</span><strong>{dashboard.kpis.recontar}</strong><small>requieren reconteo</small></div>
         </article>
-        <article className={`admin-dashboard-kpi${dashboard.kpis.diferencias_pendientes > 0 ? ' admin-dashboard-kpi--warning' : ''}`}>
+        <article className={`admin-dashboard-kpi${dashboard.kpis.confirmadas > 0 ? ' admin-dashboard-kpi--warning' : ''}`}>
           <span className="admin-dashboard-kpi__icon"><TriangleAlert size={19} /></span>
-          <div><span>Diferencias pendientes</span><strong>{dashboard.kpis.diferencias_pendientes}</strong><small>requieren seguimiento</small></div>
+          <div><span>Confirmadas</span><strong>{dashboard.kpis.confirmadas}</strong><small>diferencias confirmadas</small></div>
         </article>
-        <article className={`admin-dashboard-kpi${dashboard.kpis.persistentes > 0 ? ' admin-dashboard-kpi--danger' : ''}`}>
+        <article className={`admin-dashboard-kpi${dashboard.kpis.inconsistentes > 0 ? ' admin-dashboard-kpi--danger' : ''}`}>
           <span className="admin-dashboard-kpi__icon"><ShieldAlert size={19} /></span>
-          <div><span>Persistentes</span><strong>{dashboard.kpis.persistentes}</strong><small>requieren atención</small></div>
+          <div><span>Inconsistentes</span><strong>{dashboard.kpis.inconsistentes}</strong><small>requieren atención</small></div>
         </article>
       </section>
 
@@ -97,7 +97,7 @@ export function AdminOverview({
           <div className="admin-dashboard-table-wrap">
             <table className="admin-dashboard-table">
               <caption>Estado operativo por sede</caption>
-              <thead><tr><th>Sede</th><th>Cobertura quincenal</th><th>Seguimiento diario</th><th>Vigentes</th><th>Pendientes</th><th>Persistentes</th><th>Actividad</th><th aria-label="Abrir actividad" /></tr></thead>
+              <thead><tr><th>Sede</th><th>Cobertura quincenal</th><th>Cobertura diaria</th><th>Por recontar</th><th>Confirmadas</th><th>Inconsistentes</th><th>Actividad</th><th aria-label="Abrir actividad" /></tr></thead>
               <tbody>
                 {dashboard.sedes.map((site) => (
                   <tr
@@ -117,12 +117,12 @@ export function AdminOverview({
                     <td><strong>{site.sede}</strong></td>
                     <td><CoverageCell coverage={site.cobertura_quincenal} label={`Cobertura quincenal de ${site.sede}`} /></td>
                     <td><CoverageCell coverage={site.cobertura_hoy} label={`Grupos verificados y requeridos hoy en ${site.sede}`} /></td>
-                    <td><span className={`admin-dashboard-badge admin-dashboard-badge--${site.diferencias_vigentes > 0 ? 'warning' : 'muted'}`}>{site.diferencias_vigentes}</span></td>
-                    <td><span className={`admin-dashboard-badge admin-dashboard-badge--${site.diferencias_pendientes > 0 ? 'warning' : 'muted'}`}>{site.diferencias_pendientes}</span></td>
-                    <td><span className={`admin-dashboard-badge admin-dashboard-badge--${site.persistentes > 0 ? 'danger' : 'muted'}`}>{site.persistentes}</span></td>
+                    <td><span className={`admin-dashboard-badge admin-dashboard-badge--${site.recontar > 0 ? 'warning' : 'muted'}`}>{site.recontar}</span></td>
+                    <td><span className={`admin-dashboard-badge admin-dashboard-badge--${site.confirmadas > 0 ? 'warning' : 'muted'}`}>{site.confirmadas}</span></td>
+                    <td><span className={`admin-dashboard-badge admin-dashboard-badge--${site.inconsistentes > 0 ? 'danger' : 'muted'}`}>{site.inconsistentes}</span></td>
                     <td>
                       {site.actividad.sesion_activa ? (
-                        <div className="admin-dashboard-state"><span className="admin-dashboard-badge admin-dashboard-badge--success">Contando ahora</span>{site.actividad.sesion_iniciada_at ? <small>Desde {formatAdminDate(site.actividad.sesion_iniciada_at)}</small> : null}</div>
+                        <div className="admin-dashboard-state"><span className="admin-dashboard-badge admin-dashboard-badge--success">Contando ahora</span></div>
                       ) : site.actividad.ultima_actividad_at ? (
                         <span className="admin-dashboard-activity">{formatDashboardRelativeActivity(site.actividad.ultima_actividad_at, dashboard.server_now)}</span>
                       ) : (
