@@ -6106,45 +6106,6 @@ h1 {
   gap: 4px;
 }
 
-.control-state-cell small {
-  color: var(--color-text-muted);
-  font-size: 0.64rem;
-  font-weight: 650;
-}
-
-.control-observation-badge {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  padding: 3px 7px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  color: var(--color-text-secondary);
-  background: var(--color-surface-secondary);
-  font-size: 0.64rem;
-  font-weight: 750;
-}
-
-.control-observation-badge--seguimiento {
-  color: var(--color-warning);
-  border-color: color-mix(
-    in srgb,
-    var(--color-warning) 32%,
-    var(--color-border)
-  );
-  background: var(--color-warning-soft);
-}
-
-.control-observation-badge--reconteo {
-  color: var(--color-primary);
-  border-color: color-mix(
-    in srgb,
-    var(--color-primary) 30%,
-    var(--color-border)
-  );
-  background: var(--color-primary-soft);
-}
-
 .control-drawer__badges,
 .control-timeline__identity,
 .control-timeline__context {
@@ -6164,16 +6125,6 @@ h1 {
 
 .control-timeline__identity {
   min-width: 0;
-}
-
-.control-timeline__marker--seguimiento {
-  background: var(--color-warning);
-  box-shadow: 0 0 0 1px var(--color-warning);
-}
-
-.control-timeline__marker--reconteo {
-  background: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .control-timeline__context {
@@ -6683,7 +6634,7 @@ h1 {
   transform: translateY(-1px);
 }
 
-.cajero-fortnight-complete {
+.cajero-period-complete {
   display: flex;
   align-items: center;
   gap: 0.8rem;
@@ -6695,12 +6646,12 @@ h1 {
   background: var(--color-primary-soft);
 }
 
-.cajero-fortnight-complete > div {
+.cajero-period-complete > div {
   display: grid;
   gap: 0.15rem;
 }
 
-.cajero-fortnight-complete span {
+.cajero-period-complete span {
   color: var(--color-text-secondary);
   font-size: 0.82rem;
 }
@@ -7675,8 +7626,7 @@ h1 {
   min-width: 220px;
 }
 
-.cajero-review-reason,
-.cajero-observation-type {
+.cajero-review-reason {
   display: inline-flex;
   align-items: center;
   min-height: 28px;
@@ -8218,7 +8168,7 @@ h1 {
   transform: translateY(-1px);
 }
 
-.cajero-home .cajero-fortnight-complete {
+.cajero-home .cajero-period-complete {
   min-height: 64px;
   justify-content: center;
   padding: 0.95rem 1.1rem;
@@ -8232,7 +8182,7 @@ h1 {
   text-align: center;
 }
 
-.cajero-home .cajero-fortnight-complete strong {
+.cajero-home .cajero-period-complete strong {
   color: var(--color-text-primary);
 }
 

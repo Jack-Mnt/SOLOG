@@ -1,8 +1,8 @@
 export type ControlPeriodPreset =
   | 'today'
   | 'last_week'
-  | 'current_fortnight'
-  | 'previous_fortnight'
+  | 'current_period'
+  | 'previous_period'
   | 'custom'
 
 export interface ControlDateRange {
@@ -65,7 +65,7 @@ export function getControlPeriodRange(
 
   const day = Number(today.slice(8, 10))
   const monthStart = getMonthStart(today)
-  if (preset === 'current_fortnight') {
+  if (preset === 'current_period') {
     return day <= 15
       ? { dateFrom: monthStart, dateTo: `${today.slice(0, 7)}-15` }
       : { dateFrom: `${today.slice(0, 7)}-16`, dateTo: getMonthEnd(today) }

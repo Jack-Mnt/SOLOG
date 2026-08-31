@@ -164,7 +164,7 @@ export interface CajeroSessionController {
   checkFreshness: () => Promise<CajeroBlockReason | null>
   logoutSafely: () => Promise<boolean>
   operationalStatus: CajeroStatusResponse | null
-  fortnightComplete: boolean
+  periodComplete: boolean
   dailyPending: number
   reviewPending: number
   cacheRevision: number
@@ -308,7 +308,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       let bootstrap = bootstrapRef.current
       if (
         bootstrap &&
-        (bootstrap.cobertura_quincenal.completa !== status.cobertura_quincenal_completa ||
+        (bootstrap.cobertura_periodo.completa !== status.cobertura_periodo_completa ||
           bootstrap.stock.snapshot_id !== status.snapshot_actual_id ||
           (bootstrap.sesion_activa?.id ?? null) !== status.conteo_id)
       ) {
@@ -819,9 +819,9 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     }
   }, [finishActiveSession, onLogout])
 
-  const fortnightComplete =
-    operationalStatus?.cobertura_quincenal_completa ??
-    solog.bootstrap?.cobertura_quincenal.completa ??
+  const periodComplete =
+    operationalStatus?.cobertura_periodo_completa ??
+    solog.bootstrap?.cobertura_periodo.completa ??
     false
   const dailyPending =
     operationalStatus?.conteo_diario_pendientes ??
@@ -842,7 +842,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     error,
     pendingCount,
     operationalStatus,
-    fortnightComplete,
+    periodComplete,
     dailyPending,
     reviewPending,
     cacheRevision,

@@ -13,7 +13,7 @@ import type {
 import {
   deriveCajeroCategories,
   filterCajeroByCategory,
-  filterCajeroFortnightCategoryGroups,
+  filterCajeroPeriodCategoryGroups,
   isCajeroRouteAvailable,
 } from '../src/features/solog/cajero/cajero.utils'
 
@@ -142,7 +142,7 @@ describe('categorías locales del Panel Cajero', () => {
   })
 })
 
-describe('dataset compacto de Conteo quincenal', () => {
+describe('dataset compacto de Conteo del período', () => {
   const group = (
     id: string,
     categoryId: string,
@@ -157,7 +157,7 @@ describe('dataset compacto de Conteo quincenal', () => {
     categoria_orden: order,
     precio: 2,
     stock_teorico: 4,
-    cubierto_quincena: false,
+    cubierto_periodo: false,
     stock_cero: false,
     stock_negativo: false,
     ...overrides,
@@ -171,7 +171,7 @@ describe('dataset compacto de Conteo quincenal', () => {
     expect(payload).toEqual({ device_token: 'token', vista: 'conteo' })
   })
 
-  test('respeta cubierto_quincena y deriva las vistas localmente', () => {
+  test('respeta cubierto_periodo y deriva las vistas localmente', () => {
     const groups = [
       group('normal', 'bebidas', 'Bebidas', 2),
       group('zero', 'bodega', 'Bodega', 1, {
@@ -183,13 +183,13 @@ describe('dataset compacto de Conteo quincenal', () => {
         stock_negativo: true,
       }),
       group('covered', 'bodega', 'Bodega', 1, {
-        cubierto_quincena: true,
+        cubierto_periodo: true,
         stock_cero: true,
       }),
     ]
 
     expect(
-      filterCajeroFortnightCategoryGroups(
+      filterCajeroPeriodCategoryGroups(
         groups,
         'positive',
         'bebidas',
@@ -198,7 +198,7 @@ describe('dataset compacto de Conteo quincenal', () => {
       ),
     ).toEqual(['normal'])
     expect(
-      filterCajeroFortnightCategoryGroups(
+      filterCajeroPeriodCategoryGroups(
         groups,
         'zero',
         'bodega',
@@ -207,7 +207,7 @@ describe('dataset compacto de Conteo quincenal', () => {
       ),
     ).toEqual(['zero'])
     expect(
-      filterCajeroFortnightCategoryGroups(
+      filterCajeroPeriodCategoryGroups(
         groups,
         'negative',
         'bebidas',

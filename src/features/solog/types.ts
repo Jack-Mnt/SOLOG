@@ -78,7 +78,7 @@ export interface SologDailyCoverage {
   sin_requerimientos: boolean
 }
 
-export interface SologFortnightCoverage extends SologCoverage {
+export interface SologPeriodCoverage extends SologCoverage {
   completa: boolean
   inaugurada: boolean
   desde: string
@@ -90,7 +90,7 @@ export interface SologCategory {
   nombre: string
   orden: number
   grupos_totales: number
-  grupos_pendientes_quincena: number
+  grupos_pendientes_periodo: number
   pendientes?: number
 }
 
@@ -117,7 +117,7 @@ export interface SologOperationalBootstrap {
   stock: SologStockState
   server_now: string
   cobertura_diaria: SologDailyCoverage
-  cobertura_quincenal: SologFortnightCoverage
+  cobertura_periodo: SologPeriodCoverage
   conteo_principal: SologMainCountState
   vistas_inteligentes: SologIntelligentViews
 }
@@ -155,7 +155,7 @@ export interface SologAdminSite extends SologSede {
   dispositivo: SologAuthorizedDevice | null
   sesion_activa: SologAdminActiveSession | null
   cobertura_diaria: SologDailyCoverage
-  cobertura_quincenal: SologFortnightCoverage
+  cobertura_periodo: SologPeriodCoverage
 }
 
 export interface SologPendingDevice {
@@ -190,7 +190,7 @@ export interface SologDashboardActivity {
 export interface SologDashboardSite {
   sede_id: string
   sede: string
-  cobertura_quincenal: SologDashboardCoverage
+  cobertura_periodo: SologDashboardCoverage
   cobertura_hoy: SologDashboardDailyCoverage
   recontar: number
   confirmadas: number
@@ -200,7 +200,7 @@ export interface SologDashboardSite {
 
 export interface SologDashboardResponse {
   kpis: {
-    cobertura_quincenal: SologDashboardCoverage
+    cobertura_periodo: SologDashboardCoverage
     contados_hoy: {
       grupos_contados: number
     }
@@ -211,8 +211,8 @@ export interface SologDashboardResponse {
   sedes: SologDashboardSite[]
   periodo: {
     fecha: string
-    quincena_desde: string
-    quincena_hasta: string
+    periodo_desde: string
+    periodo_hasta: string
   }
   server_now: string
 }

@@ -19,8 +19,8 @@ import type {
 const PERIOD_OPTIONS: Array<[ControlPeriodPreset, string]> = [
   ['today', 'Hoy'],
   ['last_week', 'Última semana'],
-  ['current_fortnight', 'Quincena actual'],
-  ['previous_fortnight', 'Quincena pasada'],
+  ['current_period', 'Período actual'],
+  ['previous_period', 'Período anterior'],
   ['custom', 'Personalizado'],
 ]
 

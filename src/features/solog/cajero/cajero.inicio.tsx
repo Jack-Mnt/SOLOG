@@ -90,15 +90,15 @@ export function CajeroInicio({
     bootstrap.stock.puede_iniciar_conteo &&
     !bootstrap.sesion_activa &&
     session.pendingCount === 0;
-  const fortnightComplete = session.fortnightComplete;
-  const operationalRoute = !fortnightComplete
+  const periodComplete = session.periodComplete;
+  const operationalRoute = !periodComplete
     ? "/cajero/conteo"
     : session.dailyPending > 0
       ? "/cajero/diario"
       : session.reviewPending > 0
         ? "/cajero/revisar"
         : null;
-  const coverage = bootstrap.cobertura_quincenal;
+  const coverage = bootstrap.cobertura_periodo;
   const coveragePercentage = Math.max(0, Math.min(100, coverage.porcentaje));
 
   const begin = async () => {
@@ -176,11 +176,11 @@ export function CajeroInicio({
         </section>
       )}
 
-      {fortnightComplete ? (
+      {periodComplete ? (
         <>
-          <div className="cajero-fortnight-complete" role="status">
+          <div className="cajero-period-complete" role="status">
             <ClipboardCheck aria-hidden="true" size={24} />
-            <strong>Conteo quincenal completado</strong>
+            <strong>Conteo del período completado</strong>
           </div>
 
           <div
@@ -227,7 +227,7 @@ export function CajeroInicio({
             aria-labelledby="cajero-coverage-title"
           >
             <div className="cajero-coverage-card__copy">
-              <span>Cobertura quincenal</span>
+              <span>Cobertura del período</span>
               <h2 id="cajero-coverage-title">
                 {coverage.grupos_contados} / {coverage.grupos_totales}
               </h2>

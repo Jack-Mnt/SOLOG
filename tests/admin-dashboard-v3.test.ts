@@ -12,14 +12,14 @@ import type { SologDashboardResponse } from '../src/features/solog/types'
 function dashboardFixture(): SologDashboardResponse {
   return {
     server_now: '2026-08-31T17:00:00Z',
-    periodo: { fecha: '2026-08-31', quincena_desde: '2026-08-16', quincena_hasta: '2026-08-31' },
+    periodo: { fecha: '2026-08-31', periodo_desde: '2026-08-16', periodo_hasta: '2026-08-31' },
     kpis: {
-      cobertura_quincenal: { grupos_contados: 15, grupos_totales: 20, porcentaje: 75 },
+      cobertura_periodo: { grupos_contados: 15, grupos_totales: 20, porcentaje: 75 },
       contados_hoy: { grupos_contados: 2 }, recontar: 3, confirmadas: 4, inconsistentes: 5,
     },
     sedes: [{
       sede_id: 'huaca', sede: 'Huaca',
-      cobertura_quincenal: { grupos_contados: 15, grupos_totales: 20, porcentaje: 75 },
+      cobertura_periodo: { grupos_contados: 15, grupos_totales: 20, porcentaje: 75 },
       cobertura_hoy: { fecha: '2026-08-31', grupos_requeridos: 7, grupos_verificados: 2, pendientes: 5, porcentaje: 28.57, sin_requerimientos: false },
       recontar: 3, confirmadas: 4, inconsistentes: 5,
       actividad: { ultima_actividad_at: null, sesion_activa: true },
@@ -37,15 +37,15 @@ describe('Dashboard V3', () => {
   test('presenta exactamente los cinco KPIs con valores autoritativos V3', () => {
     const html = render(dashboardFixture())
     expect(html.match(/<article /g)).toHaveLength(5)
-    for (const [label, value] of [['Cobertura quincenal', '75%'], ['Contados hoy', '2'], ['Por recontar', '3'], ['Confirmadas', '4'], ['Inconsistentes', '5']]) {
+    for (const [label, value] of [['Cobertura del período', '75%'], ['Contados hoy', '2'], ['Por recontar', '3'], ['Confirmadas', '4'], ['Inconsistentes', '5']]) {
       expect(html).toContain(`<span>${label}</span><strong>${value}</strong>`)
     }
     expect(html).not.toMatch(/Persistentes|Diferencias vigentes|Verificados hoy|undefined|NaN/)
   })
 
-  test('cobertura diaria usa verificados/requeridos, no el shape quincenal', () => {
+  test('cobertura diaria usa verificados/requeridos, no el shape del período', () => {
     const html = render(dashboardFixture())
-    expect(html).toContain('Cobertura quincenal de Huaca: 15 de 20, 75%')
+    expect(html).toContain('Cobertura del período de Huaca: 15 de 20, 75%')
     expect(html).toContain('Grupos verificados y requeridos hoy en Huaca: 2 de 7, 28.57%')
     expect(html).toContain('<strong>2 / 7</strong>')
     for (const label of ['Cobertura diaria', 'Por recontar', 'Confirmadas', 'Inconsistentes']) {
@@ -63,9 +63,9 @@ describe('Dashboard V3', () => {
 
   test('ceros y sede sin requerimientos no generan porcentajes inventados', () => {
     const data = dashboardFixture()
-    data.kpis = { cobertura_quincenal: { grupos_contados: 0, grupos_totales: 0, porcentaje: 0 }, contados_hoy: { grupos_contados: 0 }, recontar: 0, confirmadas: 0, inconsistentes: 0 }
+    data.kpis = { cobertura_periodo: { grupos_contados: 0, grupos_totales: 0, porcentaje: 0 }, contados_hoy: { grupos_contados: 0 }, recontar: 0, confirmadas: 0, inconsistentes: 0 }
     Object.assign(data.sedes[0], {
-      cobertura_quincenal: data.kpis.cobertura_quincenal,
+      cobertura_periodo: data.kpis.cobertura_periodo,
       cobertura_hoy: { fecha: '2026-08-31', grupos_verificados: 0, grupos_requeridos: 0, pendientes: 0, porcentaje: 100, sin_requerimientos: true },
       recontar: 0, confirmadas: 0, inconsistentes: 0,
       actividad: { ultima_actividad_at: null, sesion_activa: false },

@@ -1,7 +1,7 @@
 import type {
   SologDailyCoverage,
   SologDifferenceState,
-  SologFortnightCoverage,
+  SologPeriodCoverage,
 } from '../types'
 
 export type CajeroRoute =
@@ -77,7 +77,7 @@ export interface CajeroCountGroup {
   precio: number
   stock_teorico: number
   categoria_orden?: number
-  cubierto_quincena?: boolean
+  cubierto_periodo?: boolean
   stock_cero?: boolean
   stock_negativo?: boolean
   productos?: CajeroProduct[]
@@ -116,7 +116,7 @@ export interface CajeroStatusResponse {
   server_now: string
   snapshot_actual_id: string | null
   conteo_id: string | null
-  cobertura_quincenal_completa: boolean
+  cobertura_periodo_completa: boolean
   conteo_diario_pendientes: number
   revisar_pendientes: number
 }
@@ -204,7 +204,7 @@ export interface CajeroFinishResponse {
   conteo_id: string
   grupos_guardados: number
   cobertura_diaria: SologDailyCoverage
-  cobertura_quincenal: SologFortnightCoverage
+  cobertura_periodo: SologPeriodCoverage
   finalizado_at: string
 }
 

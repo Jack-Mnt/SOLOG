@@ -28,7 +28,7 @@ const checks = []
 const check = (label) => { checks.push(label); console.log('PASS ' + label) }
 const group = (id) => ({
   grupo_id: id, nombre: 'Grupo ' + id, categoria_id: 'cat', categoria: 'Bebidas', categoria_orden: 1,
-  precio: 4, stock_teorico: 10, cubierto_quincena: false, estado_stock: 'Cambio_reciente', productos: [],
+  precio: 4, stock_teorico: 10, cubierto_periodo: false, estado_stock: 'Cambio_reciente', productos: [],
 })
 async function scenario({ complete = false, available = true } = {}) {
   console.log('Escenario', { complete, available })
@@ -51,9 +51,9 @@ async function scenario({ complete = false, available = true } = {}) {
     sesion_activa: state.active && !state.expired ? { id: countId, iniciado_at: state.started, expira_at: state.expiration, grupos_guardados: state.history.length } : null,
     stock: state.available ? { disponible: true, snapshot_id: state.snapshot, snapshot_at: now(), confirmado_at: now(), puede_iniciar_conteo: true }
       : { disponible: false, snapshot_id: null, snapshot_at: null, confirmado_at: null, puede_iniciar_conteo: false },
-    server_now: now(), cobertura_quincenal: coverage(),
+    server_now: now(), cobertura_periodo: coverage(),
     cobertura_diaria: { fecha: '2026-08-31', grupos_requeridos: state.daily.length, grupos_verificados: 0, pendientes: state.daily.length, porcentaje: 0, sin_requerimientos: state.daily.length === 0 },
-    conteo_principal: { categorias: [{ id: 'cat', nombre: 'Bebidas', orden: 1, grupos_totales: 3, grupos_pendientes_quincena: state.normal.length }], stock_cero_pendientes: 0 },
+    conteo_principal: { categorias: [{ id: 'cat', nombre: 'Bebidas', orden: 1, grupos_totales: 3, grupos_pendientes_periodo: state.normal.length }], stock_cero_pendientes: 0 },
     vistas_inteligentes: { conteo_diario: { cantidad: state.daily.length, habilitado: state.complete }, revisar: { cantidad: state.review.length, habilitado: state.complete } },
   })
   await context.route('**/*', async (route) => {
@@ -74,7 +74,7 @@ async function scenario({ complete = false, available = true } = {}) {
     if (action === 'status') return fulfill({
       ok: true, codigo: 'CASHIER_STATUS', server_now: now(), snapshot_actual_id: state.available ? state.snapshot : null,
       conteo_id: state.active && !state.expired ? countId : null,
-      cobertura_quincenal_completa: state.complete, conteo_diario_pendientes: state.daily.length, revisar_pendientes: state.review.length,
+      cobertura_periodo_completa: state.complete, conteo_diario_pendientes: state.daily.length, revisar_pendientes: state.review.length,
     })
     if (action === 'start') {
       state.active = true

@@ -101,8 +101,8 @@ async function scenario() {
     })
     if (rpc === 'rpc_solog_admin' && body.p_action === 'catalog_reference') return fulfill({ categorias: [{ id: 'cat', nombre: 'Bebidas', orden: 1 }] })
     if (rpc === 'rpc_solog_dashboard') return fulfill({
-      server_now: serverNow, periodo: { fecha: '2026-08-31', quincena_desde: '2026-08-16', quincena_hasta: '2026-08-31' },
-      kpis: { cobertura_quincenal: { grupos_contados: 0, grupos_totales: 0, porcentaje: 0 }, contados_hoy: { grupos_contados: 0 }, recontar: 0, confirmadas: 0, inconsistentes: 0 }, sedes: [],
+      server_now: serverNow, periodo: { fecha: '2026-08-31', periodo_desde: '2026-08-16', periodo_hasta: '2026-08-31' },
+      kpis: { cobertura_periodo: { grupos_contados: 0, grupos_totales: 0, porcentaje: 0 }, contados_hoy: { grupos_contados: 0 }, recontar: 0, confirmadas: 0, inconsistentes: 0 }, sedes: [],
     })
     if (rpc === 'rpc_solog_control') {
       assert.ok([...Object.keys(groups), 'todos'].includes(payload.grupo_estado))

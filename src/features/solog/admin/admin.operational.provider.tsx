@@ -22,8 +22,8 @@ const STORAGE_KEY = 'solog:admin-operational-context:v1'
 const PERIOD_PRESETS: ControlPeriodPreset[] = [
   'today',
   'last_week',
-  'current_fortnight',
-  'previous_fortnight',
+  'current_period',
+  'previous_period',
   'custom',
 ]
 

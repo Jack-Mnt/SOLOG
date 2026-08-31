@@ -64,15 +64,15 @@ export function resolveTrustedRoute(
     bootstrap.dispositivo.estado === 'autorizado'
 
   if (!deviceAuthorized) return '/device-pending'
-  const fortnightComplete = bootstrap.cobertura_quincenal.completa
+  const periodComplete = bootstrap.cobertura_periodo.completa
   if (requestedPath === '/count') {
-    return fortnightComplete ? '/cajero' : '/cajero/conteo'
+    return periodComplete ? '/cajero' : '/cajero/conteo'
   }
   if (requestedPath === '/cajero/seguimiento') {
-    return fortnightComplete ? '/cajero/revisar' : '/cajero'
+    return periodComplete ? '/cajero/revisar' : '/cajero'
   }
   return isCashierRoute(requestedPath) &&
-    isCajeroRouteAvailable(requestedPath, fortnightComplete)
+    isCajeroRouteAvailable(requestedPath, periodComplete)
     ? requestedPath
     : '/cajero'
 }

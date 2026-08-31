@@ -48,10 +48,10 @@ export function Cajero({
   }, [route])
 
   useEffect(() => {
-    if (!isCajeroRouteAvailable(route, session.fortnightComplete)) {
+    if (!isCajeroRouteAvailable(route, session.periodComplete)) {
       replaceRoute('/cajero')
     }
-  }, [route, session.fortnightComplete])
+  }, [route, session.periodComplete])
 
   const blockMessage = session.blockReason
     ? BLOCK_MESSAGES[session.blockReason]
@@ -110,7 +110,7 @@ export function Cajero({
         )}
       </main>
       <CajeroBottomNavigation
-        fortnightComplete={session.fortnightComplete}
+        periodComplete={session.periodComplete}
         route={route}
       />
     </div>

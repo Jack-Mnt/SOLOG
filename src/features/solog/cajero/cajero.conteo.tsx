@@ -26,8 +26,8 @@ import type {
   CajeroStockType,
 } from './cajero.types'
 import {
-  deriveCajeroFortnightCategories,
-  filterCajeroFortnightCategoryGroups,
+  deriveCajeroPeriodCategories,
+  filterCajeroPeriodCategoryGroups,
   getCajeroCategoryIcon,
   isCajeroGroupInStockType,
 } from './cajero.utils'
@@ -135,7 +135,7 @@ export function CajeroConteo({
       ? selectedType
       : (typeItems.find((item) => item.count > 0)?.id as CajeroStockType | undefined) ?? null
   const categories = effectiveType
-    ? deriveCajeroFortnightCategories(groups, effectiveType)
+    ? deriveCajeroPeriodCategories(groups, effectiveType)
     : []
   const categoryItems: CajeroSelectionGridItem[] = categories.map((category) => ({
     id: category.id,
@@ -147,7 +147,7 @@ export function CajeroConteo({
     (category) => category.id === openCategoryId && category.count > 0,
   )
   const modalGroups = openCategory && effectiveType
-    ? filterCajeroFortnightCategoryGroups(
+    ? filterCajeroPeriodCategoryGroups(
         groups,
         effectiveType,
         openCategory.id,
@@ -216,7 +216,7 @@ export function CajeroConteo({
           <Boxes aria-hidden="true" size={28} />
           <div>
             <strong>No hay grupos pendientes.</strong>
-            <p>La cobertura quincenal no tiene trabajo disponible.</p>
+            <p>La cobertura del período no tiene trabajo disponible.</p>
           </div>
         </div>
       ) : null}

@@ -11,8 +11,8 @@ import type {
   CajeroObservationInput,
 } from '../src/features/solog/cajero/cajero.types'
 import {
-  deriveCajeroFortnightCategories,
-  filterCajeroFortnightCategoryGroups,
+  deriveCajeroPeriodCategories,
+  filterCajeroPeriodCategoryGroups,
   getCajeroCategoryIcon,
 } from '../src/features/solog/cajero/cajero.utils'
 
@@ -49,7 +49,7 @@ function group(
     categoria_orden: order,
     precio: 3.5,
     stock_teorico: stock,
-    cubierto_quincena: !pending,
+    cubierto_periodo: !pending,
     stock_cero: stock === 0,
     stock_negativo: stock < 0,
   }
@@ -75,7 +75,7 @@ function observation(
   }
 }
 
-describe('Conteo quincenal Fase 3', () => {
+describe('Conteo del período Fase 3', () => {
   const groups = [
     group('positive-pending', 'category-b', 'Bebidas', 10, true, 2),
     group('positive-done', 'category-a', 'Almacén', 4, false, 1),
@@ -84,24 +84,24 @@ describe('Conteo quincenal Fase 3', () => {
   ]
 
   test('deriva categorías del dataset completo y conserva las vacías ordenadas', () => {
-    expect(deriveCajeroFortnightCategories(groups, 'positive')).toEqual([
+    expect(deriveCajeroPeriodCategories(groups, 'positive')).toEqual([
       { id: 'category-a', nombre: 'Almacén', count: 0, orden: 1 },
       { id: 'category-b', nombre: 'Bebidas', count: 1, orden: 2 },
     ])
-    expect(deriveCajeroFortnightCategories(groups, 'zero')[0]?.count).toBe(1)
-    expect(deriveCajeroFortnightCategories(groups, 'negative')[0]?.count).toBe(1)
+    expect(deriveCajeroPeriodCategories(groups, 'zero')[0]?.count).toBe(1)
+    expect(deriveCajeroPeriodCategories(groups, 'negative')[0]?.count).toBe(1)
   })
 
-  test('filtra siempre por cubierto_quincena, tipo y categoría', () => {
+  test('filtra siempre por cubierto_periodo, tipo y categoría', () => {
     expect(
-      filterCajeroFortnightCategoryGroups(
+      filterCajeroPeriodCategoryGroups(
         groups,
         'positive',
         'category-a',
       ),
     ).toEqual([])
     expect(
-      filterCajeroFortnightCategoryGroups(
+      filterCajeroPeriodCategoryGroups(
         groups,
         'positive',
         'category-b',

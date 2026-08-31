@@ -29,14 +29,14 @@ const check = (label) => { checks.push(label); console.log('PASS ' + label) }
 function dashboardFixture(empty = false) {
   return {
     server_now: serverNow,
-    periodo: { fecha: '2026-08-31', quincena_desde: '2026-08-16', quincena_hasta: '2026-08-31' },
+    periodo: { fecha: '2026-08-31', periodo_desde: '2026-08-16', periodo_hasta: '2026-08-31' },
     kpis: {
-      cobertura_quincenal: { grupos_contados: empty ? 0 : 15, grupos_totales: empty ? 0 : 20, porcentaje: empty ? 0 : 75 },
+      cobertura_periodo: { grupos_contados: empty ? 0 : 15, grupos_totales: empty ? 0 : 20, porcentaje: empty ? 0 : 75 },
       contados_hoy: { grupos_contados: empty ? 0 : 2 }, recontar: empty ? 0 : 3, confirmadas: empty ? 0 : 4, inconsistentes: empty ? 0 : 5,
     },
     sedes: empty ? [] : ['Huaca', 'Sin actividad'].map((sede, i) => ({
       sede_id: 'site-' + i, sede,
-      cobertura_quincenal: { grupos_contados: i ? 0 : 15, grupos_totales: i ? 0 : 20, porcentaje: i ? 0 : 75 },
+      cobertura_periodo: { grupos_contados: i ? 0 : 15, grupos_totales: i ? 0 : 20, porcentaje: i ? 0 : 75 },
       cobertura_hoy: { fecha: '2026-08-31', grupos_requeridos: i ? 0 : 7, grupos_verificados: i ? 0 : 2, pendientes: i ? 0 : 5, porcentaje: i ? 100 : 28.57, sin_requerimientos: !!i },
       recontar: i ? 0 : 3, confirmadas: i ? 0 : 4, inconsistentes: i ? 0 : 5,
       actividad: { ultima_actividad_at: null, sesion_activa: !i },
@@ -78,7 +78,7 @@ async function scenario({ empty = false, failDashboard = false } = {}) {
     if (rpc === 'rpc_solog_state' && payload.p_action === 'bootstrap') return fulfill({ usuario, server_now: serverNow })
     if (rpc === 'rpc_solog_admin' && payload.p_action === 'bootstrap') return fulfill({
       usuario, dispositivos_pendientes: [],
-      sedes: state.dashboard.sedes.map((site) => ({ id: site.sede_id, nombre: site.sede, activo: true, dispositivo: null, sesion_activa: null, cobertura_diaria: site.cobertura_hoy, cobertura_quincenal: site.cobertura_quincenal })),
+      sedes: state.dashboard.sedes.map((site) => ({ id: site.sede_id, nombre: site.sede, activo: true, dispositivo: null, sesion_activa: null, cobertura_diaria: site.cobertura_hoy, cobertura_periodo: site.cobertura_periodo })),
     })
     if (rpc === 'rpc_solog_dashboard') {
       assert.deepEqual(payload, {})
@@ -116,7 +116,7 @@ try {
     await page.getByRole('heading', { name: 'Resumen por sede' }).waitFor()
     const cards = page.locator('.admin-dashboard-kpi')
     assert.equal(await cards.count(), 5)
-    for (const [label, value] of [['Cobertura quincenal', '75%'], ['Contados hoy', '2'], ['Por recontar', '3'], ['Confirmadas', '4'], ['Inconsistentes', '5']]) {
+    for (const [label, value] of [['Cobertura del período', '75%'], ['Contados hoy', '2'], ['Por recontar', '3'], ['Confirmadas', '4'], ['Inconsistentes', '5']]) {
       assert.equal(await cards.filter({ has: page.getByText(label, { exact: true }) }).locator('strong').innerText(), value)
     }
     assert.equal(await page.getByText('Persistentes', { exact: true }).count(), 0)

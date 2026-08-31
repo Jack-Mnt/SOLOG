@@ -58,10 +58,10 @@ export function getCajeroCategoryIcon(categoryName: string): LucideIcon {
 
 export function isCajeroRouteAvailable(
   route: CajeroRoute,
-  fortnightComplete: boolean,
+  periodComplete: boolean,
 ): boolean {
   if (route === '/cajero') return true
-  return fortnightComplete
+  return periodComplete
     ? route === '/cajero/diario' ||
         route === '/cajero/revisar' ||
         route === '/cajero/historial'
@@ -234,7 +234,7 @@ export function isCajeroGroupInStockType(
   }
 }
 
-export function deriveCajeroFortnightCategories(
+export function deriveCajeroPeriodCategories(
   groups: readonly CajeroCountGroup[],
   type: CajeroStockType,
   excludedGroupIds: ReadonlySet<string> = new Set(),
@@ -243,7 +243,7 @@ export function deriveCajeroFortnightCategories(
   for (const group of groups) {
     if (!isCajeroGroupInStockType(group, type)) continue
     const pending =
-      group.cubierto_quincena !== true &&
+      group.cubierto_periodo !== true &&
       !excludedGroupIds.has(group.grupo_id)
     const current = categories.get(group.categoria_id)
     if (current) {
@@ -270,7 +270,7 @@ export function deriveCajeroFortnightCategories(
   )
 }
 
-export function filterCajeroFortnightCategoryGroups(
+export function filterCajeroPeriodCategoryGroups(
   groups: readonly CajeroCountGroup[],
   type: CajeroStockType,
   categoryId: string,
@@ -279,7 +279,7 @@ export function filterCajeroFortnightCategoryGroups(
   return groups.filter(
     (group) =>
       group.categoria_id === categoryId &&
-      group.cubierto_quincena !== true &&
+      group.cubierto_periodo !== true &&
       !excludedGroupIds.has(group.grupo_id) &&
       isCajeroGroupInStockType(group, type),
   )

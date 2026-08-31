@@ -61,7 +61,7 @@ function bootstrap(
       porcentaje: 20,
       sin_requerimientos: false,
     },
-    cobertura_quincenal: {
+    cobertura_periodo: {
       grupos_contados: 20,
       grupos_totales: 100,
       pendientes: 80,
@@ -153,8 +153,8 @@ describe('aislamiento y rutas Cajero V3', () => {
   test('restringe rutas por etapa y reemplaza nombres legacy', () => {
     const incomplete = bootstrap()
     const complete = bootstrap({
-      cobertura_quincenal: {
-        ...bootstrap().cobertura_quincenal,
+      cobertura_periodo: {
+        ...bootstrap().cobertura_periodo,
         completa: true,
         grupos_contados: 100,
         pendientes: 0,

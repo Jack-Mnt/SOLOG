@@ -35,8 +35,8 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_CLIENT_OBSERVATION_CONFLICT',
   'SOLOG_INVALID_COUNT_TIMESTAMP',
   'SOLOG_DUPLICATE_GROUP_IN_BATCH',
-  'SOLOG_GROUP_ALREADY_COVERED_QUINCENA',
-  'SOLOG_QUINCENAL_COVERAGE_REQUIRED',
+  'SOLOG_GROUP_ALREADY_COVERED_PERIOD',
+  'SOLOG_PERIOD_COVERAGE_REQUIRED',
   'SOLOG_GROUP_NOT_AVAILABLE',
   'SOLOG_GROUP_NOT_IN_CATALOG',
   'SOLOG_GROUP_ALREADY_COVERED',
@@ -233,13 +233,13 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
     'La hora física de una captura no es válida.',
   SOLOG_DUPLICATE_GROUP_IN_BATCH:
     'El lote contiene el mismo grupo más de una vez.',
-  SOLOG_GROUP_ALREADY_COVERED_QUINCENA:
-    'Uno de los grupos ya estaba cubierto en la quincena. Actualiza la vista antes de reintentar.',
-  SOLOG_GROUP_ALREADY_COVERED: 'El grupo ya fue cubierto en esta quincena.',
+  SOLOG_GROUP_ALREADY_COVERED_PERIOD:
+    'Uno de los grupos ya estaba cubierto en el período. Actualiza la vista antes de reintentar.',
+  SOLOG_GROUP_ALREADY_COVERED: 'El grupo ya fue cubierto en este período.',
   SOLOG_GROUP_NOT_YET_COVERED: 'El grupo todavía requiere su observación base.',
   SOLOG_GROUP_NOT_REQUIRED: 'El grupo ya no requiere una nueva verificación.',
-  SOLOG_QUINCENAL_COVERAGE_REQUIRED:
-    'Completa primero la cobertura quincenal para usar esta vista.',
+  SOLOG_PERIOD_COVERAGE_REQUIRED:
+    'Completa primero la cobertura del período para usar esta vista.',
   SOLOG_GROUP_NOT_ALLOWED_IN_COUNT:
     'Este grupo no pertenece al conteo activo.',
   SOLOG_RECOUNT_ALREADY_SAVED:

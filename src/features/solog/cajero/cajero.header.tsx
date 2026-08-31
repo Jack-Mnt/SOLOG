@@ -58,13 +58,13 @@ export function CajeroHeader({
 
 export function CajeroBottomNavigation({
   route,
-  fortnightComplete,
+  periodComplete,
 }: {
   route: CajeroRoute
-  fortnightComplete: boolean
+  periodComplete: boolean
 }) {
   const navigation = NAVIGATION.filter((item) =>
-    isCajeroRouteAvailable(item.route, fortnightComplete),
+    isCajeroRouteAvailable(item.route, periodComplete),
   )
 
   return (
