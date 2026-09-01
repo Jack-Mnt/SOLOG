@@ -3,13 +3,14 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "../features/auth/context";
 import { getAuthErrorMessage } from "../features/auth/errors";
 
-export function LoginPage() {
+export function LoginPage({ loading = false }: { loading?: boolean }) {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const busy = submitting || loading;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -118,10 +119,10 @@ export function LoginPage() {
 
             <button
               className="solog-login-submit"
-              disabled={submitting}
+              disabled={busy}
               type="submit"
             >
-              <span>{submitting ? "Ingresando…" : "Ingresar"}</span>
+              <span>{busy ? "Ingresando…" : "Ingresar"}</span>
             </button>
           </form>
 

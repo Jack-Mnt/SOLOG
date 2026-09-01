@@ -47,7 +47,7 @@ async function scenario({ complete = false, available = true } = {}) {
   const bootstrap = () => ({
     usuario: { id: user.id, nombre: 'Cajero prueba', rol: 'cajero' },
     sede: { id: 'site', nombre: 'Huaca', activo: true },
-    dispositivo: { id: 'device', estado: 'autorizado', sede_correcta: true, autorizado: true },
+    dispositivo: { id: 'device', estado: 'autorizado', sede_correcta: true, autorizado: true, sede_tiene_dispositivo_autorizado: true, solicitud_existente: false, puede_solicitar_acceso: false },
     sesion_activa: state.active && !state.expired ? { id: countId, iniciado_at: state.started, expira_at: state.expiration, grupos_guardados: state.history.length } : null,
     stock: state.available ? { disponible: true, snapshot_id: state.snapshot, snapshot_at: now(), confirmado_at: now(), puede_iniciar_conteo: true }
       : { disponible: false, snapshot_id: null, snapshot_at: null, confirmado_at: null, puede_iniciar_conteo: false },

@@ -1,10 +1,6 @@
 export type SologRole = 'cajero' | 'moderador' | 'admin'
 
-export type SologDeviceState =
-  | 'token_requerido'
-  | 'pendiente'
-  | 'autorizado'
-  | 'revocado'
+export type SologDeviceState = string
 
 export type SologSessionState = 'activo' | 'finalizado' | 'expirado'
 
@@ -35,6 +31,9 @@ export interface SologDevice {
   estado: SologDeviceState
   sede_correcta: boolean
   autorizado: boolean
+  sede_tiene_dispositivo_autorizado: boolean
+  solicitud_existente: boolean
+  puede_solicitar_acceso: boolean
 }
 
 export interface SologActiveSession {
@@ -121,6 +120,121 @@ export interface SologOperationalBootstrap {
   conteo_principal: SologMainCountState
   vistas_inteligentes: SologIntelligentViews
 }
+
+export type SologDetailsHistoryPeriod = 'hoy' | 'ayer'
+
+export interface SologDetailsDevice {
+  id: string | null
+  estado: string
+  sede_correcta: boolean
+  autorizado: boolean
+  sede_tiene_dispositivo_autorizado: boolean
+  solicitud_existente: boolean
+  puede_solicitar_acceso: boolean
+}
+
+export interface SologDetailsStock {
+  disponible: boolean
+  snapshot_id: string | null
+  snapshot_at: string | null
+  confirmado_at: string | null
+}
+
+export interface SologDetailsSummaryResponse {
+  ok: true
+  codigo: 'DETAILS_SUMMARY'
+  server_now: string
+  sede: Pick<SologSede, 'id' | 'nombre'>
+  dispositivo: SologDetailsDevice
+  stock: SologDetailsStock
+  cobertura_periodo: SologPeriodCoverage
+  cobertura_diaria: SologDailyCoverage
+  conteo_diario_pendientes: number
+  revisar_pendientes: number
+}
+
+export interface SologDetailsHistoryItem {
+  detalle_id: string
+  categoria_id: string
+  categoria: string
+  contado_at: string
+  grupo_id: string
+  grupo: string
+  stock_teorico: number
+  stock_fisico: number
+  diferencia: number
+  precio: number
+  valor_diferencia: number | null
+  estado_diferencia: SologDifferenceState
+  stock_posterior: number | null
+  stock_reconteo: number | null
+  recontado_at: string | null
+}
+
+export interface SologDetailsHistoryResponse {
+  ok: true
+  codigo: 'DETAILS_HISTORY'
+  periodo: SologDetailsHistoryPeriod
+  desde: string
+  hasta: string
+  server_now: string
+  items: SologDetailsHistoryItem[]
+}
+
+export interface SologDetailsExportSummary {
+  diferencias_finales: number
+  confirmadas: number
+  inconsistentes: number
+  faltantes: number
+  sobrantes: number
+  valorizado_faltantes: number
+  valorizado_sobrantes: number
+  balance_valorizado: number
+}
+
+export interface SologDetailsExportRow {
+  fecha: string
+  nombre: string
+  categoria: string
+  estado: 'Confirmada' | 'Inconsistente'
+  stock_tumi: number | null
+  fisico: number
+  diferencia: number
+  valorizado: number | null
+  precio: number
+  unidades_por_paquete: number | null
+  precio_paquete: number | null
+  detalle_id: string
+}
+
+export interface SologDetailsExportResponse {
+  ok: true
+  codigo: 'DETAILS_EXPORT'
+  sede: Pick<SologSede, 'id' | 'nombre'>
+  periodo: {
+    desde: string
+    hasta: string
+  }
+  summary: SologDetailsExportSummary
+  rows: SologDetailsExportRow[]
+  server_now: string
+}
+
+interface SologDetailsRequestAccessBase {
+  ok: true
+  dispositivo_id: string
+  server_now: string
+}
+
+export type SologDetailsRequestAccessResponse =
+  | (SologDetailsRequestAccessBase & {
+      codigo: 'DEVICE_REQUESTED' | 'DEVICE_REQUEST_ALREADY_PENDING'
+      estado: 'pendiente'
+    })
+  | (SologDetailsRequestAccessBase & {
+      codigo: 'DEVICE_ALREADY_AUTHORIZED'
+      estado: 'autorizado'
+    })
 
 export type SologAdminOperationalBootstrap = Omit<
   SologOperationalBootstrap,

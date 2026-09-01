@@ -11,7 +11,7 @@ export type AdminRoute =
   | '/admin/grupos'
   | '/admin/dispositivos'
 
-export type AppRoute = '/login' | '/' | '/device-pending' | CajeroRoute | AdminRoute
+export type AppRoute = '/login' | '/' | '/detalles' | CajeroRoute | AdminRoute
 
 export const ADMIN_ROUTES: AdminRoute[] = [
   '/admin',
@@ -63,7 +63,7 @@ export function resolveTrustedRoute(
     bootstrap.dispositivo.autorizado &&
     bootstrap.dispositivo.estado === 'autorizado'
 
-  if (!deviceAuthorized) return '/device-pending'
+  if (!deviceAuthorized) return '/detalles'
   const periodComplete = bootstrap.cobertura_periodo.completa
   if (requestedPath === '/count') {
     return periodComplete ? '/cajero' : '/cajero/conteo'

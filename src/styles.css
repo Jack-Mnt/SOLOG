@@ -638,36 +638,6 @@ h1 {
   max-width: 500px;
 }
 
-.device-pending-panel {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 20px;
-  align-items: start;
-  padding: 24px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  background: var(--color-surface);
-}
-
-.device-pending-panel__icon {
-  width: 64px;
-  height: 64px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-panel);
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
-.device-pending-panel h2 {
-  margin: 14px 0 5px;
-  font-size: 1.15rem;
-}
-.device-pending-panel p {
-  margin: 0;
-  color: var(--color-text-secondary);
-  line-height: 1.55;
-}
 .status-badge {
   width: fit-content;
   display: flex;
@@ -4885,8 +4855,7 @@ h1 {
     grid-template-columns: 1fr;
   }
   .admin-pending-card,
-  .admin-pending-actions,
-  .device-pending-panel {
+  .admin-pending-actions {
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -8258,6 +8227,174 @@ h1 {
   border-color: var(--color-primary-hover);
   color: var(--color-primary-hover);
   background: var(--color-primary-soft);
+}
+
+/* Detalles de dispositivo — resumen aislado y de solo lectura */
+.details-shell {
+  padding-bottom: 0;
+}
+
+.details-header__brand {
+  cursor: default;
+}
+
+.details-panel {
+  gap: clamp(0.9rem, 2vw, 1.2rem);
+}
+
+.details-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.details-panel__heading h1 {
+  margin: 0.2rem 0 0.35rem;
+  font-size: clamp(1.55rem, 3vw, 2rem);
+  letter-spacing: -0.035em;
+}
+
+.details-panel__heading p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.details-readonly-badge,
+.details-request-status {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.details-readonly-badge {
+  padding: 0.5rem 0.75rem;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.details-device-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: clamp(1.1rem, 3vw, 1.6rem);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 40%, var(--color-border));
+  border-radius: var(--radius-panel);
+  background:
+    linear-gradient(120deg, var(--color-warning-soft), transparent 72%),
+    var(--color-surface);
+  box-shadow: var(--shadow-default);
+}
+
+.details-device-card__icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-warning);
+  background: var(--color-surface);
+}
+
+.details-device-card__site {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.details-device-card h2,
+.details-device-card p {
+  margin: 0;
+}
+
+.details-device-card h2 {
+  margin-top: 0.15rem;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  text-transform: capitalize;
+}
+
+.details-device-card p {
+  margin-top: 0.35rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.details-device-card__warning {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--color-danger);
+  font-size: 0.8rem;
+}
+
+.details-device-card__actions {
+  display: grid;
+  justify-items: end;
+  gap: 0.6rem;
+}
+
+.details-device-card__actions .button {
+  min-height: 48px;
+  justify-content: center;
+}
+
+.details-request-status {
+  padding: 0.38rem 0.65rem;
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.details-notice {
+  border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-border));
+  color: color-mix(in srgb, var(--color-success) 76%, var(--color-text-primary));
+  background: var(--color-success-soft);
+}
+
+.details-loading {
+  min-height: 180px;
+}
+
+.details-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+@media (max-width: 799px) {
+  .details-device-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .details-device-card__actions {
+    grid-column: 1 / -1;
+    justify-items: stretch;
+  }
+
+  .details-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 599px) {
+  .details-panel__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .details-device-card {
+    grid-template-columns: 1fr;
+  }
+
+  .details-device-card__icon {
+    width: 50px;
+    height: 50px;
+  }
 }
 
 .cajero-home-appearance {

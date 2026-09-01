@@ -14,7 +14,7 @@ import {
 } from './lib/router'
 import { AdminDevicesPage } from './pages/admin.dispositivos'
 import { AdminDashboardPage } from './pages/admin.dashboard'
-import { DevicePendingPage } from './pages/dispositivo-pendiente'
+import { DetailsPage } from './pages/detalles'
 import { LoginPage } from './pages/login'
 
 const Cajero = lazy(() =>
@@ -99,14 +99,7 @@ function AppContent() {
   }
 
   if (auth.status === 'loading') {
-    return (
-      <PageShell
-        description="Recuperando la sesión existente de Supabase Auth."
-        eyebrow="SOLOG"
-        title="Cargando…"
-        variant="auth"
-      />
-    )
+    return <LoginPage loading />
   }
 
   if (auth.initializationError) {
@@ -123,14 +116,7 @@ function AppContent() {
   if (auth.status === 'unauthenticated') return <LoginPage />
 
   if (solog.status === 'loading' || solog.status === 'idle') {
-    return (
-      <PageShell
-        description="Validando perfil, rol, sede y dispositivo con el backend."
-        eyebrow="SOLOG"
-        title="Preparando sesión…"
-        variant="auth"
-      />
-    )
+    return <LoginPage loading />
   }
 
   const handleLogout = async () => {
@@ -165,9 +151,9 @@ function AppContent() {
     )
   }
 
-  if (resolvedRoute === '/device-pending') {
+  if (resolvedRoute === '/detalles') {
     return (
-      <DevicePendingPage
+      <DetailsPage
         bootstrap={bootstrap}
         onLogout={() => void handleLogout()}
       />
@@ -178,11 +164,7 @@ function AppContent() {
     return (
       <Suspense
         fallback={
-          <PageShell
-            description="Preparando el espacio operativo."
-            eyebrow="SOLOG"
-            title="Cargando panel…"
-          />
+          <div className="empty-state" role="status">Preparando módulo…</div>
         }
       >
         <Cajero

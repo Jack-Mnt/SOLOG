@@ -13,6 +13,11 @@ import type {
   SologAdminIncidentsResponse,
   SologDashboardResponse,
   SologDashboardSiteActivityResponse,
+  SologDetailsExportResponse,
+  SologDetailsHistoryPeriod,
+  SologDetailsHistoryResponse,
+  SologDetailsRequestAccessResponse,
+  SologDetailsSummaryResponse,
   SologAuthorizeDeviceResponse,
   SologCatalogChangeActionPayload,
   SologCatalogChangeActionResponse,
@@ -45,6 +50,7 @@ type SologRpcName =
   | 'rpc_solog_count'
   | 'rpc_solog_admin'
   | 'rpc_solog_catalog'
+  | 'rpc_solog_details'
 type SologPayloadRpcName =
   | 'rpc_solog_control'
   | 'rpc_solog_control_detalle'
@@ -82,6 +88,38 @@ export function getSologBootstrap(deviceToken?: string) {
     'rpc_solog_state',
     'bootstrap',
     deviceToken ? { device_token: deviceToken } : {},
+  )
+}
+
+export function getSologDetailsSummary(deviceToken?: string) {
+  return callSologRpc<SologDetailsSummaryResponse>(
+    'rpc_solog_details',
+    'summary',
+    deviceToken ? { device_token: deviceToken } : {},
+  )
+}
+
+export function getSologDetailsHistory(periodo: SologDetailsHistoryPeriod) {
+  return callSologRpc<SologDetailsHistoryResponse>(
+    'rpc_solog_details',
+    'history',
+    { periodo },
+  )
+}
+
+export function getSologDetailsExport() {
+  return callSologRpc<SologDetailsExportResponse>(
+    'rpc_solog_details',
+    'export',
+    {},
+  )
+}
+
+export function requestSologDetailsAccess(deviceToken: string) {
+  return callSologRpc<SologDetailsRequestAccessResponse>(
+    'rpc_solog_details',
+    'request_access',
+    { device_token: deviceToken },
   )
 }
 

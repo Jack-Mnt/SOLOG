@@ -38,6 +38,9 @@ function bootstrap(
       estado: 'autorizado',
       sede_correcta: true,
       autorizado: true,
+      sede_tiene_dispositivo_autorizado: true,
+      solicitud_existente: false,
+      puede_solicitar_acceso: false,
     },
     sesion_activa: {
       id: 'count-1',
@@ -172,15 +175,29 @@ describe('aislamiento y rutas Cajero V3', () => {
     expect(resolveTrustedRoute(complete, '/cajero/seguimiento')).toBe('/cajero/revisar')
   })
 
-  test('un dispositivo pendiente o revocado conserva device-pending', () => {
+  test('un dispositivo no autorizado se dirige a detalles', () => {
     const pending = bootstrap({
       dispositivo: {
         id: 'device-1',
         estado: 'pendiente',
         sede_correcta: true,
         autorizado: false,
+        sede_tiene_dispositivo_autorizado: false,
+        solicitud_existente: true,
+        puede_solicitar_acceso: false,
       },
     })
-    expect(resolveTrustedRoute(pending, '/cajero')).toBe('/device-pending')
+    expect(resolveTrustedRoute(pending, '/cajero')).toBe('/detalles')
+  })
+
+  test('admin y moderador conservan el panel administrativo', () => {
+    const admin = bootstrap({
+      usuario: { id: 'admin-1', nombre: 'Admin', rol: 'admin' },
+    })
+    const moderator = bootstrap({
+      usuario: { id: 'moderator-1', nombre: 'Moderador', rol: 'moderador' },
+    })
+    expect(resolveTrustedRoute(admin, '/login')).toBe('/admin')
+    expect(resolveTrustedRoute(moderator, '/cajero')).toBe('/admin')
   })
 })

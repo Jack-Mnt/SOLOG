@@ -15,6 +15,9 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_DEVICE_NOT_REVOCABLE',
   'SOLOG_CASHIER_WITHOUT_SEDE',
   'SOLOG_OPERATIONAL_ROLE_REQUIRED',
+  'SOLOG_SEDE_DEVICE_ALREADY_AUTHORIZED',
+  'SOLOG_DEVICE_SEDE_MISMATCH',
+  'SOLOG_INVALID_DETAILS_ACTION',
   'SOLOG_ADMIN_ROLE_REQUIRED',
   'SOLOG_CATEGORY_REQUIRED',
   'SOLOG_CATEGORY_NOT_AVAILABLE',
@@ -144,6 +147,12 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
     'La solicitud ya no está pendiente. Se actualizará la administración.',
   SOLOG_DEVICE_NOT_REVOCABLE:
     'El dispositivo ya no puede revocarse. Se actualizará la administración.',
+  SOLOG_SEDE_DEVICE_ALREADY_AUTHORIZED:
+    'La sede ya tiene otro dispositivo autorizado. Este dispositivo permanece en modo de solo lectura.',
+  SOLOG_DEVICE_SEDE_MISMATCH:
+    'Este dispositivo no corresponde a la sede asignada a tu usuario.',
+  SOLOG_INVALID_DETAILS_ACTION:
+    'La acción solicitada no está disponible en Detalles.',
   SOLOG_ADMIN_ROLE_REQUIRED:
     'Tu usuario ya no tiene permisos para administrar SOLOG.',
   SOLOG_SEDE_REQUIRED: 'Selecciona una sede para consultar Control.',
