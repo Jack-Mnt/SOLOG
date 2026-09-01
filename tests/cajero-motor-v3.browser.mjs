@@ -34,13 +34,16 @@ async function scenario({ complete = false, available = true } = {}) {
   console.log('Escenario', { complete, available })
   const context = await browser.newContext()
   const state = {
-    snapshot: 's1', complete, available, expired: false, superseded: false, failedSend: false,
+    snapshot: 's1', complete, available, vigente: available, canStart: true,
+    expired: false, superseded: false, failedSend: false,
     active: complete, normal: [group('normal')], daily: [], history: [], calls: [],
     review: complete ? ['Coincide', 'Confirmada', 'Inconsistente'].map((outcome, i) => ({
       ...group('review' + i), detalle_origen_id: 'detail' + i, estado_diferencia: 'Recontar',
       contado_at_original: now(), ultima_diferencia: -4, stock_posterior: 10,
       primer_snapshot_posterior_id: 'posterior', snapshot_reconteo_id: null, outcome,
-    })) : [], frozen: new Map(), started: now(), expiration: new Date(Date.now() + 3600000).toISOString(),
+    })) : [], frozen: new Map(), started: now(), snapshotAt: now(),
+    stockExpiration: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    expiration: new Date(Date.now() + 119 * 60 * 1000).toISOString(),
   }
   const countId = 'count-original'
   const coverage = () => ({ grupos_contados: state.complete ? 3 : 0, grupos_totales: 3, pendientes: state.complete ? 0 : state.normal.length, porcentaje: state.complete ? 100 : 0, completa: state.complete, inaugurada: true, desde: '2026-08-16', hasta: '2026-08-31' })
@@ -49,8 +52,16 @@ async function scenario({ complete = false, available = true } = {}) {
     sede: { id: 'site', nombre: 'Huaca', activo: true },
     dispositivo: { id: 'device', estado: 'autorizado', sede_correcta: true, autorizado: true, sede_tiene_dispositivo_autorizado: true, solicitud_existente: false, puede_solicitar_acceso: false },
     sesion_activa: state.active && !state.expired ? { id: countId, iniciado_at: state.started, expira_at: state.expiration, grupos_guardados: state.history.length } : null,
-    stock: state.available ? { disponible: true, snapshot_id: state.snapshot, snapshot_at: now(), confirmado_at: now(), puede_iniciar_conteo: true }
-      : { disponible: false, snapshot_id: null, snapshot_at: null, confirmado_at: null, puede_iniciar_conteo: false },
+    stock: state.available ? {
+      disponible: true, snapshot_id: state.snapshot, snapshot_at: state.snapshotAt,
+      confirmado_at: state.snapshotAt, vigente: state.vigente,
+      snapshot_expira_at: state.stockExpiration, segundos_restantes: 7200,
+      puede_iniciar_conteo: state.canStart,
+    } : {
+      disponible: false, snapshot_id: null, snapshot_at: null, confirmado_at: null,
+      vigente: false, snapshot_expira_at: null, segundos_restantes: 0,
+      puede_iniciar_conteo: false,
+    },
     server_now: now(), cobertura_periodo: coverage(),
     cobertura_diaria: { fecha: '2026-08-31', grupos_requeridos: state.daily.length, grupos_verificados: 0, pendientes: state.daily.length, porcentaje: 0, sin_requerimientos: state.daily.length === 0 },
     conteo_principal: { categorias: [{ id: 'cat', nombre: 'Bebidas', orden: 1, grupos_totales: 3, grupos_pendientes_periodo: state.normal.length }], stock_cero_pendientes: 0 },
@@ -104,6 +115,14 @@ async function scenario({ complete = false, available = true } = {}) {
       state.normal = state.normal.filter((item) => !items.some((saved) => saved.grupo_id === item.grupo_id))
       state.daily = state.daily.filter((item) => !items.some((saved) => saved.grupo_id === item.grupo_id))
       return fulfill({ ok: true, codigo: 'COUNT_BATCH_SAVED', conteo_id: countId, items, errores: [], guardados: items.length, ya_guardados: 0, rechazados: 0, server_now: now() })
+    }
+    if (action === 'finish') {
+      state.active = false
+      return fulfill({
+        ok: true, codigo: 'COUNT_FINISHED', conteo_id: payload.conteo_id,
+        grupos_guardados: state.history.length, cobertura_diaria: bootstrap().cobertura_diaria,
+        cobertura_periodo: coverage(), finalizado_at: now(),
+      })
     }
     if (action === 'recount_start') {
       const item = state.review.find((item) => item.detalle_origen_id === payload.detalle_id)
@@ -188,22 +207,20 @@ try {
     await page.reload()
     await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
     await nav(page, 'Inicio')
-    await page.getByRole('button', { name: 'Enviar conteo', exact: true }).click()
     if (superseded) {
       await page.getByText(/Otra sesión comenzó/).waitFor()
-      assert.deepEqual((await pending(page))[0].items, original.items)
-      assert.equal((await pending(page))[0].envio_bloqueado, 'SOLOG_EXPIRED_SESSION_SUPERSEDED')
-      const sent = state.calls.filter((call) => call.action === 'save_batch').length
-      await page.getByRole('button', { name: 'Enviar conteo', exact: true }).click()
-      assert.equal(state.calls.filter((call) => call.action === 'save_batch').length, sent)
-      check('SUPERSEDED conserva buffer y no reenvía ni reasigna')
+      await page.waitForFunction(() => !Object.keys(sessionStorage).some((key) => key.startsWith('solog.cajero.buffer.v4:')))
+      assert.equal(state.calls.filter((call) => call.action === 'save_batch').length, 1)
+      assert.equal(state.calls.filter((call) => call.action === 'finish').length, 1)
+      check('SUPERSEDED limpia el buffer, cierra el contexto y no reintenta')
     } else {
       await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
       assert.equal((await pending(page)).length, 0)
       const sent = state.calls.find((call) => call.action === 'save_batch').payload
       assert.equal(sent.conteo_id, original.scope.conteo_id)
       assert.deepEqual(sent.items, original.items.map(({ client_observation_id, grupo_id, stock_fisico, contado_at }) => ({ client_observation_id, grupo_id, stock_fisico, contado_at })))
-      check('recuperación de expirados usa UUID, timestamp, físico y sesión originales')
+      assert.equal(state.calls.filter((call) => call.action === 'finish').length, 1)
+      check('recuperación automática usa UUID, timestamp, físico y sesión originales')
     }
     await context.close()
   }
@@ -296,6 +313,55 @@ try {
     assert.equal(state.history.length, 1)
     assert.equal(await page.getByRole('dialog').getByRole('button', { name: 'Guardar', exact: true }).isEnabled(), false)
     check('respuesta perdida de recount se reconcilia sin duplicar ni simular éxito')
+    await context.close()
+  }
+  {
+    const { context, page, state } = await scenario({ complete: true })
+    state.snapshotAt = new Date(Date.now() - 117 * 60 * 1000).toISOString()
+    state.stockExpiration = new Date(Date.now() + 3 * 60 * 1000).toISOString()
+    state.expiration = new Date(Date.now() + 115_000).toISOString()
+    await page.reload()
+    const indicator = page.locator('.cajero-stock-indicator__trigger')
+    await indicator.waitFor()
+    assert.match(await indicator.innerText(), /^01:5[3-5]$/)
+    await indicator.click()
+    await page.getByRole('dialog', { name: 'Estado del inventario' })
+      .getByText('La sesión está por finalizar', { exact: true }).waitFor()
+    await page.waitForTimeout(300)
+    const requestsBeforeCountdown = state.calls.length
+    await page.waitForTimeout(2_100)
+    assert.equal(state.calls.length, requestsBeforeCountdown)
+    check('countdown MM:SS usa reloj local, abre popover y no hace polling')
+    await context.close()
+  }
+  {
+    const { context, page, state } = await scenario()
+    state.snapshotAt = new Date(Date.now() - 117 * 60 * 1000).toISOString()
+    state.stockExpiration = new Date(Date.now() + 3 * 60 * 1000).toISOString()
+    state.canStart = false
+    await page.reload()
+    await page.getByRole('button', { name: 'Stock a punto de vencer', exact: true }).waitFor()
+    assert.equal(await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).isEnabled(), false)
+    await page.getByText('El stock está próximo a vencer. Actualiza el inventario antes de iniciar un nuevo conteo.').waitFor()
+    check('sin sesión a 1:57 conserva estado descriptivo y bloquea inicio por margen')
+
+    state.vigente = false
+    state.stockExpiration = new Date(Date.now() - 1_000).toISOString()
+    await page.reload()
+    await page.getByRole('button', { name: 'Stock vencido', exact: true }).waitFor()
+    assert.equal(await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).isEnabled(), false)
+    check('stock vencido bloquea inicio y muestra el estado operativo')
+    await context.close()
+  }
+  {
+    const { context, page, state } = await scenario()
+    state.active = true
+    state.expiration = new Date(Date.now() - 1_000).toISOString()
+    await page.reload()
+    await page.getByText('La sesión de conteo venció.').waitFor()
+    await nav(page, 'Conteo')
+    assert.equal(await page.getByRole('button', { name: /Bebidas/ }).count(), 0)
+    check('sesión expirada bloquea nuevas capturas inmediatamente')
     await context.close()
   }
   assert.deepEqual(errors, [])

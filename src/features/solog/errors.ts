@@ -26,8 +26,9 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_COUNT_NOT_AVAILABLE',
   'SOLOG_COUNT_NOT_ACTIVE',
   'SOLOG_COUNT_EXPIRED',
-  'SOLOG_SNAPSHOT_EXPIRED',
-  'SOLOG_SNAPSHOT_EXPIRING',
+  'SOLOG_STOCK_EXPIRED',
+  'SOLOG_STOCK_TOO_CLOSE_TO_EXPIRY',
+  'SOLOG_STOCK_EXPIRED_AT_COUNT',
   'SOLOG_ACTIVE_COUNT_REQUIRED',
   'SOLOG_REFERENCE_SNAPSHOT_NOT_AVAILABLE',
   'SOLOG_INVALID_COUNT_PAYLOAD',
@@ -226,10 +227,12 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_COUNT_NOT_AVAILABLE: 'Este conteo ya no está disponible.',
   SOLOG_COUNT_NOT_ACTIVE: 'La sesión de conteo ya no está activa.',
   SOLOG_COUNT_EXPIRED: 'La sesión de conteo venció. Inicia una nueva.',
-  SOLOG_SNAPSHOT_EXPIRED:
-    'El inventario de referencia venció. Se requiere un Excel actualizado.',
-  SOLOG_SNAPSHOT_EXPIRING:
-    'El inventario está por vencer y ya no permite iniciar una sesión nueva.',
+  SOLOG_STOCK_EXPIRED:
+    'El stock venció. Actualiza el inventario desde ConeXion para iniciar un nuevo conteo.',
+  SOLOG_STOCK_TOO_CLOSE_TO_EXPIRY:
+    'El stock está próximo a vencer. Actualiza el inventario antes de iniciar un nuevo conteo.',
+  SOLOG_STOCK_EXPIRED_AT_COUNT:
+    'La captura ocurrió después del cierre de la sesión y no puede registrarse.',
   SOLOG_CONFIRMED_SNAPSHOT_REQUIRED:
     'Todavía no existe stock actualizado para esta sede.',
   SOLOG_REFERENCE_SNAPSHOT_NOT_AVAILABLE:
@@ -258,7 +261,7 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_OPERATIONAL_PERIOD_NOT_STARTED:
     'El período operativo todavía no ha comenzado.',
   SOLOG_EXPIRED_SESSION_SUPERSEDED:
-    'Otra sesión comenzó en esta sede. Los pendientes de la sesión expirada se conservan, pero ya no pueden enviarse ni reasignarse a una nueva sesión.',
+    'Otra sesión comenzó en esta sede. Se descartaron los pendientes anteriores y se actualizó el estado operativo.',
   SOLOG_INVALID_RECOUNT_PAYLOAD:
     'Los datos del reconteo no son válidos.',
   SOLOG_RECOUNT_NOT_AVAILABLE:

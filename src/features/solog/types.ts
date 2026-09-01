@@ -48,6 +48,9 @@ export interface SologAvailableStockState {
   snapshot_id: string
   snapshot_at: string
   confirmado_at: string
+  vigente: boolean
+  snapshot_expira_at: string
+  segundos_restantes: number
   puede_iniciar_conteo: boolean
 }
 
@@ -56,6 +59,9 @@ export interface SologUnavailableStockState {
   snapshot_id: null
   snapshot_at: null
   confirmado_at: null
+  vigente: false
+  snapshot_expira_at: null
+  segundos_restantes: number
   puede_iniciar_conteo: false
 }
 

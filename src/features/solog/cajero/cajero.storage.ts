@@ -18,6 +18,7 @@ export const CAJERO_BACKEND_BATCH_LIMIT = 500
 const BUFFER_VERSION = 4
 const BUFFER_KEY_PREFIX = 'solog.cajero.buffer.v4'
 const EXPRESSION_KEY_PREFIX = 'solog.cajero.expressions.v1'
+const RECOUNT_KEY_PREFIX = 'solog.cajero.recount.v1'
 const BUFFER_EVENT = 'solog:cajero-buffer-change'
 let bufferRevision = 0
 const UUID_PATTERN =
@@ -128,7 +129,6 @@ function isBuffer(value: unknown): value is CajeroBuffer {
   const buffer = value as Partial<CajeroBuffer>
   return (
     buffer.version === BUFFER_VERSION &&
-    (buffer.envio_bloqueado === undefined || buffer.envio_bloqueado === 'SOLOG_EXPIRED_SESSION_SUPERSEDED') &&
     isScope(buffer.scope) &&
     Array.isArray(buffer.items) &&
     buffer.items.every(
@@ -364,7 +364,6 @@ export function upsertCajeroObservation(
 ): CajeroPendingObservation {
   validateObservationInput(input)
   const current = readCajeroBuffer(scope, storage)
-  if (current.envio_bloqueado) throw new Error('La sesión original fue reemplazada; sus pendientes no pueden modificarse ni reasignarse.')
   const existing = current.items.find((item) => item.grupo_id === input.grupo_id)
   const observation: CajeroPendingObservation = {
     client_observation_id: existing?.client_observation_id ?? crypto.randomUUID(),
@@ -418,7 +417,6 @@ export function buildNextCajeroBatch(
   storage?: Storage,
 ): CajeroBatchPayload | null {
   const buffer = readCajeroBuffer(scope, storage)
-  if (buffer.envio_bloqueado) throw new Error('SOLOG_EXPIRED_SESSION_SUPERSEDED: los pendientes conservan su sesión original y no pueden reenviarse.')
   if (buffer.items.length === 0) return null
 
   return {
@@ -510,9 +508,9 @@ export function subscribeCajeroBufferChanges(
   return () => window.removeEventListener(BUFFER_EVENT, listener)
 }
 
-export function blockSupersededCajeroBuffer(scope: CajeroBufferScope, storage?: Storage): void {
-  const current = readCajeroBuffer(scope, storage)
-  writeCajeroBuffer({ ...current, envio_bloqueado: 'SOLOG_EXPIRED_SESSION_SUPERSEDED' }, storage)
+export function clearCajeroBuffer(scope: CajeroBufferScope, storage?: Storage): void {
+  writeCajeroBuffer({ version: BUFFER_VERSION, scope, items: [] }, storage)
+  getStorage(storage).removeItem(getCajeroExpressionDraftKey(scope))
 }
 
 // Solo versiones incompatibles de Cajero; nunca descartar pendientes V4.
@@ -527,7 +525,71 @@ export function discardLegacyCajeroBuffers(storage?: Storage): void {
 }
 
 function getRecountDraftKey(scope: CajeroBufferScope, detalleId: string): string {
-  return getCajeroBufferKey(scope).replace('buffer.v4', 'recount.v1') + ':' + encodeURIComponent(detalleId)
+  return [
+    RECOUNT_KEY_PREFIX,
+    scope.usuario_id,
+    scope.sede_id,
+    scope.dispositivo_id,
+    scope.conteo_id,
+    detalleId,
+  ].map(scopeSegment).join(':')
+}
+
+export interface CajeroStoredRecountAttempt {
+  scope: CajeroBufferScope
+  detalle_id: string
+  payload: Omit<CajeroRecountPayload, 'device_token'>
+}
+
+export function readCajeroRecountAttemptsForIdentity(
+  identity: CajeroBufferIdentity,
+  storage?: Storage,
+): CajeroStoredRecountAttempt[] {
+  const target = getStorage(storage)
+  const attempts: CajeroStoredRecountAttempt[] = []
+
+  for (let index = 0; index < target.length; index += 1) {
+    const key = target.key(index)
+    if (!key?.startsWith(`${RECOUNT_KEY_PREFIX}:`)) continue
+    const segments = key.split(':').map((segment) => decodeURIComponent(segment))
+    if (segments.length !== 6) continue
+    const [, usuarioId, sedeId, dispositivoId, conteoId, detalleId] = segments
+    if (
+      usuarioId !== identity.usuario_id ||
+      sedeId !== identity.sede_id ||
+      dispositivoId !== identity.dispositivo_id ||
+      !conteoId ||
+      !detalleId
+    ) continue
+    const scope: CajeroBufferScope = {
+      ...identity,
+      conteo_id: conteoId,
+    }
+    const payload = readCajeroRecountAttempt(scope, detalleId, target)
+    if (payload) attempts.push({ scope, detalle_id: detalleId, payload })
+  }
+
+  return attempts
+}
+
+export function removeCajeroRecountAttemptsForScope(
+  scope: CajeroBufferScope,
+  storage?: Storage,
+): void {
+  const target = getStorage(storage)
+  const prefix = [
+    RECOUNT_KEY_PREFIX,
+    scope.usuario_id,
+    scope.sede_id,
+    scope.dispositivo_id,
+    scope.conteo_id,
+  ].map(scopeSegment).join(':') + ':'
+  const keys: string[] = []
+  for (let index = 0; index < target.length; index += 1) {
+    const key = target.key(index)
+    if (key?.startsWith(prefix)) keys.push(key)
+  }
+  keys.forEach((key) => target.removeItem(key))
 }
 
 export function readCajeroRecountAttempt(

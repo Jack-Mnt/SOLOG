@@ -1,7 +1,7 @@
 import { PostgrestError } from '@supabase/supabase-js'
 import { describe, expect, test } from 'bun:test'
 import {
-  applyCajeroBatchResponse, blockSupersededCajeroBuffer, buildNextCajeroBatch,
+  applyCajeroBatchResponse, buildNextCajeroBatch, clearCajeroBuffer,
   discardLegacyCajeroBuffers, getCajeroBufferKey, readCajeroBuffer,
   readCajeroRecountAttempt, removeCajeroRecountAttempt, saveCajeroRecountAttempt,
   upsertCajeroObservation,
@@ -41,16 +41,18 @@ describe('Motor V3: buffer V4 y recuperación', () => {
     expect(buildNextCajeroBatch({ ...scope, conteo_id: 'new' }, 'token', storage)).toBeNull()
   })
 
-  test('SUPERSEDED conserva los datos y bloquea el envío normal y la edición', () => {
+  test('SUPERSEDED limpia el contexto anterior y permite continuar sin herencia', () => {
     const storage = new MemoryStorage()
-    const original = upsertCajeroObservation(scope, input, storage)
-    blockSupersededCajeroBuffer(scope, storage)
-    expect(readCajeroBuffer(scope, storage).items).toEqual([original])
-    expect(() => buildNextCajeroBatch(scope, 'token', storage)).toThrow('SUPERSEDED')
-    expect(() => upsertCajeroObservation(scope, { ...input, stock_fisico: 99 }, storage)).toThrow()
+    upsertCajeroObservation(scope, input, storage)
+    clearCajeroBuffer(scope, storage)
+    expect(readCajeroBuffer(scope, storage).items).toEqual([])
+    expect(buildNextCajeroBatch(scope, 'token', storage)).toBeNull()
+    const nextScope = { ...scope, conteo_id: 'new' }
+    const next = upsertCajeroObservation(nextScope, { ...input, stock_fisico: 99 }, storage)
+    expect(next.conteo_id).toBe('new')
     const error = normalizeSologError(new PostgrestError({ code: 'P0001', message: 'SOLOG_EXPIRED_SESSION_SUPERSEDED', details: '', hint: '' }))
     expect(error.code).toBe('SOLOG_EXPIRED_SESSION_SUPERSEDED')
-    expect(error.message).toContain('ya no pueden enviarse ni reasignarse')
+    expect(error.message).toContain('Se descartaron los pendientes anteriores')
   })
 
   test('descarta únicamente buffers legacy, preservando V4 y otras claves', () => {

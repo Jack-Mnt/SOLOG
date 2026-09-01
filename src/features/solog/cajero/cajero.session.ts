@@ -26,13 +26,18 @@ import {
 } from './cajero.api'
 import {
   applyCajeroBatchResponse,
-  blockSupersededCajeroBuffer,
+  clearCajeroBuffer,
   discardLegacyCajeroBuffers,
   buildNextCajeroBatch,
   getCajeroBufferRevision,
   readCajeroBuffersForIdentity,
+  readCajeroRecountAttemptsForIdentity,
+  removeCajeroRecountAttempt,
+  removeCajeroRecountAttemptsForScope,
   subscribeCajeroBufferChanges,
 } from './cajero.storage'
+import { recoverExpiredCajeroContext } from './cajero.recovery'
+import { getCajeroStartRestriction } from './cajero.stock'
 import type {
   CajeroRecountStartResponse,
   CajeroRecountResponse,
@@ -60,7 +65,7 @@ export function getCajeroSessionBlockReason(
 ): CajeroBlockReason | null {
   const session = bootstrap.sesion_activa
   if (!session) return null
-  if (!bootstrap.stock.disponible) return 'stock_unavailable'
+  if (!bootstrap.stock.disponible || !bootstrap.stock.vigente) return 'stock_unavailable'
 
   const expiration = Date.parse(session.expira_at)
   return !Number.isNaN(expiration) && now >= expiration ? 'expired' : null
@@ -73,7 +78,7 @@ export function getCajeroStatusBlockReason(
 ): CajeroBlockReason | null {
   const session = bootstrap.sesion_activa
   if (!session) return null
-  if (!bootstrap.stock.disponible || status.snapshot_actual_id === null) {
+  if (!bootstrap.stock.disponible || !bootstrap.stock.vigente || status.snapshot_actual_id === null) {
     return 'stock_unavailable'
   }
 
@@ -228,6 +233,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
   const operationalCachesRef = useRef<Partial<Record<CajeroCachedView, CajeroGroupsCacheEntry>>>({})
   const historyCachesRef = useRef<Partial<Record<CajeroHistoryPeriod, CajeroHistoryResponse>>>({})
   const historyRequestsRef = useRef<Partial<Record<CajeroHistoryPeriod, Promise<CajeroHistoryResponse>>>>({})
+  const recoveryRef = useRef<Promise<boolean> | null>(null)
   const bootstrapRef = useRef(solog.bootstrap)
   const identityRef = useRef(identity)
   const activeScopeRef = useRef(activeScope)
@@ -426,10 +432,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     },
     [refreshSolog, updateServerNow],
   )
-  const finishActiveSession = useCallback(async (): Promise<void> => {
-    const scope = activeScopeRef.current
-    if (!scope) return
-
+  const finishSessionScope = useCallback(async (scope: CajeroBufferScope): Promise<void> => {
     try {
       await finishCajeroSession({
         device_token: getOrCreateDeviceToken(),
@@ -449,6 +452,11 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       }
     }
   }, [invalidateOperationalCaches])
+
+  const finishActiveSession = useCallback(async (): Promise<void> => {
+    const scope = activeScopeRef.current
+    if (scope) await finishSessionScope(scope)
+  }, [finishSessionScope])
 
   const handleInactivity = useCallback(async (): Promise<void> => {
     const currentIdentity = identityRef.current
@@ -489,11 +497,6 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
         let allConfirmed = true
 
         for (const buffer of currentBuffers) {
-          if (buffer.envio_bloqueado) {
-            setError(getSologErrorMessageFromUnknown(new SologApiError(buffer.envio_bloqueado)))
-            allConfirmed = false
-            continue
-          }
           let payload = buildNextCajeroBatch(
             buffer.scope,
             getOrCreateDeviceToken(),
@@ -504,7 +507,8 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
               response = await saveCajeroBatch(payload)
             } catch (sendError) {
               if (isSologApiErrorCode(sendError, 'SOLOG_EXPIRED_SESSION_SUPERSEDED')) {
-                blockSupersededCajeroBuffer(buffer.scope)
+                clearCajeroBuffer(buffer.scope)
+                removeCajeroRecountAttemptsForScope(buffer.scope)
               }
               throw sendError
             }
@@ -514,7 +518,8 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
             }
             const application = applyCajeroBatchResponse(buffer.scope, response)
             if (response.errores.some((item) => item.codigo === 'SOLOG_EXPIRED_SESSION_SUPERSEDED')) {
-              blockSupersededCajeroBuffer(buffer.scope)
+              clearCajeroBuffer(buffer.scope)
+              removeCajeroRecountAttemptsForScope(buffer.scope)
               throw new SologApiError('SOLOG_EXPIRED_SESSION_SUPERSEDED')
             }
             if (
@@ -555,6 +560,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
             'SOLOG_DEVICE_NOT_AUTHORIZED',
             'SOLOG_COUNT_EXPIRED',
             'SOLOG_COUNT_NOT_ACTIVE',
+            'SOLOG_EXPIRED_SESSION_SUPERSEDED',
           )
         ) {
           await refreshSolog(true)
@@ -574,6 +580,114 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
       updateServerNow,
     ],
   )
+
+  const recoverExpiredContexts = useCallback(async (): Promise<boolean> => {
+    if (recoveryRef.current) return recoveryRef.current
+
+    const recovery = (async () => {
+      if (sendingRef.current) return false
+      const currentIdentity = identityRef.current
+      if (!currentIdentity) return false
+
+      const currentSession = bootstrapRef.current?.sesion_activa ?? null
+      const serverNow = Date.now() + serverOffsetRef.current
+      const sessionExpiration = currentSession
+        ? Date.parse(currentSession.expira_at)
+        : Number.NaN
+      if (currentSession && (Number.isNaN(sessionExpiration) || serverNow < sessionExpiration)) {
+        return false
+      }
+
+      const buffers = readCajeroBuffersForIdentity(currentIdentity)
+      const recountAttempts = readCajeroRecountAttemptsForIdentity(currentIdentity)
+      const scopes = new Map<string, CajeroBufferScope>()
+      buffers.forEach((buffer) => scopes.set(buffer.scope.conteo_id, buffer.scope))
+      recountAttempts.forEach((attempt) => scopes.set(attempt.scope.conteo_id, attempt.scope))
+      if (scopes.size === 0) return true
+
+      sendingRef.current = true
+      setSending(true)
+      setError(null)
+      let discarded = false
+      let superseded = false
+
+      try {
+        for (const scope of scopes.values()) {
+          const result = await recoverExpiredCajeroContext({
+            synchronize: async () => {
+              let hasRemaining = false
+              const payload = buildNextCajeroBatch(scope, getOrCreateDeviceToken())
+              if (payload) {
+                const response = await saveCajeroBatch(payload)
+                updateServerNow(response.server_now)
+                if (response.errores.some((item) => item.codigo === 'SOLOG_EXPIRED_SESSION_SUPERSEDED')) {
+                  return 'superseded'
+                }
+                const application = applyCajeroBatchResponse(scope, response)
+                if (response.guardados > 0 || response.ya_guardados > 0) {
+                  invalidateOperationalCaches()
+                }
+                hasRemaining = application.remaining.items.length > 0
+              }
+
+              const storedRecounts = readCajeroRecountAttemptsForIdentity(currentIdentity)
+                .filter((attempt) => attempt.scope.conteo_id === scope.conteo_id)
+              for (const attempt of storedRecounts) {
+                await saveCajeroRecount({
+                  device_token: getOrCreateDeviceToken(),
+                  ...attempt.payload,
+                })
+                removeCajeroRecountAttempt(scope, attempt.detalle_id)
+                invalidateOperationalCaches()
+              }
+
+              return hasRemaining ? 'remaining' : 'complete'
+            },
+            clearRemaining: () => {
+              clearCajeroBuffer(scope)
+              removeCajeroRecountAttemptsForScope(scope)
+            },
+            closeContext: () => finishSessionScope(scope),
+            isSupersededError: (recoveryError) =>
+              isSologApiErrorCode(
+                recoveryError,
+                'SOLOG_EXPIRED_SESSION_SUPERSEDED',
+              ),
+          })
+          discarded ||= result.outcome === 'discarded'
+          superseded ||= result.outcome === 'superseded'
+        }
+
+        invalidateOperationalCaches()
+        await refreshSolog(true)
+        setBlockReason(null)
+        if (superseded) {
+          setError(getSologErrorMessageFromUnknown(
+            new SologApiError('SOLOG_EXPIRED_SESSION_SUPERSEDED'),
+          ))
+        } else if (discarded) {
+          setError('No se pudieron recuperar todos los conteos pendientes. El remanente se limpió para continuar con una sesión nueva.')
+        } else {
+          solog.setNotice('Los conteos pendientes de la sesión anterior se sincronizaron correctamente.')
+        }
+        return !discarded && !superseded
+      } catch (recoveryError) {
+        setError(getSologErrorMessageFromUnknown(recoveryError))
+        await refreshSolog(true)
+        return false
+      } finally {
+        sendingRef.current = false
+        setSending(false)
+      }
+    })()
+
+    recoveryRef.current = recovery
+    try {
+      return await recovery
+    } finally {
+      if (recoveryRef.current === recovery) recoveryRef.current = null
+    }
+  }, [finishSessionScope, invalidateOperationalCaches, refreshSolog, solog, updateServerNow])
 
   const checkFreshness = useCallback(
     async (): Promise<CajeroBlockReason | null> => {
@@ -639,6 +753,24 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     }, remaining)
     return () => clearTimeout(timer)
   }, [blockReason, refreshSolog, solog.bootstrap?.sesion_activa, solog.serverOffsetMs])
+
+  useEffect(() => {
+    const currentIdentity = identity
+    if (!currentIdentity) return
+    const session = solog.bootstrap?.sesion_activa ?? null
+    const expiration = session ? Date.parse(session.expira_at) : Number.NaN
+    const sessionExpired = session !== null && !Number.isNaN(expiration) &&
+      Date.now() + solog.serverOffsetMs >= expiration
+    if (session && !sessionExpired && blockReason !== 'expired') return
+
+    const hasPendingBuffers = readCajeroBuffersForIdentity(currentIdentity).length > 0
+    const hasPendingRecounts = readCajeroRecountAttemptsForIdentity(currentIdentity).length > 0
+    if (!hasPendingBuffers && !hasPendingRecounts) return
+
+    queueMicrotask(() => {
+      void recoverExpiredContexts()
+    })
+  }, [blockReason, identity, pendingCount, recoverExpiredContexts, solog.bootstrap?.sesion_activa, solog.serverOffsetMs])
 
   useEffect(() => {
     const handleReturn = () => {
@@ -752,6 +884,16 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
   const startSession = useCallback(async (): Promise<boolean> => {
     if (starting || sendingRef.current) return false
     if (bootstrapRef.current?.sesion_activa) return true
+    const stock = bootstrapRef.current?.stock
+    const startRestriction = stock
+      ? getCajeroStartRestriction(stock, Date.now() + serverOffsetRef.current)
+      : 'stock_expired'
+    if (startRestriction) {
+      setError(startRestriction === 'stock_expired'
+        ? 'Actualiza el inventario desde ConeXion para comenzar un nuevo conteo.'
+        : 'El stock está próximo a vencer. Actualiza el inventario antes de iniciar un nuevo conteo.')
+      return false
+    }
     const currentIdentity = identityRef.current
     if (
       currentIdentity &&
@@ -782,6 +924,8 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
           startError,
           'SOLOG_ACTIVE_COUNT_EXISTS',
           'SOLOG_DEVICE_NOT_AUTHORIZED',
+          'SOLOG_STOCK_EXPIRED',
+          'SOLOG_STOCK_TOO_CLOSE_TO_EXPIRY',
         )
       ) {
         await refreshSolog(true)
@@ -837,6 +981,7 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     canCapture:
       Boolean(activeScope) &&
       solog.bootstrap?.stock.disponible === true &&
+      solog.bootstrap.stock.vigente &&
       blockReason === null &&
       !sending,
     error,
@@ -857,8 +1002,14 @@ export function useCajeroSession(onLogout: () => Promise<void>): CajeroSessionCo
     sending,
     starting,
     startSession,
-    sendPending: () => sendPendingInternal(null),
-    retrySend: () => sendPendingInternal(blockReasonRef.current),
+    sendPending: () =>
+      (!activeScopeRef.current || blockReasonRef.current === 'expired')
+        ? recoverExpiredContexts()
+        : sendPendingInternal(null),
+    retrySend: () =>
+      (!activeScopeRef.current || blockReasonRef.current === 'expired')
+        ? recoverExpiredContexts()
+        : sendPendingInternal(blockReasonRef.current),
     checkFreshness,
     logoutSafely,
     clearError: () => setError(null),

@@ -14,11 +14,12 @@ import {
 } from './cajero.session'
 import type { CajeroRoute } from './cajero.types'
 import { isCajeroRouteAvailable } from './cajero.utils'
+import { useSolog } from '../context'
 
 const BLOCK_MESSAGES: Record<CajeroBlockReason, { title: string; detail: string }> = {
   expired: {
     title: 'La sesión de conteo venció.',
-    detail: 'No registres nuevas capturas. Puedes intentar enviar los pendientes con su sesión y fecha originales.',
+    detail: 'No registres nuevas capturas. SOLOG intentará sincronizar los pendientes con su sesión y fecha originales.',
   },
   inactive: {
     title: 'La sesión se bloqueó por inactividad.',
@@ -39,6 +40,7 @@ export function Cajero({
   route: CajeroRoute
   onLogout: () => Promise<void>
 }) {
+  const solog = useSolog()
   const session = useCajeroSession(onLogout)
 
   useEffect(() => {
@@ -60,7 +62,9 @@ export function Cajero({
   return (
     <div className="cajero-shell">
       <CajeroHeader
+        bootstrap={bootstrap}
         onLogout={() => void session.logoutSafely()}
+        serverOffsetMs={solog.serverOffsetMs}
         sede={bootstrap.sede.nombre}
       />
       <main className="cajero-main">

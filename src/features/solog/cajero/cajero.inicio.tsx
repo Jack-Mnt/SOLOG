@@ -12,37 +12,15 @@ import {
 } from "lucide-react";
 import { navigateTo } from "../../../lib/router";
 import { PaletteSwitcher } from "../../theme/palette-switcher";
+import { useSolog } from "../context";
 import type { SologOperationalBootstrap } from "../types";
 import type { CajeroSessionController } from "./cajero.session";
-
-const STOCK_STALE_AFTER_MS = 2 * 60 * 60 * 1000;
-
-function getStockFreshness(confirmedAt: string, now = Date.now()) {
-  const confirmedAtMs = Date.parse(confirmedAt);
-
-  if (!Number.isFinite(confirmedAtMs)) {
-    return { fresh: false, relativeTime: null };
-  }
-
-  const elapsedMs = Math.max(0, now - confirmedAtMs);
-  if (elapsedMs > STOCK_STALE_AFTER_MS) {
-    return { fresh: false, relativeTime: null };
-  }
-
-  const elapsedMinutes = Math.floor(elapsedMs / 60_000);
-  if (elapsedMinutes < 60) {
-    return { fresh: true, relativeTime: `hace ${elapsedMinutes} min` };
-  }
-
-  const hours = Math.floor(elapsedMinutes / 60);
-  const minutes = elapsedMinutes % 60;
-
-  return {
-    fresh: true,
-    relativeTime:
-      minutes > 0 ? `hace ${hours} h ${minutes} min` : `hace ${hours} h`,
-  };
-}
+import {
+  formatCajeroElapsed,
+  getCajeroStartRestriction,
+  getCajeroStockPresentation,
+  useCajeroServerClock,
+} from "./cajero.stock";
 
 function pluralize(count: number, singular: string, plural: string) {
   return count === 1 ? singular : plural;
@@ -81,13 +59,18 @@ export function CajeroInicio({
   bootstrap: SologOperationalBootstrap;
   session: CajeroSessionController;
 }) {
+  const solog = useSolog();
+  const now = useCajeroServerClock(solog.serverOffsetMs);
   const stockAvailable = bootstrap.stock.disponible;
-  const stockFreshness = stockAvailable
-    ? getStockFreshness(bootstrap.stock.confirmado_at)
-    : null;
+  const stockPresentation = getCajeroStockPresentation(
+    bootstrap.stock,
+    bootstrap.sesion_activa,
+    now,
+  );
+  const startRestriction = getCajeroStartRestriction(bootstrap.stock, now);
   const canStart =
     stockAvailable &&
-    bootstrap.stock.puede_iniciar_conteo &&
+    startRestriction === null &&
     !bootstrap.sesion_activa &&
     session.pendingCount === 0;
   const periodComplete = session.periodComplete;
@@ -127,27 +110,25 @@ export function CajeroInicio({
         </div>
       ) : (
         <section
-          className={`cajero-stock-card${stockFreshness?.fresh ? "" : " cajero-stock-card--stale"}`}
+          className={`cajero-stock-card cajero-stock-card--${stockPresentation.state}`}
           aria-labelledby="cajero-stock-title"
         >
           <div className="cajero-stock-card__status">
             <span className="cajero-stock-card__icon" aria-hidden="true">
-              {stockFreshness?.fresh ? (
+              {stockPresentation.state === "updated" ? (
                 <CheckCircle2 size={23} />
               ) : (
                 <Database size={23} />
               )}
             </span>
             <div>
-              <h2 id="cajero-stock-title">
-                {stockFreshness?.fresh
-                  ? "Stock actualizado"
-                  : "Stock desactualizado"}
-              </h2>
+              <h2 id="cajero-stock-title">{stockPresentation.label}</h2>
               <p>
-                {stockFreshness?.fresh
-                  ? stockFreshness.relativeTime
-                  : "La antigüedad del inventario es informativa; puedes continuar si la sesión está activa."}
+                {startRestriction === "stock_expired"
+                  ? "Actualiza el inventario desde ConeXion para comenzar un nuevo conteo."
+                  : startRestriction === "stock_too_close" && !bootstrap.sesion_activa
+                    ? "El stock está próximo a vencer. Actualiza el inventario antes de iniciar un nuevo conteo."
+                    : formatCajeroElapsed(stockPresentation.elapsedMs)}
               </p>
             </div>
           </div>

@@ -6157,7 +6157,8 @@ h1 {
 }
 
 .cajero-header__brand:focus-visible,
-.cajero-header__logout:focus-visible {
+.cajero-header__logout:focus-visible,
+.cajero-stock-indicator__trigger:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
@@ -6171,6 +6172,116 @@ h1 {
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cajero-header__actions {
+  min-width: 0;
+  display: flex;
+  justify-self: end;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cajero-stock-indicator {
+  position: relative;
+}
+
+.cajero-stock-indicator__trigger {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0 0.65rem;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: var(--radius-control);
+  color: var(--color-text-inverse);
+  background: rgb(255 255 255 / 8%);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.cajero-stock-indicator__trigger--countdown {
+  min-width: 68px;
+  border-color: color-mix(in srgb, var(--color-warning) 70%, white);
+  color: #fff7d6;
+  background: rgb(183 118 0 / 32%);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.cajero-stock-indicator__trigger--expired {
+  border-color: color-mix(in srgb, var(--color-danger) 70%, white);
+  background: rgb(176 32 45 / 28%);
+}
+
+.cajero-stock-indicator__dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #61d69b;
+  box-shadow: 0 0 0 3px rgb(97 214 155 / 14%);
+}
+
+.cajero-stock-indicator__trigger--near_expiry .cajero-stock-indicator__dot,
+.cajero-stock-indicator__trigger--critical .cajero-stock-indicator__dot {
+  background: #ffc857;
+  box-shadow: 0 0 0 3px rgb(255 200 87 / 14%);
+}
+
+.cajero-stock-indicator__trigger--expired .cajero-stock-indicator__dot {
+  background: #ff7885;
+  box-shadow: 0 0 0 3px rgb(255 120 133 / 14%);
+}
+
+.cajero-stock-indicator__popover {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  width: min(300px, calc(100vw - 28px));
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-elevated);
+}
+
+.cajero-stock-indicator__popover strong,
+.cajero-stock-indicator__popover p,
+.cajero-stock-indicator__popover dl,
+.cajero-stock-indicator__popover dt,
+.cajero-stock-indicator__popover dd {
+  margin: 0;
+}
+
+.cajero-stock-indicator__popover p,
+.cajero-stock-indicator__popover dl {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.cajero-stock-indicator__popover dl,
+.cajero-stock-indicator__popover dl > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.cajero-stock-indicator__popover dl > div {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.cajero-stock-indicator__popover dd {
+  color: var(--color-text-primary);
+  font-weight: 700;
 }
 
 .cajero-header__logout {
@@ -6355,6 +6466,24 @@ h1 {
 
   .cajero-main {
     padding: 1.75rem 32px 2.25rem;
+  }
+}
+
+@media (max-width: 699px) {
+  .cajero-stock-indicator__trigger > span:not(.cajero-stock-indicator__dot) {
+    display: none;
+  }
+
+  .cajero-stock-indicator__trigger {
+    width: 40px;
+    min-width: 40px;
+    padding-inline: 0;
+  }
+
+  .cajero-stock-indicator__trigger--countdown {
+    width: auto;
+    min-width: 62px;
+    padding-inline: 0.45rem;
   }
 }
 
@@ -7921,7 +8050,9 @@ h1 {
   box-shadow: var(--shadow-default);
 }
 
-.cajero-stock-card--stale {
+.cajero-stock-card--near_expiry,
+.cajero-stock-card--critical,
+.cajero-stock-card--countdown {
   border-color: color-mix(
     in srgb,
     var(--color-warning) 42%,
@@ -7950,9 +8081,23 @@ h1 {
   background: var(--color-success-soft);
 }
 
-.cajero-stock-card--stale .cajero-stock-card__icon {
+.cajero-stock-card--near_expiry .cajero-stock-card__icon,
+.cajero-stock-card--critical .cajero-stock-card__icon,
+.cajero-stock-card--countdown .cajero-stock-card__icon {
   color: var(--color-warning);
   background: var(--color-warning-soft);
+}
+
+.cajero-stock-card--expired {
+  border-color: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
+  background:
+    linear-gradient(120deg, var(--color-danger-soft), transparent 72%),
+    var(--color-surface);
+}
+
+.cajero-stock-card--expired .cajero-stock-card__icon {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 .cajero-stock-card h2,

@@ -282,7 +282,6 @@ export interface CajeroObservationInput {
 
 export interface CajeroBuffer {
   version: 4
-  envio_bloqueado?: 'SOLOG_EXPIRED_SESSION_SUPERSEDED'
   scope: CajeroBufferScope
   items: CajeroPendingObservation[]
 }
