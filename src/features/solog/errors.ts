@@ -153,6 +153,8 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
     'Este dispositivo no corresponde a la sede asignada a tu usuario.',
   SOLOG_INVALID_DETAILS_ACTION:
     'La acción solicitada no está disponible en Detalles.',
+  SOLOG_INVALID_DETAILS_EXPORT_RESPONSE:
+    'El backend devolvió datos incompletos para generar el Excel de la sede.',
   SOLOG_ADMIN_ROLE_REQUIRED:
     'Tu usuario ya no tiene permisos para administrar SOLOG.',
   SOLOG_SEDE_REQUIRED: 'Selecciona una sede para consultar Control.',

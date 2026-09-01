@@ -4,6 +4,8 @@ import {
   CheckCircle2,
   Clock3,
   Database,
+  FileSpreadsheet,
+  History,
   LoaderCircle,
   LockKeyhole,
   LogOut,
@@ -13,7 +15,10 @@ import {
   ShieldAlert,
   Tablet,
 } from 'lucide-react'
+import { useState } from 'react'
 import type { SologOperationalBootstrap } from '../types'
+import { useSologDetailsExport } from './detalles.export.hook'
+import { SologDetailsHistoryDialog } from './detalles.historial.dialog'
 import { useSologDetailsSummary } from './detalles.hook'
 
 const LIMA_TIME_ZONE = 'America/Lima'
@@ -80,6 +85,8 @@ export function SologDetailsPanel({
   bootstrap: SologOperationalBootstrap
   onLogout: () => void
 }) {
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const detailsExport = useSologDetailsExport()
   const {
     error,
     loadSummary,
@@ -255,10 +262,57 @@ export function SologDetailsPanel({
                   </div>
                 </div>
               </section>
+
+              <section className="details-actions" aria-label="Consultas disponibles">
+                <div>
+                  <FileSpreadsheet aria-hidden="true" size={22} />
+                  <div>
+                    <h2>Información de la sede</h2>
+                    <p>Consulta el historial o descarga las diferencias finales del período.</p>
+                  </div>
+                </div>
+                <div className="details-actions__buttons">
+                  <button
+                    className="button button--secondary"
+                    onClick={() => setHistoryOpen(true)}
+                    type="button"
+                  >
+                    <History aria-hidden="true" size={18} /> Ver historial
+                  </button>
+                  <button
+                    className="button"
+                    disabled={detailsExport.exporting}
+                    onClick={() => void detailsExport.exportExcel()}
+                    type="button"
+                  >
+                    {detailsExport.exporting ? (
+                      <LoaderCircle aria-hidden="true" className="spin" size={18} />
+                    ) : (
+                      <FileSpreadsheet aria-hidden="true" size={18} />
+                    )}
+                    {detailsExport.exporting ? 'Generando Excel…' : 'Descargar Excel'}
+                  </button>
+                </div>
+              </section>
+              {detailsExport.error ? (
+                <div className="cajero-alert cajero-alert--error" role="alert">
+                  <AlertTriangle aria-hidden="true" size={22} />
+                  <p>{detailsExport.error}</p>
+                </div>
+              ) : null}
+              {detailsExport.notice ? (
+                <div className="cajero-alert details-notice" role="status">
+                  <CheckCircle2 aria-hidden="true" size={22} />
+                  <p>{detailsExport.notice}</p>
+                </div>
+              ) : null}
             </>
           ) : null}
         </section>
       </main>
+      {historyOpen ? (
+        <SologDetailsHistoryDialog onClose={() => setHistoryOpen(false)} />
+      ) : null}
     </div>
   )
 }
