@@ -112,6 +112,17 @@ export function applyCajeroCalculatorKey(
     return trimmed.slice(0, -1)
   }
 
+  if (key === 'times6' || key === 'times12') {
+    if (
+      trimmed.length === 0 ||
+      trimmed.endsWith('+') ||
+      trimmed.endsWith('×')
+    ) {
+      return expression
+    }
+    return `${trimmed} × ${key === 'times6' ? '6' : '12'}`
+  }
+
   if (key === '+' || key === '×') {
     if (
       trimmed.length === 0 ||

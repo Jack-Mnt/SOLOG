@@ -49,6 +49,8 @@ export type CajeroCalculatorKey =
   | '9'
   | '+'
   | '×'
+  | 'times6'
+  | 'times12'
   | 'clear'
   | 'backspace'
 

@@ -167,8 +167,7 @@ async function capture(page) {
   await page.getByRole('button', { name: /Bebidas/ }).click()
   await page.getByRole('dialog').getByRole('button', { name: /Grupo normal/ }).click()
   await page.getByRole('dialog').getByRole('button', { name: '8', exact: true }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Guardar', exact: true }).click()
-  await page.getByRole('dialog').locator('dd').filter({ hasText: /^8$/ }).waitFor()
+  await page.getByRole('dialog').getByRole('button', { name: 'Continuar', exact: true }).click()
 }
 async function pending(page) {
   return page.evaluate(() => Object.keys(sessionStorage).filter((key) => key.startsWith('solog.cajero.buffer.v4:')).map((key) => JSON.parse(sessionStorage.getItem(key))))
@@ -185,6 +184,60 @@ try {
     check('primer snapshot disponible actualiza Inicio sin recargar')
     await context.close()
   }
+  {
+    const { context, page, state } = await scenario()
+    state.normal = [group('first'), group('second'), group('third')]
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()
+    await page.getByRole('button', { name: /Bebidas/ }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /Grupo first/ }).click()
+    assert.equal(await dialog.getByRole('button', { name: 'Guardar', exact: true }).count(), 0)
+    assert.equal(await dialog.getByRole('button', { name: 'Multiplicar por 6', exact: true }).count(), 1)
+    assert.equal(await dialog.getByRole('button', { name: 'Multiplicar por 12', exact: true }).count(), 1)
+    const next = dialog.getByRole('button', { name: 'Siguiente', exact: true })
+    assert.equal(await next.isEnabled(), true)
+    await next.click()
+    await dialog.getByRole('heading', { name: 'Grupo second', exact: true }).waitFor()
+    assert.equal((await pending(page)).length, 0)
+
+    await dialog.getByRole('button', { name: '8', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Sumar', exact: true }).click()
+    assert.equal(await dialog.getByRole('button', { name: 'Continuar', exact: true }).isEnabled(), false)
+    await dialog.getByRole('button', { name: 'Anterior', exact: true }).click()
+    await dialog.getByRole('heading', { name: 'Grupo first', exact: true }).waitFor()
+    await dialog.getByRole('button', { name: 'Siguiente', exact: true }).click()
+    await dialog.getByText('8 +', { exact: true }).waitFor()
+    await dialog.getByRole('button', { name: 'Regresar', exact: true }).click()
+    await dialog.getByRole('button', { name: /Grupo second/ }).click()
+    await dialog.getByText('8 +', { exact: true }).waitFor()
+    await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await page.getByRole('button', { name: /Bebidas/ }).click()
+    await dialog.getByRole('button', { name: /Grupo second/ }).click()
+    await dialog.getByText('8 +', { exact: true }).waitFor()
+    assert.equal((await pending(page)).length, 0)
+
+    await dialog.getByRole('button', { name: 'Limpiar expresión', exact: true }).click()
+    for (const digit of ['1', '0', '0', '0', '0', '0']) {
+      await dialog.getByRole('button', { name: digit, exact: true }).click()
+    }
+    assert.equal(await dialog.getByRole('button', { name: 'Continuar', exact: true }).isEnabled(), false)
+    await dialog.getByRole('button', { name: 'Limpiar expresión', exact: true }).click()
+    await dialog.getByRole('button', { name: '1', exact: true }).click()
+    await dialog.getByRole('button', { name: '5', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Continuar', exact: true }).click()
+    await dialog.getByRole('heading', { name: 'Grupo third', exact: true }).waitFor()
+    assert.equal((await pending(page))[0].items[0].stock_fisico, 15)
+
+    for (const key of ['8', 'Sumar', '7', 'Multiplicar', '2']) {
+      await dialog.getByRole('button', { name: key, exact: true }).click()
+    }
+    await dialog.getByRole('button', { name: 'Continuar', exact: true }).click()
+    await dialog.getByRole('button', { name: /Grupo third/ }).waitFor()
+    const items = (await pending(page))[0].items
+    assert.equal(items.find((item) => item.grupo_id === 'third').stock_fisico, 22)
+    check('footer normal navega vacío, conserva drafts y guarda expresiones válidas antes de avanzar')
+    await context.close()
+  }
   for (const superseded of [false, true]) {
     const { context, page, state } = await scenario()
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()
@@ -198,7 +251,7 @@ try {
     await nav(page, 'Conteo')
     await page.getByRole('button', { name: /Bebidas/ }).click()
     await page.getByRole('dialog').getByRole('button', { name: /Grupo normal/ }).click()
-    assert.equal(await page.getByRole('dialog').getByRole('button', { name: 'Guardar', exact: true }).isEnabled(), true)
+    assert.equal(await page.getByRole('dialog').getByRole('button', { name: 'Continuar', exact: true }).isEnabled(), true)
     assert.deepEqual((await pending(page))[0].items, original.items)
     assert.equal(state.calls.filter((call) => call.action === 'finish').length, 0)
     check('snapshot nuevo preserva sesión, captura y pendientes V4')

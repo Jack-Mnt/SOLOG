@@ -71,6 +71,31 @@ describe('calculadora compartida Fase 2', () => {
       { grupo_id: 'group-1', expresion: '' },
     ])
   })
+
+  test('aplica x6 y x12 como atajos de multiplicación sin duplicar el parser', () => {
+    expect(applyCajeroCalculatorKey('3', 'times6')).toBe('3 × 6')
+    expect(applyCajeroCalculatorKey('2', 'times12')).toBe('2 × 12')
+    expect(applyCajeroCalculatorKey('2 + 3', 'times6')).toBe('2 + 3 × 6')
+    expect(evaluateCajeroExpression('3 × 6')).toEqual({
+      status: 'valid',
+      value: 18,
+    })
+    expect(evaluateCajeroExpression('2 × 12')).toEqual({
+      status: 'valid',
+      value: 24,
+    })
+    expect(evaluateCajeroExpression('2 + 3 × 6')).toEqual({
+      status: 'valid',
+      value: 20,
+    })
+  })
+
+  test('ignora x6 y x12 cuando no pueden formar una expresión válida', () => {
+    expect(applyCajeroCalculatorKey('', 'times6')).toBe('')
+    expect(applyCajeroCalculatorKey('', 'times12')).toBe('')
+    expect(applyCajeroCalculatorKey('8 +', 'times6')).toBe('8 +')
+    expect(applyCajeroCalculatorKey('8 ×', 'times12')).toBe('8 ×')
+  })
 })
 
 describe('Guardar local Fase 2', () => {

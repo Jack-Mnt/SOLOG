@@ -32,6 +32,7 @@ import type {
 import {
   calculateDifference,
   calculateValuation,
+  evaluateCajeroExpression,
   formatCajeroDifference,
   formatCajeroCurrency,
   getCajeroDifferenceClass,
@@ -178,14 +179,14 @@ export function CajeroCaptureModal({
     }
   }, [])
 
-  const saveActiveGroup = async (stockFisico: number) => {
-    if (!activeGroup || disabled || saveLock.current || lockedGroupIds?.has(activeGroup.grupo_id)) return
+  const saveActiveGroup = async (stockFisico: number): Promise<boolean> => {
+    if (!activeGroup || disabled || saveLock.current || lockedGroupIds?.has(activeGroup.grupo_id)) return false
     saveLock.current = true
     setSaving(true)
     setCaptureError(null)
     try {
       if (review) {
-        if (!detailId || !reference || reference.detalle_id !== detailId || result) return
+        if (!detailId || !reference || reference.detalle_id !== detailId || result) return false
         const payload = saveCajeroRecountAttempt(scope, detailId, stockFisico, session.captureTimestamp())
         const saved = await session.saveRecount(detailId, payload.stock_fisico, payload.contado_at)
         removeCajeroRecountAttempt(scope, detailId)
@@ -206,9 +207,11 @@ export function CajeroCaptureModal({
         }, activeExpression)
         onObservationSaved()
       }
+      return true
     } catch (saveError) {
       setCaptureError(getSologErrorMessageFromUnknown(saveError))
       if (review) setReference(null)
+      return false
     } finally {
       saveLock.current = false
       setSaving(false)
@@ -223,6 +226,31 @@ export function CajeroCaptureModal({
     if (onNextCategory) {
       setActiveGroupId(null)
       onNextCategory()
+    }
+  }
+
+  const expressionEvaluation = evaluateCajeroExpression(activeExpression)
+  const hasExpression = activeExpression.trim().length > 0
+  const canNavigateNext = activeIndex < groups.length - 1 || Boolean(onNextCategory)
+  const continueDisabled = review || saving || (
+    hasExpression
+      ? expressionEvaluation.status !== 'valid'
+      : !canNavigateNext
+  )
+
+  const continueToNext = async () => {
+    if (review || continueDisabled) return
+    if (!hasExpression) {
+      navigateNext()
+      return
+    }
+    if (
+      expressionEvaluation.status === 'valid' &&
+      expressionEvaluation.value !== null &&
+      await saveActiveGroup(expressionEvaluation.value)
+    ) {
+      if (canNavigateNext) navigateNext()
+      else setActiveGroupId(null)
     }
   }
 
@@ -324,6 +352,7 @@ export function CajeroCaptureModal({
               <CajeroCalculator
                 disabled={activeLocked}
                 expression={activeExpression}
+                variant={review ? 'review' : 'normal'}
                 onChange={(expression) => {
                   if (!attempt) setCajeroExpressionDraft(scope, draftId, expression)
                 }}
@@ -347,13 +376,11 @@ export function CajeroCaptureModal({
                 </button>
                 <button
                   className="button"
-                  disabled={review || saving || (activeIndex === groups.length - 1 && !onNextCategory)}
-                  onClick={navigateNext}
+                  disabled={continueDisabled}
+                  onClick={() => void continueToNext()}
                   type="button"
                 >
-                  {activeIndex === groups.length - 1 && onNextCategory
-                    ? 'Siguiente categoría'
-                    : 'Siguiente'}
+                  {review ? 'Siguiente' : hasExpression ? 'Continuar' : 'Siguiente'}
                 </button>
               </nav>
             </div>

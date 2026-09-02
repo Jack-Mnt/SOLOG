@@ -71,6 +71,10 @@ describe('calculadora Cajero Fase 1', () => {
       status: 'incomplete',
       value: null,
     })
+    expect(evaluateCajeroExpression('8 + 7 ×')).toEqual({
+      status: 'incomplete',
+      value: null,
+    })
     expect(evaluateCajeroExpression('100000')).toEqual({
       status: 'too_high',
       value: null,
