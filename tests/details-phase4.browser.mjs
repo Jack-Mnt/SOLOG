@@ -82,6 +82,7 @@ await context.route('**/*', async (route) => {
   const rpc = url.pathname.split('/').at(-1)
   const payload = request.postDataJSON() ?? {}
   calls.push({ rpc, payload })
+  if (rpc === 'rpc_solog_route_v2') return fulfill({ contract_version: 2, generated_at: serverNow, identity: bootstrap.usuario, route: '/cajero' })
   if (rpc === 'rpc_solog_state' && payload.p_action === 'bootstrap') return fulfill(bootstrap)
   if (rpc === 'rpc_solog_details' && payload.p_action === 'summary') return fulfill(summary)
   if (rpc === 'rpc_solog_details' && payload.p_action === 'export') return fulfill(exportResponse())

@@ -1,5 +1,18 @@
 export type SologRole = 'cajero' | 'moderador' | 'admin'
 
+export type SologEntryRoute = '/cajero' | '/admin'
+
+export interface SologRouteResponse {
+  contract_version: 2
+  generated_at: string
+  identity: {
+    id: string
+    nombre: string
+    rol: SologRole
+  }
+  route: SologEntryRoute
+}
+
 export type SologDeviceState = string
 
 export type SologSessionState = 'activo' | 'finalizado' | 'expirado'

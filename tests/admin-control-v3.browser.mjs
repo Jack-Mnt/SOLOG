@@ -95,6 +95,7 @@ async function scenario() {
     const payload = body.p_payload ?? {}
     state.calls.push({ rpc, body, payload })
     const usuario = { id: user.id, nombre: 'Administrador prueba', rol: 'admin' }
+    if (rpc === 'rpc_solog_route_v2') return fulfill({ contract_version: 2, generated_at: serverNow, identity: usuario, route: '/admin' })
     if (rpc === 'rpc_solog_state' && body.p_action === 'bootstrap') return fulfill({ usuario, server_now: serverNow })
     if (rpc === 'rpc_solog_admin' && body.p_action === 'bootstrap') return fulfill({
       usuario, dispositivos_pendientes: [], sedes: ['huaca', 'cutervo'].map((id) => ({ id, nombre: id === 'huaca' ? 'Huaca' : 'Cutervo', activo: true, dispositivo: null, sesion_activa: null })),

@@ -10,16 +10,10 @@ import {
 import type { MouseEvent, ReactNode } from "react";
 import { navigateTo } from "../lib/router";
 
-type PublicPanelRoute = "/admin" | "/cajero";
-
-interface PublicHomePageProps {
-  panelRoute?: PublicPanelRoute;
-}
-
 interface HomeLinkProps {
   children: ReactNode;
   className: string;
-  href: "/login" | PublicPanelRoute;
+  href: "/login";
 }
 
 const capabilities: Array<{
@@ -64,11 +58,7 @@ function HomeLink({ children, className, href }: HomeLinkProps) {
   );
 }
 
-export function PublicHomePage({ panelRoute }: PublicHomePageProps) {
-  const destination = panelRoute ?? "/login";
-  const headerLabel = panelRoute ? "Ir a mi panel" : "Ingresar";
-  const heroLabel = panelRoute ? "Ir a mi panel" : "Ingresar a SOLOG";
-
+export function PublicHomePage() {
   return (
     <div className="solog-home">
       <header className="solog-home-header">
@@ -82,10 +72,10 @@ export function PublicHomePage({ panelRoute }: PublicHomePageProps) {
           </a>
           <HomeLink
             className="solog-home-button solog-home-button--compact"
-            href={destination}
+            href="/login"
           >
             <LogIn aria-hidden="true" size={18} />
-            <span>{headerLabel}</span>
+            <span>Iniciar sesión</span>
           </HomeLink>
         </div>
       </header>
@@ -111,8 +101,8 @@ export function PublicHomePage({ panelRoute }: PublicHomePageProps) {
                 inventario bajo control.
               </p>
               <div className="solog-home-hero__actions">
-                <HomeLink className="solog-home-button" href={destination}>
-                  <span>{heroLabel}</span>
+                <HomeLink className="solog-home-button" href="/login">
+                  <span>Iniciar sesión</span>
                   <ArrowRight aria-hidden="true" size={19} />
                 </HomeLink>
                 <small>Acceso restringido al personal autorizado.</small>
@@ -187,8 +177,8 @@ export function PublicHomePage({ panelRoute }: PublicHomePageProps) {
               <p className="solog-home-eyebrow">SOLOG</p>
               <h2 id="final-cta-title">Accede a tu espacio de trabajo</h2>
             </div>
-            <HomeLink className="solog-home-button" href={destination}>
-              <span>{headerLabel}</span>
+            <HomeLink className="solog-home-button" href="/login">
+              <span>Iniciar sesión</span>
               <ArrowRight aria-hidden="true" size={19} />
             </HomeLink>
           </div>

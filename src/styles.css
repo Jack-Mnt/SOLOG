@@ -613,6 +613,118 @@ h1 {
   text-align: center;
 }
 
+.panel-loader {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  color: var(--color-text-primary);
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 34%),
+    var(--color-background);
+}
+
+.panel-loader--contained {
+  min-height: clamp(260px, 52vh, 520px);
+  padding: 24px;
+  background: transparent;
+}
+
+.panel-loader__content {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+}
+
+.panel-loader__symbol {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+}
+
+.panel-loader__symbol img {
+  position: relative;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  animation: panel-loader-float 1.8s ease-in-out infinite;
+}
+
+.panel-loader__halo {
+  position: absolute;
+  inset: 3px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 32%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  animation: panel-loader-breathe 1.8s ease-in-out infinite;
+}
+
+.panel-loader__dots {
+  display: flex;
+  gap: 7px;
+}
+
+.panel-loader__dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: panel-loader-dot 1.2s ease-in-out infinite;
+}
+
+.panel-loader__dots span:nth-child(2) {
+  animation-delay: 140ms;
+}
+
+.panel-loader__dots span:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+.panel-loader__label {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+@keyframes panel-loader-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes panel-loader-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes panel-loader-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.28;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
 .icon-spin {
   animation: icon-spin 900ms linear infinite;
 }
@@ -6066,6 +6178,12 @@ h1 {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .panel-loader__symbol img,
+  .panel-loader__halo,
+  .panel-loader__dots span {
+    animation: none !important;
   }
 }
 /* Adaptación administrativa SOLOG V3 — observaciones */

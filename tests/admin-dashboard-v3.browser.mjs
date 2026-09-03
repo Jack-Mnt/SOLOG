@@ -75,6 +75,7 @@ async function scenario({ empty = false, failDashboard = false } = {}) {
     const payload = request.postDataJSON() ?? {}
     state.calls.push({ rpc, payload })
     const usuario = { id: user.id, nombre: 'Administrador prueba', rol: 'admin' }
+    if (rpc === 'rpc_solog_route_v2') return fulfill({ contract_version: 2, generated_at: serverNow, identity: usuario, route: '/admin' })
     if (rpc === 'rpc_solog_state' && payload.p_action === 'bootstrap') return fulfill({ usuario, server_now: serverNow })
     if (rpc === 'rpc_solog_admin' && payload.p_action === 'bootstrap') return fulfill({
       usuario, dispositivos_pendientes: [],
@@ -114,6 +115,22 @@ try {
   {
     const { context, page, state } = await scenario()
     await page.getByRole('heading', { name: 'Resumen por sede' }).waitFor()
+    const resources = await page.evaluate(() =>
+      performance.getEntriesByType('resource').map((entry) => entry.name),
+    )
+    assert.equal(resources.some((url) => url.includes('/admin/admin-app.tsx')), true)
+    assert.equal(resources.some((url) => url.includes('/pages/admin.dashboard.tsx')), true)
+    assert.equal(
+      resources.some(
+        (url) =>
+          url.includes('/pages/detalles.tsx') ||
+          url.includes('/features/solog/cajero/cajero.tsx') ||
+          url.includes('/pages/admin.control.tsx') ||
+          url.includes('/pages/admin.dispositivos.tsx'),
+      ),
+      false,
+    )
+    check('waterfall frío carga solo shell Admin y Dashboard')
     const cards = page.locator('.admin-dashboard-kpi')
     assert.equal(await cards.count(), 5)
     for (const [label, value] of [['Cobertura del período', '75%'], ['Contados hoy', '2'], ['Por recontar', '3'], ['Confirmadas', '4'], ['Inconsistentes', '5']]) {

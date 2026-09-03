@@ -68,6 +68,7 @@ await context.route('**/*', async (route) => {
   const rpc = url.pathname.split('/').at(-1)
   const payload = request.postDataJSON() ?? {}
   calls.push({ rpc, payload })
+  if (rpc === 'rpc_solog_route_v2') return fulfill({ contract_version: 2, generated_at: serverNow, identity: bootstrap.usuario, route: '/cajero' })
   if (rpc === 'rpc_solog_state' && payload.p_action === 'bootstrap') {
     if (!payload.p_payload?.device_token) return fulfill({ usuario: bootstrap.usuario, server_now: serverNow })
     bootstrapStartedResolve()
@@ -89,17 +90,35 @@ try {
   await page.getByLabel('Contraseña', { exact: true }).fill('test-only-password')
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
   await bootstrapStarted
-  await page.getByRole('heading', { name: 'Bienvenido a SOLOG' }).waitFor()
-  assert.equal(await page.getByRole('button', { name: 'Ingresando…' }).isDisabled(), true)
+  await page.getByRole('status').filter({ hasText: 'Cargando el panel…' }).waitFor()
   assert.equal(await page.getByText('Cargando…', { exact: true }).count(), 0)
   assert.equal(await page.getByText('Preparando sesión…', { exact: true }).count(), 0)
   assert.equal(await page.getByText('Cargando panel…', { exact: true }).count(), 0)
   releaseBootstrap()
   await page.waitForURL('**/detalles')
   await page.getByRole('heading', { name: 'Detalles de la sede' }).waitFor()
+  const resources = await page.evaluate(() =>
+    performance.getEntriesByType('resource').map((entry) => entry.name),
+  )
+  assert.equal(resources.some((url) => url.includes('/pages/detalles.tsx')), true)
+  assert.equal(
+    resources.some(
+      (url) =>
+        url.includes('/admin/admin-app.tsx') ||
+        url.includes('/features/solog/cajero/cajero.tsx'),
+    ),
+    false,
+  )
+  const routeCalls = calls.filter((call) => call.rpc === 'rpc_solog_route_v2')
+  assert.equal(routeCalls.length, 1)
+  assert.deepEqual(routeCalls[0].payload, { p_payload: {} })
+  assert.ok(
+    calls.findIndex((call) => call.rpc === 'rpc_solog_route_v2') <
+      calls.findIndex((call) => call.rpc === 'rpc_solog_state'),
+  )
   assert.equal(calls.some((call) => call.rpc === 'rpc_solog_count'), false)
   assert.deepEqual(errors, [])
-  console.log('PASS Login permanece visible durante Auth + bootstrap y resuelve /detalles sin RPC del Motor V3')
+  console.log('PASS Login usa route v2, muestra el loader compartido y resuelve /detalles')
 } finally {
   await context.close()
   await browser.close()

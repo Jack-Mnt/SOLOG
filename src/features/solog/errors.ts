@@ -286,6 +286,8 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
   SOLOG_EMPTY_RESPONSE: 'El backend no devolvió una respuesta.',
   SOLOG_INVALID_CONTROL_EXPORT_RESPONSE:
     'El backend devolvió datos incompletos para generar el Excel.',
+  SOLOG_INVALID_CONTRACT_RESPONSE:
+    'El backend devolvió una respuesta incompatible con esta versión de SOLOG.',
 }
 
 const ERROR_CODE_PATTERN = /SOLOG_[A-Z0-9_]+/

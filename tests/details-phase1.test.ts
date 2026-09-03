@@ -39,9 +39,13 @@ describe('Detalles Fase 1: contratos', () => {
 })
 
 describe('Detalles Fase 1: Login y rutas', () => {
-  test('elimina las páginas completas intermedias y mantiene Login durante la carga', async () => {
-    const source = await readSource('src/app.tsx')
-    expect(source).toContain('<LoginPage loading />')
+  test('elimina las páginas completas intermedias y usa el loader compartido durante la carga', async () => {
+    const source = [
+      await readSource('src/app.tsx'),
+      await readSource('src/protected-app.tsx'),
+    ].join('\\n')
+    expect(source).toContain('<PanelLoader />')
+    expect(source).not.toContain('<LoginPage loading />')
     expect(source).not.toContain('title="Cargando…"')
     expect(source).not.toContain('title="Preparando sesión…"')
     expect(source).not.toContain('title="Cargando panel…"')

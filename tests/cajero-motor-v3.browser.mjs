@@ -79,7 +79,10 @@ async function scenario({ complete = false, available = true } = {}) {
     const reject = (code) => fulfill({ code: 'P0001', message: code, details: '', hint: '' }, 400)
     if (url.pathname.includes('/auth/v1/token')) return fulfill({ access_token: jwt, refresh_token: 'test-refresh', expires_in: 3600, token_type: 'bearer', user })
     if (url.pathname.includes('/auth/v1/user')) return fulfill(user)
-    const { p_action: action, p_payload: payload } = request.postDataJSON()
+    const rpc = url.pathname.split('/').at(-1)
+    const body = request.postDataJSON() ?? {}
+    if (rpc === 'rpc_solog_route_v2') return fulfill({ contract_version: 2, generated_at: now(), identity: { id: user.id, nombre: 'Cajero prueba', rol: 'cajero' }, route: '/cajero' })
+    const { p_action: action, p_payload: payload } = body
     state.calls.push({ action, payload: structuredClone(payload) })
     if (action === 'bootstrap') return fulfill(bootstrap())
     if (action === 'status') return fulfill({

@@ -4,24 +4,25 @@
 
 **Fecha de baseline:** 2026-09-03.
 
-**Contrato de integración:** `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V1.md`, congelado y desplegado.
+**Contrato de integración:** `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V2.md`, congelado y desplegado. La versión V1 de contratos queda reemplazada e histórica para integración frontend.
 
 ## 0. Autoridad, alcance y baseline
 
 ### Autoridad documental
 
 1. Las decisiones funcionales provienen de `docs/SOLOG_Decisiones_Congeladas_Optimizacion_Global.md`.
-2. Toda firma, acción, payload, respuesta, revisión, autorización, error, replay, paginación, Edge Function y Cron proviene de `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V1.md`.
-3. El contrato backend prevalece sobre cualquier supuesto anterior de este plan. El frontend no agrega wrappers, campos, acciones, normalizaciones ni fallbacks no documentados.
+2. La referencia técnica backend declarada es `docs/SOLOG_Backend_Optimizacion_Global_V1.md`.
+3. Toda firma, acción, payload, respuesta, revisión, autorización, error, replay, paginación, Edge Function y Cron para integración frontend proviene de `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V2.md`.
+4. `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V1.md` queda reemplazado/histórico y no es autoridad para consumidores nuevos.
+5. El contrato V2 prevalece sobre cualquier supuesto anterior de este plan. El frontend no agrega wrappers, campos, acciones, normalizaciones ni fallbacks no documentados.
 
 ### Baseline Git y cambios preexistentes
 
 - Branch: `master`.
-- Commit: `e9a9b49c9cc1a2ae4a99f5a49c95b4a0a237653e`.
-- Working tree antes de esta corrección: sin cambios en archivos tracked; dos archivos preexistentes untracked:
-  - `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V1.md`;
-  - `docs/SOLOG_Plan_Implementacion_Optimizacion_Global.md`.
-- Esta tarea preserva el contrato backend y modifica únicamente el segundo archivo.
+- Commit: `d73c1d44dc81fe8216c2750f8012196c1c77a29a`.
+- Working tree antes de esta corrección: limpio; sin cambios tracked ni archivos untracked.
+- Documentos presentes en `docs`: decisiones congeladas, contrato V2 y este plan. Los archivos declarados `SOLOG_Backend_Optimizacion_Global_V1.md` y `SOLOG_Backend_Contratos_Optimizacion_Global_V1.md` no están presentes en este checkout; el segundo es histórico y la ausencia del primero no bloquea esta corrección porque el contrato V2 vigente documenta exhaustivamente las superficies frontend afectadas.
+- Esta tarea modifica únicamente este plan y preserva el contrato V2 y las decisiones congeladas.
 
 ### Baseline del repositorio
 
@@ -102,7 +103,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 **Estado: COMPLETADAS — ChatGPT / Supabase**
 
-- Desplegada `rpc_solog_admin_master_v2` con lecturas `status`/`price_mismatch_options` y mutaciones `group_change_save`, `catalog_change_action`, `resolve_group_price` y `update_package_price`.
+- Desplegada `rpc_solog_admin_master_v2` con `price_mismatch_options` como lectura asociada al flujo de resolución y las mutaciones `group_change_save`, `catalog_change_action`, `resolve_group_price` y `update_package_price`. La acción `status` permanece solo por compatibilidad legacy.
+- Desplegada `rpc_solog_admin_master_read_v2` exclusivamente para `status`, `reference`, `groups`, `group_products`, `catalog_changes` y `publication_preview`; el frontend nuevo no consumirá `rpc_solog_admin_master_v2('status')`.
 - `conexion-admin` **v3** está ACTIVE, exige JWT y `{action:'publish_catalog',operation_id}`; la publicación/reserva/replay se resuelve en backend.
 - Invariantes, advisory lock común y revisiones `groups/catalog` están desplegados.
 
@@ -132,9 +134,9 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 ## Checkpoint
 
-**COMPLETADO.** El backend v2 está desplegado y congelado; Codex puede implementar frontend después de aprobar este plan. No queda el antiguo bloqueo S1–S9.
+**COMPLETADO.** El backend v2 está desplegado y congelado; Codex puede implementar frontend después de aprobar este plan. El cierre contractual V2 fue desplegado mediante `20260903112822_solog_backend_contracts_v2_route_master_reads`: añadió `rpc_solog_route_v2` y `rpc_solog_admin_master_read_v2`, congeló los esquemas Operational exhaustivos y resolvió B1/B2. No queda el antiguo bloqueo S1–S9.
 
-Único gate backend/entorno pendiente: smoke E2E Cajero `start → save_batch → finish → nueva sesión → recount_start → recount_save → finish` con snapshot fresco y dispositivo autorizado. Si revela una desviación contractual, la implementación afectada se detiene y vuelve a ChatGPT.
+Único gate backend/entorno pendiente: smoke E2E Cajero `start → save_batch → finish → nueva sesión → recount_start → recount_save → finish`, más rechazo de reconteo en la misma sesión de origen, con snapshot cuya vigencia se compruebe de nuevo al ejecutar y dispositivo autorizado. Si revela una desviación contractual, la implementación afectada se detiene y vuelve a ChatGPT.
 
 # 2. Index
 
@@ -143,12 +145,12 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 - **Objetivo:** hacer `/` estática y trasladar la comprobación de sesión a `/login` sin bucles ni llamadas operativas desde la portada.
 - **Estado actual encontrado:** `AuthProvider` y `SologProvider` envuelven toda la app; `/` ejecuta Auth y puede disparar `rpc_solog_state('bootstrap')`. El CTA cambia a “Ir a mi panel”. `/login` ya es la ruta canónica.
 - **Cambios frontend:** separar el árbol público del protegido; dejar un único CTA “Iniciar sesión”; montar Auth al entrar a `/login`; mantener rutas protegidas bajo validación backend.
-- **Contrato backend:** las RPC v2 son específicas por rol. El contrato congelado no documenta un bootstrap v2 universal para resolver el destino antes de conocer el rol. El consumidor existente `rpc_solog_state('bootstrap')` puede permanecer **sin ampliarse** como compatibilidad temporal, pero su retiro queda bloqueado por B1.
+- **Contrato backend:** cuando exista una sesión Auth válida, `/login` llama exactamente `rpc_solog_route_v2(p_payload:{})`. Consume `contract_version`, `generated_at`, `identity.id`, `identity.nombre`, `identity.rol` y `route`; `cajero` resuelve `/cajero`, `moderador|admin` resuelven `/admin`. No envía rol/ruta/sede/dispositivo, no prueba RPC por error, no confía en metadata editable y no crea un consumidor nuevo de `rpc_solog_state('bootstrap')`.
 - **Archivos probables:** `src/app.tsx`, `src/main.tsx`, `src/pages/home.tsx`, `src/pages/login.tsx`, `src/features/auth/context.tsx`, `src/features/solog/context.tsx`, `src/lib/router.ts` y pruebas browser de routing.
-- **Dependencias/riesgos:** B1 para una migración 100 % v2 del resolver de ruta; StrictMode, callback Auth duplicado, sesión expirada, rol deshabilitado y redirección circular.
-- **Validación:** `/` produce cero llamadas Supabase; `/ → /login`; sesión ausente muestra formulario; sesión válida redirige una sola vez; no hay flash de panel protegido.
-- **Terminado cuando:** la portada es independiente de Auth/SOLOG y la compatibilidad temporal de Login está explícitamente encapsulada, probada y no se usa para funcionalidad nueva.
-- **Responsable:** Codex — Repositorio. B1: ChatGPT — Supabase/contrato.
+- **Dependencias/riesgos:** checkpoint V2 satisfecho; StrictMode, callback Auth duplicado, sesión expirada, `SOLOG_AUTH_REQUIRED`, `SOLOG_INVALID_PAYLOAD`, `SOLOG_USER_DISABLED`, `SOLOG_ROLE_NOT_ALLOWED` y redirección circular.
+- **Validación:** `/` produce cero llamadas Supabase; `/ → /login`; sesión ausente muestra formulario; sesión válida realiza una sola resolución v2 y redirige una sola vez según los tres roles; no hay prueba de rol por error, uso de metadata ni flash de panel protegido.
+- **Terminado cuando:** la portada es independiente de Auth/SOLOG, Login usa exclusivamente `rpc_solog_route_v2({})` para resolver destino y no queda consumidor de `rpc_solog_state('bootstrap')` en ese flujo.
+- **Responsable:** Codex — Repositorio.
 
 ## Fase I2 [O/N] — Loader y code splitting
 
@@ -203,7 +205,7 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 - Conservar `operation_id` durante retry de la misma intención; `replay:true` es éxito comprometido. Un conflicto de revisión recarga bootstrap y la nueva intención usa otro UUID. Aplicar la respuesta autoritativa sin inventar un formato `delta`.
 - Presentar solo `Coincide`, `Recontar`, `Confirmada` e `Inconsistente` devueltos; no calcular `Dr`, signo, magnitud, teórico ni diferencia.
-- **Errores explícitos:** manejar los códigos de la sección 14 del contrato, en especial `SOLOG_SESSION_CONFLICT`, `SOLOG_SESSION_EXPIRED`, `SOLOG_SESSION_REVISION_CONFLICT`, `SOLOG_GROUPS_REVISION_CONFLICT`, `SOLOG_RECOUNT_NOT_PENDING`, `SOLOG_RECOUNT_SAME_SESSION_FORBIDDEN`, `SOLOG_DEVICE_UNAUTHORIZED` y `SOLOG_INVALID_OPERATION`.
+- **Errores explícitos:** manejar los códigos congelados por V2, en especial `SOLOG_SESSION_CONFLICT`, `SOLOG_SESSION_EXPIRED`, `SOLOG_SESSION_REVISION_CONFLICT`, `SOLOG_GROUPS_REVISION_CONFLICT`, `SOLOG_RECOUNT_NOT_PENDING`, `SOLOG_RECOUNT_SAME_SESSION_FORBIDDEN`, `SOLOG_DEVICE_UNAUTHORIZED` y `SOLOG_INVALID_OPERATION`.
 - **Archivos probables:** `cajero.api.ts`, `cajero.session.ts`, `cajero.types.ts`, Conteo/Revisar/dialogs/header, `errors.ts` y pruebas motor/integration.
 - **Dependencias/riesgos:** C1–C2; doble pulsación, timeout tras commit, respuestas invertidas, expiración, grupo fuera del freeze y revocación en escritura.
 - **Validación:** payload por acción, límite 500, replay, conflictos, respuesta tardía, colas sin refetch y prohibición de reconteo en sesión origen.
@@ -217,7 +219,7 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 - **Cambios frontend:** `rpc_solog_cashier_history_v2` recibe exactamente `p_payload:{period:'today'|'yesterday'}`; carga completa bajo demanda y cache por período/revisión/scope. Usar `server_now` para las bandas 0–1:30, >1:30–1:50, >1:50–1:57 y countdown desde 1:57; backend decide expiración/cierre.
 - **Dependencias/riesgos:** C1–C3; snapshot casi vencido, reloj desviado, app suspendida y medianoche Lima.
 - **Validación:** Today/Yesterday por `contado_at` del usuario/sede; invalidación solo del período afectado; fake timers; cero llamada por navegación/foco.
-- **Gate obligatorio:** con snapshot fresco y dispositivo autorizado ejecutar `start → save_batch → finish → nueva sesión → recount_start → recount_save → finish`; comprobar también el rechazo en misma sesión.
+- **Gate obligatorio:** al ejecutarlo, revalidar que el snapshot continúa vigente y usar un dispositivo autorizado para `start → save_batch → finish → nueva sesión → recount_start → recount_save → finish`; comprobar también el rechazo en la misma sesión de origen.
 - **Terminado cuando:** historia/temporización pasan y el gate E2E queda verde; si falla por backend/contrato, detener y devolver a ChatGPT.
 - **Responsable:** Codex — Repositorio; gate con Validación compartida.
 
@@ -276,13 +278,13 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 - **Objetivo:** reemplazar KPIs globales por tarjetas de sede, histórico de turnos y drawer diario desde la fuente backend compartida.
 - **Estado actual encontrado:** `rpc_solog_dashboard`/`rpc_solog_dashboard_site_activity` v1 alimentan KPIs globales y actividad del día; no hay grid histórico.
-- **Cambios frontend:** usar únicamente `rpc_solog_operational_v2` con `dashboard_cards`, `shift_grid` y `daily_detail`. Para `daily_detail` enviar exactamente `{site_id,origin_date}`. Para las otras acciones no agregar payloads no documentados; si la respuesta desplegada no permite seleccionar/renderizar la sede requerida, detener por B2.
+- **Cambios frontend:** usar únicamente `rpc_solog_operational_v2` con los contratos exhaustivos V2: `dashboard_cards` recibe `{}` (sin `site_id`) y devuelve `sites[]` con coberturas, pendientes, snapshot nullable y `operational_revision`; `shift_grid` recibe `{site_id,period?}`, donde `period` es `current_biweekly|previous_biweekly` y el default backend es `current_biweekly`; su respuesta consume exactamente `site_id`, `period.key/from/to`, `data.shifts[]`, `data.totals[]` y `revisions.operational/groups`; `daily_detail` recibe `{site_id,origin_date}` y consume su `summary`, `items[]` y revisión operational. La propiedad `data` es exclusiva de `shift_grid`, no un wrapper genérico.
 - Tarjeta por sede: cobertura quincenal hasta completar, luego “Completada” y cobertura diaria principal. Grid Early `[00:00,07:30)`, Day `[07:30,15:30)`, Night `[15:30,00:00)` y Total sin duplicar grupos. `+` carga drawer de origen con estado vigente, KPI Por recontar/Confirmadas/Inconsistentes y columnas congeladas.
 - Acción “DESCARGAR AJUSTE” reutiliza el modal propietario de A3 con sede preseleccionada.
 - **Archivos probables:** `admin.dashboard.*`, `src/pages/admin.dashboard.tsx`, cache A1, componentes compartidos A3 y pruebas dashboard/browser.
-- **Dependencias/riesgos:** A1; revisión `operational` por sede, respuesta tardía, Night atribuida al día de inicio, denominador cero y detalle repetido.
-- **Validación:** sin KPIs globales; cuts reproducibles; Total correcto; una llamada por expansión/drawer/revisión; Dashboard=Control para misma sede/origen.
-- **Terminado cuando:** no quedan llamadas Dashboard v1 y toda cifra proviene de acciones operacionales v2.
+- **Dependencias/riesgos:** A1 y checkpoint V2 satisfecho; revisión `operational` por sede, revisión `groups`, respuesta tardía, snapshot `null`, Night atribuida al día de inicio, denominador cero y detalle repetido.
+- **Validación:** payload `{}` de tarjetas; `site_id` obligatorio y ambos períodos/default en grid; forma exacta de las tres respuestas; sin KPIs globales; cuts reproducibles; Total correcto; una llamada por expansión/drawer/revisión; Dashboard=Control para misma sede/origen.
+- **Terminado cuando:** no quedan llamadas Dashboard v1, los tipos corresponden a los esquemas V2 exactos y toda cifra proviene de las tres acciones operacionales desplegadas.
 - **Responsable:** Codex — Repositorio.
 
 ## Fase A3 [O] — Control y exportación administrativa
@@ -301,16 +303,24 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 - **Objetivo:** migrar maestro/publicación a las acciones desplegadas sin crear caminos frontend alternativos.
 - **Estado actual encontrado:** API usa `rpc_solog_catalog`/`rpc_solog_admin` con `catalog_changes`, `catalog_change_action`, `groups`, `group_products`, `group_change_save` y `group_valuation_save`; publicación v2 no envía operation ID.
-- **Cambios frontend:** `rpc_solog_admin_master_v2` solo con lecturas `status` y `price_mismatch_options`, y mutaciones `group_change_save`, `catalog_change_action`, `resolve_group_price`, `update_package_price`. Toda mutación incluye `operation_id` y `expected_groups_revision`. Respetar:
+- **Cambios frontend — lecturas:** usar exclusivamente `rpc_solog_admin_master_read_v2` para:
+  - `status:{}` → `catalog.version_actual`, `catalog.publicado_at` y revisiones `groups/catalog`;
+  - `reference:{}` → `categories[]`, `groups[]`, precios/datos de paquete y revisiones;
+  - `groups:{categoria_id?,precio?,tipo?,buscar?,limit?,offset?}`;
+  - `group_products:{categoria_id?,grupo_id?,estado?,buscar?,limit?,offset?}`;
+  - `catalog_changes:{c_interno?,tipo?,estado?,producto?,ambito?,limit?,offset?}`;
+  - `publication_preview:{}` → proyección autoritativa exactamente dentro de `preview`.
+  Las tres listas usan `limit` 1..50 (default 50) y `offset >= 0`; no convertirlas a cursor ni `page/page_size`. Estas lecturas no reciben `operation_id` ni revisión esperada. No crear consumidor nuevo de `rpc_solog_admin_master_v2('status')`.
+- **Cambios frontend — resolución/mutaciones:** conservar `rpc_solog_admin_master_v2` solo para la lectura vinculada `price_mismatch_options` y las mutaciones `group_change_save`, `catalog_change_action`, `resolve_group_price`, `update_package_price`. Toda mutación incluye `operation_id` y `expected_groups_revision`. Respetar:
   - `price_mismatch_options:{propuesta_fingerprint}`;
   - `resolve_group_price:{propuesta_fingerprint,resolution:'update_group_price'|'separate_sku'}`;
   - `update_package_price:{grupo_id,precio_paquete}`;
   - `group_change_save` conserva campos vigentes y agrega `member_codes` al crear agrupado.
 - Publicar mediante `conexion-admin` v3 con `{action:'publish_catalog',operation_id}`; retry usa el mismo UUID. No subir directamente, no usar upsert ni invocar la RPC interna de publicación.
 - **Archivos probables:** `admin.catalogo.*`, `admin.grupos.*`, `api.ts`, `types.ts`, `errors.ts` y pruebas admin-groups/publication.
-- **Dependencias/riesgos:** A1, S7 completada; `groups_revision` obsoleta, operación en progreso, reserva en conflicto y respuesta perdida tras commit.
-- **Validación:** acciones/payloads exactos, opciones de precio, paquete independiente, replay Edge, revisión recargada tras conflicto e invariantes reflejadas desde backend.
-- **Terminado cuando:** no quedan escrituras maestro v1 ni publicación sin operation ID; el frontend nunca simula una mutación parcial.
+- **Dependencias/riesgos:** A1, S7 y checkpoint V2 satisfechos; paginación offset concurrente, `groups/catalog` obsoletas, operación en progreso, reserva en conflicto y respuesta perdida tras commit.
+- **Validación:** seis lecturas y formas de respuesta exactas; límites/offset/filtros; `preview` sin normalización; acciones/payloads de resolución/mutación exactos; opciones de precio, paquete independiente, replay Edge, revisión recargada tras conflicto e invariantes reflejadas desde backend.
+- **Terminado cuando:** Catálogo/Grupos no realizan lecturas v1 ni crean un consumidor nuevo de `admin_master_v2('status')`, no quedan escrituras maestro v1 ni publicación sin operation ID y el frontend nunca simula una mutación parcial.
 - **Responsable:** Codex — Repositorio.
 
 ## Fase A5 [O] — Incidencias por familia
@@ -363,10 +373,10 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 ## Fase G3 [O/L] — Rendimiento, suites, smoke Cajero y evidencia legacy
 
 - **Objetivo:** cerrar egress, code splitting, pruebas y transición v1→v2 antes de solicitar limpieza backend.
-- **Egress esperado por interacción:** Index 0 llamadas Supabase; Login solo las necesarias para Auth/contexto; Cajero 1 bootstrap y 0 por navegación/foco; history bajo demanda; Detalles 1 summary y una por página/caso/acción; Admin 1 bootstrap y una carga inicial por módulo, con detalles/exportaciones solo al pedir. Registrar bytes comprimidos reales y p50/p95, no estimarlos por filas.
+- **Egress esperado por interacción:** Index 0 llamadas Supabase; Login solo Auth y una `rpc_solog_route_v2({})` cuando la sesión válida esté disponible; Cajero 1 bootstrap y 0 por navegación/foco; history bajo demanda; Detalles 1 summary y una por página/caso/acción; Admin 1 bootstrap y una carga inicial por módulo, con detalles/exportaciones solo al pedir. Registrar bytes comprimidos reales y p50/p95, no estimarlos por filas.
 - **Code splitting:** medir chunks fríos Index/Cajero/Detalles/Admin y carga tardía de Excel. No silenciar warnings ni introducir refactor general.
 - **Pruebas:** TypeScript, lint, build, `bun test` explícito, browser/smoke, contratos de payload, errores, accesibilidad, absence de N+1/refetch, caches, Excel y logs de red. Si se añade script `test` será parte de la implementación aprobada, no de este plan.
-- **Gate Cajero:** ejecutar con snapshot fresco y dispositivo autorizado `start → save_batch → finish → nueva sesión → recount_start → recount_save → finish`. Sin este gate verde no concluye la optimización.
+- **Gate Cajero:** al ejecutar, comprobar de nuevo que el snapshot sigue vigente y usar dispositivo autorizado para `start → save_batch → finish → nueva sesión → recount_start → recount_save → finish`; comprobar además `SOLOG_RECOUNT_SAME_SESSION_FORBIDDEN` en la sesión de origen. Sin este gate verde no concluyen C4/G3.
 - **Legacy [L]:** buscar consumidores en `src/tests` y aportar evidencia. Codex solo retira aliases/código cliente cuya ausencia de consumidores esté demostrada. Después, ChatGPT ejecuta S10 sobre backend y Codex reinspecciona en solo lectura. No planificar ni ejecutar retiro backend desde esta fase.
 - **Terminado cuando:** suites y smoke están verdes, la tabla de llamadas/bytes/chunks demuestra la mejora, no hay N+1/refetch innecesario y existe inventario cero-consumidor para cada objeto a retirar.
 - **Responsable:** Validación compartida; Codex — Repositorio para cliente, ChatGPT — Supabase para S10.
@@ -375,12 +385,14 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 El adaptador común debe conservar el `code` backend y mapear únicamente estos códigos documentados, sin inventar equivalencias:
 
-- Auth/rol: `SOLOG_AUTH_REQUIRED`, `SOLOG_USER_DISABLED`, `SOLOG_OPERATIONAL_ROLE_REQUIRED`, `SOLOG_ADMIN_ROLE_REQUIRED`.
+- Auth/rol/routing: `SOLOG_AUTH_REQUIRED`, `SOLOG_INVALID_PAYLOAD`, `SOLOG_USER_DISABLED`, `SOLOG_ROLE_NOT_ALLOWED`, `SOLOG_OPERATIONAL_ROLE_REQUIRED`, `SOLOG_ADMIN_ROLE_REQUIRED`.
 - Dispositivo: `SOLOG_DEVICE_UNAUTHORIZED`, `SOLOG_DEVICE_REVISION_CONFLICT`, `SOLOG_PENDING_DEVICE_NOT_FOUND`, `SOLOG_DEVICE_NOT_REVOCABLE`.
 - Sesión/stock: `SOLOG_SESSION_CONFLICT`, `SOLOG_SESSION_EXPIRED`, `SOLOG_SESSION_REVISION_CONFLICT`, `SOLOG_STOCK_EXPIRED`, `SOLOG_STOCK_TOO_CLOSE_TO_EXPIRY`.
 - Grupos: `SOLOG_GROUPS_REVISION_CONFLICT`, `SOLOG_MASTERDATA_REVISION_CONFLICT`, `SOLOG_GROUP_INVARIANT`, `SOLOG_LOCK_CONFLICT_RETRYABLE`.
 - Reconteo: `SOLOG_RECOUNT_NOT_PENDING`, `SOLOG_RECOUNT_SAME_SESSION_FORBIDDEN`.
 - Paginación: `SOLOG_INVALID_PAGE_SIZE`, `SOLOG_PAGE_CURSOR_INVALID`.
+- Lecturas maestras: `SOLOG_INVALID_ACTION`, `SOLOG_INVALID_GROUP_FILTER`, `SOLOG_INVALID_GROUP_TYPE`, `SOLOG_INVALID_GROUP_PRODUCT_FILTER`, `SOLOG_INVALID_PRODUCT_MODE`, `SOLOG_INVALID_CATALOG_FILTER`, `SOLOG_INVALID_CATALOG_CHANGE_STATE`, `SOLOG_INVALID_CATALOG_CHANGE_SCOPE`, `SOLOG_INVALID_CATALOG_CHANGE_TYPE`.
+- Operacional: `SOLOG_INVALID_SITE`, `SOLOG_SITE_FORBIDDEN`, `SOLOG_INVALID_DATE_RANGE`, `SOLOG_INVALID_DIFFERENCE_STATE`, `SOLOG_EXPORT_PERIOD_INVALID`, `SOLOG_INVALID_GROUP`, además de `SOLOG_INVALID_PAGE_SIZE` y `SOLOG_INVALID_ACTION` ya compartidos.
 - Incidencias: `SOLOG_INCIDENT_FAMILY_NOT_FOUND`, `SOLOG_INVALID_INCIDENT_SCOPE`, `SOLOG_INCIDENT_ACTION_NOT_ALLOWED`.
 - Publicación: `SOLOG_OPERATION_IN_PROGRESS`, `SOLOG_CATALOG_RESERVATION_CONFLICT`.
 - Operación/idempotencia: `SOLOG_INVALID_OPERATION` y el conflicto que emita el ledger al reutilizar un UUID con otra intención; no asignarle un nombre no documentado.
@@ -389,28 +401,24 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 
 ### B1 — Resolver de destino en Login
 
-- **Evidencia:** el frontend actual usa `rpc_solog_state('bootstrap')` para descubrir rol/ruta. El contrato v2 solo documenta bootstrap Cajero (rol cajero) y bootstrap Admin (admin/moderador); no documenta una lectura universal ni autoriza derivar rol desde datos cliente.
-- **Impacto:** I1 puede hacer estática la portada, pero no puede retirar completamente el bootstrap v1 de Login sin una decisión contractual.
-- **Acción mínima:** ChatGPT debe confirmar por escrito el mecanismo ya desplegado para escoger la RPC v2 correcta o congelar un contrato mínimo. Hasta entonces, encapsular el consumidor v1 existente sin ampliarlo; no probar RPC por error ni confiar en metadata editable.
+**RESUELTO — ChatGPT / Supabase.** `rpc_solog_route_v2({})` está desplegada y congelada; I1 puede migrar el resolver completamente a v2 sin `rpc_solog_state('bootstrap')`.
 
-### B2 — Esquema exacto de lecturas Admin no exhaustivo
+### B2 — Esquemas Operational y lecturas Maestro
 
-- **Evidencia:** el documento congela nombres/acciones y describe semántica, pero no enumera payload completo de `dashboard_cards`/`shift_grid` ni el esquema íntegro de sus respuestas o de `admin_master_v2('status')`.
-- **Impacto:** A2/A4 no deben crear tipos/campos hipotéticos ni convertir respuestas reales a la forma propuesta por el plan anterior.
-- **Acción mínima:** antes de codificar esos adaptadores, obtener de ChatGPT el fixture/esquema contractual exacto o una aclaración documental. Si lo desplegado no satisface la UI congelada, detener la fase; no compensar.
+**RESUELTO — ChatGPT / Supabase.** V2 congela los esquemas exhaustivos de `dashboard_cards`, `shift_grid`, `daily_detail`, `control_page` y `control_detail`, y despliega `rpc_solog_admin_master_read_v2` con seis acciones de lectura. A2 y A4 ya no están condicionadas por B2.
 
 ### GATE-E2E — Escritura Cajero
 
 - **Evidencia:** el checkpoint validó lectura e invariantes, pero no pudo ejecutar un happy path con token autorizado real.
 - **Impacto:** no bloquea la aprobación del plan ni trabajo independiente, pero bloquea el cierre C4/G3.
-- **Requisito:** snapshot fresco, dispositivo autorizado y evidencia del flujo completo indicado.
+- **Requisito:** revalidar en ese momento snapshot vigente y dispositivo autorizado; aportar evidencia del flujo completo y del rechazo de reconteo en la sesión de origen.
 
 ## Matriz de contratos frontend ↔ backend
 
 | Consumidor | Superficie congelada | Acción/payload exacto | Revisión/idempotencia | Fase |
 |---|---|---|---|---|
 | Portada `/` | Ninguna | Ninguno | No aplica | I1 |
-| Login/routing | Sin reemplazo v2 universal documentado | Compatibilidad existente v1, sin ampliación | B1 | I1 |
+| Login/routing | `rpc_solog_route_v2(p_payload)` | `{}` → `identity{id,nombre,rol}` y `route`; solo después de sesión Auth válida | lectura v2; `contract_version=2` | I1 |
 | Cajero bootstrap | `rpc_solog_cashier_bootstrap_v2(p_payload)` | `{device_token?}` | respuesta: groups/devices/operational; `contract_version=2` | C1 |
 | Cajero start | `rpc_solog_cashier_mutate_v2('start',p_payload)` | `{operation_id,device_token}` | replay por operation ID | C3 |
 | Cajero batch | `rpc_solog_cashier_mutate_v2('save_batch',p_payload)` | `{operation_id,device_token,conteo_id,expected_groups_revision,items[<=500]}` | groups + replay | C3 |
@@ -424,10 +432,11 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 | Detalles export | `rpc_solog_details_v2('export',p_payload)` | `{period:'current_biweekly'|'previous_biweekly'}` | sin operation ID documentado | D3 |
 | Detalles access | `rpc_solog_details_v2('request_access',p_payload)` | `{operation_id,device_token}` | replay | D3 |
 | Admin bootstrap | `rpc_solog_admin_bootstrap_v2(p_payload)` | `{}` | groups/catalog globales; operational/devices/incidents por sede | A1 |
-| Dashboard | `rpc_solog_operational_v2(p_action,p_payload)` | `dashboard_cards`, `shift_grid`, `daily_detail:{site_id,origin_date}` | operational por sede; B2 para esquemas omitidos | A2 |
+| Dashboard | `rpc_solog_operational_v2(p_action,p_payload)` | `dashboard_cards:{}`; `shift_grid:{site_id,period?}`; `daily_detail:{site_id,origin_date}`; formas de respuesta exactas V2 | operational por sede; groups en cards/grid | A2 |
 | Control | `rpc_solog_operational_v2(p_action,p_payload)` | `control_page:{site_id,period,date_from/date_to solo custom,state,search?,page,page_size<=100}`; `control_detail:{site_id,group_id}` | operational por sede | A3 |
 | Export Admin | `rpc_solog_control_export_v2(p_payload)` | `{site_id,period:'current_biweekly'|'previous_biweekly'}` | sin operation ID documentado | A3 |
-| Maestro lectura | `rpc_solog_admin_master_v2(p_action,p_payload)` | `status`; `price_mismatch_options:{propuesta_fingerprint}` | groups/catalog; B2 para esquema status | A4 |
+| Maestro lectura | `rpc_solog_admin_master_read_v2(p_action,p_payload)` | `status:{}`; `reference:{}`; `groups`, `group_products`, `catalog_changes` con filtros + `limit/offset<=50`; `publication_preview:{}` → `preview` | groups/catalog; sin operation ID ni expected revision | A4 |
+| Maestro opción de precio | `rpc_solog_admin_master_v2(p_action,p_payload)` | `price_mismatch_options:{propuesta_fingerprint}` | lectura ligada a resolución | A4 |
 | Maestro mutación | `rpc_solog_admin_master_v2(p_action,p_payload)` | `group_change_save`, `catalog_change_action`, `resolve_group_price`, `update_package_price` + `operation_id` + `expected_groups_revision` y campos específicos documentados | groups + replay | A4 |
 | Publicación | Edge `conexion-admin` v3 | `{action:'publish_catalog',operation_id}` | JWT admin; replay/reserva | A4 |
 | Incidencias lectura | `rpc_solog_admin_incidents_v2` | `summary:{site_id?}`; `detail:{family_key,site_id?,page,page_size<=100}` | incidents global/sede | A5 |
@@ -439,17 +448,17 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 
 | Orden | Responsable | Cambio | Condición previa | Validación | Punto de retorno |
 |---:|---|---|---|---|---|
-| 0 | ChatGPT / contrato | Resolver B1 y B2 o confirmar compatibilidad temporal acotada | Plan aprobado | Aclaración congelada, sin cambiar cliente aún | Mantener fases gated |
-| 1 | Codex | I1 portada/frontera y I2 loader/chunks | B1 no bloquea la parte pública | Network 0 en `/`, routing, accesibilidad, chunks | Revertir solo boundary |
+| 0 | ChatGPT / Supabase | Cierre contractual V2 ya desplegado (`20260903112822_solog_backend_contracts_v2_route_master_reads`) | S1–S9 completadas | B1/B2 resueltos y contrato V2 congelado | Backend ya desplegado; no acción Codex |
+| 1 | Codex | I1 portada/frontera y I2 loader/chunks | Plan aprobado; checkpoint V2 satisfecho | Network 0 en `/`, route v2, accesibilidad, chunks | Revertir solo boundary |
 | 2 | Codex | C1 adaptador/bootstrap | S3 completada | Contract v2, una RPC | Mantener consumidor Cajero v1 temporal |
 | 3 | Codex | C2 memoria/cache | C1 | Storage/aislamiento/refetch | Restaurar store anterior antes de migrar mutaciones |
 | 4 | Codex | C3 mutaciones | C1–C2 | Payloads, replay, conflictos, Motor autoritativo | Revertir módulo a v1 sin mezclar estados |
-| 5 | Codex + Validación | C4/history/timer y GATE-E2E cuando haya entorno | Snapshot fresco + device autorizado | Flujo completo y rechazo misma sesión | Detener; volver a ChatGPT si es backend |
+| 5 | Codex + Validación | C4/history/timer y GATE-E2E cuando haya entorno | Vigencia de snapshot revalidada + device autorizado | Flujo completo y rechazo en sesión de origen | Detener; volver a ChatGPT si es backend |
 | 6 | Codex | D1–D3 | S4 completada | Summary, cursor<=100, detail, export/access | Revertir módulo Detalles completo a v1 |
 | 7 | Codex | A1 shell/bootstrap | S5 completada | Carga mínima/cache/revisiones | Revertir shell, no mezclar bootstrap |
-| 8 | Codex | A2 Dashboard | A1 y B2 resuelto | Turnos/drawer/Dashboard=Control | Mantener Dashboard v1 aislado |
+| 8 | Codex | A2 Dashboard | A1; contrato Operational V2 satisfecho | Payloads/formas exactas, turnos/drawer/Dashboard=Control | Mantener Dashboard v1 aislado |
 | 9 | Codex | A3 Control/export | A1–A2, S6 | Page<=100, 92 d, cinco hojas | Mantener Control/export v1 aislados |
-| 10 | Codex | A4 maestro/publicación | A1 y B2 resuelto | Revisiones, opciones, Edge replay | Mantener módulo v1 aislado |
+| 10 | Codex | A4 maestro/publicación | A1; `admin_master_read_v2` satisfecho | Lecturas limit/offset, revisiones, opciones, preview y Edge replay | Mantener módulo v1 aislado |
 | 11 | Codex | A5 incidencias y A6 dispositivos | A1 | Scope/pages/replay/revocación | Revertir cada módulo independientemente |
 | 12 | Validación compartida | G1–G3 | Todos los consumidores v2 | Suites, E2E, egress, chunks, seguridad | Reabrir fase propietaria |
 | 13 | ChatGPT — Supabase | S10 legacy backend | Cero consumidores/tráfico/dependencias demostrado | Retiro objeto por objeto + smoke | Restaurar objeto concreto |
@@ -516,7 +525,7 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 - S1–S9 pasaron de trabajo pendiente a **COMPLETADAS — ChatGPT / Supabase**; S10 quedó limitada a limpieza backend legacy posterior.
 - Se retiraron propuestas de tablas, migraciones, locks, RLS, grants, Cron y Edge que ya no corresponden a Codex.
 - Se eliminó el sobre hipotético `data`, `expected_revisions` genérico y códigos de error no congelados.
-- Se sustituyeron nombres hipotéticos por las diez RPC v2 públicas reales y `conexion-admin` v3.
+- Se sustituyeron nombres hipotéticos por las doce RPC v2 públicas reales y `conexion-admin` v3.
 - Cajero quedó limitado a tres RPC y cinco acciones de mutación; se eliminó la acción hipotética `discard` y se corrigió `recount`→`recount_save`.
 - Se corrigió idempotencia: no todas las lecturas/exportaciones reciben `operation_id`; solo los payloads documentados lo usan.
 - Detalles quedó en una RPC con cursor opaco solo en history y `page_size <= 100`; export no recibe operation ID y request_access sí recibe token+operation ID.
@@ -524,6 +533,7 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 - Admin quedó ligado a bootstrap, operational, export, devices, incidents y master v2; publicación usa JWT y operation ID en Edge v3.
 - El estado backend ya reconoce freeze/revisiones/helpers cerrados, cuatro Cron activos, incidencias globales corregidas e invariantes de producción en cero.
 - Legacy deja de ser una fase de eliminación frontend indiscriminada: cada objeto exige consumidor/tráfico/dependencia cero y el retiro backend vuelve a ChatGPT.
+- El cierre contractual V2 resolvió B1 mediante `rpc_solog_route_v2` y B2 mediante esquemas Operational exhaustivos más `rpc_solog_admin_master_read_v2`; V1 queda histórico.
 
 ## Resumen de fases
 
@@ -532,4 +542,5 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 - **Implementación Codex pendiente:** I1–I2, C1–C4, D1–D3 y A1–A6 (15 fases).
 - **Integración compartida pendiente:** G1–G3 (3 fases).
 - **Total del plan:** 6 bloques; 28 hitos/fases nominales: 9 completados, 1 diferido y 18 pendientes.
+- **Bloqueos contractuales:** ninguno conocido. El GATE-E2E Cajero permanece como condición de cierre de C4/G3, no como bloqueo para aprobar el plan ni iniciar I1.
 - **Aprobación:** este documento es el plan vigente para presentar a aprobación. No autoriza implementación hasta recibirla.
