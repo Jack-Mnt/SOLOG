@@ -30,8 +30,6 @@ import type {
   CajeroCountView,
 } from './cajero.types'
 import {
-  calculateDifference,
-  calculateValuation,
   evaluateCajeroExpression,
   formatCajeroDifference,
   formatCajeroCurrency,
@@ -257,12 +255,9 @@ export function CajeroCaptureModal({
   const theoretical = review ? reference?.stock_teorico_reconteo ?? null
     : activePending?.display.stock_teorico ?? activeGroup?.stock_teorico ?? null
   const physical = result?.stock_reconteo ?? attempt?.stock_fisico ?? activePending?.stock_fisico ?? null
-  const savedDifference = result?.diferencia ?? (
-    theoretical !== null && physical !== null ? calculateDifference(physical, theoretical) : null
-  )
-  const savedValuation = activeGroup && savedDifference !== null
-    ? calculateValuation(savedDifference, activeGroup.precio)
-    : null
+  const savedDifference = result?.diferencia ?? null
+  // La mutación no entrega valorización: no reconstruirla con precios del navegador.
+  const savedValuation: number | null = null
   const activeLocked = activeGroup
     ? disabled || saving || (review && (!reference || Boolean(result))) || lockedGroupIds?.has(activeGroup.grupo_id) === true
     : disabled
@@ -392,9 +387,7 @@ export function CajeroCaptureModal({
               <div className="cajero-capture-summary__rows">
                 {groups.map((group) => {
                   const pending = pendingByGroup.get(group.grupo_id)
-                  const difference = pending
-                    ? calculateDifference(pending.stock_fisico, group.stock_teorico)
-                    : null
+                  const difference = null
                   return (
                     <button
                       className={pending ? 'is-counted' : undefined}

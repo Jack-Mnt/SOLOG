@@ -20,9 +20,9 @@ const AdminApp = lazy(() =>
   })),
 )
 
-const Cajero = lazy(() =>
-  import('./features/solog/cajero/cajero').then((module) => ({
-    default: module.Cajero,
+const CajeroApp = lazy(() =>
+  import('./features/solog/cajero/cajero.app').then((module) => ({
+    default: module.CajeroApp,
   })),
 )
 
@@ -146,10 +146,9 @@ function OperationalApp() {
       <Suspense
         fallback={<PanelLoader />}
       >
-        <Cajero
-          bootstrap={bootstrap}
+        <CajeroApp
+          userId={auth.user?.id ?? ''}
           onLogout={handleLogout}
-          route={resolvedRoute}
         />
       </Suspense>
     )
@@ -192,6 +191,9 @@ function AuthenticatedApp() {
     )
   }
 
+  if (isCashierRoute(pathname) || pathname === '/count' || pathname === '/cajero/seguimiento') {
+    return <Suspense fallback={<PanelLoader />}><CajeroApp userId={auth.user?.id ?? ''} onLogout={auth.logout} /></Suspense>
+  }
   return (
     <SologProvider>
       <OperationalApp />

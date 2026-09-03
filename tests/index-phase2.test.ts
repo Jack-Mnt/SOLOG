@@ -32,7 +32,7 @@ describe('Index Fase I2: code splitting', () => {
 
     expect(app).toContain("lazy(() => import('./protected-app'))")
     expect(protectedApp).toContain("import('./features/solog/admin/admin-app')")
-    expect(protectedApp).toContain("import('./features/solog/cajero/cajero')")
+    expect(protectedApp).toContain("import('./features/solog/cajero/cajero.app')")
     expect(protectedApp).toContain("import('./pages/detalles')")
     expect(protectedApp).not.toMatch(
       /import \\{ AdminLayout \\}|import \\{ AdminDashboardPage \\}|import \\{ AdminDevicesPage \\}|import \\{ DetailsPage \\}/,

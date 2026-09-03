@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
+import { cashierFixture } from './fixtures/cashier-v4.mjs'
 
 const { chromium } = await import(process.env.SOLOG_PLAYWRIGHT_MODULE
   ? pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href : 'playwright')
@@ -69,12 +70,17 @@ await context.route('**/*', async (route) => {
   const payload = request.postDataJSON() ?? {}
   calls.push({ rpc, payload })
   if (rpc === 'rpc_solog_route_v2') return fulfill({ contract_version: 2, generated_at: serverNow, identity: bootstrap.usuario, route: '/cajero' })
-  if (rpc === 'rpc_solog_state' && payload.p_action === 'bootstrap') {
-    if (!payload.p_payload?.device_token) return fulfill({ usuario: bootstrap.usuario, server_now: serverNow })
+  if (rpc === 'rpc_solog_cashier_bootstrap_v2') {
     bootstrapStartedResolve()
     await new Promise((resolve) => { releaseBootstrap = resolve })
-    return fulfill(bootstrap)
+    const cashier = cashierFixture()
+    cashier.identity = bootstrap.usuario
+    cashier.device.autorizado = false
+    cashier.start_capability.allowed = false
+    cashier.start_capability.reason = 'SOLOG_DEVICE_UNAUTHORIZED'
+    return fulfill(cashier)
   }
+  if (rpc === 'rpc_solog_state' && payload.p_action === 'bootstrap') return fulfill(bootstrap)
   if (rpc === 'rpc_solog_details' && payload.p_action === 'summary') return fulfill(detailsSummary)
   errors.push('RPC fuera de alcance: ' + rpc)
   return route.abort()

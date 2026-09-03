@@ -8,21 +8,22 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getSologDifferenceStateClass, getSologDifferenceStateLabel } from '../labels'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import type { CajeroSessionController } from './cajero.session'
+import { cashierHistoryDate } from './cajero.history'
+import { useCajeroServerClock } from './cajero.stock'
 import type {
-  CajeroHistoryPeriod,
-  CajeroHistoryResponse,
-} from './cajero.types'
+  CashierHistoryPeriod,
+  CashierHistory,
+} from './cajero.history'
 import {
-  deriveCajeroCategories,
-  filterCajeroByCategory,
   formatCajeroCurrency,
   formatCajeroDifference,
   getCajeroCategoryIcon,
   getCajeroDifferenceClass,
-  sortHistoryNewestFirst,
 } from './cajero.utils'
 
 const timeFormatter = new Intl.DateTimeFormat('es-PE', {
+  timeZone: 'America/Lima',
+  hourCycle: 'h23',
   hour: '2-digit',
   minute: '2-digit',
 })
@@ -37,13 +38,14 @@ function formatHistoryValuation(value: number): string {
 }
 
 export function CajeroHistorial({ session }: { session: CajeroSessionController }) {
-  const [period, setPeriod] = useState<CajeroHistoryPeriod>('hoy')
+  const [period, setPeriod] = useState<CashierHistoryPeriod>('today')
+  const historyDate = cashierHistoryDate(useCajeroServerClock(session.serverOffsetMs), period)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(
     () => new Set(),
   )
-  const [history, setHistory] = useState<CajeroHistoryResponse | null>(() =>
-    session.getCachedHistory('hoy'),
+  const [history, setHistory] = useState<CashierHistory | null>(() =>
+    session.getCachedHistory('today'),
   )
   const [loading, setLoading] = useState(history === null)
   const [error, setError] = useState<string | null>(null)
@@ -85,31 +87,33 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
       active = false
       requestVersion.current += 1
     }
-  }, [loadHistory, session.cacheRevision])
+  }, [loadHistory, session.cacheRevision, historyDate])
 
   const items = useMemo(
-    () => sortHistoryNewestFirst(history?.items ?? []),
+    () => history?.items ?? [],
     [history?.items],
   )
-  const categories = useMemo(() => deriveCajeroCategories(items), [items])
+  const categories = useMemo(() => Array.from(new Set(items.map((item) => item.categoria).filter((name): name is string => name !== null))).sort().map((nombre) => ({
+    id: nombre, nombre, count: items.filter((item) => item.categoria === nombre).length,
+  })), [items])
   const effectiveCategoryId =
     selectedCategoryId !== null &&
     categories.some((category) => category.id === selectedCategoryId)
       ? selectedCategoryId
       : null
   const visibleItems = useMemo(
-    () => filterCajeroByCategory(items, effectiveCategoryId),
+    () => effectiveCategoryId === null ? items : items.filter((item) => item.categoria === effectiveCategoryId),
     [effectiveCategoryId, items],
   )
 
-  const selectPeriod = (nextPeriod: CajeroHistoryPeriod) => {
+  const selectPeriod = (nextPeriod: CashierHistoryPeriod) => {
     if (nextPeriod === period) return
     const nextHistory = getCachedHistory(nextPeriod)
     if (
       selectedCategoryId !== null &&
       (!nextHistory ||
         !nextHistory.items.some(
-          (item) => item.categoria_id === selectedCategoryId,
+          (item) => item.categoria === selectedCategoryId,
         ))
     ) {
       setSelectedCategoryId(null)
@@ -131,10 +135,10 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
       <div className="cajero-module__heading cajero-history__heading">
         <div>
           <h1 id="cajero-historial-title">Historial</h1>
-          <p>Registra la realidad</p>
+          <p>Registra la realidad{history ? ` · ${history.date} · America/Lima` : ''}</p>
         </div>
         <div className="cajero-history-tabs" aria-label="Período del historial" role="group">
-          {(['hoy', 'ayer'] as const).map((option) => (
+          {(['today', 'yesterday'] as const).map((option) => (
             <button
               aria-pressed={period === option}
               className={period === option ? 'is-active' : undefined}
@@ -142,7 +146,7 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
               onClick={() => selectPeriod(option)}
               type="button"
             >
-              {option === 'hoy' ? 'Hoy' : 'Ayer'}
+              {option === 'today' ? 'Hoy' : 'Ayer'}
             </button>
           ))}
         </div>
@@ -204,12 +208,12 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
               return (
                 <article className={expanded ? 'is-expanded' : undefined} key={item.detalle_id}>
                   <div className="cajero-history-list__summary">
-                    <strong title={item.grupo}>{item.grupo}</strong>
+                    <strong title={item.grupo ?? undefined}>{item.grupo ?? '—'}</strong>
                     <span className={differenceClass}>{formatCajeroDifference(item.diferencia)}</span>
                     <span className={differenceClass}>{formatHistoryValuation(item.valor_diferencia)}</span>
                     <button
                       aria-expanded={expanded}
-                      aria-label={`${expanded ? 'Contraer' : 'Expandir'} detalle de ${item.grupo}`}
+                      aria-label={`${expanded ? 'Contraer' : 'Expandir'} detalle de ${item.grupo ?? item.detalle_id}`}
                       onClick={() => toggleExpandedItem(item.detalle_id)}
                       type="button"
                     >
@@ -236,7 +240,7 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
         <div className="cajero-empty-state" role="status">
           <History aria-hidden="true" size={28} />
           <div>
-            <strong>{selectedCategoryId === null ? `No hay observaciones para ${period === 'hoy' ? 'hoy' : 'ayer'}.` : 'No hay observaciones en esta categoría.'}</strong>
+            <strong>{selectedCategoryId === null ? `No hay observaciones para ${period === 'today' ? 'hoy' : 'ayer'}.` : 'No hay observaciones en esta categoría.'}</strong>
             <p>El historial muestra únicamente capturas confirmadas por SOLOG.</p>
           </div>
         </div>

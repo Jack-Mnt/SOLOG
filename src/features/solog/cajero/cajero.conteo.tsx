@@ -9,8 +9,9 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
-import type { SologOperationalBootstrap } from '../types'
+import type { CashierBootstrap } from './cajero.v2'
 import { CajeroCaptureModal, type CajeroCaptureView } from './cajero.captura.dialog'
+import { CajeroPreSessionList } from './cajero.pre-session'
 import {
   CajeroSelectionGrid,
   CajeroSendBar,
@@ -47,7 +48,7 @@ export function CajeroConteo({
   bootstrap,
   session,
 }: {
-  bootstrap: SologOperationalBootstrap
+  bootstrap: CashierBootstrap
   session: CajeroSessionController
 }) {
   const [selectedType, setSelectedType] = useState<CajeroStockType | null>(null)
@@ -58,7 +59,7 @@ export function CajeroConteo({
   const requestVersion = useRef(0)
   const activeScope = session.activeScope
   const activeCountId = activeScope?.conteo_id ?? null
-  const hasActiveSession = Boolean(bootstrap.sesion_activa)
+  const hasActiveSession = Boolean(bootstrap.panel_state.session)
   const loadOperationalGroups = session.loadOperationalGroups
 
   const loadGroups = useCallback(async () => {
@@ -103,7 +104,7 @@ export function CajeroConteo({
     }
   }
 
-  if (!bootstrap.sesion_activa || !activeScope) {
+  if (!bootstrap.panel_state.session || !activeScope) {
     return (
       <section className="cajero-module" aria-labelledby="cajero-conteo-title">
         <div className="cajero-module__heading">
@@ -116,6 +117,7 @@ export function CajeroConteo({
             <p>Necesitas una referencia TumiSoft vigente antes de capturar.</p>
           </div>
         </div>
+        <CajeroPreSessionList />
       </section>
     )
   }

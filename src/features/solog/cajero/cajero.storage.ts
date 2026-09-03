@@ -24,12 +24,34 @@ let bufferRevision = 0
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
+const memory = new Map<string, string>()
+const memoryStorage: Storage = {
+  get length() { return memory.size },
+  key: (index) => [...memory.keys()][index] ?? null,
+  getItem: (key) => memory.get(key) ?? null,
+  setItem: (key, value) => { memory.set(key, value) },
+  removeItem: (key) => { memory.delete(key) },
+  clear: () => { memory.clear() },
+}
 function getStorage(storage?: Storage): Storage {
-  if (storage) return storage
-  if (typeof window === 'undefined') {
-    throw new Error('sessionStorage no está disponible en este entorno.')
+  return storage ?? memoryStorage
+}
+
+export function clearCajeroMemory(): void {
+  memory.clear()
+  bufferRevision += 1
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(BUFFER_EVENT))
+}
+
+// Retirar solo persistencia operativa anterior; conservar Auth y token de tablet.
+export function purgePersistedCajeroData(): void {
+  if (typeof window === 'undefined') return
+  for (const target of [window.sessionStorage, window.localStorage]) {
+    const keys = Array.from({ length: target.length }, (_, index) => target.key(index))
+    for (const key of keys) {
+      if (key && /^solog\.cajero\.(buffer|expressions|recount|activity)\./.test(key)) target.removeItem(key)
+    }
   }
-  return window.sessionStorage
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -82,7 +104,8 @@ function isSameCajeroBufferScope(
 ): boolean {
   return (
     isSameCajeroBufferIdentity(left, right) &&
-    left.conteo_id === right.conteo_id
+    left.conteo_id === right.conteo_id &&
+    left.groups_revision === right.groups_revision
   )
 }
 
@@ -170,6 +193,7 @@ export function getCajeroBufferKey(scope: CajeroBufferScope): string {
     scope.sede_id,
     scope.dispositivo_id,
     scope.conteo_id,
+    ...(scope.groups_revision === undefined ? [] : [String(scope.groups_revision)]),
   ]
     .map(scopeSegment)
     .join(':')
@@ -184,6 +208,7 @@ function getCajeroExpressionDraftKey(
     scope.sede_id,
     scope.dispositivo_id,
     scope.conteo_id,
+    ...(scope.groups_revision === undefined ? [] : [String(scope.groups_revision)]),
   ]
     .map(scopeSegment)
     .join(':')
@@ -531,6 +556,7 @@ function getRecountDraftKey(scope: CajeroBufferScope, detalleId: string): string
     scope.sede_id,
     scope.dispositivo_id,
     scope.conteo_id,
+    ...(scope.groups_revision === undefined ? [] : [String(scope.groups_revision)]),
     detalleId,
   ].map(scopeSegment).join(':')
 }

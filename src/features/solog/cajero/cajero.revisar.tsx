@@ -14,6 +14,7 @@ import {
 } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { CajeroCaptureModal } from './cajero.captura.dialog'
+import { CajeroPreSessionList } from './cajero.pre-session'
 import type { CajeroSessionController } from './cajero.session'
 import type { CajeroCountGroup, CajeroGroupsResponse } from './cajero.types'
 import {
@@ -98,6 +99,7 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
             <p>Necesitas una referencia TumiSoft vigente para capturar.</p>
           </div>
         </div>
+        <CajeroPreSessionList review />
       </section>
     )
   }

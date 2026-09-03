@@ -12,13 +12,12 @@ import {
 } from "lucide-react";
 import { navigateTo } from "../../../lib/router";
 import { PaletteSwitcher } from "../../theme/palette-switcher";
-import { useSolog } from "../context";
-import type { SologOperationalBootstrap } from "../types";
+
+import type { CashierBootstrap } from "./cajero.v2";
 import type { CajeroSessionController } from "./cajero.session";
 import {
   formatCajeroElapsed,
-  getCajeroStartRestriction,
-  getCajeroStockPresentation,
+  getCashierStockPresentation,
   useCajeroServerClock,
 } from "./cajero.stock";
 
@@ -56,23 +55,14 @@ export function CajeroInicio({
   bootstrap,
   session,
 }: {
-  bootstrap: SologOperationalBootstrap;
+  bootstrap: CashierBootstrap;
   session: CajeroSessionController;
 }) {
-  const solog = useSolog();
-  const now = useCajeroServerClock(solog.serverOffsetMs);
-  const stockAvailable = bootstrap.stock.disponible;
-  const stockPresentation = getCajeroStockPresentation(
-    bootstrap.stock,
-    bootstrap.sesion_activa,
-    now,
-  );
-  const startRestriction = getCajeroStartRestriction(bootstrap.stock, now);
-  const canStart =
-    stockAvailable &&
-    startRestriction === null &&
-    !bootstrap.sesion_activa &&
-    session.pendingCount === 0;
+  const now = useCajeroServerClock(session.serverOffsetMs);
+  const stockAvailable = bootstrap.panel_state.basis.snapshot_referencia_id !== null;
+  const stockPresentation = getCashierStockPresentation(bootstrap, now);
+  const canStart = bootstrap.start_capability.allowed && !bootstrap.panel_state.session && session.pendingCount === 0;
+  const startRestriction = bootstrap.start_capability.reason;
   const periodComplete = session.periodComplete;
   const operationalRoute = !periodComplete
     ? "/cajero/conteo"
@@ -81,8 +71,8 @@ export function CajeroInicio({
       : session.reviewPending > 0
         ? "/cajero/revisar"
         : null;
-  const coverage = bootstrap.cobertura_periodo;
-  const coveragePercentage = Math.max(0, Math.min(100, coverage.porcentaje));
+  const coverage = bootstrap.panel_state.kpis;
+  const coveragePercentage = coverage.coverage_percent;
 
   const begin = async () => {
     if (operationalRoute && (await session.startSession()))
@@ -124,9 +114,9 @@ export function CajeroInicio({
             <div>
               <h2 id="cajero-stock-title">{stockPresentation.label}</h2>
               <p>
-                {startRestriction === "stock_expired"
+                {startRestriction === "SOLOG_STOCK_EXPIRED"
                   ? "Actualiza el inventario desde ConeXion para comenzar un nuevo conteo."
-                  : startRestriction === "stock_too_close" && !bootstrap.sesion_activa
+                  : startRestriction === "SOLOG_STOCK_TOO_CLOSE_TO_EXPIRY" && !bootstrap.panel_state.session
                     ? "El stock está próximo a vencer. Actualiza el inventario antes de iniciar un nuevo conteo."
                     : formatCajeroElapsed(stockPresentation.elapsedMs)}
               </p>
@@ -134,7 +124,7 @@ export function CajeroInicio({
           </div>
 
           {operationalRoute ? (
-            bootstrap.sesion_activa ? (
+            bootstrap.panel_state.session ? (
               <button
                 className="button"
                 onClick={() => navigateTo(operationalRoute)}
@@ -210,12 +200,12 @@ export function CajeroInicio({
             <div className="cajero-coverage-card__copy">
               <span>Cobertura del período</span>
               <h2 id="cajero-coverage-title">
-                {coverage.grupos_contados} / {coverage.grupos_totales}
+                {coverage.coverage_counted} / {coverage.groups_total}
               </h2>
               <p>
-                {coverage.pendientes}{" "}
+                {coverage.count_pending}{" "}
                 {pluralize(
-                  coverage.pendientes,
+                  coverage.count_pending,
                   "grupo pendiente",
                   "grupos pendientes",
                 )}
@@ -250,7 +240,7 @@ export function CajeroInicio({
 
           <div className="cajero-home-metrics" aria-label="Resumen operativo">
             <button
-              aria-label={`Abrir Conteo, ${coverage.pendientes} ${pluralize(coverage.pendientes, "grupo pendiente", "grupos pendientes")}`}
+              aria-label={`Abrir Conteo, ${coverage.count_pending} ${pluralize(coverage.count_pending, "grupo pendiente", "grupos pendientes")}`}
               className="cajero-home-metric cajero-home-metric--action"
               onClick={() => navigateTo("/cajero/conteo")}
               type="button"
@@ -258,10 +248,10 @@ export function CajeroInicio({
               <CalendarCheck2 aria-hidden="true" size={23} />
               <span>Pendientes</span>
               <div className="cajero-home-metric__value">
-                <strong>{coverage.pendientes}</strong>
+                <strong>{coverage.count_pending}</strong>
                 <small>
                   {pluralize(
-                    coverage.pendientes,
+                    coverage.count_pending,
                     "grupo pendiente",
                     "grupos pendientes",
                   )}
@@ -269,7 +259,7 @@ export function CajeroInicio({
               </div>
             </button>
             <button
-              aria-label={`Abrir Stock 0, ${bootstrap.conteo_principal.stock_cero_pendientes} ${pluralize(bootstrap.conteo_principal.stock_cero_pendientes, "grupo pendiente", "grupos pendientes")}`}
+              aria-label="Abrir Stock 0"
               className="cajero-home-metric cajero-home-metric--action"
               onClick={() => navigateTo("/cajero/conteo")}
               type="button"
@@ -277,16 +267,7 @@ export function CajeroInicio({
               <PackageOpen aria-hidden="true" size={23} />
               <span>Stock 0</span>
               <div className="cajero-home-metric__value">
-                <strong>
-                  {bootstrap.conteo_principal.stock_cero_pendientes}
-                </strong>
-                <small>
-                  {pluralize(
-                    bootstrap.conteo_principal.stock_cero_pendientes,
-                    "grupo pendiente",
-                    "grupos pendientes",
-                  )}
-                </small>
+                <small>Ver grupos</small>
               </div>
             </button>
             <PendingSendCard session={session} />

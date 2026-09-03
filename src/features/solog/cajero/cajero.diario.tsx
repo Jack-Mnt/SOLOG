@@ -2,6 +2,7 @@ import { AlertCircle, CalendarCheck2, LoaderCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { CajeroCaptureModal } from './cajero.captura.dialog'
+import { CajeroPreSessionList } from './cajero.pre-session'
 import {
   CajeroSelectionGrid,
   CajeroSendBar,
@@ -90,6 +91,7 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
             <p>Necesitas una referencia TumiSoft vigente para capturar.</p>
           </div>
         </div>
+        <CajeroPreSessionList />
       </section>
     )
   }

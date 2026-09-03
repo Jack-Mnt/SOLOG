@@ -107,7 +107,7 @@ describe('Revisar Motor V3', () => {
       'src/features/solog/cajero/cajero.revisar.tsx',
     ).text()
 
-    expect(source).toContain('<p>Registra la realidad</p>')
+    expect(source).toContain('<p>Registra la realidad')
     expect(source).toContain('cajero-review-list')
     expect(source).toContain('cajero-review-filter')
     expect(source).toContain('filterCajeroReviewGroups')
@@ -175,7 +175,7 @@ describe('Historial V3', () => {
       'src/features/solog/cajero/cajero.historial.tsx',
     ).text()
 
-    expect(source).toContain('<p>Registra la realidad</p>')
+    expect(source).toContain('<p>Registra la realidad')
     expect(source).not.toContain('cajero-module__eyebrow')
     expect(source).not.toContain('Consulta</')
     expect(source).toContain('cajero-history-tabs')
@@ -193,9 +193,9 @@ describe('Historial V3', () => {
       'src/features/solog/cajero/cajero.historial.tsx',
     ).text()
 
-    expect(source).toContain("session.getCachedHistory('hoy')")
+    expect(source).toContain("session.getCachedHistory('today')")
     expect(source).toContain('getCachedHistory(nextPeriod)')
-    expect(source).toContain('filterCajeroByCategory(items, effectiveCategoryId)')
+    expect(source).toContain('items.filter((item) => item.categoria === effectiveCategoryId)')
     expect(source).toContain('setSelectedCategoryId(category.id)')
     expect(source).toContain('toggleExpandedItem(item.detalle_id)')
     expect(source).not.toContain('cajero.api')

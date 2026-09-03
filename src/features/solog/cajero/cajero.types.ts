@@ -84,7 +84,7 @@ export interface CajeroCountGroup {
   stock_negativo?: boolean
   productos?: CajeroProduct[]
   snapshot_actual_id?: string | null
-  estado_stock?: 'Contado' | 'Cambio_reciente'
+  estado_stock?: string
   stock_posterior?: number | null
   primer_snapshot_posterior_id?: string | null
   snapshot_reconteo_id?: string | null
@@ -100,7 +100,7 @@ export interface CajeroGroupsPayload {
 }
 
 export interface CajeroGroupsResponse {
-  conteo_id: string
+  conteo_id: string | null
   vista: CajeroBackendView
   snapshot_actual_id: string | null
   snapshot_actual_at: string | null
@@ -258,6 +258,7 @@ export interface CajeroBufferIdentity {
 
 export interface CajeroBufferScope extends CajeroBufferIdentity {
   conteo_id: string
+  groups_revision?: number
 }
 
 export interface CajeroObservationDisplayData {
@@ -295,13 +296,10 @@ export interface CajeroRecountStartPayload {
 }
 
 export interface CajeroRecountStartResponse {
-  ok: true
-  codigo: 'RECOUNT_STARTED'
   conteo_id: string
   detalle_id: string
   snapshot_reconteo_id: string
   stock_teorico_reconteo: number
-  server_now: string
 }
 
 export interface CajeroRecountPayload extends CajeroRecountStartPayload {
@@ -310,8 +308,6 @@ export interface CajeroRecountPayload extends CajeroRecountStartPayload {
 }
 
 export interface CajeroRecountResponse {
-  ok: true
-  codigo: 'RECOUNT_SAVED'
   conteo_id: string
   detalle_id: string
   snapshot_reconteo_id: string

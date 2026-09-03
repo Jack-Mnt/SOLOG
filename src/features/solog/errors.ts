@@ -137,6 +137,15 @@ export type SologErrorCode =
   | `SOLOG_${string}`
 
 const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
+  SOLOG_DEVICE_UNAUTHORIZED: 'Esta tablet perdió la autorización. Los borradores operativos se han eliminado.',
+  SOLOG_SESSION_CONFLICT: 'Ya existe una sesión activa en esta sede. Actualiza el panel.',
+  SOLOG_SESSION_EXPIRED: 'La sesión venció. No se permiten nuevas capturas.',
+  SOLOG_SESSION_REVISION_CONFLICT: 'La sesión no corresponde a la revisión operativa requerida. Actualiza el panel.',
+  SOLOG_GROUPS_REVISION_CONFLICT: 'La revisión de grupos cambió. Actualiza antes de crear una nueva operación.',
+  SOLOG_SESSION_NOT_FOUND: 'La sesión ya no está disponible.',
+  SOLOG_RECOUNT_NOT_PENDING: 'Este caso ya no está disponible para reconteo.',
+  SOLOG_RECOUNT_SAME_SESSION_FORBIDDEN: 'El reconteo debe realizarse en una sesión posterior a la del conteo original.',
+  SOLOG_INVALID_OPERATION: 'La operación no es válida. Vuelve a cargar el panel.',
   SOLOG_AUTH_REQUIRED: 'Tu sesión no es válida. Inicia sesión nuevamente.',
   SOLOG_USER_DISABLED: 'Este usuario está deshabilitado.',
   SOLOG_ROLE_NOT_ALLOWED: 'Tu rol no permite realizar esta operación.',

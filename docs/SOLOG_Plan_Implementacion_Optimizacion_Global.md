@@ -168,6 +168,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 ## Fase C1 [O] — Adaptador v2, tipos y bootstrap único
 
+> Nota de ejecución aprobada: C1 → C2 → C3 se implementan y activan como bloque coordinado, conservando sus criterios separados; C1 no se cierra con escrituras legacy activas. Para Cajero prevalece el contrato de integración V4 (API `contract_version=2`): grupos, SKU, colas y KPI se consumen siempre de `panel_state`, diferenciando `pre_session/frozen=false` de `session/frozen=true`. Tras mutaciones se aplica el `state` autoritativo; V4 sincroniza cobertura sin modificar el denominador congelado. C4 no forma parte de esta ejecución.
+
 - **Objetivo:** sustituir `rpc_solog_state/status/groups` por una sola lectura autoritativa v2 para todo el panel.
 - **Estado actual encontrado:** `cajero.api.ts` usa `rpc_solog_state` para `groups/status` y el contexto general hace bootstrap adicional; no hay tipos ni llamadas v2.
 - **Cambios frontend:** crear `rpc_solog_cashier_bootstrap_v2` con `p_payload:{device_token?}`; comprobar `contract_version === 2` y usar directamente `identity`, `site`, `device`, `start_capability`, `session_state` si existe, `revisions.groups/devices/operational` y `server_now`. Derivar vistas/KPI solo de esa respuesta; no exigir wrapper `data` ni campos no documentados.
@@ -214,13 +216,13 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 ## Fase C4 [O] — Historial, temporización y gate E2E
 
-- **Objetivo:** completar historial Hoy/Ayer, reloj de vigencia y validar el flujo real de escritura.
-- **Estado actual encontrado:** historial usa `rpc_solog_count('history')`; temporización/caches parciales existen; el happy path v2 real no se ejecutó por falta de credencial sintética autorizable.
+- **Objetivo:** completar historial Hoy/Ayer y reloj de vigencia; preparar el smoke humano del flujo real sin ejecutarlo desde Codex.
+- **Estado actualizado C4:** historial migrado a `rpc_solog_cashier_history_v2` según V4 y definición desplegada inspeccionada en solo lectura. Respuesta `contract_version/generated_at/period/date/items/revisions.operational`, sin `categoria_id` ni wrapper legacy. Caché en memoria por identidad/sede/dispositivo y fecha, compartida entre sesiones operativas de la misma página (el historial pertenece al usuario, no a una sesión individual); borradores y panel sí mantienen aislamiento de sesión. Se conserva la navegación existente.
 - **Cambios frontend:** `rpc_solog_cashier_history_v2` recibe exactamente `p_payload:{period:'today'|'yesterday'}`; carga completa bajo demanda y cache por período/revisión/scope. Usar `server_now` para las bandas 0–1:30, >1:30–1:50, >1:50–1:57 y countdown desde 1:57; backend decide expiración/cierre.
 - **Dependencias/riesgos:** C1–C3; snapshot casi vencido, reloj desviado, app suspendida y medianoche Lima.
 - **Validación:** Today/Yesterday por `contado_at` del usuario/sede; invalidación solo del período afectado; fake timers; cero llamada por navegación/foco.
-- **Gate obligatorio:** al ejecutarlo, revalidar que el snapshot continúa vigente y usar un dispositivo autorizado para `start → save_batch → finish → nueva sesión → recount_start → recount_save → finish`; comprobar también el rechazo en la misma sesión de origen.
-- **Terminado cuando:** historia/temporización pasan y el gate E2E queda verde; si falla por backend/contrato, detener y devolver a ChatGPT.
+- **Gate obligatorio:** `PENDIENTE — smoke test humano por dispositivo autorizado`. Codex no ejecuta escrituras de prueba reales. El usuario revalida snapshot confirmado/vigente al ejecutar `start → save_batch → finish → snapshot posterior → nueva sesión → recount_start → recount_save → finish`; comprueba la prohibición en sesión de origen. Guía: `docs/SOLOG_Cajero_C4_Smoke_Humano.md`.
+- **Terminado técnicamente cuando:** historial/temporización y validaciones automatizadas/simuladas pasan. El cierre definitivo del bloque Cajero y G3 requiere reporte aprobado del smoke humano; su ausencia no es defecto de implementación. Si aparece incompatibilidad real backend/contrato, detener y devolver a ChatGPT.
 - **Responsable:** Codex — Repositorio; gate con Validación compartida.
 
 # 4. Detalles

@@ -8,11 +8,11 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { navigateTo } from '../../../lib/router'
-import type { SologOperationalBootstrap } from '../types'
+import type { CashierBootstrap } from './cajero.v2'
 import {
   formatCajeroClock,
   formatCajeroElapsed,
-  getCajeroStockPresentation,
+  getCashierStockPresentation,
   useCajeroServerClock,
 } from './cajero.stock'
 import type { CajeroRoute } from './cajero.types'
@@ -36,7 +36,7 @@ export function CajeroHeader({
   sede,
   onLogout,
 }: {
-  bootstrap: SologOperationalBootstrap
+  bootstrap: CashierBootstrap
   serverOffsetMs: number
   sede: string
   onLogout: () => void
@@ -44,11 +44,7 @@ export function CajeroHeader({
   const [stockOpen, setStockOpen] = useState(false)
   const stockControlRef = useRef<HTMLDivElement>(null)
   const now = useCajeroServerClock(serverOffsetMs)
-  const presentation = getCajeroStockPresentation(
-    bootstrap.stock,
-    bootstrap.sesion_activa,
-    now,
-  )
+  const presentation = getCashierStockPresentation(bootstrap, now)
 
   useEffect(() => {
     if (!stockOpen) return
@@ -116,14 +112,14 @@ export function CajeroHeader({
                   <p>Actualiza el inventario desde ConeXion para iniciar un nuevo conteo.</p>
                 ) : presentation.state === 'countdown' ? (
                   <>
-                    <p>Se cerrará automáticamente antes de que venza el stock.</p>
-                    <p>Los conteos ya registrados se sincronizarán normalmente.</p>
+                    <p>Envía los pendientes antes del vencimiento. Después no se admiten nuevas capturas.</p>
+                    <p>Los registros confirmados permanecen guardados; puedes finalizar la sesión.</p>
                   </>
                 ) : (
                   <dl>
                     <div><dt>Estado del inventario</dt><dd>{formatCajeroElapsed(presentation.elapsedMs)}</dd></div>
                     {stockExpiresAt ? <div><dt>Vigente hasta</dt><dd>{stockExpiresAt}</dd></div> : null}
-                    {bootstrap.sesion_activa && sessionExpiresAt ? (
+                    {bootstrap.panel_state.session && sessionExpiresAt ? (
                       <div><dt>Sesión hasta</dt><dd>{sessionExpiresAt}</dd></div>
                     ) : null}
                   </dl>

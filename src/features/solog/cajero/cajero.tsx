@@ -1,7 +1,7 @@
 import { AlertTriangle, RefreshCw, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { replaceRoute } from '../../../lib/router'
-import type { SologOperationalBootstrap } from '../types'
+import type { CashierBootstrap } from './cajero.v2'
 import { CajeroConteo } from './cajero.conteo'
 import { CajeroDiario } from './cajero.diario'
 import { CajeroBottomNavigation, CajeroHeader } from './cajero.header'
@@ -14,12 +14,11 @@ import {
 } from './cajero.session'
 import type { CajeroRoute } from './cajero.types'
 import { isCajeroRouteAvailable } from './cajero.utils'
-import { useSolog } from '../context'
 
 const BLOCK_MESSAGES: Record<CajeroBlockReason, { title: string; detail: string }> = {
   expired: {
     title: 'La sesión de conteo venció.',
-    detail: 'No registres nuevas capturas. SOLOG intentará sincronizar los pendientes con su sesión y fecha originales.',
+    detail: 'No se admiten nuevas capturas. Los borradores no enviados se descartan; los registros confirmados permanecen guardados. Finaliza el conteo. Si hay un envío de resultado incierto, reinténtalo para confirmar su resultado.',
   },
   inactive: {
     title: 'La sesión se bloqueó por inactividad.',
@@ -36,18 +35,11 @@ export function Cajero({
   route,
   onLogout,
 }: {
-  bootstrap: SologOperationalBootstrap
+  bootstrap: CashierBootstrap
   route: CajeroRoute
   onLogout: () => Promise<void>
 }) {
-  const solog = useSolog()
   const session = useCajeroSession(onLogout)
-
-  useEffect(() => {
-    void session.checkFreshness()
-    // La ruta es el disparador explícito de entrada a vista.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route])
 
   useEffect(() => {
     if (!isCajeroRouteAvailable(route, session.periodComplete)) {
@@ -64,10 +56,15 @@ export function Cajero({
       <CajeroHeader
         bootstrap={bootstrap}
         onLogout={() => void session.logoutSafely()}
-        serverOffsetMs={solog.serverOffsetMs}
-        sede={bootstrap.sede.nombre}
+        serverOffsetMs={session.serverOffsetMs}
+        sede={bootstrap.site.nombre}
       />
       <main className="cajero-main">
+        <div className="cajero-module__heading">
+          <span>{bootstrap.panel_state.frozen ? 'Sesión congelada' : 'Vista previa · sin sesión iniciada'}</span>
+          <button className="button button--secondary" disabled={session.sending} onClick={() => void session.refresh()}>Actualizar</button>
+          {bootstrap.panel_state.session ? <button className="button button--secondary" disabled={session.sending} onClick={() => void session.finishSession()}>Finalizar conteo</button> : null}
+        </div>
         {blockMessage ? (
           <div className="cajero-alert cajero-alert--warning" role="alert">
             <AlertTriangle aria-hidden="true" size={22} />
@@ -75,7 +72,7 @@ export function Cajero({
               <strong>{blockMessage.title}</strong>
               <p>{blockMessage.detail}</p>
             </div>
-            {session.pendingCount > 0 ? (
+            {session.pendingCount > 0 || session.pendingIntent ? (
               <button
                 className="button button--secondary"
                 disabled={session.sending}
