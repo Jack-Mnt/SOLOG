@@ -16,3 +16,12 @@
 .admin-v2-card section { margin-top:1rem; }
 .admin-v2-card section > label { display:grid; gap:.4rem; }
 .admin-v2-card section > label select { width:100%; }
+.admin-v2-actions { display:flex; flex-wrap:wrap; gap:.5rem; }
+.admin-v2-form { display:grid; gap:1rem; }
+.admin-v2-form > label { display:grid; gap:.4rem; }
+.admin-v2-picker { display:grid; gap:.5rem; max-height:240px; overflow:auto; margin:1rem 0; }
+.admin-v2-picker label { display:flex; gap:.5rem; align-items:center; }
+.admin-v2-picker input { min-height:auto; }
+.admin-v2-json { white-space:pre-wrap; overflow-wrap:anywhere; max-height:300px; overflow:auto; }
+.admin-v2-data { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; }
+.admin-v2-data dd { margin:0; }

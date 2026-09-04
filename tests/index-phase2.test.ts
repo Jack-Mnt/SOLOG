@@ -31,7 +31,7 @@ describe('Index Fase I2: code splitting', () => {
     ])
 
     expect(app).toContain("lazy(() => import('./protected-app'))")
-    expect(protectedApp).toContain("import('./features/solog/admin/admin-app')")
+    expect(protectedApp).toContain("import('./features/solog/admin/admin.v2.app')")
     expect(protectedApp).toContain("import('./features/solog/cajero/cajero.app')")
     expect(protectedApp).toContain("import('./pages/detalles')")
     expect(protectedApp).not.toMatch(
@@ -41,19 +41,19 @@ describe('Index Fase I2: code splitting', () => {
 
   test('cada módulo Admin tiene un límite lazy propio', async () => {
     const adminApp = await readSource(
-      'src/features/solog/admin/admin-app.tsx',
+      'src/features/solog/admin/admin.v2.app.tsx',
     )
     const pages = [
-      'admin.dashboard',
-      'admin.control',
-      'admin.incidencias',
-      'admin.catalogo',
-      'admin.grupos',
-      'admin.dispositivos',
+      'dashboard/admin.dashboard.v2',
+      'control/admin.control.v2',
+      'incidencias/admin.incidencias.v2',
+      'catalogo/admin.catalogo.v2',
+      'grupos/admin.grupos.v2',
+      'dispositivos/admin.dispositivos.v2',
     ]
 
     for (const page of pages) {
-      expect(adminApp).toContain("import('../../../pages/" + page + "')")
+      expect(adminApp).toContain("import('./" + page + "')")
     }
   })
 

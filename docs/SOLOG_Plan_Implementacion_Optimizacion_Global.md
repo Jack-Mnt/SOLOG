@@ -1,10 +1,10 @@
 # SOLOG — Plan vigente de implementación frontend contra backend v2
 
-**Estado vigente:** I1–I2 aprobadas y cerradas; Cajero con implementación técnica completada y validación humana pendiente; D1–D3 aprobadas técnicamente; A1–A3 implementadas técnicamente, pendientes de revisión del usuario. A4–A6 no iniciadas. Los apartados de baseline siguientes conservan el diagnóstico histórico previo a implementar. Evidencia A1–A3: `docs/SOLOG_Admin_A1_A3_Implementacion.md`.
+**Estado vigente:** I1–I2 aprobadas y cerradas; Cajero con implementación técnica completada y validación humana pendiente; D1–D3 y A1–A3 aprobadas técnicamente. A4–A6 implementadas técnicamente contra V6, pendientes de revisión del usuario. Integración Global no iniciada. Los baselines y diagnósticos previos siguientes son históricos. Evidencias: `docs/SOLOG_Admin_A1_A3_Implementacion.md` y `docs/SOLOG_Admin_A4_A6_Implementacion.md`.
 
 **Fecha de baseline:** 2026-09-03.
 
-**Contrato de integración vigente:** `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V5.md`, congelado y desplegado; APIs con `contract_version = 2`. V1–V4 quedan históricas. Checkpoint A2 confirmado en solo lectura: `20260904041106_solog_shift_grid_totals_site_isolation_v5`; Totales aislados por sede sin reconstrucción frontend.
+**Contrato de integración vigente:** `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V6.md`; APIs con `contract_version = 2`. V1–V5 quedan históricas. Checkpoint A4 resuelto por ChatGPT/Supabase: `20260904051718_solog_catalog_publication_stable_artifact_v6`, Edge `conexion-admin` v4 con `verify_jwt=true`. Se conserva el checkpoint A2 V5. No se modificó backend.
 
 ## 0. Autoridad, alcance y baseline
 
@@ -12,9 +12,9 @@
 
 1. Las decisiones funcionales provienen de `docs/SOLOG_Decisiones_Congeladas_Optimizacion_Global.md`.
 2. La referencia técnica backend declarada es `docs/SOLOG_Backend_Optimizacion_Global_V1.md`.
-3. Toda firma, acción, payload, respuesta, revisión, autorización, error, replay, paginación, Edge Function y Cron para integración frontend proviene de `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V5.md`.
+3. Toda firma, acción, payload, respuesta, revisión, autorización, error, replay, paginación, Edge Function y Cron para integración frontend proviene de `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V6.md`.
 4. `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V1.md` queda reemplazado/histórico y no es autoridad para consumidores nuevos.
-5. El contrato documental V5 prevalece sobre cualquier supuesto anterior de este plan. El frontend no agrega wrappers, campos, acciones, normalizaciones ni fallbacks no documentados.
+5. El contrato documental V6 prevalece sobre cualquier supuesto anterior de este plan. El frontend no agrega wrappers, campos, acciones, normalizaciones ni fallbacks no documentados.
 
 ### Baseline Git y cambios preexistentes
 
@@ -313,7 +313,9 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 - **Terminado cuando:** Control/export no llaman v1 y el workbook concilia con los cinco datasets sin reglas Motor en frontend.
 - **Responsable:** Codex — Repositorio.
 
-## Fase A4 [O] — Catálogo, grupos, precios y conexion-admin v3
+## Fase A4 [O] — Catálogo, grupos, precios y conexion-admin v4
+
+**Implementación técnica para revisión (2026-09-04):** lecturas maestras y resolución/mutaciones v2; `limit/offset`, `preview`, revisión esperada y UUID por intención. Edge v4 con recibo de publicación por usuario que conserva el UUID al recargar/reintentar; nunca timestamps/hash/uploads cliente. Resolver precios deja la aprobación recuperable hasta publicación. Maestro invalida sus consultas y notifica cambios `groups` al store A1; no altera sesiones congeladas. Se retiraron los transportes y UI legacy reemplazados.
 
 - **Objetivo:** migrar maestro/publicación a las acciones desplegadas sin crear caminos frontend alternativos.
 - **Estado actual encontrado:** API usa `rpc_solog_catalog`/`rpc_solog_admin` con `catalog_changes`, `catalog_change_action`, `groups`, `group_products`, `group_change_save` y `group_valuation_save`; publicación v2 no envía operation ID.
@@ -330,7 +332,7 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
   - `resolve_group_price:{propuesta_fingerprint,resolution:'update_group_price'|'separate_sku'}`;
   - `update_package_price:{grupo_id,precio_paquete}`;
   - `group_change_save` conserva campos vigentes y agrega `member_codes` al crear agrupado.
-- Publicar mediante `conexion-admin` v3 con `{action:'publish_catalog',operation_id}`; retry usa el mismo UUID. No subir directamente, no usar upsert ni invocar la RPC interna de publicación.
+- Publicar mediante `conexion-admin` v4 con `{action:'publish_catalog',operation_id}`; retry usa el mismo UUID. No subir directamente, no usar upsert ni invocar la RPC interna de publicación.
 - **Archivos probables:** `admin.catalogo.*`, `admin.grupos.*`, `api.ts`, `types.ts`, `errors.ts` y pruebas admin-groups/publication.
 - **Dependencias/riesgos:** A1, S7 y checkpoint V2 satisfechos; paginación offset concurrente, `groups/catalog` obsoletas, operación en progreso, reserva en conflicto y respuesta perdida tras commit.
 - **Validación:** seis lecturas y formas de respuesta exactas; límites/offset/filtros; `preview` sin normalización; acciones/payloads de resolución/mutación exactos; opciones de precio, paquete independiente, replay Edge, revisión recargada tras conflicto e invariantes reflejadas desde backend.
@@ -338,6 +340,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 - **Responsable:** Codex — Repositorio.
 
 ## Fase A5 [O] — Incidencias por familia
+
+**Implementación técnica para revisión (2026-09-04):** summary canónico global/sede y detalle bajo demanda de 100; acciones `ignore_30d`, `reactivate`, `propose_delete`, revisiones y replay. Sin fechas manuales ni familias/conteos recalculados. Caché por scope/familia y expiración al final del período backend en Lima, sin polling. `c_interno_original` se conserva como texto. Propuesta de eliminación invalida también Catálogo.
 
 - **Objetivo:** consumir familias canónicas, detalle paginado y tres acciones idempotentes.
 - **Estado actual encontrado:** `rpc_solog_admin('incidents'/'incident_action')` usa filas/campos v1, filtros de fecha y decisiones `reviewed/ignore_15d/deleted`.
@@ -353,6 +357,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 - **Responsable:** Codex — Repositorio.
 
 ## Fase A6 [O] — Dispositivos y propagación de revocación
+
+**Implementación técnica para revisión (2026-09-04):** `list` y cuatro mutaciones v2; revisión tomada de la fila de dispositivo/sede, sin `site_id` en escrituras. Confirmación explícita para reemplazar y representación del dispositivo/pendientes autoritativos retornados, seguida de lectura selectiva para nombres/datos completos. Caché de otras sedes/módulos conservada. Cajero mantiene su invalidación aprobada ante rechazo de la siguiente escritura protegida; no se modificó ni se ejecutó E2E productivo.
 
 - **Objetivo:** migrar lista/autorizar/reemplazar/revocar/rechazar con revisión de sede y estado autoritativo.
 - **Estado actual encontrado:** `rpc_solog_admin` v1 autoriza/revoca; el hook modela rechazo reutilizando rutas legacy y no envía operación/revisión.
@@ -454,7 +460,7 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 | Maestro lectura | `rpc_solog_admin_master_read_v2(p_action,p_payload)` | `status:{}`; `reference:{}`; `groups`, `group_products`, `catalog_changes` con filtros + `limit/offset<=50`; `publication_preview:{}` → `preview` | groups/catalog; sin operation ID ni expected revision | A4 |
 | Maestro opción de precio | `rpc_solog_admin_master_v2(p_action,p_payload)` | `price_mismatch_options:{propuesta_fingerprint}` | lectura ligada a resolución | A4 |
 | Maestro mutación | `rpc_solog_admin_master_v2(p_action,p_payload)` | `group_change_save`, `catalog_change_action`, `resolve_group_price`, `update_package_price` + `operation_id` + `expected_groups_revision` y campos específicos documentados | groups + replay | A4 |
-| Publicación | Edge `conexion-admin` v3 | `{action:'publish_catalog',operation_id}` | JWT admin; replay/reserva | A4 |
+| Publicación | Edge `conexion-admin` v4 | `{action:'publish_catalog',operation_id}` | JWT admin; replay/reserva | A4 |
 | Incidencias lectura | `rpc_solog_admin_incidents_v2` | `summary:{site_id?}`; `detail:{family_key,site_id?,page,page_size<=100}` | incidents global/sede | A5 |
 | Incidencias mutación | `rpc_solog_admin_incidents_v2` | `ignore_30d|reactivate|propose_delete:{family_key,scope,site_id solo site,operation_id,expected_revision}` | incidents del scope + replay | A5 |
 | Dispositivos lectura | `rpc_solog_admin_devices_v2('list',p_payload)` | `{site_id?}` | devices por sede | A6 |
@@ -555,10 +561,10 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 
 - **Antecedentes completados:** S1–S9 — COMPLETADAS — ChatGPT / Supabase.
 - **Backend diferido:** S10 — limpieza legacy, ChatGPT / Supabase, solo después de G3.
-- **Frontend aprobado:** I1–I2 cerradas; D1–D3 aprobadas técnicamente. C1–C4 con implementación técnica completada y validación humana pendiente.
-- **Frontend implementado para revisión:** A1–A3, bloque coordinado contra V5.
-- **Implementación Codex pendiente:** A4–A6 (3 fases), no autorizadas en esta ejecución.
+- **Frontend aprobado:** I1–I2 cerradas; D1–D3 y A1–A3 aprobadas técnicamente. C1–C4 con implementación técnica completada y validación humana pendiente.
+- **Frontend implementado para revisión:** A4–A6, bloque coordinado contra V6; límites internos conservados.
+- **A4–A6:** implementación técnica completada; no avanzar a G1–G3 sin revisión.
 - **Integración compartida pendiente:** G1–G3 (3 fases).
 - **Total del plan:** 6 bloques; 28 hitos/fases nominales; se conservan los límites y responsables originales.
-- **Bloqueos contractuales:** ninguno nuevo; bloqueo A2 resuelto por V5. El smoke humano Cajero continúa como gate antes del cierre definitivo de G3, cierre global y S10 relacionado, no bloquea fases independientes.
-- **Aprobación:** A1–A3 esperan revisión del usuario. No avanzar a A4 ni ejecutar el smoke real Cajero sin la aprobación correspondiente.
+- **Bloqueos contractuales:** ninguno nuevo; A2 resuelto por V5 y recuperación A4 resuelta por V6. El smoke humano Cajero continúa como gate antes del cierre definitivo de G3, cierre global y S10 relacionado, no bloquea fases independientes.
+- **Aprobación:** A4–A6 esperan revisión del usuario. No avanzar a Integración Global. No ejecutar el smoke real Cajero; continúa pendiente de validación humana en la fase final.

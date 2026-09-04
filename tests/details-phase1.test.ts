@@ -21,11 +21,12 @@ describe('D1 adaptador V4 y entrada aislada', () => {
     expect(api).not.toContain('.from(')
     expect(await Bun.file('src/features/solog/api.ts').text()).not.toContain("'rpc_solog_details'")
   })
-  test('entrada directa previa a SologProvider, sin bootstrap general', async () => {
+  test('entrada directa sin bootstrap general', async () => {
     const source = await Bun.file('src/protected-app.tsx').text()
     const start = source.indexOf('function AuthenticatedApp')
     const auth = source.slice(start)
-    expect(auth.indexOf("pathname === '/detalles'")).toBeLessThan(auth.indexOf('<SologProvider>'))
+    expect(auth).toContain("pathname === '/detalles'")
+    expect(auth).not.toContain('<SologProvider>')
     expect(await Bun.file('src/pages/detalles.tsx').text()).not.toContain('bootstrap')
     expect(source).toContain('<PanelLoader />')
   })

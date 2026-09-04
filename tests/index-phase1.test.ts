@@ -27,7 +27,8 @@ describe('Index Fase I1: frontera pública', () => {
     expect(source).toContain('<AuthProvider>')
     expect(source).toContain("if (pathname === '/login')")
     expect(source).toContain('<LoginRouteResolver')
-    expect(source).toContain('<SologProvider>')
+    expect(source).not.toContain('<SologProvider>')
+    expect(source).toContain('<AdminV2App')
   })
 })
 
