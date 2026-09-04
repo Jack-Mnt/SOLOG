@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
+import { summaryFixture } from './fixtures/details-v2.mjs'
 import { cashierFixture } from './fixtures/cashier-v4.mjs'
 
 const { chromium } = await import(process.env.SOLOG_PLAYWRIGHT_MODULE
@@ -41,18 +42,7 @@ const bootstrap = {
   conteo_principal: { categorias: [], stock_cero_pendientes: 0 },
   vistas_inteligentes: { conteo_diario: { cantidad: 0, habilitado: false }, revisar: { cantidad: 0, habilitado: false } },
 }
-const detailsSummary = {
-  ok: true,
-  codigo: 'DETAILS_SUMMARY',
-  server_now: serverNow,
-  sede: bootstrap.sede,
-  dispositivo: bootstrap.dispositivo,
-  stock: { disponible: true, snapshot_id: 'snapshot-1', snapshot_at: serverNow, confirmado_at: serverNow },
-  cobertura_periodo: bootstrap.cobertura_periodo,
-  cobertura_diaria: bootstrap.cobertura_diaria,
-  conteo_diario_pendientes: 0,
-  revisar_pendientes: 0,
-}
+const detailsSummary = summaryFixture()
 
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
 await context.route('**/*', async (route) => {
@@ -80,8 +70,7 @@ await context.route('**/*', async (route) => {
     cashier.start_capability.reason = 'SOLOG_DEVICE_UNAUTHORIZED'
     return fulfill(cashier)
   }
-  if (rpc === 'rpc_solog_state' && payload.p_action === 'bootstrap') return fulfill(bootstrap)
-  if (rpc === 'rpc_solog_details' && payload.p_action === 'summary') return fulfill(detailsSummary)
+  if (rpc === 'rpc_solog_details_v2' && payload.p_action === 'summary') return fulfill(detailsSummary)
   errors.push('RPC fuera de alcance: ' + rpc)
   return route.abort()
 })
@@ -120,9 +109,11 @@ try {
   assert.deepEqual(routeCalls[0].payload, { p_payload: {} })
   assert.ok(
     calls.findIndex((call) => call.rpc === 'rpc_solog_route_v2') <
-      calls.findIndex((call) => call.rpc === 'rpc_solog_state'),
+      calls.findIndex((call) => call.rpc === 'rpc_solog_details_v2'),
   )
   assert.equal(calls.some((call) => call.rpc === 'rpc_solog_count'), false)
+  assert.equal(calls.filter((call) => call.rpc === 'rpc_solog_details_v2').length, 1)
+  assert.equal(calls.some((call) => call.rpc === 'rpc_solog_state'), false)
   assert.deepEqual(errors, [])
   console.log('PASS Login usa route v2, muestra el loader compartido y resuelve /detalles')
 } finally {

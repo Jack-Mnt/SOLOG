@@ -12,13 +12,6 @@ import type {
   SologAdminIncidentActionResponse,
   SologAdminIncidentsFilters,
   SologAdminIncidentsResponse,
-  SologDashboardResponse,
-  SologDashboardSiteActivityResponse,
-  SologDetailsExportResponse,
-  SologDetailsHistoryPeriod,
-  SologDetailsHistoryResponse,
-  SologDetailsRequestAccessResponse,
-  SologDetailsSummaryResponse,
   SologAuthorizeDeviceResponse,
   SologCatalogChangeActionPayload,
   SologCatalogChangeActionResponse,
@@ -26,12 +19,6 @@ import type {
   SologCatalogChangesResponse,
   SologCatalogReference,
   SologCatalogStatus,
-  SologControlDetailPayload,
-  SologControlDetailResponse,
-  SologControlExportPayload,
-  SologControlExportResponse,
-  SologControlPayload,
-  SologControlResponse,
   SologAdminGroupsFilters,
   SologAdminGroupsResponse,
   SologGroupProductsFilters,
@@ -53,12 +40,8 @@ type SologRpcName =
   | 'rpc_solog_count'
   | 'rpc_solog_admin'
   | 'rpc_solog_catalog'
-  | 'rpc_solog_details'
 type SologPayloadRpcName =
   | 'rpc_solog_route_v2'
-  | 'rpc_solog_control'
-  | 'rpc_solog_control_detalle'
-  | 'rpc_solog_control_export'
 
 function getClient() {
   if (!supabase) throw createSologConfigurationError()
@@ -153,65 +136,8 @@ export function getSologBootstrap(deviceToken?: string) {
   )
 }
 
-export function getSologDetailsSummary(deviceToken?: string) {
-  return callSologRpc<SologDetailsSummaryResponse>(
-    'rpc_solog_details',
-    'summary',
-    deviceToken ? { device_token: deviceToken } : {},
-  )
-}
-
-export function getSologDetailsHistory(periodo: SologDetailsHistoryPeriod) {
-  return callSologRpc<SologDetailsHistoryResponse>(
-    'rpc_solog_details',
-    'history',
-    { periodo },
-  )
-}
-
-export function getSologDetailsExport() {
-  return callSologRpc<SologDetailsExportResponse>(
-    'rpc_solog_details',
-    'export',
-    {},
-  )
-}
-
-export function requestSologDetailsAccess(deviceToken: string) {
-  return callSologRpc<SologDetailsRequestAccessResponse>(
-    'rpc_solog_details',
-    'request_access',
-    { device_token: deviceToken },
-  )
-}
-
 export function getSologAdminBootstrap() {
   return callSologRpc<SologAdminBootstrap>('rpc_solog_admin', 'bootstrap', {})
-}
-
-export async function getSologDashboard(): Promise<SologDashboardResponse> {
-  const { data, error } = await getClient().rpc('rpc_solog_dashboard')
-
-  if (error) throw normalizeSologError(error)
-  if (data === null) throw createSologEmptyResponseError()
-  return data as SologDashboardResponse
-}
-
-export async function getSologDashboardSiteActivity(
-  sedeId: string,
-  limit = 20,
-): Promise<SologDashboardSiteActivityResponse> {
-  const { data, error } = await getClient().rpc(
-    'rpc_solog_dashboard_site_activity',
-    {
-      p_sede_id: sedeId,
-      p_limit: limit,
-    },
-  )
-
-  if (error) throw normalizeSologError(error)
-  if (data === null) throw createSologEmptyResponseError()
-  return data as SologDashboardSiteActivityResponse
 }
 
 export function authorizeSologDevice(deviceId: string) {
@@ -224,24 +150,6 @@ export function revokeSologDevice(deviceId: string) {
   return callSologRpc<SologRevokeDeviceResponse>('rpc_solog_admin', 'revoke_device', {
     device_id: deviceId,
   })
-}
-
-export function getSologControl(input: SologControlPayload) {
-  return callSologPayloadRpc<SologControlResponse>('rpc_solog_control', input)
-}
-
-export function getSologControlDetail(input: SologControlDetailPayload) {
-  return callSologPayloadRpc<SologControlDetailResponse>(
-    'rpc_solog_control_detalle',
-    input,
-  )
-}
-
-export function getSologControlExport(input: SologControlExportPayload) {
-  return callSologPayloadRpc<SologControlExportResponse>(
-    'rpc_solog_control_export',
-    input,
-  )
 }
 
 export function getAdminIncidents(filters: SologAdminIncidentsFilters = {}) {

@@ -1,9 +1,6 @@
 import type { SheetData } from 'write-excel-file/browser'
 import { SologApiError } from '../errors'
-import type {
-  SologDetailsExportResponse,
-  SologDetailsExportRow,
-} from '../types'
+import { parseDetailsResponse, type DetailsExport as SologDetailsExportResponse, type DetailsExportRow as SologDetailsExportRow } from './detalles.v2'
 
 const LIMA_TIME_ZONE = 'America/Lima'
 const MONEY_FORMAT = '"S/ "#,##0.00;[Red]-"S/ "#,##0.00;"S/ "0.00'
@@ -36,91 +33,8 @@ interface LimaDateParts {
   minute: number
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value)
-}
-
-function isNullableFiniteNumber(value: unknown): value is number | null {
-  return value === null || isFiniteNumber(value)
-}
-
-function isExportRow(value: unknown): value is SologDetailsExportRow {
-  if (!isRecord(value)) return false
-
-  const hasPackage =
-    value.unidades_por_paquete !== null || value.precio_paquete !== null
-  const validPackage = hasPackage
-    ? Number.isInteger(value.unidades_por_paquete) &&
-      Number(value.unidades_por_paquete) > 1 &&
-      isFiniteNumber(value.precio_paquete) &&
-      value.precio_paquete > 0
-    : value.unidades_por_paquete === null && value.precio_paquete === null
-
-  return (
-    typeof value.fecha === 'string' &&
-    Number.isFinite(Date.parse(value.fecha)) &&
-    typeof value.nombre === 'string' &&
-    typeof value.categoria === 'string' &&
-    (value.estado === 'Confirmada' || value.estado === 'Inconsistente') &&
-    isNullableFiniteNumber(value.stock_tumi) &&
-    isFiniteNumber(value.fisico) &&
-    isFiniteNumber(value.diferencia) &&
-    isNullableFiniteNumber(value.valorizado) &&
-    isFiniteNumber(value.precio) &&
-    validPackage &&
-    typeof value.detalle_id === 'string'
-  )
-}
-
-export function validateDetailsExportResponse(
-  value: unknown,
-): SologDetailsExportResponse {
-  if (
-    !isRecord(value) ||
-    value.ok !== true ||
-    value.codigo !== 'DETAILS_EXPORT' ||
-    !isRecord(value.sede) ||
-    typeof value.sede.id !== 'string' ||
-    typeof value.sede.nombre !== 'string' ||
-    !isRecord(value.periodo) ||
-    typeof value.periodo.desde !== 'string' ||
-    typeof value.periodo.hasta !== 'string' ||
-    !isRecord(value.summary) ||
-    !Number.isInteger(value.summary.diferencias_finales) ||
-    !Number.isInteger(value.summary.confirmadas) ||
-    !Number.isInteger(value.summary.inconsistentes) ||
-    !Number.isInteger(value.summary.faltantes) ||
-    !Number.isInteger(value.summary.sobrantes) ||
-    !isFiniteNumber(value.summary.valorizado_faltantes) ||
-    !isFiniteNumber(value.summary.valorizado_sobrantes) ||
-    !isFiniteNumber(value.summary.balance_valorizado) ||
-    !Array.isArray(value.rows) ||
-    !value.rows.every(isExportRow) ||
-    value.summary.diferencias_finales !== value.rows.length ||
-    Number(value.summary.confirmadas) + Number(value.summary.inconsistentes) !==
-      value.summary.diferencias_finales ||
-    typeof value.server_now !== 'string'
-  ) {
-    throw new SologApiError('SOLOG_INVALID_DETAILS_EXPORT_RESPONSE')
-  }
-
-  const response = value as unknown as SologDetailsExportResponse
-  const confirmed = response.rows.filter(
-    (row) => row.estado === 'Confirmada',
-  ).length
-  const inconsistent = response.rows.length - confirmed
-  if (
-    response.summary.confirmadas !== confirmed ||
-    response.summary.inconsistentes !== inconsistent
-  ) {
-    throw new SologApiError('SOLOG_INVALID_DETAILS_EXPORT_RESPONSE')
-  }
-
-  return response
+export function validateDetailsExportResponse(value: unknown): SologDetailsExportResponse {
+  return parseDetailsResponse('export', value)
 }
 
 function getLimaDateParts(value: Date | string): LimaDateParts {
@@ -243,7 +157,7 @@ export function getDetailsExportFilename(
   const hour12 = parts.hour % 12 || 12
   const suffix = parts.hour < 12 ? 'am' : 'pm'
   const timestamp = `${MONTH_NAMES[parts.month - 1]}-${String(parts.day).padStart(2, '0')}-${String(hour12).padStart(2, '0')}${String(parts.minute).padStart(2, '0')}_${suffix}`
-  return `SOLOG_Diferencias_quincenal_${timestamp}_${sanitizeFilenamePart(response.sede.nombre)}.xlsx`
+  return `SOLOG_Diferencias_quincenal_${timestamp}_${sanitizeFilenamePart(response.site.nombre)}.xlsx`
 }
 
 function getSummaryData(
@@ -265,10 +179,10 @@ function getSummaryData(
       },
     ],
     [],
-    [{ value: 'Sede', fontWeight: 'bold' }, response.sede.nombre],
+    [{ value: 'Sede', fontWeight: 'bold' }, response.site.nombre],
     [
       { value: 'Período', fontWeight: 'bold' },
-      `${formatDateOnly(response.periodo.desde)} — ${formatDateOnly(response.periodo.hasta)}`,
+      `${formatDateOnly(response.period.from)} — ${formatDateOnly(response.period.to)}`,
     ],
     [{ value: 'Generado', fontWeight: 'bold' }, formatGeneratedAt(generatedAt)],
     [
@@ -281,7 +195,6 @@ function getSummaryData(
     [{ value: 'Sobrantes', fontWeight: 'bold' }, { value: summary.sobrantes, type: Number, format: INTEGER_FORMAT }],
     [{ value: 'Valorizado faltante', fontWeight: 'bold' }, { value: summary.valorizado_faltantes, type: Number, format: MONEY_FORMAT }],
     [{ value: 'Valorizado sobrante', fontWeight: 'bold' }, { value: summary.valorizado_sobrantes, type: Number, format: MONEY_FORMAT }],
-    [{ value: 'Balance valorizado', fontWeight: 'bold' }, { value: summary.balance_valorizado, type: Number, format: MONEY_FORMAT, fontWeight: 'bold' }],
   ]
 }
 
@@ -308,19 +221,19 @@ function getDifferencesData(rows: SologDetailsExportRow[]): SheetData {
   }))
 
   const sortedRows = [...rows].sort((left, right) => {
-    const dateDifference = Date.parse(left.fecha) - Date.parse(right.fecha)
-    return dateDifference || left.nombre.localeCompare(right.nombre, 'es')
+    const dateDifference = Date.parse(left.fecha_origen) - Date.parse(right.fecha_origen)
+    return dateDifference || (left.grupo ?? '').localeCompare(right.grupo ?? '', 'es')
   })
 
   return [
     header,
     ...sortedRows.map((row) => [
-      { value: toLimaCalendarDate(row.fecha), type: Date, format: 'dd/mm/yyyy' },
-      { value: toLimaClockTime(row.fecha), type: Date, format: 'h:mm AM/PM' },
-      { value: row.nombre, wrap: true },
-      { value: row.categoria, wrap: true },
+      { value: toLimaCalendarDate(row.fecha_origen), type: Date, format: 'dd/mm/yyyy' },
+      { value: toLimaClockTime(row.fecha_origen), type: Date, format: 'h:mm AM/PM' },
+      { value: row.grupo ?? '—', wrap: true },
+      { value: row.categoria ?? '—', wrap: true },
       row.estado,
-      row.stock_tumi === null ? '—' : { value: row.stock_tumi, type: Number, format: INTEGER_FORMAT },
+      row.teorico === null ? '—' : { value: row.teorico, type: Number, format: INTEGER_FORMAT },
       { value: row.fisico, type: Number, format: INTEGER_FORMAT },
       { value: row.diferencia, type: Number, format: SIGNED_INTEGER_FORMAT },
       row.valorizado === null ? '—' : { value: row.valorizado, type: Number, format: MONEY_FORMAT },
@@ -331,9 +244,11 @@ function getDifferencesData(rows: SologDetailsExportRow[]): SheetData {
 
 export async function downloadDetailsExport(
   response: SologDetailsExportResponse,
-  generatedAt = new Date(),
+  generatedAt = new Date(response.generated_at),
+  isCurrent = () => true,
 ): Promise<string> {
   const { default: writeXlsxFile } = await import('write-excel-file/browser')
+  if (!isCurrent()) throw new Error('El contexto de la exportación cambió.')
   const filename = getDetailsExportFilename(response, generatedAt)
   await writeXlsxFile(
     [

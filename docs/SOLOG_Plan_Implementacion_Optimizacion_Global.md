@@ -1,10 +1,10 @@
 # SOLOG — Plan vigente de implementación frontend contra backend v2
 
-**Estado:** listo para aprobación; ninguna fase de implementación frontend ha comenzado.
+**Estado vigente:** I1–I2 aprobadas y cerradas; Cajero con implementación técnica completada y validación humana pendiente; D1–D3 aprobadas técnicamente; A1–A3 implementadas técnicamente, pendientes de revisión del usuario. A4–A6 no iniciadas. Los apartados de baseline siguientes conservan el diagnóstico histórico previo a implementar. Evidencia A1–A3: `docs/SOLOG_Admin_A1_A3_Implementacion.md`.
 
 **Fecha de baseline:** 2026-09-03.
 
-**Contrato de integración:** `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V2.md`, congelado y desplegado. La versión V1 de contratos queda reemplazada e histórica para integración frontend.
+**Contrato de integración vigente:** `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V5.md`, congelado y desplegado; APIs con `contract_version = 2`. V1–V4 quedan históricas. Checkpoint A2 confirmado en solo lectura: `20260904041106_solog_shift_grid_totals_site_isolation_v5`; Totales aislados por sede sin reconstrucción frontend.
 
 ## 0. Autoridad, alcance y baseline
 
@@ -12,9 +12,9 @@
 
 1. Las decisiones funcionales provienen de `docs/SOLOG_Decisiones_Congeladas_Optimizacion_Global.md`.
 2. La referencia técnica backend declarada es `docs/SOLOG_Backend_Optimizacion_Global_V1.md`.
-3. Toda firma, acción, payload, respuesta, revisión, autorización, error, replay, paginación, Edge Function y Cron para integración frontend proviene de `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V2.md`.
+3. Toda firma, acción, payload, respuesta, revisión, autorización, error, replay, paginación, Edge Function y Cron para integración frontend proviene de `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V5.md`.
 4. `docs/SOLOG_Backend_Contratos_Optimizacion_Global_V1.md` queda reemplazado/histórico y no es autoridad para consumidores nuevos.
-5. El contrato V2 prevalece sobre cualquier supuesto anterior de este plan. El frontend no agrega wrappers, campos, acciones, normalizaciones ni fallbacks no documentados.
+5. El contrato documental V5 prevalece sobre cualquier supuesto anterior de este plan. El frontend no agrega wrappers, campos, acciones, normalizaciones ni fallbacks no documentados.
 
 ### Baseline Git y cambios preexistentes
 
@@ -125,6 +125,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 ## S10 — Limpieza backend legacy diferida
 
+**Gate adicional vigente:** no retirar definitivamente superficies legacy relacionadas hasta que el usuario ejecute y apruebe el smoke humano Cajero de integración final; se requiere además la evidencia de cero consumidores/dependencias.
+
 **Estado: PENDIENTE DIFERIDO — ChatGPT / Supabase**
 
 - No es una fase frontend ni autoriza cambios de backend a Codex.
@@ -165,6 +167,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 - **Responsable:** Codex — Repositorio.
 
 # 3. Cajero
+
+**Estado del bloque Cajero:** `IMPLEMENTACIÓN TÉCNICA COMPLETADA — VALIDACIÓN HUMANA PENDIENTE`. C4 aprobada técnicamente. El smoke de `SOLOG_Cajero_C4_Smoke_Humano.md` se difiere a integración final: no bloquea D1–D3, A1–A6 ni integración independiente de su resultado. Sigue siendo gate obligatorio antes del cierre definitivo de G3, cierre global y S10 / retirada definitiva de superficies legacy relacionadas. El flujo Cajero no está validado E2E contra producción hasta ejecución y aprobación explícita del usuario. No modificar Cajero salvo incompatibilidad concreta de integración.
 
 ## Fase C1 [O] — Adaptador v2, tipos y bootstrap único
 
@@ -227,6 +231,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 # 4. Detalles
 
+**Ejecución D1–D3:** implementación técnica realizada contra V4, pendiente de revisión/aprobación del usuario. Baseline `master` / `a36449ce8209ef04e86170e40f6bf0dd0024246a`, working tree inicialmente limpio. Las descripciones «Estado actual encontrado» siguientes documentan el baseline anterior a esta implementación. Ahora las cinco acciones consumen exclusivamente `rpc_solog_details_v2`: entrada sin `SologProvider`, historial 100/cursor opaco y detalle en memoria bajo demanda, exportación de ambas quincenas y solicitud idempotente. Export v2 no incluye `balance_valorizado`; no se sintetiza. Validación: 148 pruebas unitarias, browser simulado D1–D3 con inspección XLSX, regresiones Login/Index/Cajero, lint/TypeScript/build/diff. No se modificó backend ni código Cajero. Sin prueba E2E productiva de Cajero.
+
 ## Fase D1 [O] — Adaptador v2, entrada aislada y summary
 
 - **Objetivo:** montar `/detalles` con cuenta cajero válida, sin autorización de dispositivo para lectura y con una sola carga mínima.
@@ -267,6 +273,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 ## Fase A1 [O] — Bootstrap v2, shell y cache común
 
+**Implementación coordinada A1–A3 (baseline `master` / `a36449ce8209ef04e86170e40f6bf0dd0024246a`):** shell operacional v2, store en memoria por identidad/rol/consulta y revisiones; acceso directo a `/admin` y `/admin/control` sin bootstrap general. A4–A6 mantienen únicamente sus consumidores preexistentes en la frontera legacy diferida; al regresar desde ella se invalida Admin porque sus mutaciones aún no notifican revisiones al store v2. No se implementa A4–A6 ni se retira backend legacy. Cambios de Detalles y documentos preexistentes preservados.
+
 - **Objetivo:** cargar únicamente identidad/permisos/sedes/revisiones comunes y dejar cada módulo bajo demanda.
 - **Estado actual encontrado:** `getSologAdminBootstrap()` llama `rpc_solog_admin('bootstrap')` y el provider recibe coberturas/dispositivos/sesiones amplios; Dashboard y Dispositivos son imports ansiosos.
 - **Cambios frontend:** `rpc_solog_admin_bootstrap_v2` recibe `p_payload:{}`, sin campos adicionales. Consumir identidad, permisos, `allowed_sites`, revisiones globales `groups/catalog` y revisiones `operational/devices/incidents` por sede. Store en memoria por `user|role|module|site|period|filters|revision`; “Actualizado” usa `generated_at` y fecha snapshot cuando la RPC del módulo la exponga.
@@ -277,6 +285,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 - **Responsable:** Codex — Repositorio.
 
 ## Fase A2 [O] — Dashboard y turnos con rpc_solog_operational_v2
+
+**Actualización V5:** bloqueo de `shift_grid.data.totals` resuelto por ChatGPT/Supabase; implementación consume `data.shifts` y `data.totals` sin sumas ni reparación cliente. Tarjetas y detalle diario ya sustituyen los consumidores Dashboard v1.
 
 - **Objetivo:** reemplazar KPIs globales por tarjetas de sede, histórico de turnos y drawer diario desde la fuente backend compartida.
 - **Estado actual encontrado:** `rpc_solog_dashboard`/`rpc_solog_dashboard_site_activity` v1 alimentan KPIs globales y actividad del día; no hay grid histórico.
@@ -290,6 +300,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 - **Responsable:** Codex — Repositorio.
 
 ## Fase A3 [O] — Control y exportación administrativa
+
+**Implementación:** lista y cronología v2 con caché; filtros/página en backend, exportación autoritativa bajo demanda y modal compartido con A2. Cinco hojas sin recalcular valores o seleccionar el último resultado en frontend. Cierre técnico sujeto al reporte de pruebas y revisión del usuario; no autoriza A4.
 
 - **Objetivo:** migrar lista/detalle a la fuente operacional y producir las cinco hojas desde la RPC dedicada.
 - **Estado actual encontrado:** Control usa `rpc_solog_control`, `rpc_solog_control_detalle` y `rpc_solog_control_export` v1; pagina 50 y el libro solo tiene Resumen/Ajustes.
@@ -373,6 +385,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 - **Responsable:** Validación compartida.
 
 ## Fase G3 [O/L] — Rendimiento, suites, smoke Cajero y evidencia legacy
+
+**Gate de cierre:** el smoke humano Cajero está diferido a esta integración. Su ejecución y aprobación explícita bloquean el cierre definitivo de G3, el cierre global y S10, no las tareas independientes ni D1–D3/A1–A6.
 
 - **Objetivo:** cerrar egress, code splitting, pruebas y transición v1→v2 antes de solicitar limpieza backend.
 - **Egress esperado por interacción:** Index 0 llamadas Supabase; Login solo Auth y una `rpc_solog_route_v2({})` cuando la sesión válida esté disponible; Cajero 1 bootstrap y 0 por navegación/foco; history bajo demanda; Detalles 1 summary y una por página/caso/acción; Admin 1 bootstrap y una carga inicial por módulo, con detalles/exportaciones solo al pedir. Registrar bytes comprimidos reales y p50/p95, no estimarlos por filas.
@@ -541,8 +555,10 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 
 - **Antecedentes completados:** S1–S9 — COMPLETADAS — ChatGPT / Supabase.
 - **Backend diferido:** S10 — limpieza legacy, ChatGPT / Supabase, solo después de G3.
-- **Implementación Codex pendiente:** I1–I2, C1–C4, D1–D3 y A1–A6 (15 fases).
+- **Frontend aprobado:** I1–I2 cerradas; D1–D3 aprobadas técnicamente. C1–C4 con implementación técnica completada y validación humana pendiente.
+- **Frontend implementado para revisión:** A1–A3, bloque coordinado contra V5.
+- **Implementación Codex pendiente:** A4–A6 (3 fases), no autorizadas en esta ejecución.
 - **Integración compartida pendiente:** G1–G3 (3 fases).
-- **Total del plan:** 6 bloques; 28 hitos/fases nominales: 9 completados, 1 diferido y 18 pendientes.
-- **Bloqueos contractuales:** ninguno conocido. El GATE-E2E Cajero permanece como condición de cierre de C4/G3, no como bloqueo para aprobar el plan ni iniciar I1.
-- **Aprobación:** este documento es el plan vigente para presentar a aprobación. No autoriza implementación hasta recibirla.
+- **Total del plan:** 6 bloques; 28 hitos/fases nominales; se conservan los límites y responsables originales.
+- **Bloqueos contractuales:** ninguno nuevo; bloqueo A2 resuelto por V5. El smoke humano Cajero continúa como gate antes del cierre definitivo de G3, cierre global y S10 relacionado, no bloquea fases independientes.
+- **Aprobación:** A1–A3 esperan revisión del usuario. No avanzar a A4 ni ejecutar el smoke real Cajero sin la aprobación correspondiente.

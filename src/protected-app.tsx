@@ -26,6 +26,8 @@ const CajeroApp = lazy(() =>
   })),
 )
 
+const AdminV2App = lazy(() => import('./features/solog/admin/admin.v2.app').then(module => ({ default: module.AdminV2App })))
+
 const DetailsPage = lazy(() =>
   import('./pages/detalles').then((module) => ({
     default: module.DetailsPage,
@@ -134,7 +136,7 @@ function OperationalApp() {
     return (
       <Suspense fallback={<PanelLoader />}>
         <DetailsPage
-          bootstrap={bootstrap}
+          userId={auth.user?.id ?? ''}
           onLogout={() => void handleLogout()}
         />
       </Suspense>
@@ -191,8 +193,14 @@ function AuthenticatedApp() {
     )
   }
 
+  if (pathname === '/detalles') {
+    return <Suspense fallback={<PanelLoader />}><DetailsPage userId={auth.user?.id ?? ''} onLogout={() => void auth.logout()} /></Suspense>
+  }
   if (isCashierRoute(pathname) || pathname === '/count' || pathname === '/cajero/seguimiento') {
     return <Suspense fallback={<PanelLoader />}><CajeroApp userId={auth.user?.id ?? ''} onLogout={auth.logout} /></Suspense>
+  }
+  if (isAdminRoute(pathname)) {
+    return <Suspense fallback={<PanelLoader />}><AdminV2App key={auth.user?.id ?? ''} userId={auth.user?.id ?? ''} route={pathname} onLogout={() => void auth.logout()} legacy={<SologProvider><OperationalApp /></SologProvider>} /></Suspense>
   }
   return (
     <SologProvider>

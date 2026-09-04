@@ -60,12 +60,12 @@ describe('Index Fase I2: code splitting', () => {
   test('Excel permanece bajo demanda y no requiere manualChunks', async () => {
     const [detailsExport, adminExport, vite] = await Promise.all([
       readSource('src/features/solog/detalles/detalles.export.ts'),
-      readSource('src/features/solog/admin/control/admin.control.export.ts'),
+      readSource('src/features/solog/admin/control/admin.control.v2.export.ts'),
       readSource('vite.config.ts'),
     ])
 
     expect(detailsExport).toContain("await import('write-excel-file/browser')")
-    expect(adminExport).toContain('await import("write-excel-file/browser")')
+    expect(adminExport).toContain("await import('write-excel-file/browser')")
     expect(vite).not.toContain('manualChunks')
   })
 })

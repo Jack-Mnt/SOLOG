@@ -13,36 +13,16 @@ import {
   useRef,
   useState,
 } from 'react'
-import { getSologDetailsHistory } from '../api'
+import type { DetailsStore, DetailsHistoryEntry } from './detalles.store'
+import type { DetailsPeriod } from './detalles.v2'
+import { DetailsCaseView } from './detalles.case'
 import {
-  deriveCajeroCategories,
-  filterCajeroByCategory,
   formatCajeroCurrency,
   formatCajeroDifference,
   getCajeroCategoryIcon,
   getCajeroDifferenceClass,
 } from '../cajero/cajero.utils'
-import { useSolog } from '../context'
 import { getSologErrorMessageFromUnknown } from '../errors'
-import {
-  getSologDifferenceStateClass,
-  getSologDifferenceStateLabel,
-} from '../labels'
-import type {
-  SologDetailsHistoryPeriod,
-  SologDetailsHistoryResponse,
-} from '../types'
-
-const timeFormatter = new Intl.DateTimeFormat('es-PE', {
-  hour: '2-digit',
-  minute: '2-digit',
-  timeZone: 'America/Lima',
-})
-
-function formatHistoryTime(value: string): string {
-  const parsed = Date.parse(value)
-  return Number.isNaN(parsed) ? '—' : timeFormatter.format(parsed)
-}
 
 function formatHistoryValuation(value: number | null): string {
   if (value === null) return '—'
@@ -51,24 +31,22 @@ function formatHistoryValuation(value: number | null): string {
 
 export function SologDetailsHistoryDialog({
   onClose,
+  store,
 }: {
+  store: DetailsStore
   onClose: () => void
 }) {
-  const { updateServerNow } = useSolog()
   const titleId = useId()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const requestVersion = useRef(0)
-  const cache = useRef(
-    new Map<SologDetailsHistoryPeriod, SologDetailsHistoryResponse>(),
-  )
-  const [period, setPeriod] = useState<SologDetailsHistoryPeriod>('hoy')
+  const [period, setPeriod] = useState<DetailsPeriod>('today')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   )
   const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(
     () => new Set(),
   )
-  const [history, setHistory] = useState<SologDetailsHistoryResponse | null>(
+  const [history, setHistory] = useState<DetailsHistoryEntry | null>(
     null,
   )
   const [loading, setLoading] = useState(true)
@@ -92,7 +70,7 @@ export function SologDetailsHistoryDialog({
 
   const loadHistory = useCallback(async () => {
     const currentRequest = ++requestVersion.current
-    const cached = cache.current.get(period)
+    const cached = store.getHistory(period)
     if (cached) {
       setHistory(cached)
       setLoading(false)
@@ -105,11 +83,9 @@ export function SologDetailsHistoryDialog({
     setError(null)
 
     try {
-      const response = await getSologDetailsHistory(period)
+      const response = await store.loadHistory(period)
       if (currentRequest !== requestVersion.current) return
 
-      cache.current.set(period, response)
-      updateServerNow(response.server_now)
       setHistory(response)
     } catch (loadError) {
       if (currentRequest !== requestVersion.current) return
@@ -117,7 +93,7 @@ export function SologDetailsHistoryDialog({
     } finally {
       if (currentRequest === requestVersion.current) setLoading(false)
     }
-  }, [period, updateServerNow])
+  }, [period, store])
 
   useEffect(() => {
     let active = true
@@ -129,21 +105,31 @@ export function SologDetailsHistoryDialog({
       active = false
       requestVersion.current += 1
     }
-  }, [loadHistory])
+  }, [loadHistory, store.operational])
 
-  const items = useMemo(() => history?.items ?? [], [history?.items])
-  const categories = useMemo(() => deriveCajeroCategories(items), [items])
+  const items = useMemo(() => history?.pages.flatMap((page) => page.items) ?? [], [history])
+  const categories = useMemo(() => Array.from(new Set(items.map((item) => item.categoria).filter((name): name is string => name !== null))).sort().map((nombre) => ({
+    id: nombre, nombre, count: items.filter((item) => item.categoria === nombre).length,
+  })), [items])
   const effectiveCategoryId =
     selectedCategoryId !== null &&
     categories.some((category) => category.id === selectedCategoryId)
       ? selectedCategoryId
       : null
   const visibleItems = useMemo(
-    () => filterCajeroByCategory(items, effectiveCategoryId),
+    () => effectiveCategoryId === null ? items : items.filter((item) => item.categoria === effectiveCategoryId),
     [effectiveCategoryId, items],
   )
 
-  const selectPeriod = (nextPeriod: SologDetailsHistoryPeriod) => {
+  const loadMore = async () => {
+    const currentRequest = ++requestVersion.current
+    setLoading(true); setError(null)
+    try { const result = await store.loadHistory(period, true); if (currentRequest === requestVersion.current) setHistory(result) }
+    catch (e) { if (currentRequest === requestVersion.current) setError(getSologErrorMessageFromUnknown(e)) }
+    finally { if (currentRequest === requestVersion.current) setLoading(false) }
+  }
+
+  const selectPeriod = (nextPeriod: DetailsPeriod) => {
     if (nextPeriod === period) return
     setSelectedCategoryId(null)
     setPeriod(nextPeriod)
@@ -193,7 +179,7 @@ export function SologDetailsHistoryDialog({
             className="cajero-history-tabs"
             role="group"
           >
-            {(['hoy', 'ayer'] as const).map((option) => (
+            {(['today', 'yesterday'] as const).map((option) => (
               <button
                 aria-pressed={period === option}
                 className={period === option ? 'is-active' : undefined}
@@ -201,7 +187,7 @@ export function SologDetailsHistoryDialog({
                 onClick={() => selectPeriod(option)}
                 type="button"
               >
-                {option === 'hoy' ? 'Hoy' : 'Ayer'}
+                {option === 'today' ? 'Hoy' : 'Ayer'}
               </button>
             ))}
           </div>
@@ -268,6 +254,8 @@ export function SologDetailsHistoryDialog({
             </div>
           ) : null}
 
+          {history?.pages.at(-1)?.next_cursor ? <button className="button button--secondary" disabled={loading} onClick={() => void loadMore()}>Cargar más (hasta 100)</button> : null}
+          {history ? <p>{history.date} · America/Lima · Filtros sobre {items.length} observaciones cargadas</p> : null}
           {loading ? (
             <div className="cajero-loading" role="status">
               <LoaderCircle aria-hidden="true" className="spin" size={24} />
@@ -283,17 +271,17 @@ export function SologDetailsHistoryDialog({
               </div>
               <div className="cajero-history-list__rows">
                 {visibleItems.map((item) => {
-                  const expanded = expandedItemIds.has(item.detalle_id)
+                  const expanded = expandedItemIds.has(item.case_id)
                   const differenceClass = getCajeroDifferenceClass(
                     item.diferencia,
                   )
                   return (
                     <article
                       className={expanded ? 'is-expanded' : undefined}
-                      key={item.detalle_id}
+                      key={item.case_id}
                     >
                       <div className="cajero-history-list__summary">
-                        <strong title={item.grupo}>{item.grupo}</strong>
+                        <strong title={item.grupo ?? undefined}>{item.grupo ?? '—'}</strong>
                         <span className={differenceClass}>
                           {formatCajeroDifference(item.diferencia)}
                         </span>
@@ -302,30 +290,15 @@ export function SologDetailsHistoryDialog({
                         </span>
                         <button
                           aria-expanded={expanded}
-                          aria-label={`${expanded ? 'Contraer' : 'Expandir'} detalle de ${item.grupo}`}
-                          onClick={() => toggleExpandedItem(item.detalle_id)}
+                          aria-label={`${expanded ? 'Contraer' : 'Expandir'} detalle de ${item.grupo ?? item.case_id}`}
+                          onClick={() => toggleExpandedItem(item.case_id)}
                           type="button"
                         >
                           <span aria-hidden="true">{expanded ? '−' : '+'}</span>
                         </button>
                       </div>
                       {expanded ? (
-                        <dl className="cajero-history-list__detail">
-                          <div><dt>Hora</dt><dd>{formatHistoryTime(item.contado_at)}</dd></div>
-                          <div>
-                            <dt>Estado</dt>
-                            <dd>
-                              <span className={`control-state-badge control-state-badge--${getSologDifferenceStateClass(item.estado_diferencia)}`}>
-                                {getSologDifferenceStateLabel(item.estado_diferencia)}
-                              </span>
-                            </dd>
-                          </div>
-                          <div><dt>Stock TumiSoft</dt><dd>{item.stock_teorico}</dd></div>
-                          <div><dt>Conteo</dt><dd>{item.stock_fisico}</dd></div>
-                          <div><dt>Stock posterior</dt><dd>{item.stock_posterior ?? '—'}</dd></div>
-                          <div><dt>Reconteo</dt><dd>{item.stock_reconteo ?? '—'}</dd></div>
-                          <div><dt>Hora de reconteo</dt><dd>{item.recontado_at ? formatHistoryTime(item.recontado_at) : '—'}</dd></div>
-                        </dl>
+                        <DetailsCaseView store={store} caseId={item.case_id} />
                       ) : null}
                     </article>
                   )
@@ -338,7 +311,7 @@ export function SologDetailsHistoryDialog({
               <div>
                 <strong>
                   {selectedCategoryId === null
-                    ? `No hay observaciones para ${period === 'hoy' ? 'hoy' : 'ayer'}.`
+                    ? `No hay observaciones para ${period === 'today' ? 'hoy' : 'ayer'}.`
                     : 'No hay observaciones en esta categoría.'}
                 </strong>
                 <p>El historial corresponde a toda la sede.</p>

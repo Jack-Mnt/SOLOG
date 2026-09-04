@@ -16,7 +16,7 @@ import {
   Tablet,
 } from 'lucide-react'
 import { useState } from 'react'
-import type { SologOperationalBootstrap } from '../types'
+import type { DetailsExportPeriod } from './detalles.v2'
 import { useSologDetailsExport } from './detalles.export.hook'
 import { SologDetailsHistoryDialog } from './detalles.historial.dialog'
 import { useSologDetailsSummary } from './detalles.hook'
@@ -79,15 +79,16 @@ function pluralize(count: number, singular: string, plural: string) {
 }
 
 export function SologDetailsPanel({
-  bootstrap,
+  userId,
   onLogout,
 }: {
-  bootstrap: SologOperationalBootstrap
+  userId: string
   onLogout: () => void
 }) {
   const [historyOpen, setHistoryOpen] = useState(false)
-  const detailsExport = useSologDetailsExport()
+  const [exportPeriod, setExportPeriod] = useState<DetailsExportPeriod>('current_biweekly')
   const {
+    store,
     error,
     loadSummary,
     notice,
@@ -95,19 +96,20 @@ export function SologDetailsPanel({
     requesting,
     status,
     summary,
-  } = useSologDetailsSummary()
-  const siteName = summary?.sede.nombre ?? bootstrap.sede.nombre
-  const coverage = summary?.cobertura_periodo
+  } = useSologDetailsSummary(userId)
+  const detailsExport = useSologDetailsExport(store)
+  const siteName = summary?.site.nombre ?? '—'
+  const coverage = summary?.summary.periodo
   const coveragePercentage = coverage
     ? Math.max(0, Math.min(100, coverage.porcentaje))
     : 0
-  const device = summary?.dispositivo
+  const device = summary?.access
 
-  const authorizationMessage = device?.autorizado
+  const authorizationMessage = device?.current_device_state === 'autorizado' && device.current_device_matches_site
     ? 'Este dispositivo ya está autorizado.'
-    : device?.sede_tiene_dispositivo_autorizado
+    : device?.authorized_device_id
       ? 'La sede ya cuenta con otro dispositivo autorizado.'
-      : device?.solicitud_existente
+      : device?.current_device_state === 'pendiente'
         ? 'La solicitud está pendiente de revisión.'
         : 'Este dispositivo todavía no está autorizado.'
 
@@ -178,18 +180,18 @@ export function SologDetailsPanel({
             <>
               <section className="details-device-card" aria-labelledby="details-device-title">
                 <span className="details-device-card__icon" aria-hidden="true">
-                  {device?.autorizado ? <Tablet size={30} /> : <ShieldAlert size={30} />}
+                  {device?.current_device_state === 'autorizado' && device.current_device_matches_site ? <Tablet size={30} /> : <ShieldAlert size={30} />}
                 </span>
                 <div className="details-device-card__copy">
-                  <span className="details-device-card__site">PR {summary.sede.nombre}</span>
-                  <h2 id="details-device-title">{formatDeviceState(summary.dispositivo.estado)}</h2>
+                  <span className="details-device-card__site">PR {summary.site.nombre}</span>
+                  <h2 id="details-device-title">{formatDeviceState(summary.access.current_device_state)}</h2>
                   <p>{authorizationMessage} El acceso disponible en esta pantalla es únicamente informativo.</p>
-                  {!summary.dispositivo.sede_correcta ? (
+                  {!summary.access.current_device_matches_site ? (
                     <strong className="details-device-card__warning">El dispositivo no corresponde a la sede asignada.</strong>
                   ) : null}
                 </div>
                 <div className="details-device-card__actions">
-                  {summary.dispositivo.puede_solicitar_acceso ? (
+                  {summary.access.can_request && summary.access.current_device_state !== 'pendiente' ? (
                     <button
                       className="button"
                       disabled={requesting}
@@ -200,7 +202,7 @@ export function SologDetailsPanel({
                       {requesting ? 'Solicitando…' : 'Solicitar acceso'}
                     </button>
                   ) : null}
-                  {summary.dispositivo.solicitud_existente ? (
+                  {summary.access.current_device_state === 'pendiente' ? (
                     <span className="details-request-status">Solicitud registrada</span>
                   ) : null}
                 </div>
@@ -237,28 +239,28 @@ export function SologDetailsPanel({
                   <Clock3 aria-hidden="true" size={23} />
                   <span>Conteo diario pendiente</span>
                   <div className="cajero-home-metric__value">
-                    <strong>{summary.conteo_diario_pendientes}</strong>
-                    <small>{pluralize(summary.conteo_diario_pendientes, 'grupo', 'grupos')}</small>
+                    <strong>{summary.summary.conteo_diario_pendientes}</strong>
+                    <small>{pluralize(summary.summary.conteo_diario_pendientes, 'grupo', 'grupos')}</small>
                   </div>
                 </article>
                 <article className="cajero-home-metric">
                   <SearchCheck aria-hidden="true" size={23} />
                   <span>Casos por revisar</span>
                   <div className="cajero-home-metric__value">
-                    <strong>{summary.revisar_pendientes}</strong>
-                    <small>{pluralize(summary.revisar_pendientes, 'caso', 'casos')}</small>
+                    <strong>{summary.summary.revisar_pendientes}</strong>
+                    <small>{pluralize(summary.summary.revisar_pendientes, 'caso', 'casos')}</small>
                   </div>
                 </article>
               </div>
 
-              <section className={`cajero-stock-card${summary.stock.disponible ? '' : ' cajero-stock-card--stale'}`} aria-labelledby="details-stock-title">
+              <section className={`cajero-stock-card${summary.summary.ultimo_snapshot ? '' : ' cajero-stock-card--stale'}`} aria-labelledby="details-stock-title">
                 <div className="cajero-stock-card__status">
                   <span className="cajero-stock-card__icon" aria-hidden="true">
-                    {summary.stock.disponible ? <Database size={23} /> : <AlertTriangle size={23} />}
+                    {summary.summary.ultimo_snapshot ? <Database size={23} /> : <AlertTriangle size={23} />}
                   </span>
                   <div>
-                    <h2 id="details-stock-title">{summary.stock.disponible ? 'Última actualización de stock' : 'Stock no disponible'}</h2>
-                    <p>{formatStockUpdate(summary.stock.confirmado_at, summary.server_now)}</p>
+                    <h2 id="details-stock-title">{summary.summary.ultimo_snapshot ? 'Última actualización de stock' : 'Stock no disponible'}</h2>
+                    <p>{formatStockUpdate(summary.summary.ultimo_snapshot?.confirmado_at ?? null, summary.generated_at)}</p>
                   </div>
                 </div>
               </section>
@@ -272,6 +274,12 @@ export function SologDetailsPanel({
                   </div>
                 </div>
                 <div className="details-actions__buttons">
+                  <label>Período de exportación
+                    <select aria-label="Período de exportación" disabled={detailsExport.exporting} value={exportPeriod} onChange={(event) => setExportPeriod(event.target.value as DetailsExportPeriod)}>
+                      <option value="current_biweekly">Quincena actual</option>
+                      <option value="previous_biweekly">Quincena anterior</option>
+                    </select>
+                  </label>
                   <button
                     className="button button--secondary"
                     onClick={() => setHistoryOpen(true)}
@@ -282,7 +290,7 @@ export function SologDetailsPanel({
                   <button
                     className="button"
                     disabled={detailsExport.exporting}
-                    onClick={() => void detailsExport.exportExcel()}
+                    onClick={() => void detailsExport.exportExcel(exportPeriod)}
                     type="button"
                   >
                     {detailsExport.exporting ? (
@@ -310,8 +318,8 @@ export function SologDetailsPanel({
           ) : null}
         </section>
       </main>
-      {historyOpen ? (
-        <SologDetailsHistoryDialog onClose={() => setHistoryOpen(false)} />
+      {historyOpen && summary ? (
+        <SologDetailsHistoryDialog store={store} onClose={() => setHistoryOpen(false)} />
       ) : null}
     </div>
   )

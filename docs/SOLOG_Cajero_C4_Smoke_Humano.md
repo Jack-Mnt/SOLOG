@@ -2,6 +2,8 @@
 
 Estado: **PENDIENTE — smoke test humano por dispositivo autorizado**.
 
+Bloque Cajero: **IMPLEMENTACIÓN TÉCNICA COMPLETADA — VALIDACIÓN HUMANA PENDIENTE**. C4 aprobada técnicamente; ejecución de esta guía diferida a integración final. No bloquea D1–D3, A1–A6 ni fases de integración independientes. Es gate obligatorio del cierre definitivo de G3, cierre global y S10 / retirada definitiva de superficies legacy relacionadas. No existe todavía validación E2E aprobada contra producción.
+
 C4 puede aprobarse técnicamente con pruebas automatizadas/simuladas. El cierre definitivo de Cajero y el gate C4/G3 requieren este reporte humano. Codex no ha ejecutado este flujo en producción ni alterado dispositivos, snapshots, sesiones o datos backend.
 
 Contrato: `SOLOG_Backend_Contratos_Optimizacion_Global_V4.md`; las APIs mantienen `contract_version = 2`.

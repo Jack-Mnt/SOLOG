@@ -1,0 +1,18 @@
+.admin-v2-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,350px),1fr)); gap:1rem; }
+.admin-v2-card { border:1px solid var(--color-border); border-radius:14px; padding:1rem; min-width:0; background:var(--color-surface); }
+.admin-v2-card header,.admin-v2-toolbar { display:flex; gap:1rem; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+.admin-v2-card progress { width:100%; }
+.admin-v2-table { overflow:auto; margin:1rem 0; }
+.admin-v2-table table { border-collapse:collapse; width:100%; text-align:left; white-space:nowrap; }
+.admin-v2-table th,.admin-v2-table td { padding:.65rem; border-bottom:1px solid var(--color-border); }
+.admin-v2-kpis { display:flex; flex-wrap:wrap; gap:1.5rem; margin:1rem 0; }
+.admin-v2-updated { display:block; font-size:.8rem; opacity:.8; margin:.5rem 0; }
+.admin-v2-filters { display:flex; gap:1rem; flex-wrap:wrap; align-items:end; }
+.admin-v2-filters label { display:grid; gap:.3rem; }
+.admin-v2-drawer { margin-left:auto; height:100%; max-height:100vh; width:min(100%,1000px); border-radius:0; }
+.admin-v2-workspace .admin-header h1 { color:#fff; font-size:1.35rem; margin:0; }
+.admin-v2-workspace .admin-header { padding:1rem 1.5rem; gap:1rem; }
+.admin-v2-workspace select,.admin-v2-workspace input,.admin-v2-filters select { border:1px solid var(--color-border-strong); border-radius:8px; min-height:38px; padding:.4rem .65rem; background:var(--color-surface); color:inherit; max-width:100%; }
+.admin-v2-card section { margin-top:1rem; }
+.admin-v2-card section > label { display:grid; gap:.4rem; }
+.admin-v2-card section > label select { width:100%; }

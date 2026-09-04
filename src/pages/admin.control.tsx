@@ -1,7 +1,1 @@
-import { ControlPanel } from '../features/solog/admin/control/admin.control.panel'
-import { useAdminLayout } from '../features/solog/admin/admin.layout.context'
-
-export function AdminControlPage() {
-  const { refreshOperationalState } = useAdminLayout()
-  return <ControlPanel refreshOperationalState={refreshOperationalState} />
-}
+export { AdminControlV2 as AdminControlPage } from '../features/solog/admin/control/admin.control.v2'
