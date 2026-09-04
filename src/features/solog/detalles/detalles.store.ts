@@ -44,6 +44,8 @@ export class DetailsStore {
     const generation = this.generation
     const request = this.rpc('summary', this.deviceToken ? { device_token: this.deviceToken } : {}).then((r) => {
       this.current(generation)
+      if (this.requests.get('summary') !== request) throw new Error('La consulta de Detalles fue invalidada.')
+      if (this.summary?.site.id === r.site.id && r.revisions.devices < this.summary.revisions.devices) throw new Error('Revisión de dispositivo obsoleta.')
       if (this.summary && this.summary.site.id !== r.site.id) { this.clearData(); this.operational = 0; this.accessIntent = null }
       this.observeRevision(r.revisions.operational)
       if (this.summary && this.summary.revisions.devices !== r.revisions.devices) this.clearData()
@@ -51,7 +53,10 @@ export class DetailsStore {
       this.serverOffsetMs = Date.parse(r.generated_at) - Date.now()
       this.emit()
       return r
-    }).catch((error: unknown) => this.fail(error, generation)).finally(() => { if (this.requests.get('summary') === request) this.requests.delete('summary') })
+    }).catch((error: unknown) => {
+      if (this.requests.get('summary') !== request) throw error
+      return this.fail(error, generation)
+    }).finally(() => { if (this.requests.get('summary') === request) this.requests.delete('summary') })
     this.requests.set('summary', request)
     return request
   }
@@ -112,14 +117,20 @@ export class DetailsStore {
       this.cases.set(caseId, r)
       this.emit()
       return r
-    }).catch((error: unknown) => this.fail(error, generation)).finally(() => { if (this.requests.get(key) === request) this.requests.delete(key) })
+    }).catch((error: unknown) => {
+      this.current(generation, epoch)
+      return this.fail(error, generation)
+    }).finally(() => { if (this.requests.get(key) === request) this.requests.delete(key) })
     this.requests.set(key, request)
     return request
   }
   async export(period: DetailsExportPeriod) {
     const generation = this.generation, epoch = this.cacheEpoch
     const site = this.summary?.site.id
-    const r = await this.rpc('export', { period }).catch((error: unknown) => this.fail(error, generation))
+    const r = await this.rpc('export', { period }).catch((error: unknown) => {
+      this.current(generation, epoch)
+      return this.fail(error, generation)
+    })
     this.current(generation, epoch)
     if (r.site.id !== site || r.period.key !== period) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
     this.observeRevision(r.revisions.operational)

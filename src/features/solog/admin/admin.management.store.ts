@@ -8,6 +8,7 @@ export class ManagementStore {
   private listeners = new Set<() => void>()
   private version = 0
   private live = true
+  private accessEpoch = 0
   private floors = new Map<string, number>()
   private intents = new Map<Domain, Intent>()
   results = new Map<Domain, MutationResult>()
@@ -46,6 +47,10 @@ export class ManagementStore {
   peek<A extends ReadAction>(action: A, payload: ReadPayloads[A]) { const e = this.entries.get(this.key(action, payload)); return { data: e?.expiresAt !== undefined && e.expiresAt <= this.now() ? undefined : e?.data as Reads[A] | undefined, error: e?.error, expiresAt: e?.expiresAt } }
   private invalidate(predicate: (e: Entry) => boolean) { for (const [key, e] of this.entries) if (predicate(e)) this.entries.delete(key) }
   refresh() { this.entries.clear(); this.emit() }
+  resetAccess() {
+    this.accessEpoch++; this.entries.clear(); this.intents.clear(); this.results.clear()
+    this.publication = { operationId: this.publication.operationId }; this.emit()
+  }
   dispose() { this.live = false; this.entries.clear(); this.floors.clear(); this.intents.clear(); this.results.clear(); this.listeners.clear() }
   private revKey(name: string, site?: string) { return `${name}:${name === 'groups' || name === 'catalog' ? 'global' : site ?? 'global'}` }
   private observe(revisions: Revisions, site?: string) {
@@ -94,7 +99,7 @@ export class ManagementStore {
       }
       entry.data = result; entry.pending = undefined; this.entries.set(key, entry); this.emit(); return result
     }).catch((error: unknown) => {
-      if (this.live && this.authorizationError(error)) throw error
+      if (this.live && this.entries.get(key) === entry && this.key(action, payload) === key && this.authorizationError(error)) throw error
       if (this.live && this.entries.get(key) === entry) { entry.pending = undefined; entry.error = error instanceof Error ? error.message : 'Error de lectura'; this.emit() }
       throw error
     })
@@ -116,8 +121,10 @@ export class ManagementStore {
     this.access(intent.site)
     if (intent.pending) return intent.pending
     intent.error = undefined
+    const accessEpoch = this.accessEpoch
     const request = this.mutateRpc(intent.action, intent.payload).then(result => {
       this.access(intent.site)
+      if (accessEpoch !== this.accessEpoch) throw new Error('Respuesta descartada por cambio de acceso.')
       if (d === 'devices' && (result.site_id !== intent.site || result.action !== intent.action)) throw new ManagementError('Mutación de otro dispositivo/scope', true)
       if (d === 'incidents' && (result.family_key !== intent.payload.family_key || result.scope !== intent.payload.scope || result.site_id !== (intent.site ?? null))) throw new ManagementError('Mutación de otra familia/scope', true)
       // Replay is prior success, not a second local update. Never roll a cache back to its old revision.
@@ -127,7 +134,7 @@ export class ManagementStore {
       if (intent.action === 'propose_delete') this.invalidate(e => domain(e.action) === 'master')
       this.results.set(d, result); this.intents.delete(d); this.emit(); return result
     }).catch((error: unknown) => {
-      if (this.live) {
+      if (this.live && accessEpoch === this.accessEpoch) {
         intent.pending = undefined; intent.error = error instanceof Error ? error.message : 'Operación sin confirmar.'
         const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : intent.error
         // Domain rejection is definitive; transport failures and retryable locks retain the exact intent.
@@ -145,16 +152,18 @@ export class ManagementStore {
   publish(): Promise<PublicationResult> {
     if (this.access().identity.rol !== 'admin') return Promise.reject(new Error('Solo admin puede publicar.'))
     if (this.publication.pending) return this.publication.pending
+    const accessEpoch = this.accessEpoch
     const operationId = this.publication.operationId ?? crypto.randomUUID()
     this.publication = { operationId }
     try { sessionStorage.setItem(this.receiptKey(), operationId) } catch { /* Keep the same in-memory receipt. */ }
     const request = this.publishRpc(operationId).then(result => {
       this.access()
+      if (accessEpoch !== this.accessEpoch) throw new Error('Respuesta descartada por cambio de acceso.')
       this.publication = { result }
       try { sessionStorage.removeItem(this.receiptKey()) } catch { /* Non-fatal. */ }
       this.invalidate(e => domain(e.action) === 'master'); this.changed({}); this.emit(); return result
     }).catch((error: unknown) => {
-      if (this.live) {
+      if (this.live && accessEpoch === this.accessEpoch) {
         this.authorizationError(error)
         this.publication.pending = undefined; this.publication.error = error instanceof Error ? error.message : 'Publicación sin confirmar.'
         if (error instanceof ManagementError && !error.uncertain) {

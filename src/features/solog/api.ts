@@ -39,7 +39,6 @@ async function callSologPayloadRpc<T>(
   return data as T
 }
 
-let pendingRouteRequest: Promise<SologRouteResponse> | null = null
 
 function isSologRole(value: unknown): value is SologRole {
   return value === 'cajero' || value === 'moderador' || value === 'admin'
@@ -81,20 +80,12 @@ function parseSologRouteResponse(value: unknown): SologRouteResponse {
   return value as SologRouteResponse
 }
 
-export function getSologRoute(): Promise<SologRouteResponse> {
-  if (pendingRouteRequest) return pendingRouteRequest
-
-  const request = callSologPayloadRpc<unknown>('rpc_solog_route_v2', {}).then(
-    parseSologRouteResponse,
-  )
-  pendingRouteRequest = request
-
-  const clearPendingRequest = () => {
-    if (pendingRouteRequest === request) pendingRouteRequest = null
-  }
-  void request.then(clearPendingRequest, clearPendingRequest)
-
-  return request
+export function getSologRoute(userId: string): Promise<SologRouteResponse> {
+  return callSologPayloadRpc<unknown>('rpc_solog_route_v2', {}).then(value => {
+    const response = parseSologRouteResponse(value)
+    if (response.identity.id !== userId) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+    return response
+  })
 }
 
 export function getSologBootstrap(deviceToken?: string) {

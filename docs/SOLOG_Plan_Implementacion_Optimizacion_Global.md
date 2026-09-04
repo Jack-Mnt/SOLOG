@@ -374,6 +374,8 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 ## Fase G1 [O] — Contratos, revisiones, aislamiento y respuestas tardías
 
+**Estado 2026-09-04:** G1 aprobada y cerrada técnicamente por el usuario. Evidencia y correcciones por fase propietaria en [SOLOG_G1_Integracion_Contratos.md](SOLOG_G1_Integracion_Contratos.md). Contrato vigente V6, APIs versión 2 y Edge publicación v4. El smoke humano Cajero conserva su gate en G3/cierre global/S10.
+
 - **Objetivo:** demostrar que los cinco bloques consumen `contract_version = 2` sin mezclar usuario, sede, dispositivo, sesión o revisión.
 - **Cobertura:** caches Cajero/Detalles/Admin; revisiones `groups/catalog/operational/devices/incidents` según scope; respuesta tardía; logout; expiración Auth/sesión; revocación/reemplazo; success/replay; actualización explícita.
 - **Reglas:** ninguna respuesta v2 se normaliza a un wrapper inventado; cada módulo usa su forma real. Una respuesta cuyo scope/revisión ya no coincide se descarta. Un conflicto obliga a recargar solo la fuente autoritativa afectada; no se convierte en éxito ni se reintenta automáticamente con la misma intención obsoleta.
@@ -383,8 +385,10 @@ El checkpoint backend está completado. Esta sección registra antecedentes sati
 
 ## Fase G2 [O] — Coherencia funcional entre bloques
 
+**Estado 2026-09-04:** implementación técnica y validaciones simuladas completadas, pendientes de revisión. Se añadieron 17 pruebas y un browser cruzado con XLSX reales; no fue necesario modificar código funcional. Evidencia y límites en [SOLOG_G2_Coherencia_Funcional.md](SOLOG_G2_Coherencia_Funcional.md). G3/S10 no ejecutadas; smoke humano Cajero pendiente.
+
 - **Objetivo:** comprobar Motor, períodos, Dashboard/Control, exportaciones, Incidencias y Catálogo/Grupos como un flujo único.
-- **Cobertura:** `America/Lima`; rangos quincenales y turnos; origen por `contado_at` con estado vigente posterior; Dashboard=Control; cinco hojas Admin; export Detalles; `family_key`/scope; revisiones maestro; publicación `conexion-admin` v3; paquete independiente; revocación device.
+- **Cobertura:** `America/Lima`; rangos quincenales y turnos; origen por `contado_at` con estado vigente posterior; Dashboard=Control; cinco hojas Admin; export Detalles; `family_key`/scope; revisiones maestro; publicación `conexion-admin` v4 según V6; paquete independiente; revocación device.
 - **Validación:** bordes 1/15/16/fin de mes, 07:30/15:30/00:00; Total sin duplicar grupos; último confirmado cero; reconteo en otra quincena; inconsistentes sin valorización; ignore 30 d/reactivate/propose; dos admins con revisiones obsoletas; replay Edge y mutaciones.
 - **Límite:** el frontend no valida invariantes reejecutando Motor ni reconstruye histórico con catálogo/stock actual. Una discordancia de datos vuelve a ChatGPT con request/response y revisión.
 - **Terminado cuando:** UI, exportaciones y módulos coinciden con la misma evidencia backend para sede/período/origen.
@@ -563,8 +567,8 @@ El adaptador común debe conservar el `code` backend y mapear únicamente estos 
 - **Backend diferido:** S10 — limpieza legacy, ChatGPT / Supabase, solo después de G3.
 - **Frontend aprobado:** I1–I2 cerradas; D1–D3 y A1–A3 aprobadas técnicamente. C1–C4 con implementación técnica completada y validación humana pendiente.
 - **Frontend implementado para revisión:** A4–A6, bloque coordinado contra V6; límites internos conservados.
-- **A4–A6:** implementación técnica completada; no avanzar a G1–G3 sin revisión.
-- **Integración compartida pendiente:** G1–G3 (3 fases).
+- **A4–A6:** implementación técnica completada; el usuario autorizó continuar con G1.
+- **Integración compartida:** G1 aprobada y cerrada técnicamente; G2 implementada y validada técnicamente, pendiente de revisión; G3 pendiente de ejecución (se conservan las 3 fases).
 - **Total del plan:** 6 bloques; 28 hitos/fases nominales; se conservan los límites y responsables originales.
 - **Bloqueos contractuales:** ninguno nuevo; A2 resuelto por V5 y recuperación A4 resuelta por V6. El smoke humano Cajero continúa como gate antes del cierre definitivo de G3, cierre global y S10 relacionado, no bloquea fases independientes.
-- **Aprobación:** A4–A6 esperan revisión del usuario. No avanzar a Integración Global. No ejecutar el smoke real Cajero; continúa pendiente de validación humana en la fase final.
+- **Aprobación:** G2 espera revisión del usuario antes de avanzar a G3. No ejecutar el smoke real Cajero; continúa pendiente de validación humana en la fase final.

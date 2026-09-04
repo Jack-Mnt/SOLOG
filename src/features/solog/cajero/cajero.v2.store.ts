@@ -60,6 +60,10 @@ export class CashierStore {
       const previousScope = this.scope
       const previousRevision = this.bootstrap?.revisions.operational
       const previous = this.bootstrap
+      if (previous?.site.id === next.site.id &&
+        (next.revisions.operational < previous.revisions.operational || next.revisions.devices < previous.revisions.devices)) {
+        throw new Error('Respuesta de Cajero obsoleta. Vuelve a consultar.')
+      }
       this.bootstrap = next
       this.serverOffsetMs = Date.parse(next.server_now) - Date.now()
       if (previousScope !== this.scope || !next.device.autorizado) this.invalidate()
@@ -86,6 +90,7 @@ export class CashierStore {
   }
   async mutate(action: CashierAction, body: Record<string, unknown> = {}): Promise<CashierMutation> {
     const b = this.bootstrap
+    if (this.loading) throw new Error('Espera a que termine la actualización del panel.')
     if (!b) throw new Error('Carga el panel antes de continuar.')
     const content = JSON.stringify({ action, body })
     if (this.intent && this.intent.content !== content) throw new Error('Reintenta la operación pendiente antes de iniciar otra.')

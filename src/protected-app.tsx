@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { PageShell } from './components/page-shell'
 import { PanelLoader } from './components/panel-loader'
 import { AuthProvider, useAuth } from './features/auth/context'
@@ -29,12 +29,16 @@ const DetailsPage = lazy(() =>
 function LoginRouteResolver({ userId }: { userId: string }) {
   const auth = useAuth()
   const [attempt, setAttempt] = useState(0)
+  const pending = useRef<{ userId: string; attempt: number; request: ReturnType<typeof getSologRoute> } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
 
-    void getSologRoute()
+    if (!pending.current || pending.current.userId !== userId || pending.current.attempt !== attempt) {
+      pending.current = { userId, attempt, request: getSologRoute(userId) }
+    }
+    void pending.current.request
       .then((response) => {
         if (active) replaceRoute(response.route)
       })

@@ -71,7 +71,7 @@ describe('Index Fase I1: routing v2', () => {
     expect(api).toContain("callSologPayloadRpc<unknown>('rpc_solog_route_v2', {})")
     expect(api).toContain('response.contract_version !== 2')
     expect(api).toContain('route !== expectedRoute')
-    expect(protectedApp).toContain('getSologRoute()')
+    expect(protectedApp).toContain('getSologRoute(userId)')
     expect(protectedApp).not.toMatch(/user_metadata|app_metadata/)
     expect(protectedApp).not.toContain("getSologBootstrap")
   })

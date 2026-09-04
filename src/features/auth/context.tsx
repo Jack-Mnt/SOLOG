@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!client) return
 
     let active = true
+    let authEventReceived = false
 
     const applySession = (nextSession: Session | null) => {
       if (!active) return
@@ -48,11 +49,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event, nextSession) => {
+      authEventReceived = true
       applySession(nextSession)
     })
 
     void client.auth.getSession().then(({ data, error }) => {
-      if (!active) return
+      if (!active || authEventReceived) return
 
       if (error) {
         setInitializationError('No se pudo recuperar la sesión de Supabase.')

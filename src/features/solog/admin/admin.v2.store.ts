@@ -14,7 +14,7 @@ export class AdminStore {
   readonly management: ManagementStore
   constructor(readonly userId: string, private rpc: typeof adminRpc = adminRpc) {
     this.management = new ManagementStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
-      if (forbidden) { this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
+      if (forbidden) { this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
       if (revisions.groups !== undefined && revisions.groups > this.groups) {
         this.groups = revisions.groups; this.invalidate(); this.emit()
       }
@@ -70,7 +70,10 @@ export class AdminStore {
       if (action === 'bootstrap') {
         const b = response as AdminBootstrap
         if (b.identity.id !== this.userId) throw new Error('Identidad administrativa no coincide con Auth.')
-        if (this.bootstrap && (b.identity.rol !== this.bootstrap.identity.rol || JSON.stringify(b.allowed_sites.map(s => s.id)) !== JSON.stringify(this.bootstrap.allowed_sites.map(s => s.id)))) { this.invalidate(); this.management.refresh() }
+        // Validate the whole bootstrap before publishing identity/access or advancing any floor.
+        if (b.revisions.groups !== undefined && b.revisions.groups < this.groups) throw new Error('Bootstrap de grupos obsoleto.')
+        if (b.allowed_sites.some(s => s.operational_revision < (this.operational.get(s.id) ?? -1))) throw new Error('Bootstrap de sede obsoleto.')
+        if (this.bootstrap && (b.identity.rol !== this.bootstrap.identity.rol || JSON.stringify(b.allowed_sites.map(s => s.id)) !== JSON.stringify(this.bootstrap.allowed_sites.map(s => s.id)))) { this.invalidate(); this.management.resetAccess() }
         this.bootstrap = b
         b.allowed_sites.forEach(s => this.observeSite(s.id, s.operational_revision))
       }
@@ -97,10 +100,10 @@ export class AdminStore {
       this.emit()
       return response
     }).catch((error: unknown) => {
-      if (this.live && entry.epoch === this.epoch) {
+      if (this.live && entry.epoch === this.epoch && this.entries.get(key) === entry) {
         const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
         if (['SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_ADMIN_ROLE_REQUIRED', 'SOLOG_SITE_FORBIDDEN'].includes(code)) {
-          this.management.refresh()
+          this.management.resetAccess()
           this.epoch++; this.entries.clear(); this.bootstrap = null
         }
         entry.pending = undefined; entry.error = error instanceof Error ? error.message : 'No se pudo consultar Admin.'
