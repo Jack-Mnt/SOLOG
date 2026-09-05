@@ -8,6 +8,7 @@ import {
   Palette,
   Play,
   SearchCheck,
+  Send,
 } from "lucide-react";
 import { navigateTo } from "../../../lib/router";
 import { PaletteSwitcher } from "../../theme/palette-switcher";
@@ -31,30 +32,33 @@ function PendingSendCard({ session }: { session: CajeroSessionController }) {
     >
       <CircleAlertIcon aria-hidden="true" size={23} />
       <span>Pendientes de envío</span>
-      <div className="cajero-home-metric__value">
-        <strong>{session.pendingCount}</strong>
-        <small>{pluralize(session.pendingCount, "conteo", "conteos")}</small>
+      <div className="cajero-home-metric__send-row">
+        <div className="cajero-home-metric__value">
+          <strong>{session.pendingCount}</strong>
+          <small>{pluralize(session.pendingCount, "conteo", "conteos")}</small>
+        </div>
+        <button
+          className="button button--secondary"
+          disabled={
+            session.sending ||
+            (session.pendingCount === 0 &&
+              !["save_batch", "recount_save_batch"].includes(
+                session.pendingAction ?? "",
+              )) ||
+            Boolean(
+              session.pendingAction &&
+              !["save_batch", "recount_save_batch"].includes(
+                session.pendingAction,
+              ),
+            )
+          }
+          onClick={() => void session.flushPendingDrafts()}
+          type="button"
+        >
+          <Send aria-hidden="true" size={18} />
+          {session.sending ? "Enviando…" : "Enviar conteo"}
+        </button>
       </div>
-      <button
-        className="button button--secondary"
-        disabled={
-          session.sending ||
-          (session.pendingCount === 0 &&
-            !["save_batch", "recount_save_batch"].includes(
-              session.pendingAction ?? "",
-            )) ||
-          Boolean(
-            session.pendingAction &&
-            !["save_batch", "recount_save_batch"].includes(
-              session.pendingAction,
-            ),
-          )
-        }
-        onClick={() => void session.flushPendingDrafts()}
-        type="button"
-      >
-        {session.sending ? "Enviando…" : "Enviar conteo"}
-      </button>
     </article>
   );
 }

@@ -8474,6 +8474,19 @@ h1 {
   gap: 0.35rem;
 }
 
+.cajero-home-metric__send-row {
+  /*grid-column: 1 / -1;*/
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.45rem;
+}
+
+.cajero-home-metric__send-row > .button {
+  flex-shrink: 0;
+}
+
 .cajero-home-metric__value small {
   margin: 0;
   color: var(--color-text-secondary);
