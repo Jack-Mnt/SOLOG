@@ -159,11 +159,10 @@ try {
   const beforeDraft = calls.length
   await page.getByRole('dialog').getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('dialog').getByRole('button', { name: '0', exact: true }).click()
-  await page.getByRole('dialog').getByRole('button', { name: /Guardar/ }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Siguiente', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Continuar', exact: true }).click()
   await page.getByRole('dialog').getByRole('heading', { name: /Grupo revisión 2/ }).waitFor()
   await page.getByRole('dialog').getByRole('button', { name: '9', exact: true }).click()
-  await page.getByRole('dialog').getByRole('button', { name: /Guardar/ }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Continuar', exact: true }).click()
   assert.equal(calls.length, beforeDraft, 'Abrir, capturar y guardar draft no realizan requests')
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click()
   assert.equal(await page.getByRole('button', { name: /Enviar conteo/ }).count(), 0)

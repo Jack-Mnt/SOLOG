@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
 import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { canonicalKeys, verifyReviewCapture } from './cajero-capture.browser.mjs'
 
 const { chromium } = await import(pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href)
 const server = await createServer({
@@ -18,7 +19,7 @@ const browser = await chromium.launch({
   executablePath: process.env.SOLOG_TEST_BROWSER,
 })
 
-async function runScenario({ routeLabel, buttonLabel, pathname, expectedGroups, sendCommand }) {
+async function runScenario({ routeLabel, buttonLabel, pathname, expectedGroups, sendCommand, captureScenario }) {
   const context = await browser.newContext()
   const bootstrap = cashierFixture()
   const secondReview = structuredClone(bootstrap.panel_state.groups[1])
@@ -40,6 +41,16 @@ async function runScenario({ routeLabel, buttonLabel, pathname, expectedGroups, 
     coverage_percent: 100,
     count_pending: 0,
     review_pending: 2,
+  }
+  if (captureScenario) {
+    for (let index = 3; index <= 15; index++) {
+      const group = { ...secondReview, grupo_id: 'review-' + index, nombre: 'Grupo revisión ' + index,
+        detalle_reconteo_id: 'detail-' + index, unidades_por_paquete: 6, precio_paquete: 20 }
+      bootstrap.panel_state.groups.push(group)
+      bootstrap.panel_state.review_queue.push({ grupo_id: group.grupo_id, detalle_id: group.detalle_reconteo_id,
+        ultima_diferencia: 1, contado_at: new Date(Date.parse(bootstrap.server_now) + index * 1000).toISOString() })
+    }
+    bootstrap.panel_state.kpis = { ...bootstrap.panel_state.kpis, groups_total: 16, coverage_counted: 16, review_pending: 15 }
   }
   const user = {
     id: bootstrap.identity.id,
@@ -184,10 +195,12 @@ async function runScenario({ routeLabel, buttonLabel, pathname, expectedGroups, 
       1,
     )
     assert.equal(new URL(page.url()).pathname, pathname)
+    if (captureScenario) await verifyReviewCapture(page, calls)
     if (sendCommand) {
       const nav = page.getByRole('navigation', { name: 'Panel Cajero' })
       await page.getByRole('button', { name: /Abarrotes/ }).click()
       await page.getByRole('dialog').getByRole('button', { name: /Grupo conteo/ }).click()
+      assert.deepEqual(await page.getByRole('dialog').locator('.cajero-calculator__keys button').allTextContents(), canonicalKeys)
       await page.getByRole('dialog').getByRole('button', { name: '9', exact: true }).click()
       await page.getByRole('dialog').getByRole('button', { name: 'Continuar', exact: true }).click()
       await page.getByRole('button', { name: 'Cerrar', exact: true }).click()
@@ -195,7 +208,7 @@ async function runScenario({ routeLabel, buttonLabel, pathname, expectedGroups, 
       await page.getByRole('button', { name: 'Revisar Grupo revisión', exact: true }).click()
       await page.getByRole('dialog').getByRole('button', { name: '1', exact: true }).click()
       await page.getByRole('dialog').getByRole('button', { name: '0', exact: true }).click()
-      await page.getByRole('dialog').getByRole('button', { name: /Guardar/ }).click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Continuar', exact: true }).click()
       await page.getByRole('button', { name: 'Cerrar', exact: true }).click()
       assert.equal(await page.getByRole('button', { name: /Enviar conteo/ }).count(), 0)
       assert.deepEqual(calls.filter((c) => c.rpc === 'rpc_solog_cashier_mutate_v2').map((c) => c.body.p_action), ['start'])
@@ -235,6 +248,10 @@ async function runScenario({ routeLabel, buttonLabel, pathname, expectedGroups, 
 }
 
 try {
+  await runScenario({
+    routeLabel: 'Revisar', buttonLabel: 'Iniciar reconteo',
+    pathname: '/cajero/revisar', expectedGroups: ['Grupo revisión', 'Grupo revisión 15'], captureScenario: true,
+  })
   await runScenario({
     routeLabel: 'Conteo diario',
     buttonLabel: 'Iniciar conteo',

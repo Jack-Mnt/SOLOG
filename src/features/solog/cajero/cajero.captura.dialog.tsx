@@ -208,7 +208,7 @@ export function CajeroCaptureModal({
       setActiveGroupId(groups[activeIndex + 1]?.grupo_id ?? null)
       return
     }
-    if (onNextCategory) {
+    if (!review && onNextCategory) {
       setActiveGroupId(null)
       onNextCategory()
     }
@@ -216,16 +216,18 @@ export function CajeroCaptureModal({
 
   const expressionEvaluation = evaluateCajeroExpression(activeExpression)
   const hasExpression = activeExpression.trim().length > 0
-  const canNavigateNext = activeIndex < groups.length - 1 || Boolean(onNextCategory)
+  const needsCapture = hasExpression && (!review || !recountDraft ||
+    expressionEvaluation.status !== 'valid' || expressionEvaluation.value !== recountDraft.stock_fisico)
+  const canNavigateNext = activeIndex < groups.length - 1 || (!review && Boolean(onNextCategory))
   const continueDisabled = saving || (
-    hasExpression
-      ? expressionEvaluation.status !== 'valid'
+    needsCapture
+      ? disabled || expressionEvaluation.status !== 'valid'
       : !canNavigateNext
   )
 
   const continueToNext = async () => {
-    if (review || continueDisabled) return
-    if (!hasExpression) {
+    if (continueDisabled) return
+    if (!needsCapture) {
       navigateNext()
       return
     }
@@ -235,7 +237,7 @@ export function CajeroCaptureModal({
       await saveActiveGroup(expressionEvaluation.value)
     ) {
       if (canNavigateNext) navigateNext()
-      else setActiveGroupId(null)
+      else if (!review) setActiveGroupId(null)
     }
   }
 
@@ -279,7 +281,7 @@ export function CajeroCaptureModal({
             <ArrowLeft aria-hidden="true" size={22} />
           </button>
           <h2 id={titleId}>{categoryName}</h2>
-          <strong>{review && activeGroup ? activeIndex + 1 : registeredCount} / {groups.length}</strong>
+          <strong>{registeredCount} / {groups.length}</strong>
           <button
             aria-label="Cerrar"
             className="cajero-capture-modal__icon-button"
@@ -330,11 +332,9 @@ export function CajeroCaptureModal({
               <CajeroCalculator
                 disabled={activeLocked}
                 expression={activeExpression}
-                variant={review ? 'review' : 'normal'}
                 onChange={(expression) => {
                   setCajeroExpressionDraft(scope, draftId, expression)
                 }}
-                onSave={(physical) => void saveActiveGroup(physical)}
               />
               <nav className="cajero-capture-detail__navigation" aria-label="Navegación entre grupos">
                 <button
@@ -354,13 +354,11 @@ export function CajeroCaptureModal({
                 </button>
                 <button
                   className="button"
-                  disabled={review ? saving || activeIndex >= groups.length - 1 : continueDisabled}
-                  onClick={() => review
-                    ? setActiveGroupId(groups[activeIndex + 1]?.grupo_id ?? null)
-                    : void continueToNext()}
+                  disabled={continueDisabled}
+                  onClick={() => void continueToNext()}
                   type="button"
                 >
-                  {review ? 'Siguiente' : hasExpression ? 'Continuar' : 'Siguiente'}
+                  {needsCapture ? 'Continuar' : 'Siguiente'}
                 </button>
               </nav>
             </div>

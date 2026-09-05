@@ -31,7 +31,7 @@ const BASE_KEYS: Array<{
   { key: "0", label: "0" },
 ];
 
-const NORMAL_KEYS = [
+const KEYS = [
   ...BASE_KEYS,
   { key: "times6", label: "x6", className: "is-operator", ariaLabel: "Multiplicar por 6" },
   { key: "times12", label: "x12", className: "is-operator", ariaLabel: "Multiplicar por 12" },
@@ -46,18 +46,13 @@ const NORMAL_KEYS = [
 export function CajeroCalculator({
   expression,
   disabled,
-  variant,
   onChange,
-  onSave,
 }: {
   expression: string;
   disabled: boolean;
-  variant: "normal" | "review";
   onChange: (expression: string) => void;
-  onSave?: (value: number) => void;
 }) {
   const evaluation = evaluateCajeroExpression(expression);
-  const keys = variant === "normal" ? NORMAL_KEYS : BASE_KEYS;
 
   const applyKey = (key: CajeroCalculatorKey) => {
     if (disabled) return;
@@ -93,7 +88,7 @@ export function CajeroCalculator({
         className="cajero-calculator__keys"
         aria-label="Calculadora de conteo"
       >
-        {keys.map((item) => (
+        {KEYS.map((item) => (
           <button
             aria-label={item.ariaLabel}
             className={item.className}
@@ -105,34 +100,7 @@ export function CajeroCalculator({
             {item.label}
           </button>
         ))}
-        {variant === "review" ? (
-          <>
-            <button
-              className="is-save"
-              disabled={disabled || evaluation.status !== "valid"}
-              onClick={() => {
-                if (
-                  evaluation.status === "valid" &&
-                  evaluation.value !== null
-                ) {
-                  onSave?.(evaluation.value);
-                }
-              }}
-              type="button"
-            >
-              Guardar
-            </button>
-            <button
-              aria-label="Borrar último carácter"
-              className="is-control"
-              disabled={disabled}
-              onClick={() => applyKey("backspace")}
-              type="button"
-            >
-              ⌫
-            </button>
-          </>
-        ) : null}
+
       </div>
     </div>
   );

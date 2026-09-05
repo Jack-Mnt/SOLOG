@@ -37,7 +37,19 @@ function PendingSendCard({ session }: { session: CajeroSessionController }) {
       </div>
       <button
         className="button button--secondary"
-        disabled={session.sending || (session.pendingCount === 0 && !['save_batch', 'recount_save_batch'].includes(session.pendingAction ?? '')) || Boolean(session.pendingAction && !['save_batch', 'recount_save_batch'].includes(session.pendingAction))}
+        disabled={
+          session.sending ||
+          (session.pendingCount === 0 &&
+            !["save_batch", "recount_save_batch"].includes(
+              session.pendingAction ?? "",
+            )) ||
+          Boolean(
+            session.pendingAction &&
+            !["save_batch", "recount_save_batch"].includes(
+              session.pendingAction,
+            ),
+          )
+        }
         onClick={() => void session.flushPendingDrafts()}
         type="button"
       >
@@ -55,9 +67,13 @@ export function CajeroInicio({
   session: CajeroSessionController;
 }) {
   const now = useCajeroServerClock(session.serverOffsetMs);
-  const stockAvailable = bootstrap.panel_state.basis.snapshot_referencia_id !== null;
+  const stockAvailable =
+    bootstrap.panel_state.basis.snapshot_referencia_id !== null;
   const stockPresentation = getCashierStockPresentation(bootstrap, now);
-  const canStart = bootstrap.start_capability.allowed && !bootstrap.panel_state.session && session.pendingCount === 0;
+  const canStart =
+    bootstrap.start_capability.allowed &&
+    !bootstrap.panel_state.session &&
+    session.pendingCount === 0;
   const startRestriction = bootstrap.start_capability.reason;
   const periodComplete = session.periodComplete;
   const operationalRoute = !periodComplete
@@ -112,7 +128,8 @@ export function CajeroInicio({
               <p>
                 {startRestriction === "SOLOG_STOCK_EXPIRED"
                   ? "Actualiza el inventario desde ConeXion para comenzar un nuevo conteo."
-                  : startRestriction === "SOLOG_STOCK_TOO_CLOSE_TO_EXPIRY" && !bootstrap.panel_state.session
+                  : startRestriction === "SOLOG_STOCK_TOO_CLOSE_TO_EXPIRY" &&
+                      !bootstrap.panel_state.session
                     ? "El stock está próximo a vencer. Actualiza el inventario antes de iniciar un nuevo conteo."
                     : formatCajeroElapsed(stockPresentation.elapsedMs)}
               </p>
@@ -122,23 +139,23 @@ export function CajeroInicio({
           <div className="cajero-stock-card__actions">
             {operationalRoute ? (
               bootstrap.panel_state.session ? (
-              <button
-                className="button"
-                onClick={() => navigateTo(operationalRoute)}
-                type="button"
-              >
-                <Play aria-hidden="true" size={19} /> Continuar conteo
-              </button>
+                <button
+                  className="button"
+                  onClick={() => navigateTo(operationalRoute)}
+                  type="button"
+                >
+                  <Play aria-hidden="true" size={19} /> Continuar conteo
+                </button>
               ) : (
-              <button
-                className="button"
-                disabled={!canStart || session.starting}
-                onClick={() => void begin()}
-                type="button"
-              >
-                <Play aria-hidden="true" size={19} />
-                {session.starting ? "Iniciando…" : "Iniciar conteo"}
-              </button>
+                <button
+                  className="button"
+                  disabled={!canStart || session.starting}
+                  onClick={() => void begin()}
+                  type="button"
+                >
+                  <Play aria-hidden="true" size={19} />
+                  {session.starting ? "Iniciando…" : "Iniciar conteo"}
+                </button>
               )
             ) : null}
             {bootstrap.panel_state.session ? (
@@ -190,7 +207,9 @@ export function CajeroInicio({
               <SearchCheck aria-hidden="true" size={23} />
               <span>Revisar</span>
               <div className="cajero-home-metric__value">
-                <strong>{session.recountPendingCount}/{session.reviewPending}</strong>
+                <strong>
+                  {session.recountPendingCount}/{session.reviewPending}
+                </strong>
                 <small>casos</small>
               </div>
             </button>

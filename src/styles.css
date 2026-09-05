@@ -620,7 +620,11 @@ h1 {
   padding: 32px;
   color: var(--color-text-primary);
   background:
-    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 34%),
+    radial-gradient(
+      circle at 50% 42%,
+      color-mix(in srgb, var(--color-primary) 9%, transparent),
+      transparent 34%
+    ),
     var(--color-background);
 }
 
@@ -7748,10 +7752,9 @@ h1 {
 .cajero-review-list__head,
 .cajero-review-list__rows button {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(120px, 0.35fr) minmax(
-      120px,
-      0.35fr
-    ) 28px;
+  grid-template-columns:
+    minmax(180px, 1fr) minmax(120px, 0.35fr) minmax(120px, 0.35fr)
+    28px;
   align-items: center;
   gap: 0.75rem;
 }
@@ -7926,10 +7929,9 @@ h1 {
 .cajero-history-list__head,
 .cajero-history-list__summary {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(90px, 0.28fr) minmax(
-      120px,
-      0.34fr
-    ) 48px;
+  grid-template-columns:
+    minmax(180px, 1fr) minmax(90px, 0.28fr) minmax(120px, 0.34fr)
+    48px;
   align-items: center;
   gap: 0.75rem;
 }
@@ -8026,7 +8028,7 @@ h1 {
 
 .cajero-history-list__detail {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   margin: 0;
   padding: 0.15rem 1rem 1rem;
@@ -8095,7 +8097,7 @@ h1 {
   }
 
   .cajero-history-list__detail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     padding-inline: 0.7rem;
   }
 }
@@ -8211,7 +8213,11 @@ h1 {
 }
 
 .cajero-stock-card--expired {
-  border-color: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 42%,
+    var(--color-border)
+  );
   background:
     linear-gradient(120deg, var(--color-danger-soft), transparent 72%),
     var(--color-surface);
@@ -8551,7 +8557,8 @@ h1 {
   align-items: center;
   gap: 1rem;
   padding: clamp(1.1rem, 3vw, 1.6rem);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 40%, var(--color-border));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 40%, var(--color-border));
   border-radius: var(--radius-panel);
   background:
     linear-gradient(120deg, var(--color-warning-soft), transparent 72%),
@@ -8618,8 +8625,16 @@ h1 {
 }
 
 .details-notice {
-  border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-border));
-  color: color-mix(in srgb, var(--color-success) 76%, var(--color-text-primary));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 35%,
+    var(--color-border)
+  );
+  color: color-mix(
+    in srgb,
+    var(--color-success) 76%,
+    var(--color-text-primary)
+  );
   background: var(--color-success-soft);
 }
 
@@ -9131,14 +9146,14 @@ h1 {
 .cajero-review__actions {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .cajero-capture-detail__card h3 small {
   display: block;
-  margin-top: .35rem;
-  font-size: .8rem;
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
