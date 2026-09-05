@@ -7317,7 +7317,7 @@ h1 {
   border: 0;
   border-radius: var(--radius-control);
   color: var(--color-text-inverse);
-  background: transparent;
+  background: var(--gradient-brand);
   cursor: pointer;
 }
 
@@ -7494,9 +7494,9 @@ h1 {
 }
 
 .cajero-capture-detail__card h3 {
-  margin: 0 0 1rem;
+  margin: 1rem 0 1rem;
   color: var(--color-text-primary);
-  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-size: clamp(1rem, 2.8vw, 1.4rem);
 }
 
 .cajero-capture-detail__card dl {
@@ -8250,6 +8250,11 @@ h1 {
 }
 
 .cajero-coverage-card {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -8271,6 +8276,51 @@ h1 {
 
 .cajero-coverage-card__copy {
   min-width: 0;
+}
+
+.cajero-home-metrics.cajero-home-metrics--incomplete {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cajero-home-metrics--incomplete > article {
+  grid-column: 1 / -1;
+}
+
+.cajero-capture-group-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cajero-capture-group-heading h3 {
+  flex: 1;
+  min-width: 0;
+}
+
+.cajero-capture-products {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.cajero-capture-products ul {
+  margin: 0 0 0;
+  padding-left: 1.2rem;
+}
+
+.cajero-capture-products li + li {
+  margin-top: 0.5rem;
+}
+
+.cajero-capture-products small {
+  display: block;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 599px) {
+  .cajero-home-metrics.cajero-home-metrics--incomplete {
+    grid-template-columns: 1fr;
+  }
 }
 
 .cajero-coverage-card__copy span {

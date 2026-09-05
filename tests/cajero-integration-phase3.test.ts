@@ -113,8 +113,7 @@ describe('Conteo del período Fase 3', () => {
     const source = await Bun.file(
       'src/features/solog/cajero/cajero.conteo.tsx',
     ).text()
-    expect(source.match(/loadOperationalGroups\('conteo'\)/g)).toHaveLength(1)
-    expect(source).toContain("loadOperationalGroups('conteo')")
+    expect(source.match(/loadOperationalGroups\(["']conteo["']\)/g)).toHaveLength(1)
     expect(source).not.toContain("vista: 'categoria'")
     expect(source).toContain('CajeroSelectionGrid')
     expect(source).toContain('CajeroCaptureModal')

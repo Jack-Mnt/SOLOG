@@ -5,6 +5,7 @@ import {
   CircleAlertIcon,
   Database,
   PackageOpen,
+  MinusCircle,
   Palette,
   Play,
   SearchCheck,
@@ -14,6 +15,8 @@ import { navigateTo } from "../../../lib/router";
 import { PaletteSwitcher } from "../../theme/palette-switcher";
 
 import type { CashierBootstrap } from "./cajero.v2";
+import { deriveCajeroProgress } from "./cajero.progress";
+import { readCajeroBuffer } from "./cajero.storage";
 import type { CajeroSessionController } from "./cajero.session";
 import {
   formatCajeroElapsed,
@@ -88,7 +91,9 @@ export function CajeroInicio({
         ? "/cajero/revisar"
         : null;
   const coverage = bootstrap.panel_state.kpis;
-  const coveragePercentage = coverage.coverage_percent;
+  const progress = deriveCajeroProgress(bootstrap.panel_state,
+    session.activeScope ? readCajeroBuffer(session.activeScope).items : []);
+  const coveragePercentage = progress.coveragePercent;
 
   const begin = async () => {
     if (operationalRoute && (await session.startSession()))
@@ -222,23 +227,17 @@ export function CajeroInicio({
         </>
       ) : (
         <>
-          <section
+          <button
             className="cajero-coverage-card"
-            aria-labelledby="cajero-coverage-title"
+            aria-label="Cobertura de la quincena"
+            type="button"
+            onClick={() => navigateTo("/cajero/conteo")}
           >
             <div className="cajero-coverage-card__copy">
-              <span>Cobertura del período</span>
+              <span>Cobertura de la quincena</span>
               <h2 id="cajero-coverage-title">
-                {coverage.coverage_counted} / {coverage.groups_total}
+                {progress.coverageCount} / {coverage.groups_total}
               </h2>
-              <p>
-                {coverage.count_pending}{" "}
-                {pluralize(
-                  coverage.count_pending,
-                  "grupo pendiente",
-                  "grupos pendientes",
-                )}
-              </p>
             </div>
             <div
               className="cajero-progress-ring"
@@ -265,38 +264,33 @@ export function CajeroInicio({
               </svg>
               <strong>{coveragePercentage}%</strong>
             </div>
-          </section>
+          </button>
 
-          <div className="cajero-home-metrics" aria-label="Resumen operativo">
-            <button
-              aria-label={`Abrir Conteo, ${coverage.count_pending} ${pluralize(coverage.count_pending, "grupo pendiente", "grupos pendientes")}`}
-              className="cajero-home-metric cajero-home-metric--action"
-              onClick={() => navigateTo("/cajero/conteo")}
-              type="button"
-            >
-              <CalendarCheck2 aria-hidden="true" size={23} />
-              <span>Pendientes</span>
-              <div className="cajero-home-metric__value">
-                <strong>{coverage.count_pending}</strong>
-                <small>
-                  {pluralize(
-                    coverage.count_pending,
-                    "grupo pendiente",
-                    "grupos pendientes",
-                  )}
-                </small>
-              </div>
-            </button>
+          <div className="cajero-home-metrics cajero-home-metrics--incomplete" aria-label="Resumen operativo">
             <button
               aria-label="Abrir Stock 0"
               className="cajero-home-metric cajero-home-metric--action"
-              onClick={() => navigateTo("/cajero/conteo")}
+              onClick={() => navigateTo("/cajero/conteo?stock=zero")}
               type="button"
             >
               <PackageOpen aria-hidden="true" size={23} />
               <span>Stock 0</span>
               <div className="cajero-home-metric__value">
-                <small>Ver grupos</small>
+                <strong>{progress.select("zero").completed}/{progress.select("zero").total}</strong>
+                <small>grupos</small>
+              </div>
+            </button>
+            <button
+              aria-label="Abrir Stock negativo"
+              className="cajero-home-metric cajero-home-metric--action"
+              onClick={() => navigateTo("/cajero/conteo?stock=negative")}
+              type="button"
+            >
+              <MinusCircle aria-hidden="true" size={23} />
+              <span>Stock negativo</span>
+              <div className="cajero-home-metric__value">
+                <strong>{progress.select("negative").completed}/{progress.select("negative").total}</strong>
+                <small>grupos</small>
               </div>
             </button>
             <PendingSendCard session={session} />

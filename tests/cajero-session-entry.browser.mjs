@@ -46,6 +46,10 @@ async function runScenario({ routeLabel, buttonLabel, pathname, expectedGroups, 
     for (let index = 3; index <= 15; index++) {
       const group = { ...secondReview, grupo_id: 'review-' + index, nombre: 'Grupo revisión ' + index,
         detalle_reconteo_id: 'detail-' + index, unidades_por_paquete: 6, precio_paquete: 20 }
+      if (index === 7) group.productos = [
+        { c_interno: 20534, producto: 'Lemonade', marca: 'Marca oculta', precio: 4 },
+        { c_interno: 20535, producto: 'Cherry', marca: 'Marca oculta', precio: 4 },
+      ]
       bootstrap.panel_state.groups.push(group)
       bootstrap.panel_state.review_queue.push({ grupo_id: group.grupo_id, detalle_id: group.detalle_reconteo_id,
         ultima_diferencia: 1, contado_at: new Date(Date.parse(bootstrap.server_now) + index * 1000).toISOString() })
@@ -220,8 +224,8 @@ async function runScenario({ routeLabel, buttonLabel, pathname, expectedGroups, 
       const rowBox = await card.locator('.cajero-home-metric__send-row').boundingBox()
       const buttonBox = await globalButton.boundingBox()
       const counterBox = await card.locator('.cajero-home-metric__value').boundingBox()
-      assert.ok(Math.abs(buttonBox.x - rowBox.x) < 1, 'Botón alineado a la izquierda')
-      assert.ok(buttonBox.x + buttonBox.width <= counterBox.x, 'Contador junto al botón')
+      assert.ok(Math.abs(counterBox.x - rowBox.x) < 1, 'Contador conserva la posición vigente')
+      assert.ok(counterBox.x + counterBox.width <= buttonBox.x, 'Botón junto al contador')
       assert.ok(Math.abs(buttonBox.y + buttonBox.height / 2 - counterBox.y - counterBox.height / 2) < 1, 'Botón y contador a la misma altura')
       const finishButton = page.getByRole('button', { name: 'Finalizar conteo', exact: true })
       await (sendCommand === 'global' ? globalButton : finishButton).click()
