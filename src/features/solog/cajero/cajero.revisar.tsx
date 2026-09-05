@@ -2,7 +2,6 @@ import {
   AlertCircle,
   ChevronRight,
   LoaderCircle,
-  Play,
   SearchCheck,
 } from 'lucide-react'
 import {
@@ -14,11 +13,13 @@ import {
 } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { CajeroCaptureModal } from './cajero.captura.dialog'
-import { CajeroPreSessionList } from './cajero.pre-session'
+import { CajeroStartEmptyState } from './cajero.operativo'
 import type { CajeroSessionController } from './cajero.session'
+import { readCajeroRecountDrafts } from './cajero.storage'
 import type { CajeroCountGroup, CajeroGroupsResponse } from './cajero.types'
 import {
   formatCajeroDifference,
+  calculateDifference,
   filterCajeroReviewGroups,
   getCajeroDifferenceClass,
   toggleCajeroReviewDifferenceFilter,
@@ -85,6 +86,14 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
     () => filterCajeroReviewGroups(groups, differenceFilter),
     [differenceFilter, groups],
   )
+  const recountByDetail = new Map((activeScope ? readCajeroRecountDrafts(activeScope).items : [])
+    .map((item) => [item.detalle_id, item]))
+
+  useEffect(() => {
+    if (selectedGroup && !groups.some((group) => group.detalle_origen_id === selectedGroup.detalle_origen_id)) {
+      queueMicrotask(() => setSelectedGroup(null))
+    }
+  }, [groups, selectedGroup])
 
   if (!activeScope) {
     return (
@@ -92,14 +101,12 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
         <div className="cajero-module__heading">
           <div><h1 id="cajero-revisar-title">Revisar</h1></div>
         </div>
-        <div className="cajero-empty-state" role="status">
-          <Play aria-hidden="true" size={28} />
-          <div>
-            <strong>Inicia una sesión desde Inicio.</strong>
-            <p>Necesitas una referencia TumiSoft vigente para capturar.</p>
-          </div>
-        </div>
-        <CajeroPreSessionList review />
+        <CajeroStartEmptyState
+          buttonLabel="Iniciar reconteo"
+          detail="Inicia un conteo para revisar los casos pendientes con una referencia TumiSoft vigente."
+          session={session}
+          title="No hay un conteo activo"
+        />
       </section>
     )
   }
@@ -111,12 +118,12 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
           <h1 id="cajero-revisar-title">Revisar</h1>
           <p>Registra la realidad</p>
         </div>
-        <div
-          aria-label="Filtrar por última diferencia"
-          className="cajero-review-filter"
-          role="group"
-        >
-          <button
+        <div className="cajero-review__actions">
+          <div aria-label="Filtrar por última diferencia"
+            className="cajero-review-filter"
+            role="group"
+          >
+            <button
             aria-label="Mostrar últimas diferencias positivas"
             aria-pressed={differenceFilter === 'all' || differenceFilter === 'positive'}
             className={differenceFilter === 'all' || differenceFilter === 'positive' ? 'is-active' : undefined}
@@ -126,8 +133,8 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
             type="button"
           >
             +
-          </button>
-          <button
+            </button>
+            <button
             aria-label="Mostrar últimas diferencias negativas"
             aria-pressed={differenceFilter === 'all' || differenceFilter === 'negative'}
             className={differenceFilter === 'all' || differenceFilter === 'negative' ? 'is-active' : undefined}
@@ -137,7 +144,8 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
             type="button"
           >
             −
-          </button>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -166,7 +174,8 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
           </div>
           <div className="cajero-review-list__rows">
             {visibleGroups.map((group) => {
-              const currentDifference = null
+              const draft = group.detalle_origen_id ? recountByDetail.get(group.detalle_origen_id) : null
+              const currentDifference = draft ? calculateDifference(draft.stock_fisico, group.stock_teorico) : null
               const lastDifference = group.ultima_diferencia ?? null
 
               return (
@@ -212,7 +221,7 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
         <CajeroCaptureModal
           categoryName="Revisar"
           disabled={!session.canCapture}
-          groups={[selectedGroup]}
+          groups={groups}
           initialGroupId={selectedGroup.grupo_id}
           key={selectedGroup.detalle_origen_id}
           onClose={() => setSelectedGroup(null)}

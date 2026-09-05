@@ -8,14 +8,12 @@ import {
 } from 'react'
 import { ArrowLeft, X } from 'lucide-react'
 import { getSologErrorMessageFromUnknown } from '../errors'
-import { getSologDifferenceStateClass, getSologDifferenceStateLabel } from '../labels'
 import type { CajeroSessionController } from './cajero.session'
 import { CajeroCalculator } from './cajero.calculadora'
 import {
   getCajeroBufferRevision,
-  readCajeroRecountAttempt,
-  saveCajeroRecountAttempt,
-  removeCajeroRecountAttempt,
+  readCajeroRecountDrafts,
+  saveCajeroRecountDraft,
   readCajeroBuffer,
   readCajeroExpressionDrafts,
   saveCajeroLocalCapture,
@@ -23,16 +21,17 @@ import {
   subscribeCajeroBufferChanges,
 } from './cajero.storage'
 import type {
-  CajeroRecountStartResponse,
-  CajeroRecountResponse,
   CajeroBufferScope,
   CajeroCountGroup,
   CajeroCountView,
 } from './cajero.types'
 import {
   evaluateCajeroExpression,
+  calculateCajeroValuationPreview,
+  calculateDifference,
   formatCajeroDifference,
   formatCajeroCurrency,
+  getCajeroCapturedCount,
   getCajeroDifferenceClass,
 } from './cajero.utils'
 
@@ -81,14 +80,12 @@ export function CajeroCaptureModal({
   )
 
   const review = view === 'revisar'
-  const [reference, setReference] = useState<CajeroRecountStartResponse | null>(null)
-  const [result, setResult] = useState<CajeroRecountResponse | null>(null)
   const [captureError, setCaptureError] = useState<string | null>(null)
-  const [retry, setRetry] = useState(0)
   const [saving, setSaving] = useState(false)
   const saveLock = useRef(false)
   const buffer = readCajeroBuffer(scope)
   const drafts = readCajeroExpressionDrafts(scope)
+  const recountDrafts = readCajeroRecountDrafts(scope)
   const pendingByGroup = useMemo(
     () => new Map(buffer.items.map((item) => [item.grupo_id, item])),
     [buffer.items],
@@ -97,9 +94,13 @@ export function CajeroCaptureModal({
     () => new Map(drafts.items.map((item) => [item.grupo_id, item.expresion])),
     [drafts.items],
   )
-  const registeredCount = review ? (result ? 1 : 0) : groups.filter((group) =>
-    pendingByGroup.has(group.grupo_id),
-  ).length
+  const recountByDetail = useMemo(
+    () => new Map(recountDrafts.items.map((item) => [item.detalle_id, item])),
+    [recountDrafts.items],
+  )
+  const registeredCount = review
+    ? groups.filter((group) => group.detalle_origen_id && recountByDetail.has(group.detalle_origen_id)).length
+    : getCajeroCapturedCount(groups, new Set(pendingByGroup.keys()))
   const percentage = groups.length > 0
     ? Math.round((registeredCount / groups.length) * 100)
     : 0
@@ -110,32 +111,16 @@ export function CajeroCaptureModal({
     : null
   const detailId = review ? activeGroup?.detalle_origen_id ?? null : null
   const draftId = review ? 'recount:' + detailId : activeGroup?.grupo_id ?? ''
-  const attempt = detailId ? readCajeroRecountAttempt(scope, detailId) : null
-  const activeExpression = result ? String(result.stock_reconteo) : attempt ? String(attempt.stock_fisico) : activeGroup
+  const recountDraft = detailId ? recountByDetail.get(detailId) ?? null : null
+  const activeExpression = activeGroup
     ? expressionByGroup.has(draftId)
       ? expressionByGroup.get(draftId) ?? ''
-      : activePending
+      : recountDraft
+        ? String(recountDraft.stock_fisico)
+        : activePending
         ? String(activePending.stock_fisico)
         : ''
     : ''
-
-  const beginRecount = session.beginRecount
-  useEffect(() => {
-    if (!review || !detailId) return
-    let active = true
-    queueMicrotask(() => {
-      if (!active) return
-      setReference(null)
-      setResult(null)
-      setCaptureError(null)
-      void beginRecount(detailId).then((started) => {
-        if (active) setReference(started)
-      }).catch((startError: unknown) => {
-        if (active) setCaptureError(getSologErrorMessageFromUnknown(startError))
-      })
-    })
-    return () => { active = false }
-  }, [beginRecount, detailId, review, retry])
 
   useEffect(() => {
     onCloseRef.current = onClose
@@ -184,11 +169,14 @@ export function CajeroCaptureModal({
     setCaptureError(null)
     try {
       if (review) {
-        if (!detailId || !reference || reference.detalle_id !== detailId || result) return false
-        const payload = saveCajeroRecountAttempt(scope, detailId, stockFisico, session.captureTimestamp())
-        const saved = await session.saveRecount(detailId, payload.stock_fisico, payload.contado_at)
-        removeCajeroRecountAttempt(scope, detailId)
-        setResult(saved)
+        if (!detailId) return false
+        saveCajeroRecountDraft(scope, {
+          detalle_id: detailId,
+          grupo_id: activeGroup.grupo_id,
+          stock_fisico: stockFisico,
+          contado_at: session.captureTimestamp(),
+        }, activeExpression)
+        onObservationSaved()
       } else {
         saveCajeroLocalCapture(scope, {
           grupo_id: activeGroup.grupo_id,
@@ -208,7 +196,6 @@ export function CajeroCaptureModal({
       return true
     } catch (saveError) {
       setCaptureError(getSologErrorMessageFromUnknown(saveError))
-      if (review) setReference(null)
       return false
     } finally {
       saveLock.current = false
@@ -230,7 +217,7 @@ export function CajeroCaptureModal({
   const expressionEvaluation = evaluateCajeroExpression(activeExpression)
   const hasExpression = activeExpression.trim().length > 0
   const canNavigateNext = activeIndex < groups.length - 1 || Boolean(onNextCategory)
-  const continueDisabled = review || saving || (
+  const continueDisabled = saving || (
     hasExpression
       ? expressionEvaluation.status !== 'valid'
       : !canNavigateNext
@@ -252,14 +239,16 @@ export function CajeroCaptureModal({
     }
   }
 
-  const theoretical = review ? reference?.stock_teorico_reconteo ?? null
-    : activePending?.display.stock_teorico ?? activeGroup?.stock_teorico ?? null
-  const physical = result?.stock_reconteo ?? attempt?.stock_fisico ?? activePending?.stock_fisico ?? null
-  const savedDifference = result?.diferencia ?? null
-  // La mutación no entrega valorización: no reconstruirla con precios del navegador.
-  const savedValuation: number | null = null
+  const theoretical = activePending?.display.stock_teorico ?? activeGroup?.stock_teorico ?? null
+  const physical = expressionEvaluation.status === 'valid'
+    ? expressionEvaluation.value
+    : recountDraft?.stock_fisico ?? activePending?.stock_fisico ?? null
+  const savedDifference = physical !== null && theoretical !== null ? calculateDifference(physical, theoretical) : null
+  const savedValuation = activeGroup && savedDifference !== null
+    ? calculateCajeroValuationPreview(savedDifference, activeGroup.precio, activeGroup.unidades_por_paquete, activeGroup.precio_paquete)
+    : null
   const activeLocked = activeGroup
-    ? disabled || saving || (review && (!reference || Boolean(result))) || lockedGroupIds?.has(activeGroup.grupo_id) === true
+    ? disabled || saving || lockedGroupIds?.has(activeGroup.grupo_id) === true
     : disabled
 
   return (
@@ -290,7 +279,7 @@ export function CajeroCaptureModal({
             <ArrowLeft aria-hidden="true" size={22} />
           </button>
           <h2 id={titleId}>{categoryName}</h2>
-          <strong>{registeredCount} / {groups.length}</strong>
+          <strong>{review && activeGroup ? activeIndex + 1 : registeredCount} / {groups.length}</strong>
           <button
             aria-label="Cerrar"
             className="cajero-capture-modal__icon-button"
@@ -312,16 +301,13 @@ export function CajeroCaptureModal({
             <div className="cajero-capture-detail">
               <div className="cajero-capture-detail__information">
                 <section className={`cajero-capture-detail__card${review ? ' cajero-capture-detail__card--review' : ''}`}>
-                  <h3>{activeGroup.nombre}</h3>
+                  <h3>
+                    {activeGroup.nombre}
+                    {review ? <small>Última diferencia: <span className={getCajeroDifferenceClass(activeGroup.ultima_diferencia ?? null)}>{formatCajeroDifference(activeGroup.ultima_diferencia ?? null)}</span></small> : null}
+                  </h3>
                   <dl>
                     <div><dt>Stock TumiSoft</dt><dd>{theoretical ?? '—'}</dd></div>
                     <div><dt>Conteo</dt><dd>{physical ?? '—'}</dd></div>
-                    {review ? (
-                      <>
-                        <div><dt>Última diferencia</dt><dd className={getCajeroDifferenceClass(activeGroup.ultima_diferencia ?? null)}>{formatCajeroDifference(activeGroup.ultima_diferencia ?? null)}</dd></div>
-                        <div><dt>Motivo</dt><dd>Recontar</dd></div>
-                      </>
-                    ) : null}
                     <div><dt>{review ? 'Diferencia actual' : 'Diferencia'}</dt><dd className={getCajeroDifferenceClass(savedDifference)}>{formatCajeroDifference(savedDifference)}</dd></div>
                     <div>
                       <dt>Valorizado</dt>
@@ -339,24 +325,21 @@ export function CajeroCaptureModal({
               {captureError ? (
                 <div className="cajero-alert cajero-alert--error" role="alert">
                   <p>{captureError}</p>
-                  {review && !result ? <button className="button" type="button" onClick={() => setRetry((value) => value + 1)}>Consultar y reanudar</button> : null}
                 </div>
               ) : null}
-              {review && !reference && !captureError ? <p role="status">Iniciando reconteo…</p> : null}
-              {result ? <p role="status"><span className={`control-state-badge control-state-badge--${getSologDifferenceStateClass(result.estado_diferencia)}`}>{getSologDifferenceStateLabel(result.estado_diferencia)}</span> Diferencia final: {formatCajeroDifference(result.diferencia)}</p> : null}
               <CajeroCalculator
                 disabled={activeLocked}
                 expression={activeExpression}
                 variant={review ? 'review' : 'normal'}
                 onChange={(expression) => {
-                  if (!attempt) setCajeroExpressionDraft(scope, draftId, expression)
+                  setCajeroExpressionDraft(scope, draftId, expression)
                 }}
                 onSave={(physical) => void saveActiveGroup(physical)}
               />
               <nav className="cajero-capture-detail__navigation" aria-label="Navegación entre grupos">
                 <button
                   className="button button--secondary"
-                  disabled={review || saving || activeIndex <= 0}
+                  disabled={saving || activeIndex <= 0}
                   onClick={() => setActiveGroupId(groups[activeIndex - 1]?.grupo_id ?? null)}
                   type="button"
                 >
@@ -371,8 +354,10 @@ export function CajeroCaptureModal({
                 </button>
                 <button
                   className="button"
-                  disabled={continueDisabled}
-                  onClick={() => void continueToNext()}
+                  disabled={review ? saving || activeIndex >= groups.length - 1 : continueDisabled}
+                  onClick={() => review
+                    ? setActiveGroupId(groups[activeIndex + 1]?.grupo_id ?? null)
+                    : void continueToNext()}
                   type="button"
                 >
                   {review ? 'Siguiente' : hasExpression ? 'Continuar' : 'Siguiente'}
@@ -387,7 +372,7 @@ export function CajeroCaptureModal({
               <div className="cajero-capture-summary__rows">
                 {groups.map((group) => {
                   const pending = pendingByGroup.get(group.grupo_id)
-                  const difference = null
+                  const difference = pending ? calculateDifference(pending.stock_fisico, pending.display.stock_teorico) : null
                   return (
                     <button
                       className={pending ? 'is-counted' : undefined}

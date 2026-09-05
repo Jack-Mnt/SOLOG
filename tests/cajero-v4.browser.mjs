@@ -1,4 +1,4 @@
-// C1-C4 con RPC simuladas y red externa bloqueada. No ejecuta el gate real.
+// Delta Cajero V7 con RPC simuladas y red externa bloqueada. No ejecuta el gate real.
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
@@ -12,6 +12,16 @@ await server.listen()
 const browser = await chromium.launch({ headless: true, executablePath: process.env.SOLOG_TEST_BROWSER })
 const context = await browser.newContext()
 const b = cashierFixture()
+const secondReview = structuredClone(b.panel_state.groups[1])
+Object.assign(secondReview, {
+  grupo_id: 'group-3', nombre: 'Grupo revisión 2', detalle_reconteo_id: 'detail-second',
+})
+b.panel_state.groups.push(secondReview)
+b.panel_state.review_queue.push({
+  grupo_id: 'group-3', detalle_id: 'detail-second', ultima_diferencia: 1,
+  contado_at: '2026-09-03T20:30:01.000Z',
+})
+b.panel_state.kpis = { groups_total: 3, coverage_counted: 2, coverage_percent: 67, count_pending: 1, review_pending: 2 }
 const user = { id: b.identity.id, email: 'cashier@example.test', role: 'authenticated', app_metadata: {}, user_metadata: {}, aud: 'authenticated', created_at: b.server_now }
 const jwt = [{ alg: 'HS256', typ: 'JWT' }, { sub: user.id, aud: 'authenticated', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 }].map((part) => Buffer.from(JSON.stringify(part)).toString('base64url')).join('.') + '.test'
 const calls = []
@@ -72,19 +82,30 @@ await context.route('**/*', async (route) => {
     state.groups[0].cobertura_periodo = true
     state.groups[0].contado_detalle_id = 'saved-detail'
     state.count_queue = []
-    state.kpis = { groups_total: 2, coverage_counted: 2, coverage_percent: 100, count_pending: 0, review_pending: 1 }
+    state.kpis = { groups_total: 3, coverage_counted: 3, coverage_percent: 100, count_pending: 0, review_pending: 2 }
     response.saved = 1
     response.items = [{ ...item, detalle_id: 'saved-detail', stock_teorico: 10, diferencia: -1, estado_diferencia: 'Recontar' }]
   }
-  if (action === 'recount_start' || action === 'recount_save') Object.assign(response, { detalle_id: payload.detalle_id, snapshot_reconteo_id: 'snapshot-1', stock_teorico_reconteo: 10 })
-  if (action === 'recount_save') {
-    Object.assign(response, { stock_reconteo: payload.stock_fisico, diferencia_reconteo: 0, diferencia: 0, estado_diferencia: 'Coincide', recontado_at: payload.contado_at })
+  if (action === 'recount_save_batch') {
+    assert.equal(payload.items.length, 2)
+    assert.deepEqual(Object.keys(payload.items[0]).sort(), ['contado_at', 'detalle_id', 'stock_fisico'])
+    response.saved = payload.items.length
+    response.items = payload.items.map((item) => {
+      const group = state.review_queue.find((candidate) => candidate.detalle_id === item.detalle_id)
+      return {
+        detalle_id: item.detalle_id, grupo_id: group.grupo_id, snapshot_reconteo_id: 'snapshot-1',
+        stock_teorico_reconteo: 10, stock_reconteo: item.stock_fisico,
+        diferencia_reconteo: item.stock_fisico - 10, diferencia: item.stock_fisico - 10,
+        estado_diferencia: item.stock_fisico === 10 ? 'Coincide' : 'Inconsistente',
+        valor_diferencia: (item.stock_fisico - 10) * 4, recontado_at: item.contado_at,
+      }
+    })
     state.review_queue = []
-    state.groups[1].requiere_reconteo = false
+    state.groups.filter((group) => group.requiere_reconteo).forEach((group) => { group.requiere_reconteo = false })
     state.kpis.review_pending = 0
   }
   if (action === 'finish') state.session.estado = 'finalizado'
-  if (action !== 'recount_start') response.state = structuredClone(state)
+  response.state = structuredClone(state)
   ledger.set(payload.operation_id, response)
   if (action === 'save_batch' && !lost) { lost = true; return route.abort('failed') }
   return fulfill(response)
@@ -121,7 +142,8 @@ try {
   await nav.getByRole('button', { name: 'Historial', exact: true }).click()
   await page.getByText('Histórico conteo', { exact: true }).waitFor()
   await page.getByRole('button', { name: 'Expandir detalle de Histórico conteo' }).click()
-  await page.getByText('15:30', { exact: true }).waitFor()
+  await page.getByText('3:30 PM', { exact: true }).waitFor()
+  await page.getByRole('button', { name: /Por categorías/ }).click()
   await page.getByRole('button', { name: /Abarrotes/ }).click()
   await page.getByRole('button', { name: 'Ayer', exact: true }).click()
   await page.getByText('No hay observaciones para ayer.').waitFor()
@@ -132,12 +154,24 @@ try {
   await page.getByText('Histórico conteo', { exact: true }).waitFor()
   assert.equal(calls.filter((c) => c.rpc === 'rpc_solog_cashier_history_v2').length, 2, 'Períodos completos reutilizados sin N+1')
   await page.getByRole('navigation', { name: 'Panel Cajero' }).getByRole('button', { name: 'Revisar', exact: true }).click()
-  await page.getByRole('button', { name: /Grupo revisión/ }).click()
+  assert.deepEqual(await page.locator('.cajero-review-list__rows button strong').allTextContents(), ['Grupo revisión', 'Grupo revisión 2'])
+  await page.getByRole('button', { name: 'Revisar Grupo revisión', exact: true }).click()
+  const beforeDraft = calls.length
   await page.getByRole('dialog').getByRole('button', { name: '1', exact: true }).click()
   await page.getByRole('dialog').getByRole('button', { name: '0', exact: true }).click()
   await page.getByRole('dialog').getByRole('button', { name: /Guardar/ }).click()
-  await page.getByRole('dialog').getByText(/Diferencia final: 0/).waitFor()
+  await page.getByRole('dialog').getByRole('button', { name: 'Siguiente', exact: true }).click()
+  await page.getByRole('dialog').getByRole('heading', { name: /Grupo revisión 2/ }).waitFor()
+  await page.getByRole('dialog').getByRole('button', { name: '9', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button', { name: /Guardar/ }).click()
+  assert.equal(calls.length, beforeDraft, 'Abrir, capturar y guardar draft no realizan requests')
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click()
+  assert.equal(await page.getByRole('button', { name: /Enviar conteo/ }).count(), 0)
+  await nav.getByRole('button', { name: 'Inicio', exact: true }).click()
+  await page.getByRole('button', { name: /Enviar conteo/, exact: false }).click()
+  assert.equal(calls.filter((c) => c.body?.p_action === 'recount_save_batch').length, 1)
+  assert.equal(calls.find((c) => c.body?.p_action === 'recount_save_batch').body.p_payload.items.length, 2)
+  assert.equal(calls.filter((c) => ['recount_start', 'recount_save'].includes(c.body?.p_action)).length, 0)
   await page.evaluate(() => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')) })
   assert.equal(calls.filter((c) => c.rpc === 'rpc_solog_cashier_bootstrap_v2').length, 1)
   const persisted = await page.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)].filter((key) => /^solog\.cajero\.(buffer|expressions|recount|activity)\./.test(key)))
@@ -148,9 +182,10 @@ try {
   await page.evaluate(() => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')) })
   await page.getByText('La sesión de conteo venció.', { exact: true }).waitFor()
   assert.equal(calls.length, beforeFocus, 'Reanudar comprueba expiración local sin RPC')
+  await page.getByRole('navigation', { name: 'Panel Cajero' }).getByRole('button', { name: 'Inicio', exact: true }).click()
   await page.getByRole('button', { name: 'Finalizar conteo', exact: true }).click()
-  await page.getByText('Vista previa · sin sesión iniciada').waitFor()
+  await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
   assert.equal(calls.filter((c) => c.rpc === 'rpc_solog_cashier_bootstrap_v2').length, 2)
   assert.deepEqual(errors, [])
-  console.log('PASS C1-C4: bootstrap único, replay, historial Hoy/Ayer sin N+1/v1, filtros, expansión, Lima, caché, suspensión/expiración y cierre simulado')
+  console.log('PASS Cajero V7: drafts locales, batch separado, cero reconteos unitarios, replay, orden, historial y cierre simulado')
 } finally { await context.close(); await browser.close(); await server.close() }

@@ -163,15 +163,14 @@ describe('C3 intención y respuesta autoritativa', () => {
     await expect(store.mutate('save_batch', { items: [{ grupo_id: 'group-2', stock_fisico: 0 }] })).rejects.toThrow()
     expect(store.hasPendingIntent).toBe(false)
   })
-  test('reconteo de origen en sesión actual se rechaza sin mutar', async () => {
+  test('reconteo fuera de la cola se rechaza sin mutar', async () => {
     let calls = 0
     const started = response()
-    started.state!.groups[0].contado_detalle_id = 'current-detail'
     const store = new CashierStore('user-1', 'token', () => {}, {
       bootstrap: async () => parseCashierBootstrap(cashierFixture()), mutate: async () => { calls++; return started },
     })
     await store.refresh(); await store.mutate('start')
-    await expect(store.mutate('recount_start', { detalle_id: 'current-detail' })).rejects.toThrow()
+    await expect(store.mutate('recount_save_batch', { items: [{ detalle_id: 'current-detail', stock_fisico: 1, contado_at: '2026-09-03T20:31:00Z' }] })).rejects.toThrow()
     expect(calls).toBe(1)
   })
   test('conflicto de revisión permite recarga y nueva intención con otro UUID', async () => {

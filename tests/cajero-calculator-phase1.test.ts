@@ -3,7 +3,6 @@ import {
   applyCajeroBatchResponse,
   readCajeroExpressionDrafts,
   setCajeroExpressionDraft,
-  shouldFlushCajeroBufferImmediately,
   upsertCajeroObservation,
 } from '../src/features/solog/cajero/cajero.storage'
 import type {
@@ -142,9 +141,4 @@ describe('expresiones locales Cajero Fase 1', () => {
     ])
   })
 
-  test('el umbral de seguridad se activa con el total pendiente en 80 o más', () => {
-    expect(shouldFlushCajeroBufferImmediately(79)).toBe(false)
-    expect(shouldFlushCajeroBufferImmediately(80)).toBe(true)
-    expect(shouldFlushCajeroBufferImmediately(500)).toBe(true)
-  })
 })

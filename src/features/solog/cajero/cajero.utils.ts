@@ -148,6 +148,28 @@ export function calculateValuation(difference: number, price: number): number {
   return difference * price
 }
 
+export function calculateCajeroValuationPreview(
+  difference: number,
+  unitPrice: number,
+  unitsPerPackage: number | null,
+  packagePrice: number | null,
+): number | null {
+  if (unitsPerPackage === null && packagePrice === null) return difference * unitPrice
+  if (typeof unitsPerPackage !== 'number' || !Number.isSafeInteger(unitsPerPackage) || unitsPerPackage <= 1 ||
+    typeof packagePrice !== 'number' || !Number.isFinite(packagePrice) || packagePrice <= 0) return null
+  const absolute = Math.abs(difference)
+  const value = Math.floor(absolute / unitsPerPackage) * packagePrice +
+    (absolute % unitsPerPackage) * unitPrice
+  return Math.sign(difference) * value
+}
+
+export function getCajeroCapturedCount(
+  groups: readonly Pick<CajeroCountGroup, 'grupo_id'>[],
+  capturedGroupIds: ReadonlySet<string>,
+): number {
+  return groups.filter((group) => capturedGroupIds.has(group.grupo_id)).length
+}
+
 const cajeroCurrency = new Intl.NumberFormat('es-PE', {
   style: 'currency',
   currency: 'PEN',

@@ -60,11 +60,6 @@ export function Cajero({
         sede={bootstrap.site.nombre}
       />
       <main className="cajero-main">
-        <div className="cajero-module__heading">
-          <span>{bootstrap.panel_state.frozen ? 'Sesión congelada' : 'Vista previa · sin sesión iniciada'}</span>
-          <button className="button button--secondary" disabled={session.sending} onClick={() => void session.refresh()}>Actualizar</button>
-          {bootstrap.panel_state.session ? <button className="button button--secondary" disabled={session.sending} onClick={() => void session.finishSession()}>Finalizar conteo</button> : null}
-        </div>
         {blockMessage ? (
           <div className="cajero-alert cajero-alert--warning" role="alert">
             <AlertTriangle aria-hidden="true" size={22} />
@@ -72,7 +67,7 @@ export function Cajero({
               <strong>{blockMessage.title}</strong>
               <p>{blockMessage.detail}</p>
             </div>
-            {session.pendingCount > 0 || session.pendingIntent ? (
+            {session.pendingIntent ? (
               <button
                 className="button button--secondary"
                 disabled={session.sending}

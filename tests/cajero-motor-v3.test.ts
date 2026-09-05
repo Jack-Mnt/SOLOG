@@ -2,8 +2,9 @@ import { PostgrestError } from '@supabase/supabase-js'
 import { describe, expect, test } from 'bun:test'
 import {
   applyCajeroBatchResponse, buildNextCajeroBatch, clearCajeroBuffer,
+  buildNextCajeroRecountBatch,
   discardLegacyCajeroBuffers, getCajeroBufferKey, readCajeroBuffer,
-  readCajeroRecountAttempt, removeCajeroRecountAttempt, saveCajeroRecountAttempt,
+  readCajeroRecountDrafts, removeCajeroRecountDrafts, saveCajeroRecountDraft,
   upsertCajeroObservation,
 } from '../src/features/solog/cajero/cajero.storage'
 import { isCurrentCajeroResponse } from '../src/features/solog/cajero/cajero.session'
@@ -92,15 +93,20 @@ describe('Motor V3: buffer V4 y recuperación', () => {
 })
 
 describe('Motor V3: reconteo separado y respuestas tardías', () => {
-  test('persiste el intento por detalle, mantiene timestamp y físico y nunca lo introduce al batch', () => {
+  test('mantiene drafts de reconteo separados, editables y con timestamp estable', () => {
     const storage = new MemoryStorage()
-    const original = saveCajeroRecountAttempt(scope, 'detail-1', 8, input.contado_at, storage)
-    expect(saveCajeroRecountAttempt(scope, 'detail-1', 99, '2026-08-27T12:00:00Z', storage)).toEqual(original)
-    expect(readCajeroRecountAttempt(scope, 'detail-2', storage)).toBeNull()
-    expect(readCajeroRecountAttempt({ ...scope, conteo_id: 'other' }, 'detail-1', storage)).toBeNull()
+    saveCajeroRecountDraft(scope, { detalle_id: 'detail-1', grupo_id: 'group', stock_fisico: 8, contado_at: input.contado_at }, '8', storage)
+    saveCajeroRecountDraft(scope, { detalle_id: 'detail-1', grupo_id: 'group', stock_fisico: 99, contado_at: '2026-08-27T12:00:00Z' }, '99', storage)
+    expect(readCajeroRecountDrafts(scope, storage).items[0]).toEqual({
+      detalle_id: 'detail-1', grupo_id: 'group', stock_fisico: 99, contado_at: input.contado_at,
+    })
+    expect(readCajeroRecountDrafts({ ...scope, conteo_id: 'other' }, storage).items).toEqual([])
     expect(buildNextCajeroBatch(scope, 'token', storage)).toBeNull()
-    removeCajeroRecountAttempt(scope, 'detail-1', storage)
-    expect(readCajeroRecountAttempt(scope, 'detail-1', storage)).toBeNull()
+    expect(buildNextCajeroRecountBatch(scope, storage)?.items).toEqual([
+      { detalle_id: 'detail-1', stock_fisico: 99, contado_at: input.contado_at },
+    ])
+    removeCajeroRecountDrafts(scope, ['detail-1'], storage)
+    expect(readCajeroRecountDrafts(scope, storage).items).toEqual([])
   })
 
   test('rechaza respuestas de una generación anterior y de otro alcance', () => {

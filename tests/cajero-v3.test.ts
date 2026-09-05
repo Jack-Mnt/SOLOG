@@ -6,7 +6,6 @@ import {
   readCajeroBuffer,
   readCajeroExpressionDrafts,
   setCajeroExpressionDraft,
-  shouldFlushCajeroBufferImmediately,
   upsertCajeroObservation,
 } from '../src/features/solog/cajero/cajero.storage'
 import type {
@@ -239,11 +238,6 @@ describe('cajero.storage V3', () => {
     }, new MemoryStorage())).toThrow()
   })
 
-  test('aplica únicamente el umbral inmediato de 80', () => {
-    expect(shouldFlushCajeroBufferImmediately(79)).toBe(false)
-    expect(shouldFlushCajeroBufferImmediately(80)).toBe(true)
-    expect(shouldFlushCajeroBufferImmediately(120)).toBe(true)
-  })
 })
 
 describe('cajero.utils V3', () => {

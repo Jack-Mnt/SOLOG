@@ -18,10 +18,6 @@ import {
   type CajeroSelectionGridItem,
 } from './cajero.operativo'
 import type { CajeroSessionController } from './cajero.session'
-import {
-  getCajeroPendingCountForIdentity,
-  shouldFlushCajeroBufferImmediately,
-} from './cajero.storage'
 import type {
   CajeroGroupsResponse,
   CajeroStockType,
@@ -94,15 +90,6 @@ export function CajeroConteo({
       requestVersion.current += 1
     }
   }, [loadGroups, session.cacheRevision])
-
-  const handleObservationSaved = () => {
-    const pending = session.activeScope
-      ? getCajeroPendingCountForIdentity(session.activeScope)
-      : 0
-    if (shouldFlushCajeroBufferImmediately(pending)) {
-      void session.sendPending()
-    }
-  }
 
   if (!bootstrap.panel_state.session || !activeScope) {
     return (
@@ -231,7 +218,7 @@ export function CajeroConteo({
           key={`${effectiveType}:${openCategory.id}`}
           onClose={() => setOpenCategoryId(null)}
           onNextCategory={nextCategory ? () => setOpenCategoryId(nextCategory.id) : undefined}
-          onObservationSaved={handleObservationSaved}
+          onObservationSaved={() => undefined}
           scope={activeScope}
           session={session}
           view={modalView}

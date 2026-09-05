@@ -8,7 +8,6 @@ import {
   Palette,
   Play,
   SearchCheck,
-  Send,
 } from "lucide-react";
 import { navigateTo } from "../../../lib/router";
 import { PaletteSwitcher } from "../../theme/palette-switcher";
@@ -36,17 +35,14 @@ function PendingSendCard({ session }: { session: CajeroSessionController }) {
         <strong>{session.pendingCount}</strong>
         <small>{pluralize(session.pendingCount, "conteo", "conteos")}</small>
       </div>
-      {session.pendingCount > 0 ? (
-        <button
-          className="button button--secondary cajero-home-metric__send"
-          disabled={session.sending}
-          onClick={() => void session.sendPending()}
-          type="button"
-        >
-          <Send aria-hidden="true" size={18} />
-          {session.sending ? "Enviando…" : "Enviar conteo"}
-        </button>
-      ) : null}
+      <button
+        className="button button--secondary"
+        disabled={session.sending || (session.pendingCount === 0 && !['save_batch', 'recount_save_batch'].includes(session.pendingAction ?? '')) || Boolean(session.pendingAction && !['save_batch', 'recount_save_batch'].includes(session.pendingAction))}
+        onClick={() => void session.flushPendingDrafts()}
+        type="button"
+      >
+        {session.sending ? "Enviando…" : "Enviar conteo"}
+      </button>
     </article>
   );
 }
@@ -123,8 +119,9 @@ export function CajeroInicio({
             </div>
           </div>
 
-          {operationalRoute ? (
-            bootstrap.panel_state.session ? (
+          <div className="cajero-stock-card__actions">
+            {operationalRoute ? (
+              bootstrap.panel_state.session ? (
               <button
                 className="button"
                 onClick={() => navigateTo(operationalRoute)}
@@ -132,7 +129,7 @@ export function CajeroInicio({
               >
                 <Play aria-hidden="true" size={19} /> Continuar conteo
               </button>
-            ) : (
+              ) : (
               <button
                 className="button"
                 disabled={!canStart || session.starting}
@@ -142,8 +139,19 @@ export function CajeroInicio({
                 <Play aria-hidden="true" size={19} />
                 {session.starting ? "Iniciando…" : "Iniciar conteo"}
               </button>
-            )
-          ) : null}
+              )
+            ) : null}
+            {bootstrap.panel_state.session ? (
+              <button
+                className="button button--secondary"
+                disabled={session.sending}
+                onClick={() => void session.finishSession()}
+                type="button"
+              >
+                Finalizar conteo
+              </button>
+            ) : null}
+          </div>
         </section>
       )}
 
@@ -174,7 +182,7 @@ export function CajeroInicio({
               </div>
             </button>
             <button
-              aria-label={`Abrir Revisar, ${session.reviewPending} ${pluralize(session.reviewPending, "caso", "casos")}`}
+              aria-label={`Abrir Revisar, ${session.recountPendingCount} de ${session.reviewPending} casos`}
               className="cajero-home-metric cajero-home-metric--action"
               onClick={() => navigateTo("/cajero/revisar")}
               type="button"
@@ -182,10 +190,8 @@ export function CajeroInicio({
               <SearchCheck aria-hidden="true" size={23} />
               <span>Revisar</span>
               <div className="cajero-home-metric__value">
-                <strong>{session.reviewPending}</strong>
-                <small>
-                  {pluralize(session.reviewPending, "caso", "casos")}
-                </small>
+                <strong>{session.recountPendingCount}/{session.reviewPending}</strong>
+                <small>casos</small>
               </div>
             </button>
             <PendingSendCard session={session} />

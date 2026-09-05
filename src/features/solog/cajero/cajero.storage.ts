@@ -1,5 +1,4 @@
 import type {
-  CajeroRecountPayload,
   CajeroBatchPayload,
   CajeroBatchRejectedItem,
   CajeroBatchResponse,
@@ -9,16 +8,17 @@ import type {
   CajeroExpressionDraftStore,
   CajeroObservationInput,
   CajeroPendingObservation,
+  CajeroRecountDraft,
+  CajeroRecountDraftStore,
 } from './cajero.types'
 import { isValidPhysicalCount } from './cajero.utils'
 
-export const CAJERO_BATCH_IMMEDIATE_THRESHOLD = 80
 export const CAJERO_BACKEND_BATCH_LIMIT = 500
 
 const BUFFER_VERSION = 4
 const BUFFER_KEY_PREFIX = 'solog.cajero.buffer.v4'
 const EXPRESSION_KEY_PREFIX = 'solog.cajero.expressions.v1'
-const RECOUNT_KEY_PREFIX = 'solog.cajero.recount.v1'
+const RECOUNT_DRAFT_KEY_PREFIX = 'solog.cajero.recount-drafts.v2'
 const BUFFER_EVENT = 'solog:cajero-buffer-change'
 let bufferRevision = 0
 const UUID_PATTERN =
@@ -182,6 +182,16 @@ function isExpressionDraftStore(
   )
 }
 
+function isRecountDraftStore(value: unknown): value is CajeroRecountDraftStore {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const store = value as Partial<CajeroRecountDraftStore>
+  return store.version === 2 && isScope(store.scope) && Array.isArray(store.items) &&
+    store.items.every((item) => Boolean(item) && typeof item === 'object' && !Array.isArray(item) &&
+      isNonEmptyString(item.detalle_id) && isNonEmptyString(item.grupo_id) &&
+      typeof item.stock_fisico === 'number' && isValidPhysicalCount(item.stock_fisico) &&
+      isNonEmptyString(item.contado_at) && !Number.isNaN(Date.parse(item.contado_at)))
+}
+
 function scopeSegment(value: string): string {
   return encodeURIComponent(value)
 }
@@ -212,6 +222,17 @@ function getCajeroExpressionDraftKey(
   ]
     .map(scopeSegment)
     .join(':')
+}
+
+function getCajeroRecountDraftKey(scope: CajeroBufferScope): string {
+  return [
+    RECOUNT_DRAFT_KEY_PREFIX,
+    scope.usuario_id,
+    scope.sede_id,
+    scope.dispositivo_id,
+    scope.conteo_id,
+    ...(scope.groups_revision === undefined ? [] : [String(scope.groups_revision)]),
+  ].map(scopeSegment).join(':')
 }
 
 function emitBufferChange(scope: CajeroBufferScope): void {
@@ -432,10 +453,6 @@ export function removeCajeroObservation(
   }
 }
 
-export function shouldFlushCajeroBufferImmediately(itemCount: number): boolean {
-  return itemCount >= CAJERO_BATCH_IMMEDIATE_THRESHOLD
-}
-
 export function buildNextCajeroBatch(
   scope: CajeroBufferScope,
   deviceToken: string,
@@ -549,104 +566,64 @@ export function discardLegacyCajeroBuffers(storage?: Storage): void {
   keys.forEach((key) => target.removeItem(key))
 }
 
-function getRecountDraftKey(scope: CajeroBufferScope, detalleId: string): string {
-  return [
-    RECOUNT_KEY_PREFIX,
-    scope.usuario_id,
-    scope.sede_id,
-    scope.dispositivo_id,
-    scope.conteo_id,
-    ...(scope.groups_revision === undefined ? [] : [String(scope.groups_revision)]),
-    detalleId,
-  ].map(scopeSegment).join(':')
-}
-
-export interface CajeroStoredRecountAttempt {
-  scope: CajeroBufferScope
-  detalle_id: string
-  payload: Omit<CajeroRecountPayload, 'device_token'>
-}
-
-export function readCajeroRecountAttemptsForIdentity(
-  identity: CajeroBufferIdentity,
-  storage?: Storage,
-): CajeroStoredRecountAttempt[] {
-  const target = getStorage(storage)
-  const attempts: CajeroStoredRecountAttempt[] = []
-
-  for (let index = 0; index < target.length; index += 1) {
-    const key = target.key(index)
-    if (!key?.startsWith(`${RECOUNT_KEY_PREFIX}:`)) continue
-    const segments = key.split(':').map((segment) => decodeURIComponent(segment))
-    if (segments.length !== 6) continue
-    const [, usuarioId, sedeId, dispositivoId, conteoId, detalleId] = segments
-    if (
-      usuarioId !== identity.usuario_id ||
-      sedeId !== identity.sede_id ||
-      dispositivoId !== identity.dispositivo_id ||
-      !conteoId ||
-      !detalleId
-    ) continue
-    const scope: CajeroBufferScope = {
-      ...identity,
-      conteo_id: conteoId,
-    }
-    const payload = readCajeroRecountAttempt(scope, detalleId, target)
-    if (payload) attempts.push({ scope, detalle_id: detalleId, payload })
-  }
-
-  return attempts
-}
-
-export function removeCajeroRecountAttemptsForScope(
-  scope: CajeroBufferScope,
-  storage?: Storage,
-): void {
-  const target = getStorage(storage)
-  const prefix = [
-    RECOUNT_KEY_PREFIX,
-    scope.usuario_id,
-    scope.sede_id,
-    scope.dispositivo_id,
-    scope.conteo_id,
-  ].map(scopeSegment).join(':') + ':'
-  const keys: string[] = []
-  for (let index = 0; index < target.length; index += 1) {
-    const key = target.key(index)
-    if (key?.startsWith(prefix)) keys.push(key)
-  }
-  keys.forEach((key) => target.removeItem(key))
-}
-
-export function readCajeroRecountAttempt(
-  scope: CajeroBufferScope, detalleId: string, storage?: Storage,
-): Omit<CajeroRecountPayload, 'device_token'> | null {
-  const raw = getStorage(storage).getItem(getRecountDraftKey(scope, detalleId))
-  if (!raw) return null
+export function readCajeroRecountDrafts(scope: CajeroBufferScope, storage?: Storage): CajeroRecountDraftStore {
+  const empty: CajeroRecountDraftStore = { version: 2, scope, items: [] }
   try {
-    const value = JSON.parse(raw) as Partial<CajeroRecountPayload>
-    return value.conteo_id === scope.conteo_id && value.detalle_id === detalleId &&
-      typeof value.stock_fisico === 'number' && isValidPhysicalCount(value.stock_fisico) &&
-      typeof value.contado_at === 'string' && !Number.isNaN(Date.parse(value.contado_at))
-      ? { conteo_id: value.conteo_id, detalle_id: detalleId, stock_fisico: value.stock_fisico, contado_at: value.contado_at }
-      : null
-  } catch { return null }
+    const raw = getStorage(storage).getItem(getCajeroRecountDraftKey(scope))
+    if (!raw) return empty
+    const parsed: unknown = JSON.parse(raw)
+    return isRecountDraftStore(parsed) && isSameCajeroBufferScope(parsed.scope, scope) ? parsed : empty
+  } catch {
+    return empty
+  }
 }
 
-export function saveCajeroRecountAttempt(
-  scope: CajeroBufferScope, detalleId: string, physical: number, timestamp: string, storage?: Storage,
-): Omit<CajeroRecountPayload, 'device_token'> {
-  const existing = readCajeroRecountAttempt(scope, detalleId, storage)
-  if (existing) return existing
-  if (!isValidPhysicalCount(physical) || Number.isNaN(Date.parse(timestamp))) {
+function writeCajeroRecountDrafts(store: CajeroRecountDraftStore, storage?: Storage): void {
+  if (!isRecountDraftStore(store)) throw new Error('Los borradores de reconteo no son válidos.')
+  const target = getStorage(storage)
+  const key = getCajeroRecountDraftKey(store.scope)
+  if (store.items.length === 0) target.removeItem(key)
+  else target.setItem(key, JSON.stringify(store))
+  emitBufferChange(store.scope)
+}
+
+export function saveCajeroRecountDraft(
+  scope: CajeroBufferScope,
+  input: CajeroRecountDraft,
+  expression: string,
+  storage?: Storage,
+): CajeroRecountDraft {
+  if (!isNonEmptyString(input.detalle_id) || !isNonEmptyString(input.grupo_id) ||
+    !isValidPhysicalCount(input.stock_fisico) || Number.isNaN(Date.parse(input.contado_at))) {
     throw new Error('La captura de reconteo no es válida.')
   }
-  const value = { conteo_id: scope.conteo_id, detalle_id: detalleId, stock_fisico: physical, contado_at: timestamp }
-  getStorage(storage).setItem(getRecountDraftKey(scope, detalleId), JSON.stringify(value))
-  return value
+  const current = readCajeroRecountDrafts(scope, storage)
+  const existing = current.items.find((item) => item.detalle_id === input.detalle_id)
+  const draft = { ...input, contado_at: existing?.contado_at ?? input.contado_at }
+  const items = existing
+    ? current.items.map((item) => item.detalle_id === input.detalle_id ? draft : item)
+    : [...current.items, draft]
+  setCajeroExpressionDraft(scope, 'recount:' + input.detalle_id, expression, storage)
+  writeCajeroRecountDrafts({ ...current, items }, storage)
+  return draft
 }
 
-export function removeCajeroRecountAttempt(scope: CajeroBufferScope, detalleId: string, storage?: Storage): void {
-  getStorage(storage).removeItem(getRecountDraftKey(scope, detalleId))
-  removeCajeroExpressionDrafts(scope, ['recount:' + detalleId], storage)
+export function removeCajeroRecountDrafts(
+  scope: CajeroBufferScope,
+  detalleIds: readonly string[],
+  storage?: Storage,
+): void {
+  if (detalleIds.length === 0) return
+  const ids = new Set(detalleIds)
+  const current = readCajeroRecountDrafts(scope, storage)
+  const items = current.items.filter((item) => !ids.has(item.detalle_id))
+  if (items.length !== current.items.length) writeCajeroRecountDrafts({ ...current, items }, storage)
+  removeCajeroExpressionDrafts(scope, detalleIds.map((id) => 'recount:' + id), storage)
+}
+
+export function buildNextCajeroRecountBatch(scope: CajeroBufferScope, storage?: Storage) {
+  const drafts = readCajeroRecountDrafts(scope, storage).items.slice(0, CAJERO_BACKEND_BATCH_LIMIT)
+  return drafts.length === 0 ? null : {
+    items: drafts.map(({ detalle_id, stock_fisico, contado_at }) => ({ detalle_id, stock_fisico, contado_at })),
+  }
 }

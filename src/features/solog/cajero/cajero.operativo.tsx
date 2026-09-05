@@ -8,10 +8,6 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import type { CajeroSessionController } from './cajero.session'
-import {
-  getCajeroPendingCountForIdentity,
-  shouldFlushCajeroBufferImmediately,
-} from './cajero.storage'
 import { CajeroCountTable } from './cajero.table'
 import type {
   CajeroCachedView,
@@ -23,7 +19,40 @@ export interface CajeroSelectionGridItem {
   id: string
   name: string
   count: number
+  completed?: number
+  total?: number
   icon: LucideIcon
+}
+
+export function CajeroStartEmptyState({
+  session,
+  title,
+  detail,
+  buttonLabel,
+}: {
+  session: CajeroSessionController
+  title: string
+  detail: string
+  buttonLabel: string
+}) {
+  return (
+    <div className="cajero-empty-state cajero-start-empty-state" role="status">
+      <Play aria-hidden="true" size={28} />
+      <div>
+        <strong>{title}</strong>
+        <p>{detail}</p>
+        <button
+          className="button"
+          disabled={session.starting}
+          onClick={() => void session.startSession()}
+          type="button"
+        >
+          <Play aria-hidden="true" size={18} />
+          {buttonLabel}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export function CajeroSelectionGrid({
@@ -55,7 +84,9 @@ export function CajeroSelectionGrid({
             <span>
               <strong>{item.name}</strong>
               <small>
-                {item.count} {item.count === 1 ? 'pendiente' : 'pendientes'}
+                {item.completed !== undefined && item.total !== undefined
+                  ? `${item.completed}/${item.total} contados`
+                  : `${item.count} ${item.count === 1 ? 'pendiente' : 'pendientes'}`}
               </small>
             </span>
           </button>
@@ -72,6 +103,8 @@ export function CajeroSendBar({
   session: CajeroSessionController
   compact?: boolean
 }) {
+  const pending = session.normalPendingCount
+  const expectedAction = 'save_batch'
   return (
     <section
       className={`cajero-send-bar${compact ? ' cajero-send-bar--compact' : ''}`}
@@ -79,7 +112,7 @@ export function CajeroSendBar({
     >
       <button
         className="button button--secondary"
-        disabled={session.pendingCount === 0 || session.sending}
+        disabled={pending === 0 || session.sending || Boolean(session.pendingAction && session.pendingAction !== expectedAction)}
         onClick={() => void session.sendPending()}
         type="button"
       >
@@ -156,13 +189,6 @@ export function CajeroOperationalView({
     }
   }, [loadGroups, session.cacheRevision])
 
-  const handleBufferChange = () => {
-    const pending = activeScope
-      ? getCajeroPendingCountForIdentity(activeScope)
-      : 0
-    if (shouldFlushCajeroBufferImmediately(pending)) void session.sendPending()
-  }
-
   const groups = transformGroups(groupsState?.grupos ?? [])
 
   if (!activeScope) {
@@ -217,7 +243,7 @@ export function CajeroOperationalView({
           disabled={!session.canCapture}
           groups={groups}
           key={`${groupsState.conteo_id}:${view}`}
-          onBufferChange={handleBufferChange}
+          onBufferChange={() => undefined}
           scope={activeScope}
           session={session}
           view={view}

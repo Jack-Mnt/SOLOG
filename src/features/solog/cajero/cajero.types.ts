@@ -77,6 +77,8 @@ export interface CajeroCountGroup {
   categoria_id: string
   categoria: string
   precio: number
+  unidades_por_paquete: number | null
+  precio_paquete: number | null
   stock_teorico: number
   categoria_orden?: number
   cubierto_periodo?: boolean
@@ -289,32 +291,14 @@ export interface CajeroBuffer {
   items: CajeroPendingObservation[]
 }
 
-export interface CajeroRecountStartPayload {
-  device_token: string
-  conteo_id: string
+export interface CajeroRecountDraft {
   detalle_id: string
-}
-
-export interface CajeroRecountStartResponse {
-  conteo_id: string
-  detalle_id: string
-  snapshot_reconteo_id: string
-  stock_teorico_reconteo: number
-}
-
-export interface CajeroRecountPayload extends CajeroRecountStartPayload {
+  grupo_id: string
   stock_fisico: number
   contado_at: string
 }
-
-export interface CajeroRecountResponse {
-  conteo_id: string
-  detalle_id: string
-  snapshot_reconteo_id: string
-  stock_teorico_reconteo: number
-  stock_reconteo: number
-  diferencia_reconteo: number
-  diferencia: number
-  estado_diferencia: Exclude<SologDifferenceState, 'Recontar'>
-  recontado_at: string
+export interface CajeroRecountDraftStore {
+  version: 2
+  scope: CajeroBufferScope
+  items: CajeroRecountDraft[]
 }

@@ -2,16 +2,15 @@ import { AlertCircle, CalendarCheck2, LoaderCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { CajeroCaptureModal } from './cajero.captura.dialog'
-import { CajeroPreSessionList } from './cajero.pre-session'
 import {
   CajeroSelectionGrid,
   CajeroSendBar,
+  CajeroStartEmptyState,
   type CajeroSelectionGridItem,
 } from './cajero.operativo'
 import type { CajeroSessionController } from './cajero.session'
 import {
-  getCajeroPendingCountForIdentity,
-  shouldFlushCajeroBufferImmediately,
+  readCajeroBuffer,
 } from './cajero.storage'
 import type { CajeroGroupsResponse } from './cajero.types'
 import {
@@ -69,41 +68,36 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
     }
   }, [loadGroups, session.cacheRevision])
 
-  const handleObservationSaved = () => {
-    const pending = activeScope
-      ? getCajeroPendingCountForIdentity(activeScope)
-      : 0
-    if (shouldFlushCajeroBufferImmediately(pending)) {
-      void session.sendPending()
-    }
-  }
-
   if (!activeScope) {
     return (
       <section className="cajero-module" aria-labelledby="cajero-conteo-diario-title">
         <div className="cajero-module__heading">
           <div><h1 id="cajero-conteo-diario-title">Conteo diario</h1></div>
         </div>
-        <div className="cajero-empty-state" role="status">
-          <CalendarCheck2 aria-hidden="true" size={28} />
-          <div>
-            <strong>Inicia una sesión desde Inicio.</strong>
-            <p>Necesitas una referencia TumiSoft vigente para capturar.</p>
-          </div>
-        </div>
-        <CajeroPreSessionList />
+        <CajeroStartEmptyState
+          buttonLabel="Iniciar conteo"
+          detail="Inicia un conteo para cargar la referencia TumiSoft y comenzar a registrar productos."
+          session={session}
+          title="No hay un conteo activo"
+        />
       </section>
     )
   }
 
   const groups = groupsState?.grupos ?? []
+  const countedIds = new Set(readCajeroBuffer(activeScope).items.map((item) => item.grupo_id))
   const categories = deriveCajeroCategories(groups)
-  const categoryItems: CajeroSelectionGridItem[] = categories.map((category) => ({
-    id: category.id,
-    name: category.nombre,
-    count: category.count,
-    icon: getCajeroCategoryIcon(category.nombre),
-  }))
+  const categoryItems: CajeroSelectionGridItem[] = categories.map((category) => {
+    const categoryGroups = filterCajeroByCategory(groups, category.id)
+    return {
+      id: category.id,
+      name: category.nombre,
+      count: category.count,
+      completed: categoryGroups.filter((group) => countedIds.has(group.grupo_id)).length,
+      total: categoryGroups.length,
+      icon: getCajeroCategoryIcon(category.nombre),
+    }
+  })
   const openCategory = categories.find(
     (category) => category.id === openCategoryId && category.count > 0,
   )
@@ -170,7 +164,7 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
           key={openCategory.id}
           onClose={() => setOpenCategoryId(null)}
           onNextCategory={nextCategory ? () => setOpenCategoryId(nextCategory.id) : undefined}
-          onObservationSaved={handleObservationSaved}
+          onObservationSaved={() => undefined}
           scope={activeScope}
           session={session}
           view="conteo_diario"

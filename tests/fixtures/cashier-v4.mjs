@@ -19,7 +19,9 @@ export function cashierFixture() {
       source: 'pre_session', frozen: false, session: null,
       basis: { snapshot_referencia_id: 'snapshot-1', version_catalogo: 5, groups_revision: 7, periodo_desde: '2026-09-01', periodo_hasta: '2026-09-16' },
       groups: [group('group-1', false, false), group('group-2', true, true)],
-      count_queue: ['group-1'], review_queue: [{ grupo_id: 'group-2', detalle_id: 'detail-origin' }],
+      count_queue: ['group-1'], review_queue: [{
+        grupo_id: 'group-2', detalle_id: 'detail-origin', ultima_diferencia: -2, contado_at: stamp,
+      }],
       kpis: { groups_total: 2, coverage_counted: 1, coverage_percent: 50, count_pending: 1, review_pending: 1 },
     },
   }
@@ -32,4 +34,3 @@ export function startedFixture(b = cashierFixture()) {
     session: { ...basis, id: 'session-1', sede_id: b.site.id, usuario_id: b.identity.id, estado: 'activo', iniciado_at: b.server_now, expira_at: b.start_capability.snapshot_expira_at, finalizado_at: null },
   }
 }
-

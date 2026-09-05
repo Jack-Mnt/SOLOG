@@ -39,7 +39,7 @@ describe('C4 historial V4', () => {
     cache.invalidate(10)
     await cache.load('today', () => now, async () => history())
     await cache.load('yesterday', () => now, async () => ({ ...history('yesterday'), items: [{ detalle_id: 'origin' }] as CashierHistory['items'] }))
-    cache.invalidate(11, undefined, 'origin')
+    cache.invalidate(11, undefined, new Set(['origin']))
     expect(cache.get('yesterday', now)).toBeNull()
     expect(cache.get('today', now)).not.toBeNull()
   })
@@ -129,7 +129,7 @@ describe('C4 tiempo y expiración', () => {
       mutate: async (action) => { calls++; return { contract_version: 2, generated_at: b.server_now, action, replay: false, conteo_id: state.session.id, revisions: b.revisions, state } },
     })
     await store.refresh()
-    await expect(store.mutate('recount_start', { detalle_id: 'origin' })).rejects.toMatchObject({ code: 'SOLOG_SESSION_EXPIRED' })
+    await expect(store.mutate('recount_save_batch', { items: [{ detalle_id: 'origin', stock_fisico: 8, contado_at: b.server_now }] })).rejects.toMatchObject({ code: 'SOLOG_SESSION_EXPIRED' })
     expect(calls).toBe(0)
     await store.mutate('finish')
     expect(calls).toBe(1)

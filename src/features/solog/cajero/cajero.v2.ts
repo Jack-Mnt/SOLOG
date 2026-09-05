@@ -1,4 +1,4 @@
-// Contrato de integración SOLOG V4 (API contract_version = 2).
+// Contrato de integración SOLOG V7 (API contract_version = 2).
 export interface CashierRevisions { groups: number; devices: number; operational: number }
 export interface CashierBasis {
   snapshot_referencia_id: string | null
@@ -49,8 +49,14 @@ export interface CashierState {
   session: CashierSession
   groups: CashierGroup[]
   count_queue: string[]
-  review_queue: { grupo_id: string; detalle_id: string }[]
+  review_queue: CashierReviewQueueItem[]
   kpis: CashierKpis
+}
+export interface CashierReviewQueueItem {
+  grupo_id: string
+  detalle_id: string
+  ultima_diferencia: number
+  contado_at: string
 }
 export type CashierPanel = Omit<CashierState, 'session'> & { basis: CashierBasis } & (
   | { source: 'pre_session'; frozen: false; session: null }
@@ -68,7 +74,29 @@ export interface CashierBootstrap {
   session_state: CashierState | null
   panel_state: CashierPanel
 }
-export type CashierAction = 'start' | 'save_batch' | 'recount_start' | 'recount_save' | 'finish'
+export type CashierAction = 'start' | 'save_batch' | 'recount_save_batch' | 'finish'
+export interface CashierCountSavedItem {
+  client_observation_id: string
+  detalle_id: string
+  grupo_id: string
+  stock_teorico: number
+  stock_fisico: number
+  diferencia: number
+  estado_diferencia: string
+  contado_at: string
+}
+export interface CashierRecountSavedItem {
+  detalle_id: string
+  grupo_id: string
+  snapshot_reconteo_id: string
+  stock_teorico_reconteo: number
+  stock_reconteo: number
+  diferencia_reconteo: number
+  diferencia: number
+  estado_diferencia: 'Coincide' | 'Confirmada' | 'Inconsistente'
+  valor_diferencia: number
+  recontado_at: string
+}
 export interface CashierMutation {
   contract_version: 2
   generated_at: string
@@ -77,14 +105,6 @@ export interface CashierMutation {
   revisions: CashierRevisions
   state?: CashierState
   conteo_id?: string
-  detalle_id?: string
-  snapshot_reconteo_id?: string
-  stock_teorico_reconteo?: number
-  stock_reconteo?: number
-  diferencia_reconteo?: number
-  diferencia?: number
-  estado_diferencia?: 'Coincide' | 'Recontar' | 'Confirmada' | 'Inconsistente'
-  recontado_at?: string
   saved?: number
-  items?: { client_observation_id: string; detalle_id: string; grupo_id: string; stock_teorico: number; stock_fisico: number; diferencia: number; estado_diferencia: string; contado_at: string }[]
+  items?: CashierCountSavedItem[] | CashierRecountSavedItem[]
 }

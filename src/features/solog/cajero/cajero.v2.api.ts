@@ -28,7 +28,12 @@ function validateState(value: unknown, preSession = false) {
     check(typeof group.cobertura_periodo === 'boolean' && typeof group.requiere_conteo === 'boolean' && typeof group.requiere_reconteo === 'boolean')
   }
   check(state.count_queue.every((id) => typeof id === 'string' && ids.has(id)))
-  check(state.review_queue.every((item) => typeof record(item).detalle_id === 'string' && ids.has(String(record(item).grupo_id))))
+  check(state.review_queue.every((item) => {
+    const queueItem = record(item)
+    return typeof queueItem.detalle_id === 'string' && ids.has(String(queueItem.grupo_id)) &&
+      typeof queueItem.ultima_diferencia === 'number' && Number.isFinite(queueItem.ultima_diferencia) &&
+      typeof queueItem.contado_at === 'string' && Number.isFinite(Date.parse(queueItem.contado_at))
+  }))
   for (const name of ['groups_total', 'coverage_counted', 'coverage_percent', 'count_pending', 'review_pending']) {
     const n = record(state.kpis)[name]
     check(typeof n === 'number' && Number.isFinite(n) && n >= 0)
@@ -62,14 +67,20 @@ export function parseCashierBootstrap(value: unknown): CashierBootstrap {
 export function parseCashierMutation(value: unknown, action: CashierAction): CashierMutation {
   const response = validateEnvelope(value)
   check(response.action === action && typeof response.replay === 'boolean')
-  if (action === 'recount_start') {
-    check(typeof response.detalle_id === 'string' && typeof response.snapshot_reconteo_id === 'string' && typeof response.stock_teorico_reconteo === 'number')
-  } else validateState(response.state)
-  if (action === 'save_batch') check(Array.isArray(response.items) && typeof response.saved === 'number')
-  if (action === 'recount_save') {
-    check(typeof response.stock_reconteo === 'number' && typeof response.stock_teorico_reconteo === 'number' &&
-      typeof response.diferencia === 'number' && typeof response.detalle_id === 'string' && typeof response.snapshot_reconteo_id === 'string' &&
-      ['Coincide', 'Confirmada', 'Inconsistente'].includes(String(response.estado_diferencia)))
+  validateState(response.state)
+  if (action === 'save_batch' || action === 'recount_save_batch') {
+    check(Array.isArray(response.items) && Number.isSafeInteger(response.saved) && Number(response.saved) >= 0)
+  }
+  if (action === 'recount_save_batch') {
+    for (const value of response.items as unknown[]) {
+      const item = record(value)
+      check(typeof item.detalle_id === 'string' && typeof item.grupo_id === 'string' && typeof item.snapshot_reconteo_id === 'string')
+      for (const key of ['stock_teorico_reconteo', 'stock_reconteo', 'diferencia_reconteo', 'diferencia', 'valor_diferencia']) {
+        check(typeof item[key] === 'number' && Number.isFinite(item[key]))
+      }
+      check(['Coincide', 'Confirmada', 'Inconsistente'].includes(String(item.estado_diferencia)))
+      check(typeof item.recontado_at === 'string' && Number.isFinite(Date.parse(item.recontado_at)))
+    }
   }
   return value as CashierMutation
 }

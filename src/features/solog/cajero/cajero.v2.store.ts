@@ -16,6 +16,7 @@ export class CashierStore {
   busy = false
   serverOffsetMs = 0
   get hasPendingIntent() { return this.intent !== null }
+  get pendingAction() { return this.intent?.action ?? null }
   private generation = 0
   private listeners = new Set<() => void>()
   private loading: Promise<void> | null = null
@@ -110,9 +111,20 @@ export class CashierStore {
           if (!b.panel_state.count_queue.includes(item.grupo_id)) throw new SologApiError('SOLOG_GROUP_NOT_AVAILABLE')
         }
       }
-      if (action === 'recount_start' || action === 'recount_save') {
-        if (b.panel_state.groups.some((group) => group.contado_detalle_id !== null && group.contado_detalle_id === body.detalle_id)) throw new SologApiError('SOLOG_RECOUNT_SAME_SESSION_FORBIDDEN')
-        if (!b.panel_state.review_queue.some((item) => item.detalle_id === body.detalle_id)) throw new SologApiError('SOLOG_RECOUNT_NOT_PENDING')
+      if (action === 'recount_save_batch') {
+        const items = body.items
+        if (!Array.isArray(items) || items.length === 0 || items.length > 500) throw new SologApiError('SOLOG_INVALID_RECOUNT_BATCH_PAYLOAD')
+        const pending = new Set(b.panel_state.review_queue.map((item) => item.detalle_id))
+        const seen = new Set<string>()
+        for (const item of items) {
+          if (!item || typeof item.detalle_id !== 'string' || seen.has(item.detalle_id) ||
+            !Number.isInteger(item.stock_fisico) || item.stock_fisico < 0 ||
+            typeof item.contado_at !== 'string' || !Number.isFinite(Date.parse(item.contado_at))) {
+            throw new SologApiError('SOLOG_INVALID_RECOUNT_BATCH_ITEM')
+          }
+          if (!pending.has(item.detalle_id)) throw new SologApiError('SOLOG_RECOUNT_NOT_PENDING')
+          seen.add(item.detalle_id)
+        }
       }
       this.intent = { action, content, payload: { ...body, operation_id: crypto.randomUUID(), device_token: this.deviceToken,
         ...(session ? { conteo_id: session.id, expected_groups_revision: session.groups_revision } : {}) } }
@@ -125,7 +137,6 @@ export class CashierStore {
       if (generation !== this.generation) throw new Error('La sesión de usuario cambió durante la operación.')
       const state = response.state
       if (action !== 'start' && response.conteo_id !== b.panel_state.session?.id) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
-      if ((action === 'recount_start' || action === 'recount_save') && response.detalle_id !== intent.payload.detalle_id) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
       if (state && response.revisions.groups !== state.session.groups_revision) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
       if (state && (state.session.usuario_id !== this.userId || state.session.sede_id !== b.site.id ||
         (action !== 'start' && state.session.id !== b.panel_state.session?.id))) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
@@ -141,8 +152,12 @@ export class CashierStore {
       if (action === 'save_batch') {
         const items = intent.payload.items as Array<{ contado_at: string }>
         this.history.invalidate(response.revisions.operational, new Set(items.map((item) => cashierHistoryDate(Date.parse(item.contado_at)))))
-      } else if (action === 'recount_save' || action === 'recount_start') {
-        this.history.invalidate(response.revisions.operational, undefined, String(intent.payload.detalle_id))
+      } else if (action === 'recount_save_batch') {
+        const detailIds = new Set((intent.payload.items as Array<{ detalle_id: string }>).map((item) => item.detalle_id))
+        const dates = new Set(b.panel_state.review_queue
+          .filter((item) => detailIds.has(item.detalle_id))
+          .map((item) => cashierHistoryDate(Date.parse(item.contado_at))))
+        this.history.invalidate(response.revisions.operational, dates, detailIds)
       } else this.history.invalidate(response.revisions.operational, new Set())
       this.intent = null
       return response

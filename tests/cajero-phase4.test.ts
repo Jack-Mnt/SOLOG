@@ -46,6 +46,8 @@ function group(
     categoria_id: 'category-1',
     categoria: 'Bebidas',
     precio: 4,
+    unidades_por_paquete: null,
+    precio_paquete: null,
     stock_teorico: 10,
     productos: [],
     detalle_origen_id: '4f3e43cc-2e6d-4cc5-bf9b-50bb58610417',
@@ -119,18 +121,19 @@ describe('Revisar Motor V3', () => {
     expect(source).not.toContain('Motivo</')
   })
 
-  test('el modal delega el reconteo al controlador sin usar el batch', async () => {
+  test('el modal guarda drafts locales y no ejecuta reconteos unitarios', async () => {
     const source = await Bun.file(
       'src/features/solog/cajero/cajero.captura.dialog.tsx',
     ).text()
 
     expect(source).toContain("'conteo_diario' | 'revisar'")
     expect(source).toContain('initialGroupId?: string')
-    expect(source).toContain('<dt>Última diferencia</dt>')
-    expect(source).toContain('<dt>Motivo</dt>')
-    expect(source).toContain('beginRecount(detailId)')
-    expect(source).toContain('session.saveRecount(detailId, payload.stock_fisico, payload.contado_at)')
-    expect(source).toContain('result?.diferencia')
+    expect(source).toContain('saveCajeroRecountDraft')
+    expect(source).toContain('Última diferencia:')
+    expect(source).not.toContain('<dt>Motivo</dt>')
+    expect(source).not.toContain('beginRecount')
+    expect(source).not.toContain('saveRecount')
+    expect(source).not.toContain('Iniciando reconteo')
     expect(source).not.toContain('sendPending')
     expect(source).not.toContain('cajero.api')
   })
@@ -175,9 +178,11 @@ describe('Historial V3', () => {
       'src/features/solog/cajero/cajero.historial.tsx',
     ).text()
 
-    expect(source).toContain('<p>Registra la realidad')
+    expect(source).toContain('<p>Consulta tus conteos recientes')
     expect(source).not.toContain('cajero-module__eyebrow')
-    expect(source).not.toContain('Consulta</')
+    expect(source).toContain('Por categorías')
+    expect(source).not.toContain('<dt>Estado</dt>')
+    expect(source).toContain("hour12: true")
     expect(source).toContain('cajero-history-tabs')
     expect(source).toContain('cajero-selection-grid cajero-history-categories')
     expect(source).toContain('getCajeroCategoryIcon')

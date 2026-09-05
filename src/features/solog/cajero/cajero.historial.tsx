@@ -5,7 +5,6 @@ import {
   LoaderCircle,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getSologDifferenceStateClass, getSologDifferenceStateLabel } from '../labels'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import type { CajeroSessionController } from './cajero.session'
 import { cashierHistoryDate } from './cajero.history'
@@ -21,10 +20,10 @@ import {
   getCajeroDifferenceClass,
 } from './cajero.utils'
 
-const timeFormatter = new Intl.DateTimeFormat('es-PE', {
+const timeFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/Lima',
-  hourCycle: 'h23',
-  hour: '2-digit',
+  hour12: true,
+  hour: 'numeric',
   minute: '2-digit',
 })
 
@@ -41,6 +40,7 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
   const [period, setPeriod] = useState<CashierHistoryPeriod>('today')
   const historyDate = cashierHistoryDate(useCajeroServerClock(session.serverOffsetMs), period)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(
     () => new Set(),
   )
@@ -135,7 +135,7 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
       <div className="cajero-module__heading cajero-history__heading">
         <div>
           <h1 id="cajero-historial-title">Historial</h1>
-          <p>Registra la realidad{history ? ` · ${history.date} · America/Lima` : ''}</p>
+          <p>Consulta tus conteos recientes</p>
         </div>
         <div className="cajero-history-tabs" aria-label="Período del historial" role="group">
           {(['today', 'yesterday'] as const).map((option) => (
@@ -166,7 +166,21 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
               <small>{items.length} {items.length === 1 ? 'observación' : 'observaciones'}</small>
             </span>
           </button>
-          {categories.map((category) => {
+          <button
+            aria-expanded={categoriesOpen}
+            className={categoriesOpen ? 'is-active' : undefined}
+            onClick={() => {
+              setCategoriesOpen((current) => {
+                if (current) setSelectedCategoryId(null)
+                return !current
+              })
+            }}
+            type="button"
+          >
+            <Layers3 aria-hidden="true" size={23} />
+            <span><strong>Por categorías</strong><small>{categories.length} categorías</small></span>
+          </button>
+          {categoriesOpen ? categories.map((category) => {
             const Icon = getCajeroCategoryIcon(category.nombre)
             return (
               <button
@@ -183,7 +197,7 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
                 </span>
               </button>
             )
-          })}
+          }) : null}
         </div>
       ) : null}
 
@@ -222,13 +236,16 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
                   </div>
                   {expanded ? (
                     <dl className="cajero-history-list__detail">
-                      <div><dt>Hora</dt><dd>{formatHistoryTime(item.contado_at)}</dd></div>
-                      <div><dt>Estado</dt><dd><span className={`control-state-badge control-state-badge--${getSologDifferenceStateClass(item.estado_diferencia)}`}>{getSologDifferenceStateLabel(item.estado_diferencia)}</span></dd></div>
+                      <div><dt>Hora de conteo</dt><dd>{formatHistoryTime(item.contado_at)}</dd></div>
                       <div><dt>Stock TumiSoft</dt><dd>{item.stock_teorico}</dd></div>
-                      <div><dt>Conteo</dt><dd>{item.stock_fisico}</dd></div>
-                      <div><dt>Stock posterior</dt><dd>{item.stock_posterior ?? '—'}</dd></div>
-                      <div><dt>Reconteo</dt><dd>{item.stock_reconteo ?? '—'}</dd></div>
-                      <div><dt>Hora de reconteo</dt><dd>{item.recontado_at ? formatHistoryTime(item.recontado_at) : '—'}</dd></div>
+                      <div><dt>Conteo</dt><dd className={item.estado_diferencia === 'Inconsistente' ? 'cajero-history-value--discarded' : undefined}>{item.stock_fisico}</dd></div>
+                      {item.estado_diferencia === 'Confirmada' || item.estado_diferencia === 'Inconsistente' ? (
+                        <>
+                          <div><dt>Hora de reconteo</dt><dd>{item.recontado_at ? formatHistoryTime(item.recontado_at) : '—'}</dd></div>
+                          <div><dt>Stock posterior</dt><dd>{item.stock_posterior ?? '—'}</dd></div>
+                          <div><dt>Reconteo</dt><dd className={item.estado_diferencia === 'Inconsistente' ? 'cajero-history-value--discarded' : undefined}>{item.stock_reconteo ?? '—'}</dd></div>
+                        </>
+                      ) : null}
                     </dl>
                   ) : null}
                 </article>

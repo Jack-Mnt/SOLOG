@@ -21,14 +21,15 @@ function deferred<T>() {
   return { promise, resolve, reject }
 }
 
-for (const action of ['start', 'save_batch', 'recount_start', 'recount_save', 'finish'] as CashierAction[]) {
+for (const action of ['start', 'save_batch', 'recount_save_batch', 'finish'] as CashierAction[]) {
   test('G1 Cajero '+action+' conserva intención y estado autoritativo al recuperar replay', async () => {
     const sent: Record<string, unknown>[] = []
     const bootstrap = parseCashierBootstrap(cashierFixture())
     const state = startedFixture()
     if (action !== 'start') { bootstrap.session_state = state; bootstrap.panel_state = panelFromState(state) }
     const result = { contract_version: 2, generated_at: bootstrap.generated_at, replay: true, action,
-      conteo_id: 'session-1', detalle_id: 'detail-origin', revisions: { groups: 7, devices: 2, operational: 11 }, state } as CashierMutation
+      conteo_id: 'session-1', revisions: { groups: 7, devices: 2, operational: 11 }, state } as CashierMutation
+    if (action === 'save_batch' || action === 'recount_save_batch') { result.saved = 1; result.items = [] }
     const store = new CashierStore('user-1', 'token', () => {}, {
       bootstrap: async () => bootstrap,
       mutate: async (_a, p) => { sent.push(p); if (sent.length === 1) throw new Error('timeout'); return result },
@@ -36,7 +37,7 @@ for (const action of ['start', 'save_batch', 'recount_start', 'recount_save', 'f
     await store.refresh()
     const body = action === 'save_batch'
       ? { items: [{ grupo_id: 'group-1', stock_fisico: 10, contado_at: bootstrap.generated_at }] }
-      : action.startsWith('recount') ? { detalle_id: 'detail-origin', ...(action === 'recount_save' ? { stock_fisico: 10 } : {}) } : {}
+      : action === 'recount_save_batch' ? { items: [{ detalle_id: 'detail-origin', stock_fisico: 10, contado_at: bootstrap.generated_at }] } : {}
     await expect(store.mutate(action, body)).rejects.toThrow('timeout')
     const clock = store.serverOffsetMs
     expect((await store.retryPending())?.replay).toBe(true)

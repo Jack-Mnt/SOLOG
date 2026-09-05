@@ -59,12 +59,12 @@ export class CashierHistoryCache {
   private generation = 0
   private revision = 0
   clear() { this.entries.clear(); this.requests.clear(); this.revision = 0; this.generation++ }
-  invalidate(revision: number, dates?: Set<string>, detailId?: string) {
+  invalidate(revision: number, dates?: Set<string>, detailIds?: ReadonlySet<string>) {
     this.revision = Math.max(this.revision, revision)
     this.requests.clear()
     this.generation++
     for (const [period, response] of this.entries) {
-      if ((!dates && !detailId) || dates?.has(response.date) || response.items.some((item) => item.detalle_id === detailId)) this.entries.delete(period)
+      if ((!dates && !detailIds) || dates?.has(response.date) || response.items.some((item) => detailIds?.has(item.detalle_id))) this.entries.delete(period)
     }
   }
   get(period: CashierHistoryPeriod, now: number) {

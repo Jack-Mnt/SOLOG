@@ -6689,6 +6689,10 @@ h1 {
   margin: 0.3rem 0 0;
 }
 
+.cajero-start-empty-state .button {
+  margin-top: 0.9rem;
+}
+
 .cajero-session-card {
   display: flex;
   align-items: center;
@@ -9122,4 +9126,23 @@ h1 {
 
 .cajero-history-categories {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.cajero-stock-card__actions,
+.cajero-review__actions {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+.cajero-capture-detail__card h3 small {
+  display: block;
+  margin-top: .35rem;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.cajero-history-value--discarded {
+  color: var(--danger, #b42318);
+  text-decoration: line-through;
 }

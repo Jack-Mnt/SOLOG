@@ -3,15 +3,15 @@ import { getSologErrorMessageFromUnknown, SologApiError } from '../errors'
 import type { SologOperationalBootstrap } from '../types'
 import type { CashierHistoryPeriod } from './cajero.history'
 import { useCashier } from './cajero.v2.context'
+import { CashierDraftCoordinator } from './cajero.flush'
 import {
-  buildNextCajeroBatch, clearCajeroMemory, getCajeroBufferRevision,
-  readCajeroBuffersForIdentity, removeCajeroObservation, removeCajeroExpressionDrafts,
+  clearCajeroMemory, getCajeroBufferRevision,
+  readCajeroBuffer, readCajeroRecountDrafts,
   subscribeCajeroBufferChanges,
 } from './cajero.storage'
 import type {
   CajeroBufferScope, CajeroGroupsCacheEntry, CajeroGroupsResponse, CajeroStatusResponse,
   CajeroCachedView,
-  CajeroRecountStartResponse, CajeroRecountResponse,
 } from './cajero.types'
 export const CAJERO_INACTIVITY_MS = 20 * 60 * 1000
 
@@ -79,6 +79,8 @@ export function isCajeroInactive(lastActivity: number, now: number): boolean {
 
 export function useCajeroSession(onLogout: () => Promise<void>) {
   const store = useCashier()
+  const draftCoordinator = useMemo(() => new CashierDraftCoordinator(store), [store])
+  const orchestrating = useSyncExternalStore(draftCoordinator.subscribe, draftCoordinator.getSnapshot, () => false)
   const bootstrap = store.bootstrap!
   const panel = bootstrap.panel_state
   const currentSession = panel.session
@@ -93,25 +95,22 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
     dispositivo_id: bootstrap.device.id, conteo_id: currentSession.id,
     groups_revision: currentSession.groups_revision,
   } : null, [bootstrap.identity.id, bootstrap.site.id, bootstrap.device.id, currentSession])
-  const pendingCount = activeScope ? readCajeroBuffersForIdentity(activeScope).reduce((sum, b) => sum + b.items.length, 0) : 0
-  const recounts = useRef(new Map<string, Promise<CajeroRecountStartResponse>>())
+  const normalPendingCount = activeScope ? readCajeroBuffer(activeScope).items.length : 0
+  const recountPendingCount = activeScope ? readCajeroRecountDrafts(activeScope).items.length : 0
+  const pendingCount = normalPendingCount + recountPendingCount
   const blockReason: CajeroBlockReason | null = expired ? 'expired' : inactive ? 'inactive' : null
-  const canCapture = Boolean(activeScope && currentSession?.estado === 'activo' && bootstrap.device.autorizado && !expired && !inactive && !store.busy && !store.hasPendingIntent)
+  const canCapture = Boolean(activeScope && currentSession?.estado === 'activo' && bootstrap.device.autorizado && !expired && !inactive && !orchestrating && !store.busy && !store.hasPendingIntent)
   useEffect(() => {
     clearCajeroMemory()
-    recounts.current.clear()
     lastActivity.current = Date.now()
     queueMicrotask(() => setInactive(false))
   }, [bootstrap.identity.id, bootstrap.site.id, bootstrap.device.id, currentSession?.id])
-  useEffect(() => {
-    recounts.current.clear()
-  }, [bootstrap.revisions.operational, bootstrap.revisions.devices, panel.basis.groups_revision])
   useEffect(() => {
     let cleared = false
     const check = () => {
       const isExpired = Boolean(currentSession && (currentSession.estado === 'expirado' || Date.now() + serverOffsetMs >= Date.parse(currentSession.expira_at)))
       // Una intención enviada cuyo resultado es incierto conserva su payload para replay.
-      if (isExpired && !cleared) { clearCajeroMemory(); recounts.current.clear(); cleared = true }
+      if (isExpired && !cleared) { clearCajeroMemory(); cleared = true }
       setExpired(isExpired)
     }
     queueMicrotask(check)
@@ -127,11 +126,11 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const captureTimestamp = useCallback(() => {
     const b = store.bootstrap
     const s = b?.panel_state.session
-    if (!s || s.estado !== 'activo' || !b?.device.autorizado || inactive || store.busy || store.hasPendingIntent || Date.now() + serverOffsetMs >= Date.parse(s.expira_at)) {
+    if (!s || s.estado !== 'activo' || !b?.device.autorizado || inactive || draftCoordinator.getSnapshot() || store.busy || store.hasPendingIntent || Date.now() + serverOffsetMs >= Date.parse(s.expira_at)) {
       throw new SologApiError('SOLOG_SESSION_EXPIRED')
     }
     return new Date(Date.now() + serverOffsetMs).toISOString()
-  }, [store, serverOffsetMs, inactive])
+  }, [store, serverOffsetMs, inactive, draftCoordinator])
   const handleError = useCallback(async (e: unknown) => {
     setError(getSologErrorMessageFromUnknown(e))
     if (e instanceof SologApiError && ['SOLOG_GROUPS_REVISION_CONFLICT', 'SOLOG_SESSION_REVISION_CONFLICT', 'SOLOG_SESSION_CONFLICT', 'SOLOG_DEVICE_UNAUTHORIZED'].includes(e.code)) {
@@ -144,47 +143,17 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
     try { await store.mutate('start'); setError(null); return true }
     catch (e) { await handleError(e); return false }
   }, [store, handleError])
-  const sendPending = useCallback(async () => {
-    if (!activeScope) return false
+  const executeDraftCommand = useCallback(async (command: Parameters<CashierDraftCoordinator['run']>[0]) => {
     try {
-      if (store.hasPendingIntent) {
-        const response = await store.retryPending()
-        for (const item of response?.items ?? []) {
-          removeCajeroObservation(activeScope, item.grupo_id)
-          removeCajeroExpressionDrafts(activeScope, [item.grupo_id])
-        }
-      }
-      let batch = buildNextCajeroBatch(activeScope, store.deviceToken)
-      while (batch) {
-        const response = await store.mutate('save_batch', { items: batch.items })
-        for (const item of response.items ?? []) {
-          removeCajeroObservation(activeScope, item.grupo_id)
-          removeCajeroExpressionDrafts(activeScope, [item.grupo_id])
-        }
-        batch = buildNextCajeroBatch(activeScope, store.deviceToken)
-      }
+      await draftCoordinator.run(command)
       setError(null)
       return true
     } catch (e) { await handleError(e); return false }
-  }, [activeScope, store, handleError])
-  const finishSession = useCallback(async () => {
-    try {
-      const session = store.bootstrap?.panel_state.session
-      const isExpired = session && Date.now() + store.serverOffsetMs >= Date.parse(session.expira_at)
-      if (isExpired && !store.hasPendingIntent) clearCajeroMemory()
-      if (store.hasPendingIntent) {
-        const result = await store.retryPending()
-        if (activeScope) for (const item of result?.items ?? []) removeCajeroObservation(activeScope, item.grupo_id)
-      }
-      if (pendingCount && !isExpired && !(await sendPending())) return false
-      if (store.bootstrap?.panel_state.session) {
-        await store.mutate('finish')
-        await store.refresh()
-      }
-      setError(null)
-      return true
-    } catch (e) { await handleError(e); return false }
-  }, [pendingCount, sendPending, store, handleError, activeScope])
+  }, [draftCoordinator, handleError])
+  const retryPending = useCallback(() => executeDraftCommand('retry'), [executeDraftCommand])
+  const sendPending = useCallback(() => executeDraftCommand('normal'), [executeDraftCommand])
+  const flushPendingDrafts = useCallback(() => executeDraftCommand('global'), [executeDraftCommand])
+  const finishSession = useCallback(() => executeDraftCommand('finish'), [executeDraftCommand])
   const logoutSafely = useCallback(async () => {
     if (!(await finishSession())) return false
     store.dispose()
@@ -211,35 +180,23 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
       window.removeEventListener('keydown', register)
     }
   }, [currentSession, finishSession])
-  const beginRecount = useCallback(async (detalleId: string): Promise<CajeroRecountStartResponse> => {
-    const key = store.scope + ':' + detalleId
-    let request = recounts.current.get(key)
-    if (!request) {
-      request = store.mutate('recount_start', { detalle_id: detalleId }).then((r) => r as CajeroRecountStartResponse)
-      recounts.current.set(key, request)
-    }
-    try { return await request }
-    catch (e) { recounts.current.delete(key); await handleError(e); throw e }
-  }, [store, handleError])
-  const saveRecount = useCallback(async (detalleId: string, physical: number, timestamp: string): Promise<CajeroRecountResponse> => {
-    try {
-      const r = await store.mutate('recount_save', { detalle_id: detalleId, stock_fisico: physical, contado_at: timestamp })
-      return r as CajeroRecountResponse
-    } catch (e) { await handleError(e); throw e }
-  }, [store, handleError])
   const views = useMemo(() => {
     const lookup = new Map(panel.groups.map((g) => [g.grupo_id, g]))
     const result = {} as Record<CajeroCachedView, CajeroGroupsResponse>
     for (const view of ['conteo', 'conteo_diario', 'revisar'] as const) {
-      const ids = view === 'revisar' ? panel.review_queue.map((r) => r.grupo_id) : panel.count_queue
+      const queue: Array<{ grupo_id: string; detalle_id?: string; ultima_diferencia?: number; contado_at?: string }> =
+        view === 'revisar' ? panel.review_queue : panel.count_queue.map((grupo_id) => ({ grupo_id }))
       result[view] = {
         conteo_id: panel.session?.id ?? null, vista: view,
         snapshot_actual_id: panel.basis.snapshot_referencia_id,
         snapshot_actual_at: panel.basis.snapshot_referencia_id === bootstrap.start_capability.snapshot_id ? bootstrap.start_capability.snapshot_at : null,
         server_now: bootstrap.server_now,
-        grupos: ids.map((id) => {
-          const g = lookup.get(id)!
+        grupos: queue.map((item) => {
+          const g = lookup.get(item.grupo_id)!
+          const reviewItem = typeof item.detalle_id === 'string' ? item : null
           return { ...g, cubierto_periodo: g.cobertura_periodo, detalle_origen_id: g.detalle_reconteo_id,
+            ...(reviewItem ? { detalle_origen_id: reviewItem.detalle_id, ultima_diferencia: reviewItem.ultima_diferencia!,
+              contado_at_original: reviewItem.contado_at! } : {}),
             productos: g.productos.map((p) => ({ ...p, marca: p.marca ?? '' })) }
         }),
       }
@@ -251,11 +208,13 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const getCachedHistory = useCallback((period: CashierHistoryPeriod) => store.history.get(period, Date.now() + store.serverOffsetMs), [store])
   const loadHistory = useCallback((period: CashierHistoryPeriod) => store.history.load(period, () => Date.now() + store.serverOffsetMs), [store])
   return {
-    activeScope, blockReason, canCapture, error, pendingCount, pendingIntent: store.hasPendingIntent, sending: store.busy, starting: store.busy,
-    startSession, sendPending, retrySend: sendPending, logoutSafely, finishSession, serverOffsetMs,
+    activeScope, blockReason, canCapture, error, pendingCount, normalPendingCount, recountPendingCount,
+    pendingIntent: store.hasPendingIntent, pendingAction: store.pendingAction, sending: store.busy || orchestrating, starting: store.busy || orchestrating,
+    startSession, sendPending, flushPendingDrafts, retrySend: retryPending, logoutSafely, finishSession, serverOffsetMs,
     periodComplete: panel.kpis.coverage_percent === 100,
-    dailyPending: panel.kpis.count_pending, reviewPending: panel.kpis.review_pending, cacheRevision: store.revision,
-    captureTimestamp, beginRecount, saveRecount, getCachedOperationalGroups, loadOperationalGroups,
+    dailyPending: Math.max(0, panel.kpis.count_pending - normalPendingCount),
+    reviewPending: panel.kpis.review_pending, cacheRevision: store.revision,
+    captureTimestamp, getCachedOperationalGroups, loadOperationalGroups,
     getCachedHistory, loadHistory, clearError: () => setError(null),
     refresh: async () => { try { await store.refresh(); setError(null) } catch (e) { await handleError(e) } },
   }
