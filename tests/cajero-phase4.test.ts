@@ -126,7 +126,7 @@ describe('Revisar Motor V3', () => {
       'src/features/solog/cajero/cajero.captura.dialog.tsx',
     ).text()
 
-    expect(source).toContain("'conteo_diario' | 'revisar'")
+    expect(source).toMatch(/["']conteo_diario["']\s*\|\s*["']revisar["']/)
     expect(source).toContain('initialGroupId?: string')
     expect(source).toContain('saveCajeroRecountDraft')
     expect(source).toContain('Última diferencia:')

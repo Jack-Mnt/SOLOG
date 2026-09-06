@@ -207,6 +207,7 @@ export function CajeroConteo({
                 items={categoryItems}
                 label="Categorías del tipo de stock seleccionado"
                 onSelect={setOpenCategoryId}
+                disabled={!session.canCapture}
               />
             </section>
           ) : null}

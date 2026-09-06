@@ -57,11 +57,13 @@ export function CajeroStartEmptyState({
 
 export function CajeroSelectionGrid({
   items,
+  disabled = false,
   selectedId,
   onSelect,
   label,
 }: {
   items: CajeroSelectionGridItem[]
+  disabled?: boolean
   selectedId?: string | null
   onSelect: (id: string) => void
   label: string
@@ -75,7 +77,7 @@ export function CajeroSelectionGrid({
           <button
             aria-pressed={selected}
             className={selected ? 'is-active' : undefined}
-            disabled={item.count === 0}
+            disabled={disabled || item.count === 0}
             key={item.id}
             onClick={() => onSelect(item.id)}
             type="button"
@@ -112,7 +114,7 @@ export function CajeroSendBar({
     >
       <button
         className="button button--secondary"
-        disabled={pending === 0 || session.sending || Boolean(session.pendingAction && session.pendingAction !== expectedAction)}
+        disabled={!session.canDeliver || pending === 0 || session.sending || Boolean(session.pendingAction && session.pendingAction !== expectedAction)}
         onClick={() => void session.sendPending()}
         type="button"
       >

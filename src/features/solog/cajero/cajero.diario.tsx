@@ -128,6 +128,7 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
             items={categoryItems}
             label="Categorías con conteo diario pendiente"
             onSelect={setOpenCategoryId}
+            disabled={!session.canCapture}
           />
         </section>
       ) : null}

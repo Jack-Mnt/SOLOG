@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { cashierFixture, startedFixture, capabilityFixture } from './fixtures/cashier-v4.mjs'
 import { parseCashierBootstrap, parseCashierMutation, panelFromState } from '../src/features/solog/cajero/cajero.v2.api'
 import { CashierStore } from '../src/features/solog/cajero/cajero.v2.store'
 import {
@@ -104,6 +104,7 @@ describe('DC4 batch, replay y orden', () => {
     state.review_queue.push({ grupo_id: 'group-3', detalle_id: 'detail-2', ultima_diferencia: 1, contado_at: '2026-09-03T20:30:01Z' })
     bootstrap.panel_state = panelFromState(state)
     bootstrap.session_state = state
+    bootstrap.session_capability = capabilityFixture(state, bootstrap.server_now)
     const calls: Array<{ action: string; payload: Record<string, unknown> }> = []
     const store = new CashierStore('user-1', 'token', () => {}, {
       bootstrap: async () => bootstrap,
@@ -125,6 +126,7 @@ describe('DC4 batch, replay y orden', () => {
     const state = startedFixture()
     bootstrap.panel_state = panelFromState(state)
     bootstrap.session_state = state
+    bootstrap.session_capability = capabilityFixture(state, bootstrap.server_now)
     const sent: Record<string, unknown>[] = []
     const store = new CashierStore('user-1', 'token', () => {}, {
       bootstrap: async () => bootstrap,

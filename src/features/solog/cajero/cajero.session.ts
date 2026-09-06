@@ -17,6 +17,7 @@ export const CAJERO_INACTIVITY_MS = 20 * 60 * 1000
 
 export type CajeroBlockReason =
   | 'expired'
+  | 'recovery'
   | 'inactive'
   | 'stock_unavailable'
 
@@ -85,7 +86,7 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const panel = bootstrap.panel_state
   const currentSession = panel.session
   const [error, setError] = useState<string | null>(null)
-  const [expired, setExpired] = useState(false)
+  const [, setClock] = useState(0)
   const [inactive, setInactive] = useState(false)
   const lastActivity = useRef(0)
   useSyncExternalStore(subscribeCajeroBufferChanges, getCajeroBufferRevision, () => 0)
@@ -98,8 +99,11 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const normalPendingCount = activeScope ? readCajeroBuffer(activeScope).items.length : 0
   const recountPendingCount = activeScope ? readCajeroRecountDrafts(activeScope).items.length : 0
   const pendingCount = normalPendingCount + recountPendingCount
-  const blockReason: CajeroBlockReason | null = expired ? 'expired' : inactive ? 'inactive' : null
-  const canCapture = Boolean(activeScope && currentSession?.estado === 'activo' && bootstrap.device.autorizado && !expired && !inactive && !orchestrating && !store.busy && !store.hasPendingIntent)
+  const capability = store.capability
+  const effectiveMode = capability.mode
+  const blockReason: CajeroBlockReason | null = effectiveMode === 'expired' ? 'expired' : effectiveMode === 'recovery' ? 'recovery' : inactive ? 'inactive' : null
+  const canCapture = Boolean(activeScope && capability.captureAllowed && !inactive && !orchestrating && !store.busy && !store.hasPendingIntent)
+  const canDeliver = capability.deliveryAllowed
   useEffect(() => {
     clearCajeroMemory()
     lastActivity.current = Date.now()
@@ -108,10 +112,10 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   useEffect(() => {
     let cleared = false
     const check = () => {
-      const isExpired = Boolean(currentSession && (currentSession.estado === 'expirado' || Date.now() + serverOffsetMs >= Date.parse(currentSession.expira_at)))
-      // Una intención enviada cuyo resultado es incierto conserva su payload para replay.
+      const isExpired = store.capability.mode === 'expired'
+      // El store conserva la intención incierta para conciliación, sin retransmitirla vencida.
       if (isExpired && !cleared) { clearCajeroMemory(); cleared = true }
-      setExpired(isExpired)
+      setClock(Date.now())
     }
     queueMicrotask(check)
     const timer = window.setInterval(check, 1000)
@@ -126,7 +130,7 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const captureTimestamp = useCallback(() => {
     const b = store.bootstrap
     const s = b?.panel_state.session
-    if (!s || s.estado !== 'activo' || !b?.device.autorizado || inactive || draftCoordinator.getSnapshot() || store.busy || store.hasPendingIntent || Date.now() + serverOffsetMs >= Date.parse(s.expira_at)) {
+    if (!s || !store.capability.captureAllowed || inactive || draftCoordinator.getSnapshot() || store.busy || store.hasPendingIntent) {
       throw new SologApiError('SOLOG_SESSION_EXPIRED')
     }
     return new Date(Date.now() + serverOffsetMs).toISOString()
@@ -139,8 +143,11 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   }, [store])
   const startSession = useCallback(async () => {
     const session = store.bootstrap?.panel_state.session
-    if (session?.estado === 'activo' && Date.now() + store.serverOffsetMs < Date.parse(session.expira_at)) return true
-    try { await store.mutate('start'); setError(null); return true }
+    if (session?.estado === 'activo' && !store.needsCapabilityRefresh && store.capability.mode !== 'expired') return store.capability.captureAllowed
+    try {
+      if (store.capability.mode === 'expired' && !store.hasPendingIntent) await store.refresh()
+      await store.startAndRefresh(); setError(null); return true
+    }
     catch (e) { await handleError(e); return false }
   }, [store, handleError])
   const executeDraftCommand = useCallback(async (command: Parameters<CashierDraftCoordinator['run']>[0]) => {
@@ -155,7 +162,8 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const flushPendingDrafts = useCallback(() => executeDraftCommand('global'), [executeDraftCommand])
   const finishSession = useCallback(() => executeDraftCommand('finish'), [executeDraftCommand])
   const logoutSafely = useCallback(async () => {
-    if (!(await finishSession())) return false
+    if (store.capability.mode !== 'expired' && !(await finishSession())) return false
+    if (store.hasPendingIntent) { setError('Hay una operación de resultado incierto pendiente de conciliación.'); return false }
     store.dispose()
     await onLogout()
     return true
@@ -167,10 +175,9 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
       clearTimeout(timer)
       timer = setTimeout(() => {
         setInactive(true)
-        void finishSession()
       }, Math.max(0, CAJERO_INACTIVITY_MS - (Date.now() - lastActivity.current)))
     }
-    const register = () => { lastActivity.current = Date.now(); schedule() }
+    const register = () => { lastActivity.current = Date.now(); setInactive(false); schedule() }
     schedule()
     window.addEventListener('pointerdown', register, { passive: true })
     window.addEventListener('keydown', register)
@@ -179,7 +186,7 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
       window.removeEventListener('pointerdown', register)
       window.removeEventListener('keydown', register)
     }
-  }, [currentSession, finishSession])
+  }, [currentSession])
   const views = useMemo(() => {
     const lookup = new Map(panel.groups.map((g) => [g.grupo_id, g]))
     const result = {} as Record<CajeroCachedView, CajeroGroupsResponse>
@@ -208,7 +215,10 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const getCachedHistory = useCallback((period: CashierHistoryPeriod) => store.history.get(period, Date.now() + store.serverOffsetMs), [store])
   const loadHistory = useCallback((period: CashierHistoryPeriod) => store.history.load(period, () => Date.now() + store.serverOffsetMs), [store])
   return {
-    activeScope, blockReason, canCapture, error, pendingCount, normalPendingCount, recountPendingCount,
+    activeScope, blockReason, canCapture, canDeliver, effectiveMode, inactive,
+    needsCapabilityRefresh: store.needsCapabilityRefresh,
+    recoveryUntil: currentSession?.recovery_until ?? null,
+    error, pendingCount, normalPendingCount, recountPendingCount,
     pendingIntent: store.hasPendingIntent, pendingAction: store.pendingAction, sending: store.busy || orchestrating, starting: store.busy || orchestrating,
     startSession, sendPending, flushPendingDrafts, retrySend: retryPending, logoutSafely, finishSession, serverOffsetMs,
     periodComplete: panel.kpis.coverage_percent === 100,

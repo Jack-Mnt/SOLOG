@@ -89,6 +89,7 @@ export class CashierDraftCoordinator {
     }
     if (pendingAction) {
       const response = await this.store.retryPending()
+      if (response?.action === 'start') await this.store.refresh()
       if (scope && response && response.action !== 'finish') this.confirm(scope, response)
     }
     if (command === 'retry') return

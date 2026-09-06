@@ -15,6 +15,7 @@ export function cashierFixture() {
     revisions: { groups: 7, devices: 2, operational: 10 },
     start_capability: { allowed: true, reason: null, snapshot_id: 'snapshot-1', snapshot_at: stamp, confirmado_at: stamp, version_catalogo: 5, snapshot_expira_at: '2026-09-03T22:30:00.000Z' },
     session_state: null,
+    session_capability: { mode: 'none', capture_allowed: false, pending_delivery_allowed: false, recovery_until: null },
     panel_state: {
       source: 'pre_session', frozen: false, session: null,
       basis: { snapshot_referencia_id: 'snapshot-1', version_catalogo: 5, groups_revision: 7, periodo_desde: '2026-09-01', periodo_hasta: '2026-09-16' },
@@ -31,6 +32,13 @@ export function startedFixture(b = cashierFixture()) {
   void source; void frozen
   return {
     ...state,
-    session: { ...basis, id: 'session-1', sede_id: b.site.id, usuario_id: b.identity.id, estado: 'activo', iniciado_at: b.server_now, expira_at: b.start_capability.snapshot_expira_at, finalizado_at: null },
+    session: { ...basis, id: 'session-1', sede_id: b.site.id, usuario_id: b.identity.id, estado: 'activo', iniciado_at: b.server_now, expira_at: b.start_capability.snapshot_expira_at,
+      recovery_until: new Date(Date.parse(b.start_capability.snapshot_expira_at) + 7200000).toISOString(), finalizado_at: null },
   }
+}
+
+export function capabilityFixture(state, now) {
+  if (!state || state.session.estado !== 'activo') return { mode: 'none', capture_allowed: false, pending_delivery_allowed: false, recovery_until: null }
+  const active = Date.parse(now) < Date.parse(state.session.expira_at)
+  return { mode: active ? 'active' : 'recovery', capture_allowed: active, pending_delivery_allowed: true, recovery_until: state.session.recovery_until }
 }

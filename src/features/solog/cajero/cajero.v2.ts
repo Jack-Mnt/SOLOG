@@ -1,4 +1,4 @@
-// Contrato de integración SOLOG V7 (API contract_version = 2).
+// Contrato de integración SOLOG V8 (API contract_version = 2).
 export interface CashierRevisions { groups: number; devices: number; operational: number }
 export interface CashierBasis {
   snapshot_referencia_id: string | null
@@ -14,6 +14,7 @@ export interface CashierSession extends CashierBasis {
   estado: 'activo' | 'finalizado' | 'expirado'
   iniciado_at: string
   expira_at: string
+  recovery_until: string
   finalizado_at: string | null
 }
 export interface CashierGroup {
@@ -72,6 +73,12 @@ export interface CashierBootstrap {
   revisions: CashierRevisions
   start_capability: { allowed: boolean; reason: string | null; snapshot_id: string | null; snapshot_at: string | null; confirmado_at: string | null; version_catalogo: number | null; snapshot_expira_at: string | null }
   session_state: CashierState | null
+  session_capability: {
+    mode: 'none' | 'active' | 'recovery'
+    capture_allowed: boolean
+    pending_delivery_allowed: boolean
+    recovery_until: string | null
+  }
   panel_state: CashierPanel
 }
 export type CashierAction = 'start' | 'save_batch' | 'recount_save_batch' | 'finish'

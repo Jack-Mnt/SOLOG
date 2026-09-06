@@ -23,7 +23,7 @@ export async function verifyReviewCapture(page, calls) {
   const products = button('Productos incluidos')
   assert.equal(await products.getAttribute('aria-expanded'), 'false')
   await products.click()
-  assert.deepEqual(await dialog.locator('.cajero-capture-products li').allTextContents(), ['Lemonade#20534', 'Cherry#20535'])
+  assert.deepEqual(await dialog.locator('.cajero-capture-products li').allTextContents(), ['Lemonade - #20534', 'Cherry - #20535'])
   assert.equal(await dialog.getByText('Marca oculta').count(), 0)
   await button('Siguiente').click()
   await button('Anterior').click()

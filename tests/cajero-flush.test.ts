@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { cashierFixture, startedFixture, capabilityFixture } from './fixtures/cashier-v4.mjs'
 import { CashierStore } from '../src/features/solog/cajero/cajero.v2.store'
 import { CashierDraftCoordinator } from '../src/features/solog/cajero/cajero.flush'
 import { panelFromState, parseCashierBootstrap } from '../src/features/solog/cajero/cajero.v2.api'
@@ -22,6 +22,7 @@ async function setup(normal = true, recount = true, failure?: { action: CashierA
   let pause: (() => Promise<void>) | undefined
   const store = new CashierStore('user-1', 'token', () => {}, {
     bootstrap: async () => ({ ...b, revisions: { ...b.revisions, operational: revision },
+      session_capability: capabilityFixture(state, b.server_now),
       panel_state: state.session.estado === 'finalizado' ? b.panel_state : panelFromState(state) }),
     mutate: async (action, payload) => {
       calls.push({ action, payload: structuredClone(payload) })

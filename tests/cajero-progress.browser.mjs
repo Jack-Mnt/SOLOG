@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
-import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { cashierFixture, startedFixture, capabilityFixture } from './fixtures/cashier-v4.mjs'
 const { chromium } = await import(pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href)
 const server = await createServer({ server: { host: '127.0.0.1', port: 5209, strictPort: true },
   define: { 'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('https://solog-progress.test'),
@@ -44,6 +44,7 @@ await context.route('**/*', async route => {
   if (rpc === 'rpc_solog_route_v2') return reply({ contract_version: 2, generated_at: bootstrap.server_now,
     identity: bootstrap.identity, route: '/cajero' })
   if (rpc === 'rpc_solog_cashier_bootstrap_v2') return reply({ ...bootstrap, session_state: state,
+    session_capability: capabilityFixture(state, bootstrap.server_now),
     panel_state: { ...state, basis: bootstrap.panel_state.basis, source: 'session', frozen: true } })
   assert.equal(rpc, 'rpc_solog_cashier_mutate_v2')
   assert.equal(body.p_action, 'save_batch')
@@ -82,7 +83,7 @@ try {
   const toggle = dialog.getByRole('button', { name: 'Productos incluidos', exact: true })
   assert.equal(await toggle.getAttribute('aria-expanded'), 'false')
   await toggle.click()
-  assert.deepEqual(await dialog.locator('.cajero-capture-products li').allTextContents(), ['Lemonade#20534', 'Cherry#20535'])
+  assert.deepEqual(await dialog.locator('.cajero-capture-products li').allTextContents(), ['Lemonade - #20534', 'Cherry - #20535'])
   assert.equal(await dialog.getByText('Marca oculta').count(), 0)
   await toggle.click()
   assert.equal(await dialog.locator('.cajero-capture-products').count(), 0)

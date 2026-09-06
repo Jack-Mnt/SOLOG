@@ -14,11 +14,16 @@ import {
 } from './cajero.session'
 import type { CajeroRoute } from './cajero.types'
 import { isCajeroRouteAvailable } from './cajero.utils'
+import { formatCajeroClock } from './cajero.stock'
 
 const BLOCK_MESSAGES: Record<CajeroBlockReason, { title: string; detail: string }> = {
   expired: {
     title: 'La sesión de conteo venció.',
-    detail: 'No se admiten nuevas capturas. Los borradores no enviados se descartan; los registros confirmados permanecen guardados. Finaliza el conteo. Si hay un envío de resultado incierto, reinténtalo para confirmar su resultado.',
+    detail: 'Terminó el plazo de recuperación. Los borradores no enviados se descartan; los registros confirmados permanecen guardados. Una operación de resultado incierto se conserva para conciliación, sin volver a enviarla.',
+  },
+  recovery: {
+    title: 'Sesión en recuperación.',
+    detail: 'El tiempo de captura terminó. No puedes registrar nuevos conteos.',
   },
   inactive: {
     title: 'La sesión se bloqueó por inactividad.',
@@ -65,18 +70,26 @@ export function Cajero({
             <AlertTriangle aria-hidden="true" size={22} />
             <div>
               <strong>{blockMessage.title}</strong>
-              <p>{blockMessage.detail}</p>
+              <p>{blockMessage.detail}{session.effectiveMode === 'recovery' && session.recoveryUntil
+                ? ` Envía tus conteos pendientes antes de ${formatCajeroClock(Date.parse(session.recoveryUntil))}.` : ''}</p>
             </div>
             {session.pendingIntent ? (
               <button
                 className="button button--secondary"
-                disabled={session.sending}
+                disabled={session.sending || !session.canDeliver}
                 onClick={() => void session.retrySend()}
                 type="button"
               >
                 <RefreshCw aria-hidden="true" size={18} /> Reintentar envío
               </button>
             ) : null}
+          </div>
+        ) : null}
+        {session.needsCapabilityRefresh || session.effectiveMode === 'expired' ? (
+          <div className="cajero-alert cajero-alert--warning" role="status">
+            <p>{session.needsCapabilityRefresh ? 'El conteo fue iniciado. Falta confirmar su capacidad de captura.' : 'Consulta el estado actual antes de iniciar otro conteo.'}</p>
+            <button className="button button--secondary" type="button" disabled={session.sending}
+              onClick={() => void session.refresh()}>Consultar estado de sesión</button>
           </div>
         ) : null}
         {session.error ? (

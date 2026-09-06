@@ -16,6 +16,8 @@ function validateState(value: unknown, preSession = false) {
     const session = record(state.session)
     check(typeof session.id === 'string' && typeof session.usuario_id === 'string' && typeof session.sede_id === 'string')
     check(Number.isFinite(Date.parse(String(session.expira_at))))
+    check(typeof session.recovery_until === 'string' && Number.isFinite(Date.parse(session.recovery_until)) &&
+      Date.parse(session.recovery_until) > Date.parse(String(session.expira_at)))
   }
   check(Array.isArray(state.groups) && Array.isArray(state.count_queue) && Array.isArray(state.review_queue))
   const ids = new Set<string>()
@@ -57,6 +59,17 @@ export function parseCashierBootstrap(value: unknown): CashierBootstrap {
   const panel = record(response.panel_state)
   check((panel.source === 'pre_session' && panel.frozen === false) || (panel.source === 'session' && panel.frozen === true))
   validateState(panel, panel.source === 'pre_session')
+  const capability = record(response.session_capability)
+  check(['none', 'active', 'recovery'].includes(String(capability.mode)))
+  check(typeof capability.capture_allowed === 'boolean' && typeof capability.pending_delivery_allowed === 'boolean')
+  if (panel.source === 'pre_session') {
+    check(capability.mode === 'none' && capability.capture_allowed === false &&
+      capability.pending_delivery_allowed === false && capability.recovery_until === null)
+  } else {
+    check(capability.recovery_until === record(panel.session).recovery_until)
+    check(capability.mode !== 'none' && capability.pending_delivery_allowed === true &&
+      capability.capture_allowed === (capability.mode === 'active'))
+  }
   check(Number.isSafeInteger(record(panel.basis).groups_revision))
   if (panel.source === 'session') {
     const session = record(panel.session)

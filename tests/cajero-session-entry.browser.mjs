@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
-import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { cashierFixture, startedFixture, capabilityFixture } from './fixtures/cashier-v4.mjs'
 import { canonicalKeys, verifyReviewCapture } from './cajero-capture.browser.mjs'
 
 const { chromium } = await import(pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href)
@@ -152,6 +152,7 @@ async function runScenario({ routeLabel, buttonLabel, pathname, expectedGroups, 
     current = {
       ...bootstrap, revisions: response.revisions,
       session_state: state,
+      session_capability: capabilityFixture(state, bootstrap.server_now),
       panel_state: state.session.estado === 'finalizado' ? bootstrap.panel_state : {
         ...state, basis: bootstrap.panel_state.basis, source: 'session', frozen: true,
       },

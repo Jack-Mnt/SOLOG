@@ -43,6 +43,7 @@ function PendingSendCard({ session }: { session: CajeroSessionController }) {
         <button
           className="button button--secondary"
           disabled={
+            !session.canDeliver ||
             session.sending ||
             (session.pendingCount === 0 &&
               !["save_batch", "recount_save_batch"].includes(
@@ -150,6 +151,7 @@ export function CajeroInicio({
               bootstrap.panel_state.session ? (
                 <button
                   className="button"
+                  disabled={!session.canCapture}
                   onClick={() => navigateTo(operationalRoute)}
                   type="button"
                 >
@@ -170,7 +172,7 @@ export function CajeroInicio({
             {bootstrap.panel_state.session ? (
               <button
                 className="button button--secondary"
-                disabled={session.sending}
+                disabled={session.sending || !session.canDeliver}
                 onClick={() => void session.finishSession()}
                 type="button"
               >

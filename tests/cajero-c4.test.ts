@@ -116,22 +116,27 @@ describe('C4 tiempo y expiración', () => {
     b.start_capability.snapshot_id = 'newer'
     const expiry = Date.parse(state.session.expira_at)
     expect(getCashierStockPresentation(b, expiry - 60000).countdown).toBe('01:00')
-    expect(getCashierStockPresentation(b, expiry).state).toBe('expired')
+    expect(getCashierStockPresentation(b, expiry).label).toBe('Sesión en recuperación')
+    expect(getCashierStockPresentation(b, Date.parse(state.session.recovery_until)).state).toBe('expired')
   })
-  test('bloquea nuevas escrituras vencidas pero permite finish', async () => {
+  test('V8 permite entrega y finish en recuperación, no después de recovery_until', async () => {
     let calls = 0
     const b = parseCashierBootstrap(cashierFixture())
     const state = startedFixture()
     state.session.expira_at = b.server_now
+    b.session_capability = { mode: 'recovery', capture_allowed: false, pending_delivery_allowed: true, recovery_until: state.session.recovery_until }
     b.panel_state = { ...state, basis: b.panel_state.basis, source: 'session', frozen: true }
     const store = new CashierStore('user-1', 'token', () => {}, {
       bootstrap: async () => b,
       mutate: async (action) => { calls++; return { contract_version: 2, generated_at: b.server_now, action, replay: false, conteo_id: state.session.id, revisions: b.revisions, state } },
     })
     await store.refresh()
-    await expect(store.mutate('recount_save_batch', { items: [{ detalle_id: 'origin', stock_fisico: 8, contado_at: b.server_now }] })).rejects.toMatchObject({ code: 'SOLOG_SESSION_EXPIRED' })
-    expect(calls).toBe(0)
-    await store.mutate('finish')
+    await store.mutate('recount_save_batch', { items: [{ detalle_id: 'detail-origin', stock_fisico: 8, contado_at: b.server_now }] })
     expect(calls).toBe(1)
+    await store.mutate('finish')
+    expect(calls).toBe(2)
+    store.serverOffsetMs = Date.parse(state.session.recovery_until) - Date.now()
+    await expect(store.mutate('finish')).rejects.toMatchObject({ code: 'SOLOG_SESSION_EXPIRED' })
+    expect(calls).toBe(2)
   })
 })

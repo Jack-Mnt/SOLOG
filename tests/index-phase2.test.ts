@@ -64,8 +64,9 @@ describe('Index Fase I2: code splitting', () => {
       readSource('vite.config.ts'),
     ])
 
-    expect(detailsExport).toContain("await import('write-excel-file/browser')")
-    expect(adminExport).toContain("await import('write-excel-file/browser')")
+    const { hasDynamicImport } = await import('./source-syntax')
+    expect(hasDynamicImport(detailsExport, 'write-excel-file/browser')).toBe(true)
+    expect(hasDynamicImport(adminExport, 'write-excel-file/browser')).toBe(true)
     expect(vite).not.toContain('manualChunks')
   })
 })

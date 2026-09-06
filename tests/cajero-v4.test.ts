@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { cashierFixture, startedFixture, capabilityFixture } from './fixtures/cashier-v4.mjs'
 import { parseCashierBootstrap, parseCashierMutation } from '../src/features/solog/cajero/cajero.v2.api'
 import { CashierStore } from '../src/features/solog/cajero/cajero.v2.store'
 import { SologApiError } from '../src/features/solog/errors'
@@ -106,17 +106,24 @@ describe('C3 intención y respuesta autoritativa', () => {
   })
   test('batch usa revisión congelada y acepta KPI completos sin incrementos locales', async () => {
     let payload: Record<string, unknown> = {}
+    const b = cashierFixture()
+    const state = startedFixture(b)
     const store = new CashierStore('user-1', 'token', () => {}, {
-      bootstrap: async () => parseCashierBootstrap(cashierFixture()),
+      bootstrap: async () => parseCashierBootstrap(b),
       mutate: async (action, input) => {
         payload = input
-        if (action === 'start') return response()
+        if (action === 'start') {
+          Object.assign(b, { revisions: response().revisions, session_state: state,
+            panel_state: { ...state, basis: b.panel_state.basis, source: 'session', frozen: true },
+            session_capability: capabilityFixture(state, b.server_now) })
+          return response()
+        }
         const r = response('save_batch', 12)
         r.state!.kpis = { groups_total: 2, coverage_counted: 2, coverage_percent: 100, count_pending: 0, review_pending: 1 }
         return r
       },
     })
-    await store.refresh(); await store.mutate('start')
+    await store.refresh(); await store.startAndRefresh()
     await store.mutate('save_batch', { items: [{ grupo_id: 'group-1', stock_fisico: 9, client_observation_id: 'observation-1', contado_at: '2026-09-03T20:31:00Z' }] })
     expect(payload.expected_groups_revision).toBe(7)
     expect(payload.conteo_id).toBe('session-1')

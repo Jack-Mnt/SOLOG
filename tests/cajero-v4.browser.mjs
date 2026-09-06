@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
-import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { cashierFixture, startedFixture, capabilityFixture } from './fixtures/cashier-v4.mjs'
 const { chromium } = await import(pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href)
 const server = await createServer({ server: { host: '127.0.0.1', port: 5206, strictPort: true }, define: {
   'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('https://solog-v4.test'),
@@ -44,6 +44,7 @@ await context.route('**/*', async (route) => {
   if (rpc === 'rpc_solog_route_v2') return fulfill({ contract_version: 2, generated_at: b.server_now, identity: b.identity, route: '/cajero' })
   if (rpc === 'rpc_solog_cashier_bootstrap_v2') {
     return fulfill({ ...b, revisions: { ...b.revisions, operational },
+      session_capability: capabilityFixture(state, b.server_now),
       ...(state?.session.estado === 'activo' ? { session_state: state, panel_state: { ...state, basis: b.panel_state.basis, source: 'session', frozen: true } } : {}) })
   }
   if (rpc === 'rpc_solog_cashier_history_v2') {
@@ -121,7 +122,8 @@ try {
   await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
   assert.equal(calls.filter((c) => c.rpc === 'rpc_solog_cashier_bootstrap_v2').length, 1)
   await page.getByRole('navigation', { name: 'Panel Cajero' }).getByRole('button', { name: 'Conteo', exact: true }).click()
-  await page.getByText('Grupo conteo', { exact: true }).waitFor()
+  assert.equal(await page.getByText('Grupo conteo', { exact: true }).count(), 0)
+  assert.equal(await page.getByRole('dialog').count(), 0)
   await page.getByRole('navigation', { name: 'Panel Cajero' }).getByRole('button', { name: 'Inicio', exact: true }).click()
   await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()
   await page.getByRole('button', { name: /Stock positivo/ }).click()
@@ -172,19 +174,19 @@ try {
   assert.equal(calls.find((c) => c.body?.p_action === 'recount_save_batch').body.p_payload.items.length, 2)
   assert.equal(calls.filter((c) => ['recount_start', 'recount_save'].includes(c.body?.p_action)).length, 0)
   await page.evaluate(() => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')) })
-  assert.equal(calls.filter((c) => c.rpc === 'rpc_solog_cashier_bootstrap_v2').length, 1)
+  assert.equal(calls.filter((c) => c.rpc === 'rpc_solog_cashier_bootstrap_v2').length, 2, 'Bootstrap inicial y post-start; focus no consulta')
   const persisted = await page.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)].filter((key) => /^solog\.cajero\.(buffer|expressions|recount|activity)\./.test(key)))
   assert.deepEqual(persisted, [])
   await page.clock.install({ time: Date.now() })
   await page.clock.setSystemTime(Date.now() + 121 * 60_000)
   const beforeFocus = calls.length
   await page.evaluate(() => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')) })
-  await page.getByText('La sesión de conteo venció.', { exact: true }).waitFor()
+  await page.getByText('Sesión en recuperación.', { exact: true }).waitFor()
   assert.equal(calls.length, beforeFocus, 'Reanudar comprueba expiración local sin RPC')
   await page.getByRole('navigation', { name: 'Panel Cajero' }).getByRole('button', { name: 'Inicio', exact: true }).click()
   await page.getByRole('button', { name: 'Finalizar conteo', exact: true }).click()
   await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
-  assert.equal(calls.filter((c) => c.rpc === 'rpc_solog_cashier_bootstrap_v2').length, 2)
+  assert.equal(calls.filter((c) => c.rpc === 'rpc_solog_cashier_bootstrap_v2').length, 3)
   assert.deepEqual(errors, [])
   console.log('PASS Cajero V7: drafts locales, batch separado, cero reconteos unitarios, replay, orden, historial y cierre simulado')
 } finally { await context.close(); await browser.close(); await server.close() }

@@ -9220,7 +9220,7 @@ h1 {
   font-weight: 600;
 }
 
-.cajero-history-value--discarded {
+.cajero-history-list__detail dd.cajero-history-value--discarded {
   color: var(--danger, #b42318);
   text-decoration: line-through;
 }

@@ -116,6 +116,10 @@ export function getCajeroStockPresentation(
 export function getCashierStockPresentation(bootstrap: CashierBootstrap, now: number): CajeroStockPresentation {
   const panel = bootstrap.panel_state
   const capability = bootstrap.start_capability
+  if (panel.session?.estado === 'activo' && now >= Date.parse(panel.session.expira_at) && now < Date.parse(panel.session.recovery_until)) {
+    return { state: 'near_expiry', label: 'Sesión en recuperación', countdown: null,
+      elapsedMs: null, stockExpiresAtMs: null, sessionExpiresAtMs: Date.parse(panel.session.expira_at) }
+  }
   if (panel.source === 'session' && panel.basis.snapshot_referencia_id !== capability.snapshot_id) {
     const remaining = Date.parse(panel.session.expira_at) - now
     // Helper desplegado: expira a 1:59; banda final desde 1:57.

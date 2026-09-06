@@ -7,7 +7,7 @@ import { AdminStore } from '../src/features/solog/admin/admin.v2.store'
 import type { adminRpc } from '../src/features/solog/admin/admin.v2'
 import { ManagementStore } from '../src/features/solog/admin/admin.management.store'
 import { ManagementError, type managementRead, type managementMutate } from '../src/features/solog/admin/admin.management.v2'
-import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { cashierFixture, startedFixture, capabilityFixture } from './fixtures/cashier-v4.mjs'
 import { panelFromState } from '../src/features/solog/cajero/cajero.v2.api'
 import type { CashierAction, CashierMutation } from '../src/features/solog/cajero/cajero.v2'
 import { SologApiError } from '../src/features/solog/errors'
@@ -27,6 +27,7 @@ for (const action of ['start', 'save_batch', 'recount_save_batch', 'finish'] as 
     const bootstrap = parseCashierBootstrap(cashierFixture())
     const state = startedFixture()
     if (action !== 'start') { bootstrap.session_state = state; bootstrap.panel_state = panelFromState(state) }
+    if (action !== 'start') bootstrap.session_capability = capabilityFixture(state, bootstrap.server_now)
     const result = { contract_version: 2, generated_at: bootstrap.generated_at, replay: true, action,
       conteo_id: 'session-1', revisions: { groups: 7, devices: 2, operational: 11 }, state } as CashierMutation
     if (action === 'save_batch' || action === 'recount_save_batch') { result.saved = 1; result.items = [] }
