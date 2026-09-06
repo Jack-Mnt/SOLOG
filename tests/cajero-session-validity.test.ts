@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 import { readFile } from 'node:fs/promises'
-import { recoverExpiredCajeroContext } from '../src/features/solog/cajero/cajero.recovery'
 import {
   CAJERO_STOCK_COUNTDOWN_START_MS,
   CAJERO_STOCK_NEAR_LIMIT_MS,
@@ -81,67 +80,5 @@ describe('vigencia temporal de stock y sesión', () => {
     )
     expect(source).toContain('setInterval')
     expect(source).not.toMatch(/getSolog|supabase|rpc_solog|fetch\(/)
-  })
-})
-
-describe('recuperación acotada de sesión expirada', () => {
-  test('aceptado al primer intento cierra sin limpiar', async () => {
-    let cleared = 0
-    let closed = 0
-    const result = await recoverExpiredCajeroContext({
-      synchronize: async () => 'complete',
-      clearRemaining: () => { cleared += 1 },
-      closeContext: async () => { closed += 1 },
-      isSupersededError: () => false,
-    })
-    expect(result).toEqual({ attempts: 1, outcome: 'recovered', lastError: null })
-    expect({ cleared, closed }).toEqual({ cleared: 0, closed: 1 })
-  })
-
-  test('resultado parcial reintenta solo una vez y puede completar', async () => {
-    let calls = 0
-    const result = await recoverExpiredCajeroContext({
-      synchronize: async () => (++calls === 1 ? 'remaining' : 'complete'),
-      clearRemaining: () => undefined,
-      closeContext: async () => undefined,
-      isSupersededError: () => false,
-    })
-    expect(result.outcome).toBe('recovered')
-    expect(result.attempts).toBe(2)
-    expect(calls).toBe(2)
-  })
-
-  test('dos fallos limpian el remanente y cierran el contexto', async () => {
-    let calls = 0
-    let cleared = 0
-    let closed = 0
-    const result = await recoverExpiredCajeroContext({
-      synchronize: async () => {
-        calls += 1
-        throw new Error('sin red')
-      },
-      clearRemaining: () => { cleared += 1 },
-      closeContext: async () => { closed += 1 },
-      isSupersededError: () => false,
-    })
-    expect(result.outcome).toBe('discarded')
-    expect({ calls, cleared, closed }).toEqual({ calls: 2, cleared: 1, closed: 1 })
-  })
-
-  test('SUPERSEDED no reintenta, limpia y cierra el contexto anterior', async () => {
-    let calls = 0
-    let cleared = 0
-    const superseded = new Error('SOLOG_EXPIRED_SESSION_SUPERSEDED')
-    const result = await recoverExpiredCajeroContext({
-      synchronize: async () => {
-        calls += 1
-        throw superseded
-      },
-      clearRemaining: () => { cleared += 1 },
-      closeContext: async () => undefined,
-      isSupersededError: (error) => error === superseded,
-    })
-    expect(result.outcome).toBe('superseded')
-    expect({ calls, cleared }).toEqual({ calls: 1, cleared: 1 })
   })
 })

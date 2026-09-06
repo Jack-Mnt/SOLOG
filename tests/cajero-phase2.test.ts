@@ -13,7 +13,6 @@ import type {
   CajeroObservationInput,
 } from '../src/features/solog/cajero/cajero.types'
 import type { SologOperationalBootstrap } from '../src/features/solog/types'
-import { resolveTrustedRoute } from '../src/lib/router'
 
 class MemoryStorage implements Storage {
   private readonly values = new Map<string, string>()
@@ -157,53 +156,5 @@ describe('aislamiento y rutas Cajero V3', () => {
     const buffers = readCajeroBuffersForIdentity(base, storage)
     expect(buffers.map((buffer) => buffer.scope.conteo_id)).toEqual(['count-1', 'count-2'])
     expect(readCajeroBuffersForIdentity({ ...base, sede_id: 'site-2' }, storage)).toHaveLength(0)
-  })
-
-  test('restringe rutas por etapa y reemplaza nombres legacy', () => {
-    const incomplete = bootstrap()
-    const complete = bootstrap({
-      cobertura_periodo: {
-        ...bootstrap().cobertura_periodo,
-        completa: true,
-        grupos_contados: 100,
-        pendientes: 0,
-        porcentaje: 100,
-      },
-    })
-
-    expect(resolveTrustedRoute(incomplete, '/cajero/conteo')).toBe('/cajero/conteo')
-    expect(resolveTrustedRoute(incomplete, '/cajero/historial')).toBe('/cajero')
-    expect(resolveTrustedRoute(incomplete, '/count')).toBe('/cajero/conteo')
-    expect(resolveTrustedRoute(complete, '/cajero/conteo')).toBe('/cajero')
-    expect(resolveTrustedRoute(complete, '/cajero/diario')).toBe('/cajero/diario')
-    expect(resolveTrustedRoute(complete, '/cajero/revisar')).toBe('/cajero/revisar')
-    expect(resolveTrustedRoute(complete, '/cajero/historial')).toBe('/cajero/historial')
-    expect(resolveTrustedRoute(complete, '/cajero/seguimiento')).toBe('/cajero/revisar')
-  })
-
-  test('un dispositivo no autorizado se dirige a detalles', () => {
-    const pending = bootstrap({
-      dispositivo: {
-        id: 'device-1',
-        estado: 'pendiente',
-        sede_correcta: true,
-        autorizado: false,
-        sede_tiene_dispositivo_autorizado: false,
-        solicitud_existente: true,
-        puede_solicitar_acceso: false,
-      },
-    })
-    expect(resolveTrustedRoute(pending, '/cajero')).toBe('/detalles')
-  })
-
-  test('admin y moderador conservan el panel administrativo', () => {
-    const admin = bootstrap({
-      usuario: { id: 'admin-1', nombre: 'Admin', rol: 'admin' },
-    })
-    const moderator = bootstrap({
-      usuario: { id: 'moderator-1', nombre: 'Moderador', rol: 'moderador' },
-    })
-    expect(resolveTrustedRoute(admin, '/login')).toBe('/admin')
-    expect(resolveTrustedRoute(moderator, '/cajero')).toBe('/admin')
   })
 })

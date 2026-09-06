@@ -1,4 +1,4 @@
-import { FunctionsHttpError, type PostgrestError } from '@supabase/supabase-js'
+import type { PostgrestError } from '@supabase/supabase-js'
 
 export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_AUTH_REQUIRED',
@@ -320,24 +320,6 @@ function extractKnownErrorCode(value: string): SologErrorCode | null {
   )
 }
 
-function getStringProperty(value: unknown, property: string): string | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
-  const propertyValue = (value as Record<string, unknown>)[property]
-  return typeof propertyValue === 'string' ? propertyValue : null
-}
-
-async function readFunctionErrorBody(error: unknown): Promise<unknown> {
-  if (!(error instanceof FunctionsHttpError)) return null
-  const context = error.context
-  if (!(context instanceof Response)) return null
-
-  try {
-    return await context.clone().json()
-  } catch {
-    return null
-  }
-}
-
 export class SologApiError extends Error {
   readonly code: SologErrorCode
   readonly backendCode: string | null
@@ -364,21 +346,10 @@ export class SologApiError extends Error {
   }
 }
 
-export function getSologErrorMessage(code: SologErrorCode): string {
-  return ERROR_MESSAGES[code] ?? 'No se pudo completar la operación en SOLOG.'
-}
-
 export function getSologErrorMessageFromUnknown(error: unknown): string {
   if (error instanceof SologApiError) return error.message
   if (error instanceof Error) return error.message
   return 'No se pudo completar la operación en SOLOG.'
-}
-
-export function isSologApiErrorCode(
-  error: unknown,
-  ...codes: SologErrorCode[]
-): error is SologApiError {
-  return error instanceof SologApiError && codes.includes(error.code)
 }
 
 export function normalizeSologError(error: PostgrestError): SologApiError {
@@ -392,25 +363,6 @@ export function normalizeSologError(error: PostgrestError): SologApiError {
     details: error.details,
     hint: error.hint,
     original: error,
-  })
-}
-
-export async function normalizeSologFunctionError(
-  error: unknown,
-): Promise<SologApiError> {
-  const body = await readFunctionErrorBody(error)
-  const bodyCode =
-    getStringProperty(body, 'codigo') ??
-    getStringProperty(body, 'code') ??
-    getStringProperty(body, 'error')
-  const errorMessage = error instanceof Error ? error.message : ''
-  const extractedCode = extractKnownErrorCode(
-    [bodyCode, errorMessage].filter(Boolean).join(' '),
-  )
-
-  return new SologApiError(extractedCode ?? 'SOLOG_FUNCTION_ERROR', {
-    backendCode: bodyCode,
-    details: getStringProperty(body, 'message'),
   })
 }
 

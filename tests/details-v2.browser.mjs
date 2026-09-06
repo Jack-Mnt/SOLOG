@@ -86,7 +86,7 @@ export async function runDetailsV2Browser() {
   page.on('pageerror', (e) => errors.push(e.message))
   try {
     await page.goto('http://127.0.0.1:5207/detalles')
-    await page.getByRole('heading', { name: 'Sin solicitud', exact: true }).waitFor()
+    await page.getByRole('heading', { name: 'Sin autorización', exact: true }).waitFor()
     await page.getByText('15 / 20', { exact: true }).waitFor()
     assert.equal(count('summary'), 1)
     assert.equal(calls.length, 1)
@@ -121,7 +121,14 @@ export async function runDetailsV2Browser() {
     const access = calls.filter((c) => c.p_action === 'request_access')
     assert.equal(access.length, 2); assert.deepEqual(access[0], access[1]); assert.equal(count('summary'), 1)
     for (const period of ['current_biweekly', 'previous_biweekly']) {
-      await page.getByLabel('Período de exportación').selectOption(period)
+      const periodSwitch = page.getByRole('switch', { name: 'Cambiar quincena a exportar', exact: true })
+      const current = period === 'current_biweekly'
+      assert.equal(await periodSwitch.isEnabled(), true)
+      if (await periodSwitch.isChecked() !== current) {
+        await periodSwitch.focus()
+        await periodSwitch.press('Space')
+      }
+      assert.equal(await periodSwitch.isChecked(), current)
       const event = page.waitForEvent('download')
       await page.getByRole('button', { name: 'Descargar Excel', exact: true }).click()
       const download = await event

@@ -91,7 +91,7 @@ try {
   assert.equal(await page.getByText('Cargando panel…', { exact: true }).count(), 0)
   releaseBootstrap()
   await page.waitForURL('**/detalles')
-  await page.getByRole('heading', { name: 'Detalles de la sede' }).waitFor()
+  await page.getByRole('heading', { name: 'Info de la sede' }).waitFor()
   const resources = await page.evaluate(() =>
     performance.getEntriesByType('resource').map((entry) => entry.name),
   )

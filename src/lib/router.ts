@@ -1,7 +1,5 @@
 import { useSyncExternalStore } from 'react'
 import type { CajeroRoute } from '../features/solog/cajero/cajero.types'
-import { isCajeroRouteAvailable } from '../features/solog/cajero/cajero.utils'
-import type { SologOperationalBootstrap } from '../features/solog/types'
 
 export type AdminRoute =
   | '/admin'
@@ -39,43 +37,6 @@ export function isCashierRoute(pathname: string): pathname is CajeroRoute {
 }
 
 const NAVIGATION_EVENT = 'solog:navigation'
-
-export function resolveTrustedRoute(
-  bootstrap: SologOperationalBootstrap,
-  requestedPath: string,
-): AppRoute {
-  if (
-    bootstrap.usuario.rol === 'admin' ||
-    bootstrap.usuario.rol === 'moderador'
-  ) {
-    if (requestedPath === '/admin/conteos') return '/admin'
-    if (
-      requestedPath === '/admin/diferencias' ||
-      requestedPath === '/admin/historial' ||
-      requestedPath === '/admin/ajuste-pos'
-    ) {
-      return '/admin/control'
-    }
-    return isAdminRoute(requestedPath) ? requestedPath : '/admin'
-  }
-
-  const deviceAuthorized =
-    bootstrap.dispositivo.autorizado &&
-    bootstrap.dispositivo.estado === 'autorizado'
-
-  if (!deviceAuthorized) return '/detalles'
-  const periodComplete = bootstrap.cobertura_periodo.completa
-  if (requestedPath === '/count') {
-    return periodComplete ? '/cajero' : '/cajero/conteo'
-  }
-  if (requestedPath === '/cajero/seguimiento') {
-    return periodComplete ? '/cajero/revisar' : '/cajero'
-  }
-  return isCashierRoute(requestedPath) &&
-    isCajeroRouteAvailable(requestedPath, periodComplete)
-    ? requestedPath
-    : '/cajero'
-}
 
 function subscribe(onStoreChange: () => void) {
   window.addEventListener('popstate', onStoreChange)

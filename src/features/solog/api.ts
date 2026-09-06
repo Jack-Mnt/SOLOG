@@ -5,27 +5,14 @@ import {
   createSologEmptyResponseError,
   normalizeSologError,
 } from './errors'
-import type { SologOperationalBootstrap, SologRouteResponse, SologRole } from './types'
+import type { SologRouteResponse, SologRole } from './types'
 
-type SologRpcName =
-  | 'rpc_solog_state'
 type SologPayloadRpcName =
   | 'rpc_solog_route_v2'
 
 function getClient() {
   if (!supabase) throw createSologConfigurationError()
   return supabase
-}
-
-export async function callSologRpc<T>(rpcName: SologRpcName, action: string, payload: object): Promise<T> {
-  const { data, error } = await getClient().rpc(rpcName, {
-    p_action: action,
-    p_payload: payload,
-  })
-
-  if (error) throw normalizeSologError(error)
-  if (data === null) throw createSologEmptyResponseError()
-  return data as T
 }
 
 async function callSologPayloadRpc<T>(
@@ -86,12 +73,4 @@ export function getSologRoute(userId: string): Promise<SologRouteResponse> {
     if (response.identity.id !== userId) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
     return response
   })
-}
-
-export function getSologBootstrap(deviceToken?: string) {
-  return callSologRpc<SologOperationalBootstrap>(
-    'rpc_solog_state',
-    'bootstrap',
-    deviceToken ? { device_token: deviceToken } : {},
-  )
 }
