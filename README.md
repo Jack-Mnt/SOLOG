@@ -15,29 +15,100 @@ bun run dev
 
 Complete `.env.local` con la URL y la clave publicable/anon de `PuertoRicoOnline`. Nunca use una clave `service_role` en esta aplicación web.
 
-## Backend V2
+## Arquitectura actual
 
-El frontend usa Supabase Auth y únicamente `rpc_solog_state`, `rpc_solog_count` y `rpc_solog_admin`, centralizadas en `src/features/solog/api.ts`. No consulta directamente el schema privado `inventario`.
+SOLOG usa Supabase Auth y contratos backend V2 con `contract_version = 2`. El frontend no consulta directamente el schema privado `inventario`.
 
-SOLOG V2 mantiene una sesión general activa por sede. Dentro de ella el cajero navega entre categorías, Stock 0 y, cuando la cobertura quincenal está completa, Cambios recientes, Stock negativo y Contar detalladamente. Las capturas regulares se conservan en `localStorage` bajo `solog.pending-counts.v2` y se transmiten con `save_batch`; los reconteos siguen siendo individuales e identifican la observación original por `detalle_id`.
+Superficies principales vigentes:
 
-La fuente de verdad sobre sesión, snapshot, coberturas, categorías pendientes, autorización y roles siempre es el backend. El temporizador usa `server_now` para compensar el reloj local y representa la vigencia del Excel, no la duración calculada desde el inicio de sesión.
+- `rpc_solog_route_v2`
+- `rpc_solog_cashier_bootstrap_v2`
+- `rpc_solog_cashier_mutate_v2`
+- `rpc_solog_cashier_history_v2`
+- `rpc_solog_details_v2`
+- `rpc_solog_admin_bootstrap_v2`
+- `rpc_solog_operational_v2`
+- `rpc_solog_control_export_v2`
+- `rpc_solog_admin_master_read_v2`
+- `rpc_solog_admin_master_v2`
+- `rpc_solog_admin_incidents_v2`
+- `rpc_solog_admin_devices_v2`
+- publicación de catálogo mediante Edge `conexion-admin` y contratos de publicación vigentes.
 
-Documentación:
+Las antiguas RPC genéricas V1 fueron retiradas durante S10 y ya no forman parte del contrato.
 
-- [Estado actual del backend](./docs/backend-current-state.md)
-- [Contrato técnico Backend V2](./docs/SOLOG_Contrato_Tecnico_Backend_V2.md)
-- [Contrato V1 obsoleto](./docs/SOLOG_Contrato_Tecnico_Backend_V1.md)
-- [Cambios requeridos en Supabase](./docs/supabase-required-changes.md)
-- [Identidad visual SOLOG](./docs/Identidad_visual_SOLOG.md)
+## Cajero
+
+El Cajero utiliza una sesión congelada por sede basada en snapshot, catálogo, grupos, teóricos y precios autoritativos del backend.
+
+Las mutaciones vigentes son:
+
+- `start`
+- `save_batch`
+- `recount_save_batch`
+- `finish`
+
+Los conteos y reconteos pendientes se mantienen en memoria hasta su envío; no se usa persistencia operativa en `localStorage` o `sessionStorage`.
+
+La expiración de captura y la entrega pendiente están separadas. Al llegar a `expira_at` se bloquea nueva captura, pero una sesión puede entrar en Recovery y entregar borradores válidos hasta `recovery_until`. El backend conserva timestamps originales y valida que `contado_at <= expira_at`.
+
+El Motor V3 y los estados finales de diferencia son responsabilidad del backend.
+
+## Detalles
+
+`/detalles` consume `rpc_solog_details_v2` para:
+
+- resumen;
+- historial paginado;
+- detalle bajo demanda;
+- exportación;
+- solicitud de acceso del dispositivo.
+
+## Administración
+
+`/admin` organiza:
+
+- Dashboard
+- Control
+- Incidencias
+- Catálogo
+- Grupos
+- Dispositivos
+
+Admin consume contratos V2 dedicados. Control concentra la trazabilidad y exportación administrativa. SOLOG no modifica directamente el stock del POS.
+
+La publicación de catálogo se realiza mediante `conexion-admin`; el navegador no posee privilegios `service_role`.
+
+## Compatibilidad
+
+Las rutas `/count` y `/cajero/seguimiento` continúan reconocidas como compatibilidad activa. No deben confundirse con código legacy eliminado.
+
+## Documentación vigente
+
+Orden de referencia principal:
+
+1. [Contrato backend V9](./docs/SOLOG_Backend_Contratos_Optimizacion_Global_V9.md)
+2. [Decisiones congeladas de optimización global](./docs/SOLOG_Decisiones_Congeladas_Optimizacion_Global.md)
+3. [Alcance y cierre de limpieza legacy S10](./docs/SOLOG_Arquitectura_Limpieza_Legacy_S10_V1.md)
+4. [Cierre S10](./docs/SOLOG_Refactor_Limpieza_Legacy_S10_Cierre_V1.md)
+
+`SOLOG_Backend_Contratos_Optimizacion_Global_V8.md` y versiones anteriores se conservan como documentación histórica/heredada según la precedencia declarada en V9.
+
+`SOLOG_Plan_Implementacion_Optimizacion_Global.md` se conserva como plan histórico de la migración y optimización ejecutada; no debe utilizarse como descripción del runtime actual cuando contradiga V9 o este README.
 
 ## Validación
 
 ```bash
+bun test
 bun run lint
 bun run build
 ```
 
-El proyecto no define actualmente un script automatizado de tests.
+La validación final de S10-B cerró con:
 
-El área `/admin` organiza Dashboard, Control, Incidencias, Catálogo, Grupos y Dispositivos. Control concentra la trazabilidad y permite exportar el Excel administrativo de ajustes; SOLOG no modifica directamente el POS ni distribuye diferencias entre trabajadores.
+- 269 tests aprobados;
+- 16/16 browser runners aprobados;
+- lint aprobado;
+- typecheck/build aprobados;
+- `git diff --check` aprobado;
+- cero superficies RPC/actions legacy en `src` y chunks de producción.
