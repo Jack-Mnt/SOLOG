@@ -46,7 +46,7 @@
 
   /* Texto */
   --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
+  --color-text-secondary: #475569; /*#475569;*/
   --color-text-muted: #94a3b8;
   --color-text-inverse: #f8fafc;
 
@@ -8817,7 +8817,6 @@ h1 {
 }
 
 @media (max-width: 720px) {
-
   .cajero-send-bar .button {
     align-self: flex-end;
   }

@@ -1,5 +1,5 @@
-import { Check, Palette } from "lucide-react";
-import { useRef, useState } from "react";
+import { Check, Gem, Leaf, Orbit, Palette } from "lucide-react";
+import { useState } from "react";
 import { getStoredPalette, persistPalette, type SologPalette } from "./palette";
 
 const OPTIONS: Array<{ value: SologPalette; label: string }> = [
@@ -14,6 +14,8 @@ const HOME_LABELS: Record<SologPalette, string> = {
   green: "Natura",
 };
 
+const SIDEBAR_ICONS = { blue: Orbit, violet: Gem, green: Leaf };
+
 export function PaletteSwitcher({
   collapsed = false,
   variant = "default",
@@ -22,14 +24,10 @@ export function PaletteSwitcher({
   variant?: "default" | "sidebar" | "home";
 } = {}) {
   const [palette, setPalette] = useState(getStoredPalette);
-  const menuRef = useRef<HTMLDetailsElement>(null);
 
   const selectPalette = (nextPalette: SologPalette) => {
     setPalette(nextPalette);
     persistPalette(nextPalette);
-    if (collapsed) {
-      menuRef.current?.removeAttribute("open");
-    }
   };
 
   const options = (
@@ -51,22 +49,6 @@ export function PaletteSwitcher({
       ))}
     </div>
   );
-
-  if (variant === "sidebar" && collapsed) {
-    return (
-      <details className="admin-sidebar__popover" ref={menuRef}>
-        <summary aria-label="Cambiar apariencia" title="Apariencia">
-          <Palette aria-hidden="true" size={19} strokeWidth={2} />
-        </summary>
-        <div
-          className="admin-sidebar__popover-panel"
-          aria-label="Paleta de color"
-        >
-          {options}
-        </div>
-      </details>
-    );
-  }
 
   if (variant === "home") {
     return (
@@ -93,13 +75,26 @@ export function PaletteSwitcher({
     );
   }
 
+  if (variant === "sidebar") {
+    return <section className={"admin-appearance" + (collapsed ? " admin-appearance--collapsed" : "")} aria-label="Apariencia">
+      {!collapsed && <span className="admin-main-tabs__label">APARIENCIA</span>}
+      {OPTIONS.map(option => {
+        const Icon = SIDEBAR_ICONS[option.value];
+        return <button type="button" key={option.value} aria-label={HOME_LABELS[option.value]} title={collapsed ? HOME_LABELS[option.value] : undefined} aria-pressed={palette === option.value} onClick={() => selectPalette(option.value)}>
+          <Icon aria-hidden="true" size={19} className={"admin-appearance__icon admin-appearance__icon--" + option.value} />
+          {!collapsed && <span>{HOME_LABELS[option.value]}</span>}
+          {!collapsed && palette === option.value && <Check className="admin-appearance__check" aria-hidden="true" size={16} />}
+        </button>;
+      })}
+    </section>;
+  }
+
   return (
     <div
-      className={`palette-switcher${variant === "sidebar" ? " palette-switcher--sidebar" : ""}`}
+      className="palette-switcher"
       aria-label="Paleta de color"
     >
       <Palette aria-hidden="true" size={18} strokeWidth={2} />
-      {variant === "sidebar" ? <span>Apariencia</span> : null}
       {options}
     </div>
   );

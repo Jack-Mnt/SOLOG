@@ -130,16 +130,13 @@
   margin: 0;
 }
 
-/* Shell + Dispositivos: scoped UI, without changing other module cards/dialogs. */
+/* Admin V2: composición específica.
+   La identidad cromática proviene exclusivamente de los tokens globales de styles.css.
+   Sidebar, header, workspace y cards permanecen como superficies estructurales neutras;
+   Órbita / Prisma / Natura actúan sobre acentos y estados interactivos. */
 .admin-v2-workspace {
-  /* Fondo del Panel: Gris neutro e impecable para mantener la limpieza */
-  --admin-panel-bg: #eef3f8;
-  background: var(--admin-panel-bg);
+  background: var(--color-workspace);
   color: var(--color-text-primary);
-
-  /* 🪐 Tema Órbita (Azul) */
-  --admin-sidebar-bg: #071126; /* Azul medianoche ultra oscuro y masivo */
-  --admin-header-bg: #0d1930; /* Azul vivo e intenso (Zafiro digital) */
 }
 
 .admin-v2-workspace .admin-header {
@@ -148,7 +145,7 @@
   gap: 16px;
   flex-wrap: wrap;
   color: var(--color-text-primary);
-  background: var(--admin-header-bg);
+  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   box-shadow: none;
 }
@@ -190,10 +187,10 @@
   transform: none;
 }
 .admin-v2-workspace .admin-tab--active {
-  background: var(--color-primary-soft);
-  color: var(--color-primary-active);
-  border-color: var(--color-primary-soft);
-  box-shadow: none;
+  color: var(--color-text-inverse);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  box-shadow: inset 3px 0 var(--color-primary);
   font-weight: 700;
 }
 .admin-v2-workspace .admin-sidebar__account .icon-button {
@@ -245,13 +242,13 @@
   flex-shrink: 0;
 }
 .admin-appearance__icon--blue {
-  color: #60a5fa;
+  color: var(--swatch-blue);
 }
 .admin-appearance__icon--violet {
-  color: #c084fc;
+  color: var(--swatch-violet);
 }
 .admin-appearance__icon--green {
-  color: #34d399;
+  color: var(--swatch-green);
 }
 .admin-appearance--collapsed {
   border-top: 1px solid rgb(255 255 255 / 12%);
@@ -287,7 +284,7 @@
   padding: 7px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface);
   color: var(--color-text-primary);
   font: inherit;
   font-size: 0.8125rem;
@@ -314,8 +311,8 @@
     var(--color-primary) 12%,
     var(--color-border)
   );
-  background: color-mix(in srgb, var(--color-primary) 4%, white);
-  color: var(--color-primary-active);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   box-shadow: none;
   cursor: default;
 }
@@ -348,10 +345,10 @@
   padding: 14px 16px;
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 .admin-device-card--authorized {
-  box-shadow: inset 3px 0 color-mix(in srgb, var(--color-primary) 45%, white);
+  box-shadow: inset 3px 0 color-mix(in srgb, var(--color-primary) 52%, transparent);
 }
 .admin-device-card__icon {
   grid-column: 1;
@@ -361,7 +358,7 @@
   width: 44px;
   height: 44px;
   border-radius: 11px;
-  background: color-mix(in srgb, var(--color-primary) 7%, white);
+  background: var(--color-primary-soft);
   color: var(--color-primary-active);
 }
 .admin-device-card > header {
@@ -390,16 +387,16 @@
   white-space: nowrap;
 }
 .admin-device-badge--authorized {
-  color: #176347;
-  background: #e7f6ee;
+  color: color-mix(in srgb, var(--color-success) 72%, black);
+  background: var(--color-success-soft);
 }
 .admin-device-badge--empty {
-  color: #5b687a;
-  background: #edf1f6;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
 }
 .admin-device-badge--pending {
-  color: #855514;
-  background: #fff3d6;
+  color: color-mix(in srgb, var(--color-warning) 72%, black);
+  background: var(--color-warning-soft);
 }
 .admin-device-card__person {
   grid-column: 2;
@@ -418,7 +415,7 @@
 .admin-device-card__empty,
 .admin-devices__empty {
   margin: 0;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-size: 0.8125rem;
   line-height: 1.5;
 }
@@ -435,18 +432,26 @@
 .admin-devices .button {
   min-height: 34px;
   padding: 7px 12px;
+  border-color: var(--color-primary);
   border-radius: 8px;
   font-size: 0.8125rem;
-  background: var(--color-primary);
   color: var(--color-primary-contrast);
+  background: var(--gradient-brand);
   box-shadow: none;
   transform: none;
 }
 .admin-devices .button:hover:not(:disabled) {
-  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-hover) 0%,
+    var(--color-secondary-hover) 100%
+  );
+  box-shadow: none;
+  transform: none;
 }
 .admin-devices .button--secondary {
-  background: #fff;
+  background: var(--color-surface);
   border-color: var(--color-border);
   color: var(--color-text-primary);
 }

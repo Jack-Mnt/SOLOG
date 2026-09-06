@@ -1,5 +1,6 @@
 import { adminRpc, type AdminAction, type AdminBootstrap, type AdminPayloads, type AdminResponses, type Envelope } from './admin.v2'
 import { ManagementStore } from './admin.management.store'
+import { orderedAdminSites } from './admin.site-ui'
 
 interface Entry { data?: Envelope; error?: string; pending?: Promise<Envelope>; action: AdminAction; site?: string; epoch: number; groups: number }
 export class AdminStore {
@@ -10,6 +11,7 @@ export class AdminStore {
   private live = true
   private groups = -1
   private operational = new Map<string, number>()
+  private selectedSite = ''
   bootstrap: AdminBootstrap | null = null
   readonly management: ManagementStore
   constructor(readonly userId: string, private rpc: typeof adminRpc = adminRpc) {
@@ -22,6 +24,15 @@ export class AdminStore {
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   snapshot = () => this.version
+  get siteId() {
+    const sites = this.bootstrap?.allowed_sites ?? []
+    return sites.some(site => site.id === this.selectedSite) ? this.selectedSite : orderedAdminSites(sites)[0]?.id ?? ''
+  }
+  selectSite(siteId: string) {
+    if (!this.live || !this.bootstrap?.allowed_sites.some(site => site.id === siteId) || this.siteId === siteId) return
+    this.selectedSite = siteId
+    this.emit()
+  }
   private emit() { this.version++; this.listeners.forEach(fn => fn()) }
   key<A extends AdminAction>(action: A, payload: AdminPayloads[A]) {
     return JSON.stringify([this.userId, this.bootstrap?.identity.rol, action, Object.entries(payload).sort(([a], [b]) => a.localeCompare(b))])

@@ -28,7 +28,8 @@ export function AdminControlV2() {
   const store = useAdminStore()
   useSyncExternalStore(store.subscribe, store.snapshot)
   const sites = store.bootstrap!.allowed_sites
-  const [site, setSite] = useState(sites[0]?.id ?? '')
+  const site = store.siteId
+  const setSite = (id: string) => store.selectSite(id)
   const [period, setPeriod] = useState<ControlPeriod>('today')
   const [state, setState] = useState<DifferenceState | ''>('')
   const [search, setSearch] = useState('')
@@ -36,6 +37,10 @@ export function AdminControlV2() {
   const [page, setPage] = useState(0)
   const [exportOpen, setExportOpen] = useState(false)
   const [payload, setPayload] = useState<AdminPayloads['control_page']>({ site_id: site, period: 'today', state: null, page: 0, page_size: 100 })
+  if (payload.site_id !== site) {
+    setPage(0)
+    setPayload({ ...payload, site_id: site, page: 0 })
+  }
   const invalid = period === 'custom' && !validCustomRange(from, to)
   const apply = () => { setPage(0); setPayload({ site_id: site, period, state: state || null, ...(search.trim() ? { search: search.trim() } : {}), page: 0, page_size: 100, ...(period === 'custom' ? { date_from: from, date_to: to } : {}) }) }
   const currentPayload = { ...payload, page }

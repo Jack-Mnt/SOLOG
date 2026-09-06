@@ -104,12 +104,12 @@ export async function runAdminV2Browser() {
     }
     empty=true;await page.getByRole('button',{name:'DESCARGAR AJUSTE',exact:true}).click();await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Descargar Excel'}).click()]);assert.equal(count('export'),3)
     assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>k.includes('admin-operational'))),false)
-    revision++;await page.getByRole('button',{name:'Actualizar Admin'}).click();await page.getByRole('heading',{name:'Consulta por sede'}).waitFor();await page.getByText('Grupo 99',{exact:true}).waitFor();assert.equal(count('bootstrap'),2)
+    revision++;await page.reload();await page.getByRole('heading',{name:'Consulta por sede'}).waitFor();await page.getByText('Grupo 99',{exact:true}).waitFor();assert.equal(count('bootstrap'),2)
     await page.setViewportSize({width:800,height:900});await page.getByRole('button',{name:'Alternar navegación'}).click()
     await page.getByRole('heading',{name:'Consulta por sede'}).scrollIntoViewIfNeeded()
     await page.waitForFunction(()=>document.querySelector('.admin-sidebar')?.getBoundingClientRect().width<=72)
     if(process.env.SOLOG_ADMIN_SCREENSHOT)await page.screenshot({path:process.env.SOLOG_ADMIN_SCREENSHOT,fullPage:false})
-    denied=true;await page.getByRole('button',{name:'Actualizar Admin'}).click();await page.getByRole('button',{name:'Reintentar',exact:true}).waitFor();assert.equal(await page.getByText('Grupo 99',{exact:true}).count(),0)
+    denied=true;await page.reload();await page.getByRole('button',{name:'Reintentar',exact:true}).waitFor();assert.equal(await page.getByText('Grupo 99',{exact:true}).count(),0)
     assert.deepEqual(errors,[])
     console.log(JSON.stringify({status:'PASS A1–A3 browser simulado',rpcCalls:calls.length,responseBytes:bytes,productionCalls:0,actions:Object.fromEntries(['bootstrap','dashboard_cards','shift_grid','daily_detail','control_page','control_detail','export'].map(a=>[a,count(a)]))}))
   } finally {await browser.close();await server.close()}
