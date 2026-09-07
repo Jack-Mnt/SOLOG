@@ -101,7 +101,14 @@ try {
 
   await nav('Dispositivos')
   await page.getByRole('heading', { name: 'Tablets por sede', exact: true }).waitFor()
-  assert.equal(await page.locator('.admin-header').getByText('Puerto Rico', { exact: true }).count(), 1)
+  assert.equal(await page.locator('.admin-header').getByText('Puerto Rico', { exact: true }).count(), 0)
+  const logo = page.locator('.admin-header').getByRole('img', { name: 'Puerto Rico', exact: true })
+  assert.equal(await logo.getAttribute('src'), '/logo-pr-light.png')
+  await logo.evaluate(image => image.decode())
+  const logoSize = await logo.evaluate(image => ({ width: image.getBoundingClientRect().width, height: image.getBoundingClientRect().height, ratio: image.naturalWidth / image.naturalHeight, interactive: !!image.closest('button, a') }))
+  assert.ok(logoSize.height >= 24 && logoSize.height <= 30)
+  assert.ok(Math.abs(logoSize.width / logoSize.height - logoSize.ratio) < .01)
+  assert.equal(logoSize.interactive, false)
   assert.equal(await page.locator('.admin-header').getByRole('button').count(), 0)
   assert.equal(await page.locator('.admin-devices select').count(), 0)
   assert.equal(await page.locator('.admin-devices').getByRole('button', { name: /Actualizar/ }).count(), 0)
@@ -112,6 +119,9 @@ try {
   assert.equal(await page.getByRole('article', { name: 'Solicitud de Divino', exact: true }).getByRole('button', { name: 'Autorizar', exact: true }).count(), 1)
   const card = page.getByRole('article', { name: 'Tablet de Cutervo', exact: true })
   assert.match(await card.innerText(), /Último acceso · Hoy,/)
+  assert.equal(await page.locator('.admin-device-card--authorized').getByText(/Cajero/).count(), 0)
+  assert.equal(await page.getByRole('article', { name: 'Solicitud de Huaca', exact: true }).getByText('Cajero Huaca', { exact: true }).count(), 1)
+  assert.equal(await card.locator('.lucide-shield-off').count(), 1)
   const cardsText = await page.locator('.admin-devices').innerText()
   assert.equal(/84f12648|ID ·|Copiar|revisión/i.test(cardsText), false)
   assert.equal(await page.locator('.admin-devices .lucide-tablet').count(), 7)
@@ -124,26 +134,41 @@ try {
     assert.equal(await button.getAttribute('aria-pressed'), 'true')
     themeSurfaces.push(await page.evaluate(() => {
       const bg = selector => getComputedStyle(document.querySelector(selector)).backgroundColor
-      return { sidebar: bg('.admin-sidebar'), header: bg('.admin-header'), panel: bg('.admin-v2-workspace'), card: bg('.admin-device-card'), badge: bg('.admin-device-badge--authorized') }
+      const style = selector => getComputedStyle(document.querySelector(selector))
+      return { sidebar: bg('.admin-sidebar'), header: style('.admin-header').backgroundImage, title: style('.admin-header h1').color, panel: bg('.admin-v2-workspace'), card: bg('.admin-device-card'), badge: bg('.admin-device-badge--authorized'), accent: style('.admin-device-card__icon').color, revoke: bg('.admin-device-revoke'), revokeColor: style('.admin-device-revoke').color }
     }))
     await screenshot('expanded-' + palette)
   }
-  for (const surface of ['sidebar', 'header', 'panel']) assert.equal(new Set(themeSurfaces.map(theme => theme[surface])).size, 3)
+  for (const surface of ['sidebar', 'header', 'title', 'panel', 'card', 'badge', 'revoke', 'revokeColor']) assert.equal(new Set(themeSurfaces.map(theme => theme[surface])).size, 1)
+  assert.equal(new Set(themeSurfaces.map(theme => theme.accent)).size, 3)
+  assert.match(themeSurfaces[0].header, /linear-gradient/)
+  assert.equal(themeSurfaces[0].title, 'rgb(248, 250, 252)')
+  assert.equal(themeSurfaces[0].revoke, 'rgb(255, 240, 245)')
   assert.ok(themeSurfaces.every(theme => theme.card === 'rgb(255, 255, 255)' && theme.badge === themeSurfaces[0].badge))
   assert.equal(calls.length, beforeThemes)
   assert.equal(await page.locator('.admin-sidebar .lucide-palette, .admin-sidebar details, .admin-appearance .palette-option').count(), 0)
-  const globalContext = page.locator('.admin-site-context--global')
+  assert.equal(await page.locator('.admin-site-context--global').count(), 0)
+  const globalContext = logo
   const contextStyle = () => globalContext.evaluate(node => {
     const style = getComputedStyle(node)
-    return [style.cursor, style.backgroundColor, style.boxShadow]
+    return [style.cursor, style.backgroundColor, style.boxShadow, style.borderTopWidth, style.filter]
   })
   const beforeHover = await contextStyle()
   await globalContext.hover()
   assert.deepEqual(await contextStyle(), beforeHover)
-  assert.equal(beforeHover[0], 'default')
+  assert.ok(['auto', 'default'].includes(beforeHover[0]))
+  assert.equal(beforeHover[1], 'rgba(0, 0, 0, 0)')
   assert.equal(beforeHover[2], 'none')
+  assert.equal(beforeHover[3], '0px')
+  assert.equal(beforeHover[4], 'none')
   assert.equal(count('list'), 1)
   await screenshot('desktop')
+  const revoke = card.getByRole('button', { name: 'Revocar', exact: true })
+  await revoke.hover()
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.admin-device-revoke')).backgroundColor !== 'rgb(255, 240, 245)')
+  assert.equal(await revoke.evaluate(node => getComputedStyle(node).backgroundImage), 'none')
+  await screenshot('revoke-hover')
+  await logo.hover()
   const singleColumn = async () => {
     const boxes = await page.locator('[aria-labelledby="admin-tablets-title"] article').evaluateAll(cards => cards.map(card => { const r = card.getBoundingClientRect(); return { x: r.x, width: r.width, top: r.top, bottom: r.bottom } }))
     assert.ok(boxes.every((box, i) => box.x === boxes[0].x && box.width === boxes[0].width && (!i || box.top >= boxes[i - 1].bottom)))

@@ -175,9 +175,7 @@ function Shell({
               ))}
             </div>
           ) : (
-            <span className="admin-site-context admin-site-context--global">
-              Puerto Rico
-            </span>
+            <img className="admin-header__context-logo" src="/logo-pr-light.png" alt="Puerto Rico" />
           )}
         </header>
         <div className="admin-workspace__content">
