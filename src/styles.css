@@ -14,7 +14,7 @@
   /* Apariencia de interfaz — seleccionable */
   --ui-blue: #0a63f8;
   --ui-violet: #7a00ff;
-  --ui-green: #10b981;
+  --ui-green: #00d26a; /*--ui-green: #10b981;*/
   --ui-primary: var(--ui-blue);
   --ui-secondary: #00c2ff;
   --ui-accent: #44e1ff;

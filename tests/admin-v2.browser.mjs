@@ -47,7 +47,9 @@ export async function runAdminV2Browser() {
   })
   const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message))
   try {
-    await page.goto('http://127.0.0.1:5208/admin')
+    const controlOnly = process.env.SOLOG_CONTROL_UI_ONLY === '1'
+    await page.goto('http://127.0.0.1:5208/admin' + (controlOnly ? '/control' : ''))
+    if (!controlOnly) {
     await page.getByRole('heading',{name:'Sede A',exact:true}).waitFor()
     assert.equal(count('bootstrap'),1);assert.equal(count('dashboard_cards'),1);assert.equal(calls.length,2)
     assert.equal(await page.getByRole('progressbar').count(),2)
@@ -83,6 +85,7 @@ export async function runAdminV2Browser() {
     assert.equal(count('export'),0,'Abrir exportación no descarga automáticamente')
     await page.getByRole('button',{name:'Cerrar',exact:true}).click()
     if(process.env.SOLOG_ADMIN_SCREENSHOT)await page.screenshot({path:process.env.SOLOG_ADMIN_SCREENSHOT.replace('.png','-dashboard.png'),fullPage:true})
+    }
     await page.getByRole('button',{name:'Control',exact:true}).click()
     await page.getByText('Grupo 99',{exact:true}).waitFor();assert.equal(count('control_page'),1);assert.equal(count('control_detail'),0)
     await page.getByRole('button',{name:'Siguiente',exact:true}).click();await page.getByText('Grupo 100',{exact:true}).waitFor()
@@ -93,9 +96,9 @@ export async function runAdminV2Browser() {
     await page.getByRole('button',{name:'Dashboard',exact:true}).click();await page.getByRole('heading',{name:'Sede A',exact:true}).waitFor();assert.equal(count('dashboard_cards'),1)
     await page.getByRole('button',{name:'Control',exact:true}).click();await page.getByText('Grupo 99',{exact:true}).waitFor();assert.equal(count('control_page'),2)
     await page.getByLabel('Período',{exact:true}).selectOption('custom');await page.getByLabel('Desde',{exact:true}).fill('2026-01-01');await page.getByLabel('Hasta',{exact:true}).fill('2026-05-01');assert.equal(await page.getByRole('button',{name:'Aplicar filtros'}).isDisabled(),true)
-    await page.getByLabel('Hasta',{exact:true}).fill('2026-04-02');await page.getByRole('button',{name:'Aplicar filtros'}).click();await page.getByText('2026-01-01 — 2026-04-02',{exact:true}).waitFor()
+    await page.getByLabel('Hasta',{exact:true}).fill('2026-04-02');await page.getByRole('button',{name:'Aplicar filtros'}).click();await page.getByText('01 ene. — 02 abr.',{exact:true}).waitFor()
     for(const period of ['current_biweekly','previous_biweekly']) {
-      await page.getByRole('button',{name:'DESCARGAR AJUSTE',exact:true}).click()
+      await page.getByRole('button',{name:'Descargar ajuste',exact:true}).click()
       await page.getByLabel('Período de exportación').selectOption(period)
       const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Descargar Excel'}).click()])
       const stream=await download.createReadStream(), chunks=[];for await(const chunk of stream)chunks.push(chunk)
@@ -110,16 +113,16 @@ export async function runAdminV2Browser() {
       assert.deepEqual(parsed,['Grupo','Categoría','Fecha de origen','Teórico de conteo','Físico de conteo','Diferencia de conteo','Teórico de reconteo','Físico de reconteo','Diferencia de reconteo','Estado'])
       assert.match(download.suggestedFilename(),/SOLOG_Ajustes_Sede_A_/)
     }
-    empty=true;await page.getByRole('button',{name:'DESCARGAR AJUSTE',exact:true}).click();await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Descargar Excel'}).click()]);assert.equal(count('export'),3)
+    empty=true;await page.getByRole('button',{name:'Descargar ajuste',exact:true}).click();await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Descargar Excel'}).click()]);assert.equal(count('export'),3)
     assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>k.includes('admin-operational'))),false)
-    revision++;await page.reload();await page.getByRole('heading',{name:'Consulta por sede'}).waitFor();await page.getByText('Grupo 99',{exact:true}).waitFor();assert.equal(count('bootstrap'),2)
+    revision++;await page.reload();await page.getByRole('heading',{name:'Control de diferencias'}).waitFor();await page.getByText('Grupo 99',{exact:true}).waitFor();assert.equal(count('bootstrap'),2)
     await page.setViewportSize({width:800,height:900});await page.getByRole('button',{name:'Alternar navegación'}).click()
-    await page.getByRole('heading',{name:'Consulta por sede'}).scrollIntoViewIfNeeded()
+    await page.getByRole('heading',{name:'Control de diferencias'}).scrollIntoViewIfNeeded()
     await page.waitForFunction(()=>document.querySelector('.admin-sidebar')?.getBoundingClientRect().width<=72)
     if(process.env.SOLOG_ADMIN_SCREENSHOT)await page.screenshot({path:process.env.SOLOG_ADMIN_SCREENSHOT,fullPage:false})
     denied=true;await page.reload();await page.getByRole('button',{name:'Reintentar',exact:true}).waitFor();assert.equal(await page.getByText('Grupo 99',{exact:true}).count(),0)
     assert.deepEqual(errors,[])
-    console.log(JSON.stringify({status:'PASS A1–A3 browser simulado',rpcCalls:calls.length,responseBytes:bytes,productionCalls:0,actions:Object.fromEntries(['bootstrap','dashboard_cards','shift_grid','daily_detail','control_page','control_detail','export'].map(a=>[a,count(a)]))}))
+    console.log(JSON.stringify({status:controlOnly?'PASS Control/Excel browser simulado':'PASS A1–A3 browser simulado',rpcCalls:calls.length,responseBytes:bytes,productionCalls:0,actions:Object.fromEntries(['bootstrap','dashboard_cards','shift_grid','daily_detail','control_page','control_detail','export'].map(a=>[a,count(a)]))}))
   } finally {await browser.close();await server.close()}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await runAdminV2Browser()

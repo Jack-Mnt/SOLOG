@@ -54,6 +54,12 @@ await context.route('**/*', async route => {
       totals: dates.map(date => ({ ...grid.data.totals[0], date })),
     } })
   }
+  if (action === 'control_page') {
+    const data = responseFixture(action, p)
+    if (p.site_id === 'site-1') return fulfill({ ...data, items: [], summary: { total: 0, coincide: 0, pending_recount: 0, confirmed: 0, inconsistent: 0 } })
+    data.items = data.items.map((row, i) => ({ ...row, estado_diferencia: ['Coincide', 'Recontar', 'Confirmada', 'Inconsistente'][i % 4], diferencia: [0, 2, -2, -3][i % 4] }))
+    return fulfill(data)
+  }
   if (rpc === 'rpc_solog_operational_v2') return fulfill(responseFixture(action, p))
   if (action === 'list') {
     assert.deepEqual(p, {})
@@ -84,7 +90,9 @@ const screenshot = async suffix => {
   if (process.env.SOLOG_SHELL_SCREENSHOT) await page.screenshot({ path: process.env.SOLOG_SHELL_SCREENSHOT.replace('.png', '-' + suffix + '.png'), fullPage: true, animations: 'disabled' })
 }
 try {
-  await page.goto('http://127.0.0.1:5222/admin')
+  const controlOnly = process.env.SOLOG_CONTROL_UI_ONLY === '1'
+  await page.goto('http://127.0.0.1:5222/admin' + (controlOnly ? '/control' : ''))
+  if (!controlOnly) {
   await page.getByRole('heading', { name: 'Cutervo', exact: true }).waitFor()
   assert.equal(await headerSites().count(), 0)
   const dashboardLogo = page.locator('.admin-header').getByRole('img', { name: 'Puerto Rico', exact: true })
@@ -196,6 +204,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1100 })
   await page.getByRole('button', { name: 'Alternar navegación' }).click()
   await page.waitForFunction(() => document.querySelector('.admin-sidebar').getBoundingClientRect().width > 200)
+  }
   await nav('Control')
   await page.getByText('Grupo 99', { exact: true }).waitFor()
   assert.deepEqual(await headerSites().getByRole('button').allTextContents(), ['Cutervo', 'Huaca', 'Divino', 'Unidad', 'Casua'])
@@ -203,20 +212,68 @@ try {
   const dimensions = await headerSites().getByRole('button').evaluateAll(buttons => buttons.map(button => [button.getBoundingClientRect().width, button.getBoundingClientRect().height]))
   assert.ok(dimensions.every(size => JSON.stringify(size) === JSON.stringify(dimensions[0])))
   await headerSites().getByRole('button', { name: 'Huaca', exact: true }).click()
-  await page.waitForFunction(() => document.querySelector('select[aria-label="Sede"]').value === 'site-3')
+  await page.waitForFunction(() => document.querySelector('.admin-site-context button[aria-pressed="true"]').textContent === 'Huaca')
   await page.getByText('Grupo 99', { exact: true }).waitFor()
   assert.equal(calls.filter(c => c.action === 'control_page').at(-1).payload.site_id, 'site-3')
-  assert.equal(await page.getByLabel('Sede', { exact: true }).inputValue(), 'site-3')
+  assert.equal(await page.getByLabel('Sede', { exact: true }).count(), 0)
+  const control = page.locator('.admin-control')
+  assert.equal(await control.getByText(/Consulta aplicada|Actualizado/).count(), 0)
+  assert.equal(await control.locator('.admin-control__chip').count(), 5)
+  assert.deepEqual(await control.locator('.admin-control__badge').allTextContents().then(values => values.slice(0, 4)), ['Coincide', 'Por recontar', 'Confirmada', 'Inconsistente'])
+  assert.equal(await control.locator('.admin-control__difference--positive').first().innerText(), '+2')
+  assert.equal(await control.locator('.admin-control__difference--negative').first().innerText(), '-2')
+  assert.equal(await control.locator('.admin-control__difference--zero').first().innerText(), '0')
+  assert.match(await control.locator('time').first().innerText(), /3 (set|sep).*5:30 pm/)
+  const detailButton = control.getByRole('button', { name: 'Ver cronología de Grupo 0', exact: true })
+  assert.equal(await detailButton.locator('.lucide-eye').count(), 1)
+  assert.equal(await detailButton.innerText(), '')
+  const beforeFilters = count('control_page')
+  await control.getByLabel('Buscar grupo').fill('Grupo')
+  await control.getByLabel('Estado', { exact: true }).selectOption('Recontar')
+  assert.equal(count('control_page'), beforeFilters, 'Editar filtros no consulta ni filtra localmente')
+  await control.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await control.getByText('Grupo 99', { exact: true }).waitFor()
+  assert.equal(count('control_page'), beforeFilters + 1)
+  assert.deepEqual(calls.filter(call => call.action === 'control_page').at(-1).payload, { site_id: 'site-3', period: 'today', state: 'Recontar', search: 'Grupo', page: 0, page_size: 100 })
+  const controlThemes = []
+  for (const name of ['Órbita', 'Prisma', 'Natura']) {
+    await page.getByRole('button', { name, exact: true }).click()
+    controlThemes.push(await control.evaluate(node => {
+      const style = selector => getComputedStyle(node.querySelector(selector))
+      return { table: style('.admin-control__table').backgroundColor, badge: style('.admin-control__badge.admin-control__tone--warning').backgroundColor, button: style('.admin-control__filters > .button').backgroundColor }
+    }))
+    await screenshot('control-huaca-' + name)
+  }
+  assert.equal(new Set(controlThemes.map(theme => theme.table)).size, 1)
+  assert.equal(new Set(controlThemes.map(theme => theme.badge)).size, 1)
+  assert.equal(new Set(controlThemes.map(theme => theme.button)).size, 3)
+  const table = control.locator('.admin-control__table')
+  await table.evaluate(node => { node.scrollTop = 150 })
+  await page.waitForFunction(() => document.querySelector('.admin-control__table').scrollTop > 0)
+  assert.ok(Math.abs((await table.getByRole('columnheader').first().boundingBox()).y - (await table.boundingBox()).y) < 3)
+  await screenshot('control-sticky')
+  await headerSites().getByRole('button', { name: 'Unidad', exact: true }).click()
+  await control.getByText('No hay resultados para los filtros seleccionados.').waitFor()
+  assert.equal(calls.filter(call => call.action === 'control_page').at(-1).payload.site_id, 'site-1')
+  assert.equal(await control.getByRole('table').count(), 0)
+  assert.equal(await control.getByText(/Página/).count(), 0)
+  assert.equal(await control.getByRole('button', { name: /^(Anterior|Siguiente)$/ }).count(), 0)
+  await screenshot('control-unidad-empty')
+  console.log('PASS Control UI: header-only scope, filters payload, chips/badges, signed values, Lima, Eye, sticky table, three themes, empty without pagination')
   await headerSites().getByRole('button', { name: 'Casua', exact: true }).click()
-  await page.waitForFunction(() => document.querySelector('select[aria-label="Sede"]').value === 'site-0')
+  await page.waitForFunction(() => document.querySelector('.admin-site-context button[aria-pressed="true"]').textContent === 'Casua')
   await page.getByText('Grupo 99', { exact: true }).waitFor()
   assert.equal(calls.filter(c => c.action === 'control_page').at(-1).payload.site_id, 'site-0')
-  await page.getByLabel('Sede', { exact: true }).selectOption('site-3')
+  await headerSites().getByRole('button', { name: 'Huaca', exact: true }).click()
   await nav('Dashboard')
   assert.equal(await headerSites().count(), 0)
   await nav('Control')
   assert.equal(await headerSites().getByRole('button', { name: 'Huaca', exact: true }).getAttribute('aria-pressed'), 'true')
 
+  if (controlOnly) {
+    assert.deepEqual(errors, [])
+    console.log(JSON.stringify({ status: 'PASS Control UI aislado', productionRequests: 0, rpcCalls: calls.length }))
+  } else {
   await nav('Dispositivos')
   console.log('PASS Dashboard UI: cinco sedes, acordeón exclusivo/caché, cobertura válida/vacía, snapshot, 15 fechas/Lima, scroll tablet, tres temas y header global')
   await page.getByRole('heading', { name: 'Tablets por sede', exact: true }).waitFor()
@@ -344,4 +401,5 @@ try {
   await screenshot('empty')
   assert.deepEqual(errors, [])
   console.log(JSON.stringify({ ok: true, scenarios: ['sites/order/alias/scope', 'themes/persistence', 'navigation/cache', 'global devices', 'single-column desktop/tablet', 'theme surfaces / semantic badges / no technical data', 'authorize/pending guard', 'read retry', 'empty requests'], rpcCalls: calls.length, productionRequests: 0, errors }, null, 2))
+  }
 } finally { if (heldMutation) heldMutation(); await browser.close(); await server.close() }

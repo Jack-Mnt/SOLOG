@@ -62,7 +62,7 @@ try {
   await page.getByText('Grupo 0',{exact:true}).waitFor()
   assert.match(await page.locator('tbody tr').innerText(),/Confirmada/)
   assert.match(await page.locator('tbody tr').innerText(),/-2/)
-  await page.getByRole('button',{name:'DESCARGAR AJUSTE',exact:true}).click()
+  await page.getByRole('button',{name:'Descargar ajuste',exact:true}).click()
   await page.getByRole('dialog').getByLabel('Período de exportación').selectOption('previous_biweekly')
   let event = page.waitForEvent('download')
   await page.getByRole('dialog').getByRole('button',{name:/Descargar Excel/}).click()
