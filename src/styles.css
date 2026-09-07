@@ -621,7 +621,7 @@ h1 {
   color: var(--color-text-primary);
   background:
     radial-gradient(
-      circle at 50% 42%,
+      circle at 60% 50%,
       color-mix(in srgb, var(--color-primary) 9%, transparent),
       transparent 34%
     ),
@@ -642,8 +642,8 @@ h1 {
 
 .panel-loader__symbol {
   position: relative;
-  width: 76px;
-  height: 76px;
+  width: 120px;
+  height: 120px;
   display: grid;
   place-items: center;
 }
@@ -654,7 +654,29 @@ h1 {
   width: 48px;
   height: 48px;
   object-fit: contain;
-  animation: panel-loader-float 1.8s ease-in-out infinite;
+  animation: panel-loader-spin-step 2s ease-in-out infinite;
+}
+
+@keyframes panel-loader-spin-step {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  35% {
+    transform: rotate(180deg);
+  }
+
+  50% {
+    transform: rotate(180deg); /* se detiene */
+  }
+
+  85% {
+    transform: rotate(360deg);
+  }
+
+  100% {
+    transform: rotate(360deg); /* pequeña pausa antes de repetir */
+  }
 }
 
 .panel-loader__halo {
@@ -692,16 +714,6 @@ h1 {
   font-size: 0.9rem;
   font-weight: 650;
   letter-spacing: 0.01em;
-}
-
-@keyframes panel-loader-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
 }
 
 @keyframes panel-loader-breathe {
@@ -1629,7 +1641,7 @@ h1 {
   padding: 9px 12px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text-secondary);
-  background: var(--color-surface-secondary);
+  background: var(--color-primary-soft);
   box-shadow: 0 1px 0 var(--color-border);
   font-size: 0.67rem;
   font-weight: 700;

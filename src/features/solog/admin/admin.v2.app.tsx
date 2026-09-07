@@ -157,7 +157,7 @@ function Shell({
       <section className="admin-workspace__main">
         <header className="admin-header">
           <h1>{navigation.find(([path]) => path === route)?.[1]}</h1>
-          {route === "/admin" || route === "/admin/control" ? (
+          {route === "/admin/control" ? (
             <div
               className="admin-site-context"
               role="group"
