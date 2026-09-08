@@ -45,7 +45,7 @@ await context.route('**/*',async route=>{
   if(rpc==='rpc_solog_details_v2')return fulfill(action==='summary'?s.summary:s.details)
   if(action==='shift_grid') { assert.equal(p.site_id,'site-a'); return fulfill({...s.grid,period:{...s.grid.period,key:p.period}}) }
   if(action==='daily_detail'){assert.equal(p.origin_date,'2026-09-15');return fulfill(s.daily)}
-  if(action==='control_page')return fulfill({...s.control,period:{...s.control.period,key:p.period}})
+  if(action==='control_groups')return fulfill({contract_version:2,generated_at:s.control.generated_at,revisions:s.control.revisions,site_id:p.site_id,period:{...s.control.period,key:p.period},items:s.control.items.map(row=>({case_id:row.case_id,group_id:row.grupo_id,group_name:row.grupo,category:row.categoria,origin_at:row.contado_at,state:row.estado_diferencia,difference:row.diferencia,valued_difference:row.valor_diferencia}))})
   if(action==='export'){assert.deepEqual(p,{site_id:'site-a',period:'previous_biweekly'});return fulfill(s.admin)}
   return fulfill(responseFixture(action,p))
 })

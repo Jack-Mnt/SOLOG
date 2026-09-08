@@ -1,4 +1,4 @@
-import { adminRpc, type AdminAction, type AdminBootstrap, type AdminPayloads, type AdminResponses, type Envelope } from './admin.v2'
+import { adminRpc, validateControlPayload, type AdminAction, type AdminBootstrap, type AdminPayloads, type AdminResponses, type Envelope } from './admin.v2'
 import { ManagementStore } from './admin.management.store'
 import { orderedAdminSites } from './admin.site-ui'
 
@@ -18,7 +18,7 @@ export class AdminStore {
     this.management = new ManagementStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
       if (forbidden) { this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
       if (revisions.groups !== undefined && revisions.groups > this.groups) {
-        this.groups = revisions.groups; this.invalidate(); this.emit()
+        this.groups = revisions.groups; this.invalidate(undefined, true); this.emit()
       }
     })
   }
@@ -41,28 +41,32 @@ export class AdminStore {
     const entry = this.entries.get(this.key(action, payload))
     return { data: entry?.data as AdminResponses[A] | undefined, error: entry?.error }
   }
-  private invalidate(site?: string) {
+  private invalidate(site?: string, preserveControl = false) {
     for (const [key, entry] of this.entries) {
+      // V10 datasets stay cached for this Admin session, without background revalidation.
+      // Access changes, explicit refresh and disposal still remove them.
+      if (preserveControl && (entry.action === 'control_groups' || entry.action === 'control_chronology')) continue
       if (entry.action !== 'bootstrap' && (!site || entry.site === site || entry.action === 'dashboard_cards')) this.entries.delete(key)
     }
   }
   private observe(response: Envelope, site?: string) {
     if (response.revisions.groups !== undefined) {
       if (response.revisions.groups < this.groups) throw new Error('Respuesta anterior a la revisión de grupos. Actualiza la consulta.')
-      if (response.revisions.groups > this.groups) { this.groups = response.revisions.groups; this.management.observeGroups(this.groups); this.invalidate() }
+      if (response.revisions.groups > this.groups) { this.groups = response.revisions.groups; this.management.observeGroups(this.groups); this.invalidate(undefined, true) }
     }
     if (site && response.revisions.operational !== undefined) this.observeSite(site, response.revisions.operational)
   }
   private observeSite(site: string, revision: number) {
     const previous = this.operational.get(site) ?? -1
     if (revision < previous) throw new Error('Respuesta anterior a la revisión de sede. Actualiza la consulta.')
-    if (revision > previous) { this.operational.set(site, revision); this.invalidate(site) }
+    if (revision > previous) { this.operational.set(site, revision); this.invalidate(site, true) }
   }
   current = () => this.live
   dispose() { this.management.dispose(); this.live = false; this.epoch++; this.entries.clear(); this.bootstrap = null; this.operational.clear(); this.listeners.clear() }
   // Explicit refresh invalidates requests in flight as well as cached pages/details.
   refresh() { this.epoch++; this.entries.clear(); this.management.refresh(); this.emit() }
   async load<A extends AdminAction>(action: A, payload: AdminPayloads[A]): Promise<AdminResponses[A]> {
+    validateControlPayload(action, payload)
     if (!this.live) throw new Error('El contexto Admin ya no está activo.')
     if (action !== 'bootstrap' && !this.bootstrap) throw new Error('Primero valida el acceso administrativo.')
     const site = 'site_id' in payload ? String(payload.site_id) : undefined
@@ -76,7 +80,7 @@ export class AdminStore {
     const request = this.rpc(action, payload).then(response => {
       if (!this.live || entry.epoch !== this.epoch) throw new Error('Respuesta descartada: cambió el contexto Admin.')
       if (this.entries.get(key) !== entry) throw new Error('Respuesta descartada: la consulta fue invalidada.')
-      if (action !== 'bootstrap' && response.revisions.groups === undefined && entry.groups < this.groups) throw new Error('Respuesta anterior a la revisión de grupos. Actualiza la consulta.')
+      if (action !== 'bootstrap' && (response as Envelope).revisions.groups === undefined && entry.groups < this.groups) throw new Error('Respuesta anterior a la revisión de grupos. Actualiza la consulta.')
       if ('site_id' in response && response.site_id !== site) throw new Error('Respuesta recibida para otra sede.')
       if (action === 'bootstrap') {
         const b = response as AdminBootstrap
@@ -100,6 +104,14 @@ export class AdminStore {
       if (action === 'shift_grid' && (response as AdminResponses['shift_grid']).period.key !== ((payload as AdminPayloads['shift_grid']).period ?? 'current_biweekly')) throw new Error('Período recibido incorrecto.')
       if (action === 'daily_detail' && (response as AdminResponses['daily_detail']).origin_date !== (payload as AdminPayloads['daily_detail']).origin_date) throw new Error('Fecha recibida incorrecta.')
       if (action === 'control_detail' && (response as AdminResponses['control_detail']).group_id !== (payload as AdminPayloads['control_detail']).group_id) throw new Error('Grupo recibido incorrecto.')
+      if (action === 'control_groups') {
+        const r = response as AdminResponses['control_groups'], p = payload as AdminPayloads['control_groups']
+        if (r.period.key !== p.period || (p.period === 'custom' && (r.period.from !== p.date_from || r.period.to !== p.date_to))) throw new Error('Período recibido incorrecto.')
+      }
+      if (action === 'control_chronology') {
+        const r = response as AdminResponses['control_chronology'], p = payload as AdminPayloads['control_chronology']
+        if (r.group.id !== p.group_id || r.period.key !== p.period) throw new Error('Grupo o período recibido incorrecto.')
+      }
       if (action === 'control_page') {
         const r = response as AdminResponses['control_page'], p = payload as AdminPayloads['control_page']
         if (r.page !== p.page || r.page_size !== p.page_size || r.period.key !== p.period || (p.period === 'custom' && (r.period.from !== p.date_from || r.period.to !== p.date_to))) throw new Error('Página o período recibido incorrecto.')

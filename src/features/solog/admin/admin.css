@@ -1,4 +1,77 @@
 /* Control: composición local; contratos, detalle y exportación sin cambios. */
+.admin-control > h2 {
+  scroll-margin-top: 10rem;
+}
+.admin-control-chronology {
+  width: min(1100px, 100%);
+}
+.admin-control-chronology__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+.admin-control-chronology__periods {
+  display: flex;
+  gap: 4px;
+}
+.admin-control-chronology__periods button {
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  padding: 8px 14px;
+  font: inherit;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+.admin-control-chronology__periods button[aria-pressed="true"] {
+  border-color: var(--color-primary);
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+}
+.admin-control-chronology__periods button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.admin-control-chronology__table {
+  overflow: auto;
+  max-height: 60vh;
+}
+.admin-control-chronology__table table {
+  min-width: 850px;
+  font-size: 0.8rem;
+}
+.admin-control-chronology__table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface-secondary);
+}
+.admin-control-chronology__table th:nth-child(n + 4):nth-child(-n + 7) {
+  text-align: right;
+}
+.admin-control-chronology__table td {
+  vertical-align: middle;
+}
+.admin-control-chronology__table .admin-control__number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.admin-control-chronology__table tbody tr:hover {
+  background: var(--color-surface-secondary);
+}
+.admin-control-chronology__valuation {
+  min-width: 170px;
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+}
+.admin-control-chronology__valuation span {
+  display: block;
+}
 .admin-control .admin-control__filters .admin-control__period-field {
   flex-basis: 210px;
 }
@@ -35,7 +108,7 @@
   top: calc(100% + 5px);
   left: 0;
   z-index: 10;
-  width: max(100%, 250px);
+  width: max(100%, 210px);
   max-width: calc(100vw - 48px);
   display: grid;
   gap: 2px;
@@ -121,8 +194,8 @@
 }
 .admin-control__filters > .button--secondary,
 .admin-control__pagination > .button {
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   border: 1px solid var(--color-border);
 }
 .admin-control__filters > .button--secondary:hover:not(:disabled),
@@ -140,11 +213,14 @@
   margin: 15px 0 8px;
   font-size: 0.9rem;
   color: var(--color-text-secondary);
-  align-self: self-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: end;
 }
 .admin-control__summary {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  align-items: center;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) 2fr;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -152,9 +228,10 @@
 .admin-control__badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   padding: 5px 9px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--color-surface-secondary);
   color: var(--color-text-secondary);
   font-size: 0.75rem;

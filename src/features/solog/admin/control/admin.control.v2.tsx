@@ -11,11 +11,13 @@ import { useAdminQuery, useAdminStore } from "../admin.v2.context";
 import type {
   AdminPayloads,
   ControlPeriod,
+  ControlChronologyPeriod,
   DifferenceState,
 } from "../admin.v2";
-import { QueryState, Updated, Value } from "../admin.v2.presentation";
-import { adminTimestamp, validCustomRange } from "../admin.v2.format";
+import { QueryState, Value } from "../admin.v2.presentation";
+import { validCustomRange } from "../admin.v2.format";
 import { AdminExportDialog } from "./admin.control.v2.export-dialog";
+import { controlView } from "./admin.control.data";
 
 const periods: [ControlPeriod, string][] = [
   ["today", "Hoy"],
@@ -23,12 +25,6 @@ const periods: [ControlPeriod, string][] = [
   ["current_biweekly", "Período actual quincenal"],
   ["previous_biweekly", "Período anterior quincenal"],
   ["custom", "Personalizado"],
-];
-const states: DifferenceState[] = [
-  "Coincide",
-  "Recontar",
-  "Confirmada",
-  "Inconsistente",
 ];
 const stateTone: Record<DifferenceState, string> = {
   Coincide: "success",
@@ -59,15 +55,6 @@ function ControlPeriodSelect({
 }) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [confirmedRange, setConfirmedRange] = useState(range);
-  // Presentation only: retain the applied range while the next explicit query resolves.
-  // The parent keys this control by site, so another site's range is never retained.
-  if (
-    range &&
-    (range.from !== confirmedRange?.from || range.to !== confirmedRange?.to)
-  )
-    setConfirmedRange(range);
-  const effectiveRange = range ?? confirmedRange;
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const options = useRef<(HTMLButtonElement | null)[]>([]);
@@ -138,9 +125,9 @@ function ControlPeriodSelect({
         }}
       >
         <span id={rangeId}>
-          {effectiveRange
-            ? `${controlDate(effectiveRange.from)} — ${controlDate(effectiveRange.to)}`
-            : "Rango por confirmar"}
+          {range
+            ? `${controlDate(range.from)} — ${controlDate(range.to)}`
+            : periods.find(([period]) => period === value)?.[1]}
         </span>
         <ChevronDown size={15} aria-hidden="true" />
       </button>
@@ -175,88 +162,63 @@ function ControlPeriodSelect({
   );
 }
 
-function GroupDetail({
-  site,
-  group,
-  name,
-  close,
-}: {
-  site: string;
-  group: string;
-  name: string;
-  close: () => void;
-}) {
-  const query = useAdminQuery("control_detail", {
-    site_id: site,
-    group_id: group,
-  });
+function eventDate(value: string) {
+  const parts = new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", day: "2-digit", month: "short" }).formatToParts(new Date(value));
+  return `${parts.find(part => part.type === "day")!.value} ${parts.find(part => part.type === "month")!.value}`;
+}
+function eventTime(value: string) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(value)).toLowerCase();
+}
+function GroupDetail({ site, group, name, close }: { site: string; group: string; name: string; close: () => void }) {
+  const [period, setPeriod] = useState<ControlChronologyPeriod>("current_biweekly");
+  const actualButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement;
+    const button = actualButton.current;
+    button?.focus();
+    const dialog = button?.closest('[role="dialog"]');
+    const trap = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || !dialog) return;
+      const controls = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input, select, a[href], [tabindex="0"]'));
+      const first = controls[0], last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    dialog?.addEventListener("keydown", trap as EventListener);
+    return () => { dialog?.removeEventListener("keydown", trap as EventListener); if (previous instanceof HTMLElement && previous.isConnected) previous.focus(); };
+  }, []);
+  const query = useAdminQuery("control_chronology", { site_id: site, group_id: group, period });
   return (
-    <AdminDialog
-      title={`Cronología de ${name}`}
-      description="Resultados históricos de este grupo en la sede seleccionada."
-      onClose={close}
-      wide
-      className="admin-v2-drawer"
-    >
-      {!query.data ? (
-        <QueryState {...query} />
-      ) : (
-        <>
-          <Updated at={query.data.generated_at} />
-          <div className="admin-v2-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Origen</th>
-                  <th>Estado vigente</th>
-                  <th>Teórico de conteo</th>
-                  <th>Físico de conteo</th>
-                  <th>Diferencia inicial</th>
-                  <th>Stock posterior</th>
-                  <th>Teórico de reconteo</th>
-                  <th>Físico de reconteo</th>
-                  <th>Recontado</th>
-                  <th>Diferencia vigente</th>
-                  <th>Valorizado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {query.data.chronology.map((r) => (
-                  <tr key={r.case_id}>
-                    <td>{adminTimestamp(r.contado_at)}</td>
-                    <td>{r.estado_diferencia}</td>
-                    <td>
-                      <Value value={r.stock_teorico} />
-                    </td>
-                    <td>
-                      <Value value={r.stock_fisico} />
-                    </td>
-                    <td>
-                      <Value value={r.diferencia_inicial} />
-                    </td>
-                    <td>
-                      <Value value={r.stock_posterior} />
-                    </td>
-                    <td>
-                      <Value value={r.stock_teorico_reconteo} />
-                    </td>
-                    <td>
-                      <Value value={r.stock_reconteo} />
-                    </td>
-                    <td>{adminTimestamp(r.recontado_at)}</td>
-                    <td>
-                      <Value value={r.diferencia} />
-                    </td>
-                    <td>
-                      <Value value={r.valor_diferencia} money />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {!query.data.chronology.length && <p>No hay registros.</p>}
-        </>
+    <AdminDialog title={`Cronología de ${name}`} description="Evolución del grupo por quincena. Fechas y horas de Lima." onClose={close} wide className="admin-control-chronology">
+      <div className="admin-control-chronology__toolbar">
+        <div role="group" aria-label="Quincena de cronología" className="admin-control-chronology__periods">
+          <button ref={actualButton} type="button" aria-pressed={period === "current_biweekly"} onClick={() => setPeriod("current_biweekly")}>Actual</button>
+          <button type="button" aria-pressed={period === "previous_biweekly"} onClick={() => setPeriod("previous_biweekly")}>Anterior</button>
+        </div>
+        {query.data && <span>{controlDate(query.data.period.from)} — {controlDate(query.data.period.to)}</span>}
+      </div>
+      {!query.data ? <QueryState {...query} /> : !query.data.chronology.length ? <p role="status">No hay registros en esta quincena.</p> : (
+        <div className="admin-v2-table admin-control-chronology__table">
+          <table>
+            <thead><tr><th>Fecha</th><th>Hora</th><th>Estado</th><th>Teórico</th><th>Físico</th><th>Diferencia</th><th>Valorizado</th><th>Detalle</th></tr></thead>
+            <tbody>{query.data.chronology.map(row => (
+              <tr key={row.row_id}>
+                <td><time dateTime={row.event_at}>{eventDate(row.event_at)}</time></td>
+                <td>{eventTime(row.event_at)}</td>
+                <td><span className={`admin-control__badge admin-control__tone--${row.state === "Recontado" ? "info" : stateTone[row.state]}`}>{row.state}</span></td>
+                <td className="admin-control__number"><Value value={row.theoretical} /></td>
+                <td className="admin-control__number"><Value value={row.physical} /></td>
+                <td className={`admin-control__number admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}>{row.difference > 0 ? "+" : ""}<Value value={row.difference} /></td>
+                <td className="admin-control__number"><Value value={row.valued_difference} money /></td>
+                <td className="admin-control-chronology__valuation">
+                  <span>Unidad: <Value value={row.valuation.unit_price} money /></span>
+                  {row.valuation.units_per_package !== null && <span>Unidades por paquete: <Value value={row.valuation.units_per_package} /></span>}
+                  {row.valuation.package_price !== null && <span>Paquete: <Value value={row.valuation.package_price} money /></span>}
+                </td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
       )}
     </AdminDialog>
   );
@@ -265,15 +227,22 @@ function ControlResults({
   payload,
   selectedState,
   onStateChange,
+  search,
 }: {
-  payload: AdminPayloads["control_page"];
+  payload: AdminPayloads["control_groups"];
   selectedState: DifferenceState | "";
   onStateChange: (value: DifferenceState | "") => void;
+  search: string;
 }) {
-  const query = useAdminQuery("control_page", payload);
+  const query = useAdminQuery("control_groups", payload);
   const [group, setGroup] = useState<{ id: string; name: string } | null>(null);
+  const [page, setPage] = useState(0);
+  const filterKey = JSON.stringify([selectedState, search]);
+  const [previousFilter, setPreviousFilter] = useState(filterKey);
+  if (filterKey !== previousFilter) { setPreviousFilter(filterKey); setPage(0); }
   const data = query.data;
   if (!data) return <QueryState {...query} />;
+  const view = controlView(data.items, selectedState, search, page);
   return (
     <>
       <div
@@ -286,7 +255,7 @@ function ControlResults({
           aria-pressed={selectedState === ""}
           onClick={() => onStateChange("")}
         >
-          <b>{data.summary.total} conteos</b>
+          <b>{view.summary.total} Total</b>
         </button>
         <button
           type="button"
@@ -294,7 +263,7 @@ function ControlResults({
           aria-pressed={selectedState === "Coincide"}
           onClick={() => onStateChange("Coincide")}
         >
-          <b>{data.summary.coincide} coinciden</b>
+          <b>{view.summary.coincide} Coinciden</b>
         </button>
         <button
           type="button"
@@ -302,7 +271,7 @@ function ControlResults({
           aria-pressed={selectedState === "Recontar"}
           onClick={() => onStateChange("Recontar")}
         >
-          <b>{data.summary.pending_recount} por recontar</b>
+          <b>{view.summary.pending_recount} Recontar</b>
         </button>
         <button
           type="button"
@@ -310,7 +279,7 @@ function ControlResults({
           aria-pressed={selectedState === "Confirmada"}
           onClick={() => onStateChange("Confirmada")}
         >
-          <b>{data.summary.confirmed} confirmados</b>
+          <b>{view.summary.confirmed} Confirmadas</b>
         </button>
         <button
           type="button"
@@ -318,13 +287,13 @@ function ControlResults({
           aria-pressed={selectedState === "Inconsistente"}
           onClick={() => onStateChange("Inconsistente")}
         >
-          <b>{data.summary.inconsistent} incoherentes</b>
+          <b>{view.summary.inconsistent} Inconsistentes</b>
         </button>
         <p className="admin-control__period">
           {controlDate(data.period.from)} — {controlDate(data.period.to)}
         </p>
       </div>
-      {data.items.length > 0 ? (
+      {view.total > 0 ? (
         <div className="admin-v2-table admin-control__table">
           <table>
             <thead>
@@ -339,39 +308,39 @@ function ControlResults({
               </tr>
             </thead>
             <tbody>
-              {data.items.map((row) => (
+              {view.rows.map((row) => (
                 <tr key={row.case_id}>
-                  <td>{row.grupo}</td>
-                  <td>{row.categoria}</td>
+                  <td>{row.group_name}</td>
+                  <td>{row.category}</td>
                   <td>
-                    <time dateTime={row.contado_at}>
-                      {controlDate(row.contado_at, true)}
+                    <time dateTime={row.origin_at}>
+                      {controlDate(row.origin_at, true)}
                     </time>
                   </td>
                   <td>
                     <span
-                      className={`admin-control__badge admin-control__tone--${stateTone[row.estado_diferencia]}`}
+                      className={`admin-control__badge admin-control__tone--${stateTone[row.state]}`}
                     >
-                      {row.estado_diferencia === "Recontar"
+                      {row.state === "Recontar"
                         ? "Por recontar"
-                        : row.estado_diferencia}
+                        : row.state}
                     </span>
                   </td>
                   <td
-                    className={`admin-control__number admin-control__difference--${row.diferencia < 0 ? "negative" : row.diferencia > 0 ? "positive" : "zero"}`}
+                    className={`admin-control__number admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}
                   >
-                    {row.diferencia > 0 ? "+" : ""}
-                    <Value value={row.diferencia} />
+                    {row.difference > 0 ? "+" : ""}
+                    <Value value={row.difference} />
                   </td>
                   <td className="admin-control__number">
-                    <Value value={row.valor_diferencia} money />
+                    <Value value={row.valued_difference} money />
                   </td>
                   <td className="admin-control__detail-cell">
                     <button
                       className="icon-button"
-                      aria-label={`Ver cronología de ${row.grupo}`}
+                      aria-label={`Ver cronología de ${row.group_name}`}
                       onClick={() =>
-                        setGroup({ id: row.grupo_id, name: row.grupo })
+                        setGroup({ id: row.group_id, name: row.group_name })
                       }
                     >
                       <Eye size={16} aria-hidden="true" />
@@ -387,6 +356,13 @@ function ControlResults({
           <SearchX size={18} aria-hidden="true" />
           No hay resultados para los filtros seleccionados.
         </p>
+      )}
+      {view.total > 0 && (
+        <div className="admin-control__pagination">
+          <button className="button button--secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Anterior</button>
+          <span>Página {page + 1}</span>
+          <button className="button button--secondary" disabled={(page + 1) * 100 >= view.total} onClick={() => setPage(p => p + 1)}>Siguiente</button>
+        </div>
       )}
       {group && (
         <GroupDetail
@@ -408,50 +384,25 @@ export function AdminControlV2() {
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState(""),
     [to, setTo] = useState("");
-  const [page, setPage] = useState(0);
   const [exportOpen, setExportOpen] = useState(false);
-  const [payload, setPayload] = useState<AdminPayloads["control_page"]>({
-    site_id: site,
-    period: "today",
-    state: null,
-    page: 0,
-    page_size: 100,
-  });
-  if (payload.site_id !== site) {
-    setPage(0);
-    setPayload({ ...payload, site_id: site, page: 0 });
-  }
   const invalid = period === "custom" && !validCustomRange(from, to);
-  const apply = () => {
-    setPage(0);
-    setPayload({
-      site_id: site,
-      period,
-      state: state || null,
-      ...(search.trim() ? { search: search.trim() } : {}),
-      page: 0,
-      page_size: 100,
-      ...(period === "custom" ? { date_from: from, date_to: to } : {}),
-    });
+  const currentPayload: AdminPayloads["control_groups"] | null = !site || invalid ? null : {
+    site_id: site,
+    period,
+    ...(period === "custom" ? { date_from: from, date_to: to } : {}),
   };
-  const currentPayload = { ...payload, page };
-  const cached = store.peek("control_page", currentPayload).data;
+  const cached = currentPayload ? store.peek("control_groups", currentPayload).data : undefined;
   return (
     <section className="admin-control">
-      <form
-        className="admin-filter-bar admin-control__filters"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!invalid) apply();
-        }}
-      >
+      <h2>Control de diferencias</h2>
+      <div className="admin-filter-bar admin-control__filters">
         <div className="admin-filter-field admin-control__period-field">
           <span>Período</span>
           <ControlPeriodSelect
             key={site}
             value={period}
             onChange={setPeriod}
-            range={currentPayload.site_id === site ? cached?.period : undefined}
+            range={cached?.period}
           />
         </div>
         {period === "custom" && (
@@ -474,21 +425,6 @@ export function AdminControlV2() {
             </label>
           </>
         )}
-        <label className="admin-filter-field">
-          Estado
-          <select
-            aria-label="Estado"
-            value={state}
-            onChange={(e) => setState(e.target.value as DifferenceState | "")}
-          >
-            <option value="">Todos</option>
-            {states.map((s) => (
-              <option key={s} value={s}>
-                {s === "Recontar" ? "Por recontar" : s}
-              </option>
-            ))}
-          </select>
-        </label>
         <label className="admin-filter-field admin-filter-search-field">
           Buscar grupo
           <span className="admin-filter-search-control">
@@ -496,9 +432,6 @@ export function AdminControlV2() {
             <input value={search} onChange={(e) => setSearch(e.target.value)} />
           </span>
         </label>
-        <button className="button" disabled={!site || invalid}>
-          Aplicar filtros
-        </button>
         <button
           type="button"
           disabled={!site}
@@ -508,43 +441,23 @@ export function AdminControlV2() {
           <Download size={16} aria-hidden="true" />
           Descargar ajuste
         </button>
-      </form>
+      </div>
       {invalid && (
-        <p role="alert">Selecciona un rango válido de hasta 90 días.</p>
+        <p role="alert">Selecciona un rango válido de hasta 92 días.</p>
       )}
-      {site ? (
+      {currentPayload ? (
         <>
           <ControlResults
             key={JSON.stringify(currentPayload)}
             payload={currentPayload}
             selectedState={state}
             onStateChange={setState}
+            search={search}
           />
-          {!!cached?.items.length && (
-            <div className="admin-control__pagination">
-              <button
-                className="button button--secondary"
-                disabled={page === 0}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Anterior
-              </button>
-              <span>Página {page + 1}</span>
-              <button
-                className="button button--secondary"
-                disabled={
-                  !cached ||
-                  (page + 1) * cached.page_size >= cached.summary.total
-                }
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Siguiente
-              </button>
-            </div>
-          )}
+
         </>
       ) : (
-        <p>No hay sedes disponibles.</p>
+        !site ? <p>No hay sedes disponibles.</p> : null
       )}
       {exportOpen && (
         <AdminExportDialog siteId={site} onClose={() => setExportOpen(false)} />

@@ -29,6 +29,27 @@ export interface DailyDetail extends Envelope {
   items: { case_id: string; grupo_id: string; grupo: string; estado: DifferenceState; contado_at: string; recontado_at: string | null; theoretical: number; physical: number; difference: number; value: number | null; source: 'initial' | 'posterior' | 'recount' }[]
 }
 export interface StateSummary { total: number; coincide: number; pending_recount: number; confirmed: number; inconsistent: number }
+export interface ControlGroupsPayload { site_id: string; period: ControlPeriod; date_from?: string; date_to?: string }
+export interface ControlGroupItem {
+  case_id: string; group_id: string; group_name: string; category: string; origin_at: string
+  state: DifferenceState; difference: number; valued_difference: number
+}
+export interface ControlGroupsResponse extends Envelope {
+  revisions: { operational: number }
+  site_id: string; period: { key: ControlPeriod; from: string; to: string }; items: ControlGroupItem[]
+}
+export type ControlChronologyPeriod = Biweekly
+export interface ControlChronologyPayload { site_id: string; group_id: string; period: ControlChronologyPeriod }
+export interface ControlChronologyRow {
+  row_id: string; case_id: string; event_at: string; state: DifferenceState | 'Recontado'
+  theoretical: number; physical: number; difference: number; valued_difference: number
+  valuation: { unit_price: number; units_per_package: number | null; package_price: number | null }
+}
+export interface ControlChronologyResponse extends Envelope {
+  revisions: { operational: number }
+  site_id: string; group: { id: string; name: string; category: string | null }
+  period: { key: ControlChronologyPeriod; from: string; to: string }; chronology: ControlChronologyRow[]
+}
 export interface ControlPage extends Envelope {
   site_id: string; period: { key: ControlPeriod; from: string; to: string }; summary: StateSummary
   items: { case_id: string; grupo_id: string; grupo: string; categoria: string; contado_at: string; recontado_at: string | null; estado_diferencia: DifferenceState; diferencia: number; valor_diferencia: number | null }[]
@@ -52,11 +73,13 @@ export interface AdminPayloads {
   dashboard_cards: Record<string, never>
   shift_grid: { site_id: string; period?: Biweekly }
   daily_detail: { site_id: string; origin_date: string }
+  control_groups: ControlGroupsPayload
+  control_chronology: ControlChronologyPayload
   control_page: { site_id: string; period: ControlPeriod; state: DifferenceState | null; search?: string; page: number; page_size: number; date_from?: string; date_to?: string }
   control_detail: { site_id: string; group_id: string }
   export: { site_id: string; period: Biweekly }
 }
-export interface AdminResponses { bootstrap: AdminBootstrap; dashboard_cards: DashboardCards; shift_grid: ShiftGrid; daily_detail: DailyDetail; control_page: ControlPage; control_detail: ControlDetail; export: ControlExport }
+export interface AdminResponses { bootstrap: AdminBootstrap; dashboard_cards: DashboardCards; shift_grid: ShiftGrid; daily_detail: DailyDetail; control_groups: ControlGroupsResponse; control_chronology: ControlChronologyResponse; control_page: ControlPage; control_detail: ControlDetail; export: ControlExport }
 export type AdminAction = keyof AdminPayloads
 
 type RecordValue = Record<string, unknown>
@@ -68,6 +91,24 @@ function nullableNumbers(value: RecordValue, keys: string[]) { return keys.every
 function nullableTime(value: unknown) { return value === null || typeof value === 'string' && Number.isFinite(Date.parse(value)) }
 function state(value: unknown) { return ['Coincide', 'Recontar', 'Confirmada', 'Inconsistente'].includes(String(value)) }
 function source(value: unknown) { return ['initial', 'posterior', 'recount'].includes(String(value)) }
+function dateOnly(value: unknown): value is string { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value }
+const controlPeriods = ['today', 'last_week', 'current_biweekly', 'previous_biweekly', 'custom']
+function controlRange(value: unknown, chronology = false) {
+  return record(value) && (chronology ? ['current_biweekly', 'previous_biweekly'] : controlPeriods).includes(String(value.key)) && dateOnly(value.from) && dateOnly(value.to) && value.from <= value.to
+}
+function unique(rows: unknown, key: string) { return Array.isArray(rows) && new Set(rows.map(row => row[key])).size === rows.length }
+export function validateControlPayload(action: AdminAction, payload: unknown) {
+  if (action !== 'control_groups' && action !== 'control_chronology') return
+  const chronology = action === 'control_chronology'
+  let valid = record(payload) && strings(payload, ['site_id', 'period']) && !!payload.site_id
+  if (valid && record(payload)) {
+    const allowed = chronology ? ['site_id', 'group_id', 'period'] : payload.period === 'custom' ? ['site_id', 'period', 'date_from', 'date_to'] : ['site_id', 'period']
+    valid = Object.keys(payload).every(key => allowed.includes(key)) && (chronology
+      ? strings(payload, ['group_id']) && !!payload.group_id && ['current_biweekly', 'previous_biweekly'].includes(String(payload.period))
+      : controlPeriods.includes(String(payload.period)) && (payload.period !== 'custom' || dateOnly(payload.date_from) && dateOnly(payload.date_to) && payload.date_from <= payload.date_to && (Date.parse(payload.date_to) - Date.parse(payload.date_from)) / 86400000 + 1 <= 92))
+  }
+  if (!valid) throw new Error(`Payload ${action} incompatible con contrato V10.`)
+}
 function exportBase(r: RecordValue) { return strings(r, ['case_id', 'grupo_id', 'grupo', 'categoria', 'fecha_origen']) && nullableTime(r.fecha_origen) }
 function exportResult(r: RecordValue) { return exportBase(r) && state(r.estado) && source(r.source) && numbers(r, ['teorico', 'fisico', 'diferencia']) && nullableNumbers(r, ['valorizado']) }
 export function validateAdminResponse<A extends AdminAction>(action: A, value: unknown): AdminResponses[A] {
@@ -79,6 +120,8 @@ export function validateAdminResponse<A extends AdminAction>(action: A, value: u
     case 'dashboard_cards': valid = array(value.sites, r => strings(r, ['site_id', 'site']) && numbers(r, ['pending_recount', 'operational_revision']) && numbers(r.period_coverage, ['counted', 'total', 'percent']) && record(r.period_coverage) && typeof r.period_coverage.complete === 'boolean' && numbers(r.daily_coverage, ['counted_today', 'total', 'percent']) && (r.snapshot === null || strings(r.snapshot, ['id', 'capturado_at', 'confirmado_at']))); break
     case 'shift_grid': valid = strings(value, ['site_id']) && strings(value.period, ['key', 'from', 'to']) && record(value.data) && array(value.data.shifts, r => strings(r, ['date', 'calculated_at']) && ['early', 'day', 'night'].includes(String(r.shift)) && numbers(r, ['numerator', 'denominator', 'percentage'])) && array(value.data.totals, r => strings(r, ['date']) && numbers(r, ['numerator', 'denominator', 'percentage'])); break
     case 'daily_detail': valid = strings(value, ['site_id', 'origin_date']) && numbers(value.summary, ['pending_recount', 'confirmed', 'inconsistent']) && rows(value.items); break
+    case 'control_groups': valid = strings(value, ['site_id']) && controlRange(value.period) && array(value.items, r => strings(r, ['case_id', 'group_id', 'group_name', 'category', 'origin_at']) && nullableTime(r.origin_at) && state(r.state) && numbers(r, ['difference', 'valued_difference'])) && unique(value.items, 'group_id') && unique(value.items, 'case_id'); break
+    case 'control_chronology': valid = strings(value, ['site_id']) && strings(value.group, ['id', 'name']) && record(value.group) && (value.group.category === null || typeof value.group.category === 'string') && controlRange(value.period, true) && array(value.chronology, r => strings(r, ['row_id', 'case_id', 'event_at']) && nullableTime(r.event_at) && (state(r.state) || r.state === 'Recontado') && numbers(r, ['theoretical', 'physical', 'difference', 'valued_difference']) && numbers(r.valuation, ['unit_price']) && record(r.valuation) && nullableNumbers(r.valuation, ['units_per_package', 'package_price'])) && unique(value.chronology, 'row_id'); break
     case 'control_page': valid = strings(value, ['site_id']) && strings(value.period, ['key', 'from', 'to']) && numbers(value.summary, ['total', 'coincide', 'pending_recount', 'confirmed', 'inconsistent']) && rows(value.items) && Number.isInteger(value.page) && Number(value.page) >= 0 && Number.isInteger(value.page_size) && Number(value.page_size) >= 1 && Number(value.page_size) <= 100; break
     case 'control_detail': valid = strings(value, ['site_id', 'group_id']) && rows(value.chronology); break
     case 'export': valid = strings(value.site, ['id', 'nombre']) && strings(value.period, ['key', 'from', 'to']) && numbers(value.summary, ['total', 'coincide', 'pending_recount', 'confirmed', 'inconsistent']) && [value.adjustments, value.pending_recount, value.inconsistent, value.all].every(rows); break
@@ -95,6 +138,7 @@ export function validateAdminResponse<A extends AdminAction>(action: A, value: u
   return value as unknown as AdminResponses[A]
 }
 export async function adminRpc<A extends AdminAction>(action: A, payload: AdminPayloads[A]): Promise<AdminResponses[A]> {
+  validateControlPayload(action, payload)
   if (!supabase) throw createSologConfigurationError()
   const rpc = action === 'bootstrap' ? 'rpc_solog_admin_bootstrap_v2' : action === 'export' ? 'rpc_solog_control_export_v2' : 'rpc_solog_operational_v2'
   const args = action === 'bootstrap' || action === 'export' ? { p_payload: payload } : { p_action: action, p_payload: payload }
