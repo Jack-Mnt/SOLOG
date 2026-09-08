@@ -95,8 +95,8 @@ export async function runAdminV2Browser() {
     await page.getByRole('button',{name:'Cerrar',exact:true}).click()
     await page.getByRole('button',{name:'Dashboard',exact:true}).click();await page.getByRole('heading',{name:'Sede A',exact:true}).waitFor();assert.equal(count('dashboard_cards'),1)
     await page.getByRole('button',{name:'Control',exact:true}).click();await page.getByText('Grupo 99',{exact:true}).waitFor();assert.equal(count('control_page'),2)
-    await page.getByLabel('Período',{exact:true}).selectOption('custom');await page.getByLabel('Desde',{exact:true}).fill('2026-01-01');await page.getByLabel('Hasta',{exact:true}).fill('2026-05-01');assert.equal(await page.getByRole('button',{name:'Aplicar filtros'}).isDisabled(),true)
-    await page.getByLabel('Hasta',{exact:true}).fill('2026-04-02');await page.getByRole('button',{name:'Aplicar filtros'}).click();await page.getByText('01 ene. — 02 abr.',{exact:true}).waitFor()
+    await page.getByRole('combobox',{name:'Período',exact:true}).click();await page.getByRole('option',{name:'Personalizado',exact:true}).click();await page.getByLabel('Desde',{exact:true}).fill('2026-01-01');await page.getByLabel('Hasta',{exact:true}).fill('2026-05-01');assert.equal(await page.getByRole('button',{name:'Aplicar filtros'}).isDisabled(),true)
+    await page.getByLabel('Hasta',{exact:true}).fill('2026-04-02');await page.getByRole('button',{name:'Aplicar filtros'}).click();await page.getByRole('combobox',{name:'Período',exact:true}).filter({hasText:'01 ene. — 02 abr.'}).waitFor()
     for(const period of ['current_biweekly','previous_biweekly']) {
       await page.getByRole('button',{name:'Descargar ajuste',exact:true}).click()
       await page.getByLabel('Período de exportación').selectOption(period)

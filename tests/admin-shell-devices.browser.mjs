@@ -26,7 +26,7 @@ const device = (siteIndex, state, suffix) => ({
 })
 let devices = [device(4, 'autorizado', '3f'), device(3, 'autorizado', '4f'), device(3, 'pendiente', '5f'), device(2, 'pendiente', '6f')]
 const calls = [], errors = []
-let failList = false, heldMutation
+let failList = false, heldMutation, holdControlRead = false, releaseControlRead
 await context.route('**/*', async route => {
   const url = new URL(route.request().url())
   if (url.hostname === '127.0.0.1') return route.continue()
@@ -56,6 +56,9 @@ await context.route('**/*', async route => {
   }
   if (action === 'control_page') {
     const data = responseFixture(action, p)
+    const ranges = { today: ['2026-09-03', '2026-09-03'], last_week: ['2026-08-28', '2026-09-03'], current_biweekly: ['2026-09-01', '2026-09-15'], previous_biweekly: ['2026-08-16', '2026-08-31'] }
+    if (ranges[p.period]) [data.period.from, data.period.to] = ranges[p.period]
+    if (holdControlRead) await new Promise(resolve => { releaseControlRead = resolve })
     if (p.site_id === 'site-1') return fulfill({ ...data, items: [], summary: { total: 0, coincide: 0, pending_recount: 0, confirmed: 0, inconsistent: 0 } })
     data.items = data.items.map((row, i) => ({ ...row, estado_diferencia: ['Coincide', 'Recontar', 'Confirmada', 'Inconsistente'][i % 4], diferencia: [0, 2, -2, -3][i % 4] }))
     return fulfill(data)
@@ -227,6 +230,73 @@ try {
   const detailButton = control.getByRole('button', { name: 'Ver cronología de Grupo 0', exact: true })
   assert.equal(await detailButton.locator('.lucide-eye').count(), 1)
   assert.equal(await detailButton.innerText(), '')
+  const periodTrigger = control.getByRole('combobox', { name: 'Período', exact: true })
+  const initialRange = await periodTrigger.innerText()
+  assert.match(initialRange, /03 (set|sep)\. — 03 (set|sep)\./)
+  const beforeSelection = count('control_page')
+  await periodTrigger.click()
+  assert.deepEqual(await control.getByRole('listbox').getByRole('option').allTextContents(), ['Hoy', 'Última semana', 'Período actual quincenal', 'Período anterior quincenal', 'Personalizado'])
+  assert.equal(await control.getByRole('option', { name: 'Hoy', exact: true }).getAttribute('aria-selected'), 'true')
+  await page.keyboard.press('Escape')
+  assert.equal(await periodTrigger.getAttribute('aria-expanded'), 'false')
+  assert.equal(await periodTrigger.evaluate(node => node === document.activeElement), true)
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('End')
+  await page.keyboard.press('Home')
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('Enter')
+  assert.equal(await periodTrigger.getAttribute('title'), 'Última semana')
+  assert.equal(await periodTrigger.innerText(), initialRange)
+  assert.equal(count('control_page'), beforeSelection)
+  holdControlRead = true
+  await control.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await control.getByRole('status').waitFor()
+  assert.equal(await periodTrigger.innerText(), initialRange, 'Keep confirmed range while request is pending')
+  holdControlRead = false
+  releaseControlRead()
+  await periodTrigger.filter({ hasText: /28 ago\. — 03 (set|sep)\./ }).waitFor()
+  for (const [label, expected] of [['Período actual quincenal', /01 (set|sep)\. — 15 (set|sep)\./], ['Período anterior quincenal', /16 ago\. — 31 ago\./], ['Personalizado', /03 (set|sep)\. — 11 (set|sep)\./]]) {
+    const previous = await periodTrigger.innerText(), before = count('control_page')
+    await periodTrigger.click()
+    await control.getByRole('option', { name: label, exact: true }).click()
+    if (label === 'Personalizado') {
+      await control.getByLabel('Desde', { exact: true }).fill('2026-09-03')
+      await control.getByLabel('Hasta', { exact: true }).fill('2026-09-11')
+    }
+    assert.equal(await periodTrigger.innerText(), previous)
+    assert.equal(count('control_page'), before)
+    await control.getByRole('button', { name: 'Aplicar filtros' }).click()
+    await periodTrigger.filter({ hasText: expected }).waitFor()
+    assert.equal(count('control_page'), before + 1)
+  }
+  await periodTrigger.click()
+  await screenshot('control-period-open')
+  await control.getByRole('heading', { name: 'Control de diferencias' }).click()
+  assert.equal(await periodTrigger.getAttribute('aria-expanded'), 'false')
+  await periodTrigger.focus()
+  await page.keyboard.press('Space')
+  await page.keyboard.press('Tab')
+  assert.equal(await periodTrigger.getAttribute('aria-expanded'), 'false')
+  await periodTrigger.click()
+  await control.getByRole('option', { name: 'Hoy', exact: true }).click()
+  await control.getByRole('button', { name: 'Aplicar filtros' }).click()
+  await periodTrigger.filter({ hasText: initialRange }).waitFor()
+  const beforeChips = count('control_page')
+  const stateSelect = control.getByLabel('Estado', { exact: true })
+  for (const [label, value] of [['Coinciden', 'Coincide'], ['Recontar', 'Recontar'], ['Confirmadas', 'Confirmada'], ['Inconsistentes', 'Inconsistente'], ['Total', '']]) {
+    const chip = control.locator('.admin-control__chip').filter({ hasText: label })
+    await chip.click()
+    assert.equal(await stateSelect.inputValue(), value)
+    assert.equal(await chip.getAttribute('aria-pressed'), 'true')
+    assert.equal(await control.locator('.admin-control__chip[aria-pressed="true"]').count(), 1)
+    await stateSelect.selectOption('')
+    assert.equal(await control.locator('.admin-control__chip').filter({ hasText: 'Total' }).getAttribute('aria-pressed'), 'true')
+    await stateSelect.selectOption(value)
+    assert.equal(await chip.getAttribute('aria-pressed'), 'true')
+  }
+  assert.equal(await stateSelect.locator('option[value="Recontar"]').innerText(), 'Por recontar')
+  assert.equal(count('control_page'), beforeChips, 'Chips/select edit locally without requests')
+  console.log('PASS Control delta: authoritative ranges, delayed response, presets/custom, keyboard/outside close, all chip mappings and two-way state sync')
   const beforeFilters = count('control_page')
   await control.getByLabel('Buscar grupo').fill('Grupo')
   await control.getByLabel('Estado', { exact: true }).selectOption('Recontar')

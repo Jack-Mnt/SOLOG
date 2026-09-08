@@ -1,8 +1,107 @@
 /* Control: composición local; contratos, detalle y exportación sin cambios. */
-.admin-control > h2 { margin: 0 0 12px; font-size: 1rem; }
-.admin-control .admin-control__filters { padding: 10px 12px; gap: 10px; }
-.admin-control__filters .admin-filter-field { flex-basis: 170px; min-width: 140px; }
-.admin-control__filters .admin-filter-search-field { flex: 1 1 200px; min-width: 180px; }
+.admin-control .admin-control__filters .admin-control__period-field {
+  flex-basis: 210px;
+}
+.admin-control__period-select {
+  position: relative;
+  min-width: 0;
+}
+.admin-control__period-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--admin-control-height);
+  padding: 7px 10px;
+  border: 1px solid var(--admin-control-border);
+  border-radius: var(--admin-control-radius);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+.admin-control__period-trigger > svg {
+  flex-shrink: 0;
+}
+.admin-control__period-trigger:hover {
+  border-color: var(--color-primary);
+}
+.admin-control__period-options {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 10;
+  width: max(100%, 250px);
+  max-width: calc(100vw - 48px);
+  display: grid;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-surface);
+  box-shadow: 0 5px 15px
+    color-mix(in srgb, var(--color-text-primary) 12%, transparent);
+}
+.admin-control__period-options > button {
+  border: 0;
+  border-radius: 5px;
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+.admin-control__period-options > button:hover,
+.admin-control__period-options > button[aria-selected="true"] {
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+}
+.admin-control__summary > .admin-control__chip {
+  font-family: inherit;
+  margin-top: 12px;
+  border: 1px solid;
+  cursor: pointer;
+}
+.admin-control__summary > .admin-control__chip:hover {
+  border-color: currentColor;
+}
+.admin-control__summary > .admin-control__chip[aria-pressed="true"] {
+  border-color: currentColor;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+  background-image: linear-gradient(
+    color-mix(in srgb, currentColor 7%, transparent),
+    color-mix(in srgb, currentColor 7%, transparent)
+  );
+}
+.admin-control__period-trigger:focus-visible,
+.admin-control__period-options > button:focus-visible,
+.admin-control__summary > .admin-control__chip:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.admin-control > h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+.admin-control .admin-control__filters {
+  padding: 10px 12px;
+  gap: 10px;
+}
+.admin-control__filters .admin-filter-field {
+  flex-basis: 170px;
+  min-width: 140px;
+}
+.admin-control__filters .admin-filter-search-field {
+  flex: 1 1 200px;
+  min-width: 180px;
+}
 .admin-control__filters > .button,
 .admin-control__pagination > .button {
   min-height: 38px;
@@ -31,9 +130,24 @@
   color: var(--color-primary-active);
   background: var(--color-primary-subtle);
 }
-.admin-control__export { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; }
-.admin-control__period { margin: 14px 0 10px; font-size: 0.75rem; color: var(--color-text-secondary); }
-.admin-control__summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.admin-control__export {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+.admin-control__period {
+  margin: 15px 0 8px;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  align-self: self-end;
+}
+.admin-control__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
 .admin-control__chip,
 .admin-control__badge {
   display: inline-flex;
@@ -48,11 +162,38 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.admin-control__chip b { font-weight: 700; }
-.admin-control__badge { padding: 3px 7px; font-size: 0.6875rem; font-weight: 600; }
-.admin-control__tone--success { background: var(--color-success-soft); color: color-mix(in srgb, var(--color-success) 60%, var(--color-text-primary)); }
-.admin-control__tone--warning { background: var(--color-warning-soft); color: color-mix(in srgb, var(--color-warning) 45%, var(--color-text-primary)); }
-.admin-control__tone--danger { background: var(--color-danger-soft); color: color-mix(in srgb, var(--color-danger) 75%, var(--color-text-primary)); }
+.admin-control__chip b {
+  font-weight: 700;
+}
+.admin-control__badge {
+  padding: 3px 7px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.admin-control__tone--success {
+  background: var(--color-success-soft);
+  color: color-mix(
+    in srgb,
+    var(--color-success) 60%,
+    var(--color-text-primary)
+  );
+}
+.admin-control__tone--info {
+  background: var(--color-info-soft);
+  color: color-mix(in srgb, var(--color-info) 60%, var(--color-text-primary));
+}
+.admin-control__tone--warning {
+  background: var(--color-warning-soft);
+  color: color-mix(
+    in srgb,
+    var(--color-warning) 45%,
+    var(--color-text-primary)
+  );
+}
+.admin-control__tone--danger {
+  background: var(--color-danger-soft);
+  color: color-mix(in srgb, var(--color-danger) 75%, var(--color-text-primary));
+}
 .admin-control > .admin-control__table {
   margin: 0;
   max-height: min(65vh, 680px);
@@ -61,9 +202,16 @@
   background: var(--color-surface);
   isolation: isolate;
 }
-.admin-control > .admin-control__table table { border-collapse: separate; border-spacing: 0; }
+.admin-control > .admin-control__table table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
 .admin-control > .admin-control__table th,
-.admin-control > .admin-control__table td { padding: 8px 14px; font-size: 0.8125rem; line-height: 1.4; }
+.admin-control > .admin-control__table td {
+  padding: 8px 14px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
 .admin-control__table thead th {
   position: sticky;
   top: 0;
@@ -73,12 +221,25 @@
   font-size: 0.75rem;
   font-weight: 600;
 }
-.admin-control__table tbody tr:hover { background: var(--color-primary-subtle); }
-.admin-control__table .admin-control__number { text-align: right; font-variant-numeric: tabular-nums; }
-.admin-control__table .admin-control__detail-cell { text-align: center; }
-.admin-control__difference--negative { color: color-mix(in srgb, var(--color-danger) 80%, var(--color-text-primary)); }
-.admin-control__difference--positive { color: color-mix(in srgb, var(--color-info) 80%, var(--color-text-primary)); }
-.admin-control__difference--zero { color: var(--color-text-secondary); }
+.admin-control__table tbody tr:hover {
+  background: var(--color-primary-subtle);
+}
+.admin-control__table .admin-control__number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.admin-control__table .admin-control__detail-cell {
+  text-align: center;
+}
+.admin-control__difference--negative {
+  color: color-mix(in srgb, var(--color-danger) 80%, var(--color-text-primary));
+}
+.admin-control__difference--positive {
+  color: color-mix(in srgb, var(--color-info) 80%, var(--color-text-primary));
+}
+.admin-control__difference--zero {
+  color: var(--color-text-secondary);
+}
 .admin-control__table .icon-button {
   display: inline-flex;
   align-items: center;
@@ -90,16 +251,44 @@
   background: transparent;
   box-shadow: none;
 }
-.admin-control__table .icon-button:hover { color: var(--color-primary-active); background: var(--color-primary-soft); }
+.admin-control__table .icon-button:hover {
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+}
 .admin-control__table .icon-button:focus-visible,
 .admin-control__filters > .button:focus-visible,
-.admin-control__pagination > .button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-.admin-control__empty { display: flex; align-items: center; gap: 8px; margin: 18px 0; color: var(--color-text-secondary); font-size: 0.8125rem; }
-.admin-control__pagination { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 12px; font-size: 0.75rem; color: var(--color-text-secondary); }
-.admin-control__pagination > .button { min-height: 32px; }
+.admin-control__pagination > .button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.admin-control__empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+.admin-control__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+.admin-control__pagination > .button {
+  min-height: 32px;
+}
 @media (max-width: 850px) {
-  .admin-control__filters .admin-filter-field { flex: 1 1 170px; max-width: none; }
-  .admin-control__filters .admin-filter-search-field { flex-basis: 100%; }
+  .admin-control__filters .admin-filter-field {
+    flex: 1 1 170px;
+    max-width: none;
+  }
+  .admin-control__filters .admin-filter-search-field {
+    flex-basis: 100%;
+  }
 }
 
 /* Dashboard global: una sede por fila, sin alterar las cards de otros módulos. */
