@@ -53,6 +53,16 @@ await context.route('**/*',async route=>{
   }
   if(['groups','group_products','catalog_changes'].includes(action)){assert.equal(p.limit,50);assert.ok(p.offset>=0);assert.equal('page' in p||'cursor' in p,false)}
   const r=managementFixture(action,p,revisions)
+  if(action==='catalog_changes') {
+    const price=r.rows[0]
+    const urgent={...price,propuesta_fingerprint:'add-fingerprint',cambio_id:'change-add',tipo:'agregar_producto',seccion:'urgente',producto:'Producto urgente',c_interno:456,datos:{precio:4},catalogo_actual:{...price.catalogo_actual,producto:null,precio:null}}
+    const approvedRow={...price,propuesta_fingerprint:'name-fingerprint',cambio_id:'change-name',tipo:'nombre',estado:'aprobado',producto:'Nombre vigente',datos:{producto_nuevo:'Nombre propuesto'}}
+    const ignoredRow={...price,propuesta_fingerprint:'code-fingerprint',cambio_id:'change-code',tipo:'codigo',estado:'ignorado',datos:{c_barras_nuevo:'987654321'}}
+    const incorporatedRow={...price,propuesta_fingerprint:'delete-fingerprint',cambio_id:'change-delete',tipo:'eliminar_producto',estado:'incorporado'}
+    const rows=[price,urgent,approvedRow,ignoredRow,incorporatedRow]
+    r.rows=rows.filter(change=>!p.estado||change.estado===p.estado).slice(p.offset,p.offset+p.limit)
+    r.counts={pendiente:2,aprobado:1,ignorado:1,incorporado:1,urgentes_pendientes:1,cambios_pendientes:1,producto_aprobado:1,grupo_aprobado:0}
+  }
   if(action==='reference') {
     r.categories.push({id:'cat-empty',nombre:'Sin grupos'})
     r.groups.push({...r.groups[0],id:'unique',nombre:'Agua individual',unidades_por_paquete:null,precio_paquete:null})
@@ -64,7 +74,7 @@ await context.route('**/*',async route=>{
       .filter(g=>(!p.tipo||g.tipo===p.tipo)&&(!p.categoria_id||g.categoria_id===p.categoria_id)&&(!p.buscar||g.nombre.toLowerCase().includes(p.buscar.toLowerCase())))
       .slice(p.offset,p.offset+p.limit)
   }
-  if(action==='catalog_changes'&&approved)r.rows[0].estado='aprobado'
+  if(action==='catalog_changes'&&approved)r.rows=r.rows.filter(change=>change.propuesta_fingerprint!=='price-fingerprint')
   if(action==='summary'){r.families[0].suppressed_cases=suppressed?2:0;r.families[0].pending_cases=suppressed?0:2;r.families[0].active_suppression_until=suppressed?'2026-10-04T12:00:00Z':null;r.families[0].deletion_proposed=deletion}
   if(action==='list')r.devices=r.devices.filter(d=>deviceStates.get(d.id)!=='removed').map(d=>({...d,estado:deviceStates.get(d.id)??d.estado}))
   return fulfill(r)
@@ -73,8 +83,18 @@ const page=await context.newPage();page.setDefaultTimeout(12000);page.on('pageer
 const nav=label=>page.getByRole('navigation',{name:'Módulos administrativos'}).getByRole('button',{name:label,exact:true}).click()
 const close=()=>page.getByRole('dialog').last().getByRole('button',{name:'Cerrar',exact:true}).click()
 try{
-  await page.goto('http://127.0.0.1:5209/admin/catalogo');await page.getByRole('button',{name:'Ver propuesta'}).waitFor();assert.equal(count('bootstrap'),1);assert.equal(count('publication_preview'),0)
-  await page.getByRole('button',{name:'Ver propuesta'}).click();await page.getByRole('button',{name:'Aprobar',exact:true}).click();await page.getByRole('heading',{name:'Resolver precio del grupo'}).waitFor();await page.getByRole('button',{name:'Actualizar precio de todo el grupo'}).click();await page.getByRole('dialog').waitFor({state:'detached'})
+  await page.goto('http://127.0.0.1:5209/admin/catalogo');await page.getByRole('button',{name:/Revisar propuesta/}).first().waitFor();assert.equal(count('bootstrap'),1);assert.equal(count('publication_preview'),0)
+  const catalog=page.locator('.admin-catalog')
+  assert.equal(await catalog.getByRole('button',{name:'Pendientes 2'}).getAttribute('aria-pressed'),'true')
+  assert.equal(await catalog.getByRole('button',{name:'Todas'}).count(),0)
+  assert.deepEqual(await catalog.locator('.admin-catalog__section--urgent thead th').allTextContents(),['Tipo','Nombre','C. Interno','Precio','Acciones'])
+  assert.deepEqual(await catalog.locator('.admin-catalog__section--emerging thead th').allTextContents(),['Tipo','Nombre','Actual','Nuevo valor','Acciones'])
+  assert.equal(await catalog.getByRole('button',{name:/Revisar propuesta/}).count()>0,true)
+  await catalog.getByRole('button',{name:'Aprobados 1'}).click();await catalog.getByText('Nombre propuesto',{exact:true}).waitFor();assert.equal(await catalog.getByRole('button',{name:'Aprobados 1'}).getAttribute('aria-pressed'),'true')
+  await catalog.getByRole('button',{name:'Ignorados 1'}).click();await catalog.getByText('987654321',{exact:true}).waitFor()
+  await catalog.getByRole('button',{name:'Incorporados 1'}).click();await catalog.getByText('Eliminar producto',{exact:true}).waitFor()
+  await catalog.getByRole('button',{name:'Pendientes 2'}).click();await catalog.getByText('Producto urgente',{exact:true}).waitFor()
+  await page.getByRole('button',{name:'Revisar propuesta: Bebida prueba',exact:true}).click();assert.equal(await page.getByRole('dialog').locator('pre').count(),0);await page.getByRole('button',{name:'Aprobar',exact:true}).click();await page.getByRole('heading',{name:'Resolver precio del grupo'}).waitFor();await page.getByRole('button',{name:'Actualizar precio de todo el grupo'}).click();await page.getByRole('dialog').waitFor({state:'detached'})
   await page.getByRole('button',{name:'Revisar publicación'}).click();await page.getByRole('button',{name:'Confirmar publicación'}).click();await page.getByRole('button',{name:'Reintentar publicación'}).waitFor();await page.reload();await page.getByRole('button',{name:'Recuperar publicación'}).click();await page.getByRole('button',{name:'Reintentar publicación'}).click();await page.getByText(/CATALOG_PUBLISHED/).waitFor();await close();assert.equal(count('publish'),2)
   await nav('Grupos');
   const groups=page.locator('.admin-groups'),table=groups.getByRole('table'),groupRow=()=>table.getByRole('row').filter({has:page.getByRole('rowheader',{name:'Bebidas agrupadas',exact:true})})
@@ -97,12 +117,12 @@ try{
   await groups.getByLabel('Tipo').selectOption('Único')
   await unique.waitFor();await groupRow().waitFor({state:'detached'})
   assert.equal(calls.filter(c=>c.action==='groups').at(-1).payload.tipo,'Único')
-  await nav('Catálogo');await page.getByRole('button',{name:'Ver propuesta'}).waitFor()
+  await nav('Catálogo');await page.getByRole('button',{name:/Revisar propuesta/}).first().waitFor()
   await nav('Grupos')
   await groupRow().waitFor()
   await groups.getByLabel('Categoría').selectOption('cat-empty')
   await groups.getByText('No hay grupos para los filtros seleccionados.').waitFor()
-  await nav('Catálogo');await page.getByRole('button',{name:'Ver propuesta'}).waitFor()
+  await nav('Catálogo');await page.getByRole('button',{name:/Revisar propuesta/}).first().waitFor()
   await nav('Grupos');await groupRow().waitFor()
   const beforeSearch=count('groups')
   await groups.getByLabel('Buscar grupo').fill('Agua')
@@ -132,6 +152,6 @@ try{
   await page.getByRole('article',{name:'Solicitud de Sede B',exact:true}).getByRole('button',{name:'Rechazar',exact:true}).click();await page.getByRole('button',{name:'Confirmar rechazar'}).click();await page.getByRole('dialog').waitFor({state:'detached'});await page.getByText('No hay solicitudes pendientes.').waitFor()
   if(process.env.SOLOG_MANAGEMENT_SCREENSHOT)await page.screenshot({path:process.env.SOLOG_MANAGEMENT_SCREENSHOT.replace('.png','-devices.png'),fullPage:true})
   await nav('Dashboard');await page.getByRole('heading',{name:'Sede A',exact:true}).waitFor();const cards=count('dashboard_cards');await nav('Dispositivos');await page.getByRole('heading',{name:'Sede B',exact:true}).waitFor();await nav('Dashboard');await page.getByRole('heading',{name:'Sede A',exact:true}).waitFor();assert.equal(count('dashboard_cards'),cards)
-  await nav('Catálogo');await page.getByRole('button',{name:'Ver propuesta'}).waitFor();if(process.env.SOLOG_MANAGEMENT_SCREENSHOT)await page.screenshot({path:process.env.SOLOG_MANAGEMENT_SCREENSHOT.replace('.png','-catalog.png'),fullPage:true})
+  await nav('Catálogo');await page.getByRole('button',{name:/Revisar propuesta/}).first().waitFor();if(process.env.SOLOG_MANAGEMENT_SCREENSHOT)await page.screenshot({path:process.env.SOLOG_MANAGEMENT_SCREENSHOT.replace('.png','-catalog.png'),fullPage:true})
   assert.deepEqual(errors,[]);console.log(JSON.stringify({ok:true,calls:calls.length,bytes,actions:[...new Set(calls.map(c=>c.action))],productionRequests:0,errors},null,2))
 }finally{await browser.close();await server.close()}
