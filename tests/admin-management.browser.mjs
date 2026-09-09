@@ -53,6 +53,17 @@ await context.route('**/*',async route=>{
   }
   if(['groups','group_products','catalog_changes'].includes(action)){assert.equal(p.limit,50);assert.ok(p.offset>=0);assert.equal('page' in p||'cursor' in p,false)}
   const r=managementFixture(action,p,revisions)
+  if(action==='reference') {
+    r.categories.push({id:'cat-empty',nombre:'Sin grupos'})
+    r.groups.push({...r.groups[0],id:'unique',nombre:'Agua individual',unidades_por_paquete:null,precio_paquete:null})
+    r.groups.push({...r.groups[0],id:'incomplete',nombre:'Grupo con un nombre largo para verificar legibilidad sin truncamiento agresivo',unidades_por_paquete:null,precio_paquete:null})
+  }
+  if(action==='groups') {
+    const base=r.rows[0]
+    r.rows=[base,{...base,id:'unique',nombre:'Agua individual',tipo:'Único',sku_count:1,precio:1},{...base,id:'incomplete',nombre:'Grupo con un nombre largo para verificar legibilidad sin truncamiento agresivo',sku_count:4,precio:3.5}]
+      .filter(g=>(!p.tipo||g.tipo===p.tipo)&&(!p.categoria_id||g.categoria_id===p.categoria_id)&&(!p.buscar||g.nombre.toLowerCase().includes(p.buscar.toLowerCase())))
+      .slice(p.offset,p.offset+p.limit)
+  }
   if(action==='catalog_changes'&&approved)r.rows[0].estado='aprobado'
   if(action==='summary'){r.families[0].suppressed_cases=suppressed?2:0;r.families[0].pending_cases=suppressed?0:2;r.families[0].active_suppression_until=suppressed?'2026-10-04T12:00:00Z':null;r.families[0].deletion_proposed=deletion}
   if(action==='list')r.devices=r.devices.filter(d=>deviceStates.get(d.id)!=='removed').map(d=>({...d,estado:deviceStates.get(d.id)??d.estado}))
@@ -65,8 +76,52 @@ try{
   await page.goto('http://127.0.0.1:5209/admin/catalogo');await page.getByRole('button',{name:'Ver propuesta'}).waitFor();assert.equal(count('bootstrap'),1);assert.equal(count('publication_preview'),0)
   await page.getByRole('button',{name:'Ver propuesta'}).click();await page.getByRole('button',{name:'Aprobar',exact:true}).click();await page.getByRole('heading',{name:'Resolver precio del grupo'}).waitFor();await page.getByRole('button',{name:'Actualizar precio de todo el grupo'}).click();await page.getByRole('dialog').waitFor({state:'detached'})
   await page.getByRole('button',{name:'Revisar publicación'}).click();await page.getByRole('button',{name:'Confirmar publicación'}).click();await page.getByRole('button',{name:'Reintentar publicación'}).waitFor();await page.reload();await page.getByRole('button',{name:'Recuperar publicación'}).click();await page.getByRole('button',{name:'Reintentar publicación'}).click();await page.getByText(/CATALOG_PUBLISHED/).waitFor();await close();assert.equal(count('publish'),2)
-  await nav('Grupos');await page.getByRole('heading',{name:'Bebidas agrupadas'}).waitFor();await page.getByRole('button',{name:'Editar',exact:true}).click();await page.getByLabel('Nombre',{exact:true}).fill('Nombre actualizado');failMutation=true;await page.getByRole('button',{name:'Guardar cambio'}).click();await page.getByRole('dialog').getByRole('button',{name:'Reintentar misma operación'}).click();await page.getByRole('dialog').waitFor({state:'detached'});await page.getByText(/replay confirmado|confirmada \(replay\)/).first().waitFor()
-  await page.getByRole('button',{name:'Precio por paquete',exact:true}).click();await page.getByLabel('Nuevo precio por paquete').fill('12');await page.getByRole('button',{name:'Actualizar precio x6',exact:true}).click();await page.getByRole('dialog').waitFor({state:'detached'})
+  await nav('Grupos');
+  const groups=page.locator('.admin-groups'),table=groups.getByRole('table'),groupRow=()=>table.getByRole('row').filter({has:page.getByRole('rowheader',{name:'Bebidas agrupadas',exact:true})})
+  await groupRow().waitFor()
+  assert.deepEqual(await table.locator('thead th').allTextContents(),['Grupo','Categoría','Agrupación','Precio','Paquete','Acciones'])
+  assert.equal(await groups.locator('.admin-v2-cards').count(),0)
+  await groupRow().getByText('2 SKU',{exact:true}).waitFor()
+  assert.match(await groupRow().locator('td').nth(2).innerText(),/S\/\s*2\.00/)
+  assert.match(await groupRow().locator('td').nth(3).innerText(),/x6 · S\/\s*10\.00/)
+  const unique=table.getByRole('row').filter({has:page.getByRole('rowheader',{name:'Agua individual'})})
+  assert.equal(await unique.locator('td').nth(1).innerText(),'Único')
+  assert.equal(await unique.locator('td').nth(3).innerText(),'—')
+  await table.getByText('Sin configurar',{exact:true}).waitFor()
+  const requests=calls.length
+  await groupRow().getByRole('button',{name:'Integrantes de Bebidas agrupadas',exact:true}).click()
+  await page.locator('#group-members-group-1').waitFor()
+  assert.equal(await groupRow().getByRole('button',{name:/Integrantes/}).getAttribute('aria-expanded'),'true')
+  await groupRow().getByRole('button',{name:/Integrantes/}).click()
+  assert.equal(calls.length,requests,'Integrantes uses already loaded rows')
+  await groups.getByLabel('Tipo').selectOption('Único')
+  await unique.waitFor();await groupRow().waitFor({state:'detached'})
+  assert.equal(calls.filter(c=>c.action==='groups').at(-1).payload.tipo,'Único')
+  await nav('Catálogo');await page.getByRole('button',{name:'Ver propuesta'}).waitFor()
+  await nav('Grupos')
+  await groupRow().waitFor()
+  await groups.getByLabel('Categoría').selectOption('cat-empty')
+  await groups.getByText('No hay grupos para los filtros seleccionados.').waitFor()
+  await nav('Catálogo');await page.getByRole('button',{name:'Ver propuesta'}).waitFor()
+  await nav('Grupos');await groupRow().waitFor()
+  const beforeSearch=count('groups')
+  await groups.getByLabel('Buscar grupo').fill('Agua')
+  assert.equal(count('groups'),beforeSearch,'Typing does not query a partial dataset')
+  await groups.getByRole('button',{name:'Buscar',exact:true}).click()
+  await groupRow().waitFor({state:'detached'});await unique.waitFor()
+  assert.equal(calls.filter(c=>c.action==='groups').at(-1).payload.buscar,'Agua')
+  await groups.getByLabel('Buscar grupo').fill('')
+  await groups.getByRole('button',{name:'Buscar',exact:true}).click()
+  await groupRow().waitFor()
+  assert.equal(await groups.getByRole('button',{name:'Grupos',exact:true}).getAttribute('aria-pressed'),'true')
+  if(process.env.SOLOG_MANAGEMENT_SCREENSHOT)await page.screenshot({path:process.env.SOLOG_MANAGEMENT_SCREENSHOT.replace('.png','-groups.png'),fullPage:true})
+  await page.setViewportSize({width:900,height:900})
+  assert.ok(await groups.locator('.admin-groups__table').evaluate(e=>e.scrollWidth>e.clientWidth),'Tablet table scrolls horizontally')
+  assert.ok(await table.getByRole('rowheader',{name:/Grupo con un nombre largo/}).evaluate(e=>getComputedStyle(e).whiteSpace==='normal'))
+  if(process.env.SOLOG_MANAGEMENT_SCREENSHOT)await page.screenshot({path:process.env.SOLOG_MANAGEMENT_SCREENSHOT.replace('.png','-groups-tablet.png'),fullPage:true})
+  await page.setViewportSize({width:1440,height:1000})
+  await groupRow().getByRole('button',{name:'Editar Bebidas agrupadas',exact:true}).click();await page.getByLabel('Nombre',{exact:true}).fill('Nombre actualizado');failMutation=true;await page.getByRole('button',{name:'Guardar cambio'}).click();await page.getByRole('dialog').getByRole('button',{name:'Reintentar misma operación'}).click();await page.getByRole('dialog').waitFor({state:'detached'});await page.getByText(/replay confirmado|confirmada \(replay\)/).first().waitFor()
+  await groupRow().getByRole('button',{name:'Precio por paquete de Bebidas agrupadas',exact:true}).click();await page.getByLabel('Nuevo precio por paquete').fill('12');await page.getByRole('button',{name:'Actualizar precio x6',exact:true}).click();await page.getByRole('dialog').waitFor({state:'detached'})
   await page.getByRole('button',{name:'Crear grupo',exact:true}).click();await page.getByRole('dialog').getByLabel('Nombre',{exact:true}).fill('Grupo nuevo');await page.getByRole('dialog').getByLabel('Categoría').selectOption('cat-1');await page.getByLabel('Precio unitario',{exact:true}).fill('2');await page.getByRole('checkbox').nth(0).check();await page.getByRole('checkbox').nth(1).check();await page.getByRole('button',{name:'Guardar cambio'}).click();await page.getByRole('dialog').waitFor({state:'detached'});assert.deepEqual(calls.filter(c=>c.action==='group_change_save').at(-1).payload.member_codes,[123,124])
   await page.getByRole('button',{name:'Productos',exact:true}).click();await page.getByRole('button',{name:'Clasificar'}).first().click();await page.getByLabel('Modalidad').selectOption('Único');await page.getByRole('button',{name:'Guardar cambio'}).click();await page.getByRole('dialog').waitFor({state:'detached'})
   await nav('Incidencias');await page.getByText('2 casos · 7 apariciones · 2 sedes').waitFor();assert.equal(count('detail'),0);await page.getByRole('button',{name:/Ver repeticiones/}).click();await page.getByRole('dialog').getByText('Sede A',{exact:true}).waitFor();await close();await page.getByRole('button',{name:/Ver repeticiones/}).click();await close();assert.equal(count('detail'),1)

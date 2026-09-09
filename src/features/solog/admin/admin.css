@@ -57,6 +57,34 @@
 .admin-control-chronology__table td {
   vertical-align: middle;
 }
+.admin-groups { min-width: 0; }
+.admin-groups__heading { margin-bottom: 18px; }
+.admin-groups__heading h2 { margin: 0 0 6px; font-size: 1.25rem; }
+.admin-groups__heading p { margin: 0; color: var(--color-text-secondary); font-size: 0.875rem; }
+.admin-groups__navigation { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 10px; background: #f8fafc; }
+.admin-groups__navigation button { padding: 8px 18px; border: 0; border-radius: 7px; background: transparent; color: var(--color-text-secondary); font: inherit; font-size: 0.875rem; cursor: pointer; }
+.admin-groups__navigation button[aria-pressed="true"] { background: var(--color-primary); color: var(--color-on-primary, #fff); }
+.admin-groups__navigation button:focus-visible,
+.admin-groups__table:focus-visible,
+.admin-groups__filters .button:focus-visible,
+.admin-groups__actions .button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+.admin-groups__filters { gap: 12px; }
+.admin-groups__filters > label:first-child { flex: 1 1 230px; }
+.admin-groups__filters > label { font-size: 0.8rem; }
+.admin-groups__filters > .button { min-height: 38px; padding: 8px 14px; font-size: 0.85rem; }
+.admin-groups__filters > .admin-groups__create { margin-left: auto; }
+.admin-groups__table { border: 1px solid var(--color-border); border-radius: 10px; background: #fff; }
+.admin-groups__table table { min-width: 960px; }
+.admin-groups__table thead { background: #f8fafc; }
+.admin-groups__table th, .admin-groups__table td { padding: 11px 12px; font-size: 0.82rem; }
+.admin-groups__table tbody th { width: 28%; min-width: 200px; max-width: 380px; white-space: normal; overflow-wrap: anywhere; font-weight: 600; }
+.admin-groups__table tbody tr:hover { background: #f8fafc; }
+.admin-groups__table .admin-groups__money { text-align: right; font-variant-numeric: tabular-nums; }
+.admin-groups__table thead th:nth-child(4) { text-align: right; }
+.admin-groups__actions { display: flex; align-items: center; gap: 6px; }
+.admin-groups__actions .button { padding: 6px 9px; min-height: 32px; font-size: 0.75rem; white-space: nowrap; }
+.admin-groups__members ul { margin: 0; padding: 4px 20px; white-space: normal; }
+
 .admin-control-chronology__table .admin-control__number {
   text-align: right;
   font-variant-numeric: tabular-nums;
