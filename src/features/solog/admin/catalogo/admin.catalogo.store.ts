@@ -1,5 +1,5 @@
 import type { AdminBootstrap } from '../admin.v2'
-import { catalogMutate, catalogRead, type CatalogMutationAction, type CatalogMutationResult, type CatalogMutations, type CatalogReadAction, type CatalogReadPayloads, type CatalogReads, type CatalogRevisions } from './admin.catalogo.v3'
+import { CatalogPublicationError, catalogMutate, catalogRead, publishCatalog, type CatalogMutationAction, type CatalogMutationResult, type CatalogMutations, type CatalogPublicationResult, type CatalogReadAction, type CatalogReadPayloads, type CatalogReads, type CatalogRevisions } from './admin.catalogo.v3'
 
 type CatalogMutationInput<T> = T extends { operation_id: string; expected_catalog_revision: number; expected_groups_revision: number }
   ? Omit<T, 'operation_id' | 'expected_catalog_revision' | 'expected_groups_revision'>
@@ -9,6 +9,7 @@ type Intent = { action: CatalogMutationAction; payload: CatalogMutations[Catalog
 
 export type CatalogReadTransport = typeof catalogRead
 export type CatalogMutateTransport = typeof catalogMutate
+export type CatalogPublishTransport = typeof publishCatalog
 
 export class CatalogStore {
   private entries = new Map<string, Entry>()
@@ -19,6 +20,7 @@ export class CatalogStore {
   private epoch = 0
   private live = true
   private scope = ''
+  publication: { operationId?: string; pending?: Promise<CatalogPublicationResult>; result?: CatalogPublicationResult; error?: string } = {}
 
   constructor(
     readonly userId: string,
@@ -26,7 +28,10 @@ export class CatalogStore {
     private changed: (revisions: CatalogRevisions, forbidden?: boolean) => void = () => {},
     private read: CatalogReadTransport = catalogRead,
     private mutateRpc: CatalogMutateTransport = catalogMutate,
-  ) {}
+    private publishRpc: CatalogPublishTransport = publishCatalog,
+  ) {
+    try { const id = sessionStorage.getItem(this.receiptKey()); if (id && /^[0-9a-f-]{36}$/i.test(id)) this.publication.operationId = id } catch { /* Memory retry remains available. */ }
+  }
 
   subscribe = (listener: () => void) => {
     this.listeners.add(listener)
@@ -47,13 +52,14 @@ export class CatalogStore {
     this.scope = scope
     return bootstrap
   }
+  private receiptKey() { return `solog:catalog:publication:v3:${this.userId}` }
   private key(action: CatalogReadAction, payload: Record<string, unknown>) {
     return JSON.stringify([this.userId, this.scope, action, Object.entries(payload).sort(([left], [right]) => left.localeCompare(right))])
   }
   private invalidate() { this.entries.clear() }
   private authorizationError(error: unknown) {
     const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
-    if (!['SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_ADMIN_ROLE_REQUIRED'].includes(code)) return false
+    if (!['SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_ADMIN_ROLE_REQUIRED', 'AUTH_REQUIRED', 'AUTH_INVALID', 'USER_DISABLED', 'ADMIN_REQUIRED'].includes(code)) return false
     this.epoch++
     this.entries.clear()
     this.intentState = undefined
@@ -147,6 +153,38 @@ export class CatalogStore {
   retryMutation() {
     if (!this.intentState) return Promise.reject(new Error('No hay una operación de Catálogo pendiente.'))
     return this.execute(this.intentState)
+  }
+  publish(): Promise<CatalogPublicationResult> {
+    if (this.access().identity.rol !== 'admin') return Promise.reject(new Error('Solo admin puede publicar.'))
+    if (this.publication.pending) return this.publication.pending
+    const epoch = this.epoch
+    const operationId = this.publication.operationId ?? crypto.randomUUID()
+    this.publication = { operationId }
+    try { sessionStorage.setItem(this.receiptKey(), operationId) } catch { /* Keep the in-memory receipt. */ }
+    const request = this.publishRpc(operationId).then(result => {
+      this.access()
+      if (epoch !== this.epoch) throw new Error('Respuesta de publicación descartada por cambio de acceso.')
+      this.invalidate()
+      this.publication = result.completion_recorded ? { result } : { operationId, result }
+      if (result.completion_recorded) try { sessionStorage.removeItem(this.receiptKey()) } catch { /* Non-fatal. */ }
+      this.emit()
+      return result
+    }).catch((error: unknown) => {
+      if (this.live && epoch === this.epoch && !this.authorizationError(error)) {
+        this.publication.pending = undefined
+        this.publication.error = error instanceof Error ? error.message : 'Publicación sin confirmar.'
+        if (error instanceof CatalogPublicationError && !error.uncertain) {
+          this.publication.operationId = undefined
+          try { sessionStorage.removeItem(this.receiptKey()) } catch { /* Non-fatal. */ }
+        }
+        this.invalidate()
+        this.emit()
+      }
+      throw error
+    })
+    this.publication.pending = request
+    this.emit()
+    return request
   }
   private execute(intent: Intent): Promise<CatalogMutationResult> {
     this.access()

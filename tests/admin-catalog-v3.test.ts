@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { CatalogContractError, validateCatalogMutation, validateCatalogMutationPayload, validateCatalogRead, type CatalogMutationAction, type CatalogMutations, type CatalogReadAction } from '../src/features/solog/admin/catalogo/admin.catalogo.v3'
+import { CatalogContractError, CatalogPublicationError, validateCatalogMutation, validateCatalogMutationPayload, validateCatalogPublication, validateCatalogRead, type CatalogMutationAction, type CatalogMutations, type CatalogReadAction } from '../src/features/solog/admin/catalogo/admin.catalogo.v3'
 
 const now = '2026-09-10T12:00:00.000Z'
 const revisions = { catalog: 7, groups: 3 }
@@ -35,6 +35,18 @@ describe('Catálogo V3 contratos de lectura', () => {
   })
 })
 
+describe('Catálogo V3 publicación', () => {
+  const operationId = '123e4567-e89b-12d3-a456-426614174000'
+  const response = (overrides: Record<string, unknown> = {}) => ({ ok: true, codigo: 'CATALOG_PUBLISHED', operation_id: operationId, replay: false, completion_recorded: true, version: 7, hash: 'sha256', storage_path: 'conexion-catalogos/catalog.prcatalog', productos: 10, grupos_activos: 4, cambios_incorporados: 2, ...overrides })
+  test('acepta la respuesta estable y conserva la recuperación cuando falta registrar el cierre', () => {
+    expect(validateCatalogPublication(response(), operationId).completion_recorded).toBe(true)
+    expect(validateCatalogPublication(response({ completion_recorded: false }), operationId).completion_recorded).toBe(false)
+  })
+  test('rechaza respuestas incompletas o de otra operación como inciertas', () => {
+    expect(() => validateCatalogPublication(response({ operation_id: '123e4567-e89b-12d3-a456-426614174001' }), operationId)).toThrow(CatalogPublicationError)
+    expect(() => validateCatalogPublication({ ok: true, codigo: 'CATALOG_PUBLISHED' }, operationId)).toThrow(CatalogPublicationError)
+  })
+})
 describe('Catálogo V3 contratos de mutación', () => {
   const base = { operation_id: '123e4567-e89b-12d3-a456-426614174000', expected_catalog_revision: 7, expected_groups_revision: 3 }
   const payloads: Record<CatalogMutationAction, CatalogMutations[CatalogMutationAction]> = {

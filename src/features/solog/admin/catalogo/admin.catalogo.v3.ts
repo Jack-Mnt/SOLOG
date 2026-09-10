@@ -38,6 +38,8 @@ export interface CatalogMutations {
 }
 export type CatalogMutationAction = keyof CatalogMutations
 export interface CatalogMutationResult extends CatalogEnvelope { replay: boolean; result: CatalogPayload }
+export interface CatalogPublicationResult { ok: true; codigo: string; operation_id: string; replay: boolean; completion_recorded: boolean; version: number; hash: string; storage_path: string; productos: number; grupos_activos: number; cambios_incorporados: number }
+export class CatalogPublicationError extends Error { constructor(readonly code: string, readonly uncertain = false) { super(code); this.name = 'CatalogPublicationError' } }
 export class CatalogContractError extends Error { constructor(message: string) { super(message); this.name = 'CatalogContractError' } }
 
 const statuses = ['pendiente', 'aprobado', 'ignorado', 'incorporado'] as const
@@ -133,4 +135,24 @@ export async function catalogMutate<A extends CatalogMutationAction>(action: A, 
   const { data, error } = await supabase.rpc('rpc_solog_admin_catalog_v3', { p_action: action, p_payload: payload })
   if (error) throw normalizeSologError(error)
   return validateCatalogMutation(data)
+}
+
+export function validateCatalogPublication(value: unknown, operationId: string): CatalogPublicationResult {
+  if (!object(value) || typeof value.ok !== 'boolean' || typeof value.codigo !== 'string') throw new CatalogPublicationError('Publicación sin confirmación. Reintenta la misma operación.', true)
+  if (!value.ok) {
+    const terminal = value.operation_id === operationId && (value.replay === true || object(value.resultado) && value.resultado.ok === false)
+    throw new CatalogPublicationError(value.codigo, !terminal)
+  }
+  if (value.operation_id !== operationId) throw new CatalogPublicationError('Publicación de otra operación.', true)
+  if (typeof value.replay !== 'boolean' || typeof value.completion_recorded !== 'boolean' || !integer(value.version) || typeof value.hash !== 'string' || typeof value.storage_path !== 'string' || !integer(value.productos) || !integer(value.grupos_activos) || !integer(value.cambios_incorporados)) throw new CatalogPublicationError('Respuesta de publicación Catálogo V3 incompleta.', true)
+  return value as unknown as CatalogPublicationResult
+}
+export async function publishCatalog(operationId: string): Promise<CatalogPublicationResult> {
+  if (!supabase) throw createSologConfigurationError()
+  const { data, error } = await supabase.functions.invoke('conexion-admin', { body: { action: 'publish_catalog', operation_id: operationId } })
+  let response: unknown = data
+  if (error && typeof error === 'object' && 'context' in error && error.context instanceof Response) {
+    try { response = await error.context.clone().json() } catch { /* Preserve the operation for retry. */ }
+  }
+  return validateCatalogPublication(response, operationId)
 }
