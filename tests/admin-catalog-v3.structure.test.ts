@@ -40,6 +40,13 @@ describe('Catálogo V3: estructura principal', () => {
     expect(ui).toContain('store.publish()')
   })
 
+  test('expone estados UI, reintentos y controles accesibles de staging y publicación', async () => {
+    const ui = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+    for (const state of ['QueryState', 'role="alert"', 'role="status"', 'Reintentar misma operación', 'No hay propuestas', 'configuración requerida antes de publicar', 'Existe staging preparado', 'No publicable:', 'Confirmar publicación', 'Recuperar publicación']) expect(ui).toContain(state)
+    expect(ui).toContain('aria-label="Estado de propuestas"')
+    expect(ui).toContain('aria-label="Superficies de Catálogo"')
+    expect(ui).toContain('disabled={!admin || !!receipt.pending || (!receipt.operationId && !preview?.ok)}')
+  })
   test('opera Productos sobre una carga completa local y crea propuestas de estado V3', async () => {
     const ui = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
     expect(ui).toContain('useMemo')
