@@ -1,4 +1,5 @@
 import { adminRpc, validateControlPayload, type AdminAction, type AdminBootstrap, type AdminPayloads, type AdminResponses, type Envelope } from './admin.v2'
+import { CatalogStore } from './catalogo/admin.catalogo.store'
 import { ManagementStore } from './admin.management.store'
 import { orderedAdminSites } from './admin.site-ui'
 
@@ -14,12 +15,16 @@ export class AdminStore {
   private selectedSite = ''
   bootstrap: AdminBootstrap | null = null
   readonly management: ManagementStore
+  readonly catalog: CatalogStore
   constructor(readonly userId: string, private rpc: typeof adminRpc = adminRpc) {
     this.management = new ManagementStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
-      if (forbidden) { this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
+      if (forbidden) { this.management.resetAccess(); this.catalog.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
       if (revisions.groups !== undefined && revisions.groups > this.groups) {
         this.groups = revisions.groups; this.invalidate(undefined, true); this.emit()
       }
+    })
+    this.catalog = new CatalogStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => {
+      if (forbidden) { this.catalog.resetAccess(); this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit() }
     })
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
@@ -62,9 +67,9 @@ export class AdminStore {
     if (revision > previous) { this.operational.set(site, revision); this.invalidate(site, true) }
   }
   current = () => this.live
-  dispose() { this.management.dispose(); this.live = false; this.epoch++; this.entries.clear(); this.bootstrap = null; this.operational.clear(); this.listeners.clear() }
+  dispose() { this.management.dispose(); this.catalog.dispose(); this.live = false; this.epoch++; this.entries.clear(); this.bootstrap = null; this.operational.clear(); this.listeners.clear() }
   // Explicit refresh invalidates requests in flight as well as cached pages/details.
-  refresh() { this.epoch++; this.entries.clear(); this.management.refresh(); this.emit() }
+  refresh() { this.epoch++; this.entries.clear(); this.management.refresh(); this.catalog.refresh(); this.emit() }
   async load<A extends AdminAction>(action: A, payload: AdminPayloads[A]): Promise<AdminResponses[A]> {
     validateControlPayload(action, payload)
     if (!this.live) throw new Error('El contexto Admin ya no está activo.')
@@ -88,7 +93,7 @@ export class AdminStore {
         // Validate the whole bootstrap before publishing identity/access or advancing any floor.
         if (b.revisions.groups !== undefined && b.revisions.groups < this.groups) throw new Error('Bootstrap de grupos obsoleto.')
         if (b.allowed_sites.some(s => s.operational_revision < (this.operational.get(s.id) ?? -1))) throw new Error('Bootstrap de sede obsoleto.')
-        if (this.bootstrap && (b.identity.rol !== this.bootstrap.identity.rol || JSON.stringify(b.allowed_sites.map(s => s.id)) !== JSON.stringify(this.bootstrap.allowed_sites.map(s => s.id)))) { this.invalidate(); this.management.resetAccess() }
+        if (this.bootstrap && (b.identity.rol !== this.bootstrap.identity.rol || JSON.stringify(b.allowed_sites.map(s => s.id)) !== JSON.stringify(this.bootstrap.allowed_sites.map(s => s.id)))) { this.invalidate(); this.management.resetAccess(); this.catalog.resetAccess() }
         this.bootstrap = b
         b.allowed_sites.forEach(s => this.observeSite(s.id, s.operational_revision))
       }
@@ -126,7 +131,7 @@ export class AdminStore {
       if (this.live && entry.epoch === this.epoch && this.entries.get(key) === entry) {
         const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
         if (['SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_ADMIN_ROLE_REQUIRED', 'SOLOG_SITE_FORBIDDEN'].includes(code)) {
-          this.management.resetAccess()
+          this.management.resetAccess(); this.catalog.resetAccess()
           this.epoch++; this.entries.clear(); this.bootstrap = null
         }
         entry.pending = undefined; entry.error = error instanceof Error ? error.message : 'No se pudo consultar Admin.'

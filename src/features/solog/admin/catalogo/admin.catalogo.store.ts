@@ -1,0 +1,180 @@
+import type { AdminBootstrap } from '../admin.v2'
+import { catalogMutate, catalogRead, type CatalogMutationAction, type CatalogMutationResult, type CatalogMutations, type CatalogReadAction, type CatalogReadPayloads, type CatalogReads, type CatalogRevisions } from './admin.catalogo.v3'
+
+type CatalogMutationInput<T> = T extends { operation_id: string; expected_catalog_revision: number; expected_groups_revision: number }
+  ? Omit<T, 'operation_id' | 'expected_catalog_revision' | 'expected_groups_revision'>
+  : never
+type Entry = { action: CatalogReadAction; payload: Record<string, unknown>; data?: CatalogReads[CatalogReadAction]; error?: string; pending?: Promise<CatalogReads[CatalogReadAction]> }
+type Intent = { action: CatalogMutationAction; payload: CatalogMutations[CatalogMutationAction]; pending?: Promise<CatalogMutationResult>; error?: string }
+
+export type CatalogReadTransport = typeof catalogRead
+export type CatalogMutateTransport = typeof catalogMutate
+
+export class CatalogStore {
+  private entries = new Map<string, Entry>()
+  private listeners = new Set<() => void>()
+  private floors: CatalogRevisions = { catalog: -1, groups: -1 }
+  private intentState?: Intent
+  private version = 0
+  private epoch = 0
+  private live = true
+  private scope = ''
+
+  constructor(
+    readonly userId: string,
+    private auth: () => AdminBootstrap | null,
+    private changed: (revisions: CatalogRevisions, forbidden?: boolean) => void = () => {},
+    private read: CatalogReadTransport = catalogRead,
+    private mutateRpc: CatalogMutateTransport = catalogMutate,
+  ) {}
+
+  subscribe = (listener: () => void) => {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+  snapshot = () => this.version
+  private emit() { this.version++; this.listeners.forEach(listener => listener()) }
+  private access() {
+    const bootstrap = this.auth()
+    if (!this.live || !bootstrap || bootstrap.identity.id !== this.userId) throw new Error('Contexto Catálogo no disponible.')
+    if (bootstrap.identity.rol !== 'admin' && bootstrap.identity.rol !== 'moderador') throw new Error('Rol no autorizado para Catálogo.')
+    const scope = `${bootstrap.identity.id}:${bootstrap.identity.rol}`
+    if (this.scope && this.scope !== scope) {
+      this.epoch++
+      this.entries.clear()
+      this.intentState = undefined
+    }
+    this.scope = scope
+    return bootstrap
+  }
+  private key(action: CatalogReadAction, payload: Record<string, unknown>) {
+    return JSON.stringify([this.userId, this.scope, action, Object.entries(payload).sort(([left], [right]) => left.localeCompare(right))])
+  }
+  private invalidate() { this.entries.clear() }
+  private authorizationError(error: unknown) {
+    const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
+    if (!['SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_ADMIN_ROLE_REQUIRED'].includes(code)) return false
+    this.epoch++
+    this.entries.clear()
+    this.intentState = undefined
+    this.changed({ catalog: this.floors.catalog, groups: this.floors.groups }, true)
+    this.emit()
+    return true
+  }
+  private observeRead(revisions: CatalogRevisions) {
+    if (revisions.catalog < this.floors.catalog || revisions.groups < this.floors.groups) throw new Error('Respuesta Catálogo obsoleta: actualiza la fuente autoritativa.')
+    const changed = revisions.catalog > this.floors.catalog || revisions.groups > this.floors.groups
+    this.floors = { catalog: Math.max(this.floors.catalog, revisions.catalog), groups: Math.max(this.floors.groups, revisions.groups) }
+    if (changed) this.invalidate()
+    this.changed(this.floors)
+  }
+  private observeMutation(revisions: CatalogRevisions) {
+    this.floors = { catalog: Math.max(this.floors.catalog, revisions.catalog), groups: Math.max(this.floors.groups, revisions.groups) }
+    this.changed(this.floors)
+  }
+  private definitive(error: unknown) {
+    const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
+    return code.startsWith('SOLOG_') && !/RETRYABLE|IN_PROGRESS|UNKNOWN|EMPTY_RESPONSE|INVALID_CONTRACT_RESPONSE/.test(code)
+  }
+
+  peek<A extends CatalogReadAction>(action: A, payload: CatalogReadPayloads[A]) {
+    this.access()
+    const entry = this.entries.get(this.key(action, payload))
+    return { data: entry?.data as CatalogReads[A] | undefined, error: entry?.error }
+  }
+  revisions() { return { ...this.floors } }
+  refresh() { this.epoch++; this.entries.clear(); this.emit() }
+  resetAccess() { this.epoch++; this.entries.clear(); this.intentState = undefined; this.scope = ''; this.emit() }
+  dispose() { this.live = false; this.epoch++; this.entries.clear(); this.intentState = undefined; this.listeners.clear() }
+  retry<A extends CatalogReadAction>(action: A, payload: CatalogReadPayloads[A]) { this.entries.delete(this.key(action, payload)); this.emit() }
+
+  async load<A extends CatalogReadAction>(action: A, payload: CatalogReadPayloads[A]): Promise<CatalogReads[A]> {
+    this.access()
+    const key = this.key(action, payload)
+    const cached = this.entries.get(key)
+    if (cached?.data) return cached.data as CatalogReads[A]
+    if (cached?.pending) return cached.pending as Promise<CatalogReads[A]>
+    const entry: Entry = { action, payload }
+    const epoch = this.epoch
+    this.entries.set(key, entry)
+    const request = this.read(action, payload).then(result => {
+      this.access()
+      if (epoch !== this.epoch || this.entries.get(key) !== entry) throw new Error('Consulta Catálogo invalidada durante la carga.')
+      if (action === 'proposals') {
+        const proposals = result as CatalogReads['proposals'], query = payload as CatalogReadPayloads['proposals']
+        if (proposals.estado !== (query.estado ?? 'pendiente')) throw new Error('Propuestas recibidas para otro estado.')
+      }
+      if (action === 'price_options') {
+        const options = result as CatalogReads['price_options'], query = payload as CatalogReadPayloads['price_options']
+        if (options.propuesta_fingerprint !== query.propuesta_fingerprint) throw new Error('Opciones recibidas para otra propuesta.')
+      }
+      this.observeRead(result.revisions)
+      entry.data = result
+      entry.pending = undefined
+      this.entries.set(key, entry)
+      this.emit()
+      return result
+    }).catch((error: unknown) => {
+      if (this.live && epoch === this.epoch && this.entries.get(key) === entry && !this.authorizationError(error)) {
+        entry.pending = undefined
+        entry.error = error instanceof Error ? error.message : 'Error al consultar Catálogo.'
+        this.entries.set(key, entry)
+        this.emit()
+      }
+      throw error
+    })
+    entry.pending = request
+    return request
+  }
+
+  intent() { return this.intentState }
+  async mutation<A extends CatalogMutationAction>(action: A, payload: CatalogMutationInput<CatalogMutations[A]>): Promise<CatalogMutationResult> {
+    this.access()
+    if (this.intentState) throw new Error('Hay una operación de Catálogo sin confirmar. Reinténtala antes de crear otra.')
+    if (this.floors.catalog < 0 || this.floors.groups < 0) throw new Error('Faltan revisiones autoritativas de Catálogo.')
+    const intent: Intent = {
+      action,
+      payload: {
+        ...payload,
+        operation_id: crypto.randomUUID(),
+        expected_catalog_revision: this.floors.catalog,
+        expected_groups_revision: this.floors.groups,
+      } as CatalogMutations[CatalogMutationAction],
+    }
+    this.intentState = intent
+    return this.execute(intent)
+  }
+  retryMutation() {
+    if (!this.intentState) return Promise.reject(new Error('No hay una operación de Catálogo pendiente.'))
+    return this.execute(this.intentState)
+  }
+  private execute(intent: Intent): Promise<CatalogMutationResult> {
+    this.access()
+    if (intent.pending) return intent.pending
+    intent.error = undefined
+    const epoch = this.epoch
+    const request = this.mutateRpc(intent.action, intent.payload).then(result => {
+      this.access()
+      if (epoch !== this.epoch || this.intentState !== intent) throw new Error('Respuesta Catálogo descartada por cambio de acceso.')
+      this.observeMutation(result.revisions)
+      this.invalidate()
+      this.intentState = undefined
+      this.emit()
+      return result
+    }).catch((error: unknown) => {
+      if (this.live && epoch === this.epoch && this.intentState === intent && !this.authorizationError(error)) {
+        intent.pending = undefined
+        intent.error = error instanceof Error ? error.message : 'Operación Catálogo sin confirmar.'
+        if (this.definitive(error)) {
+          this.intentState = undefined
+          this.invalidate()
+        }
+        this.emit()
+      }
+      throw error
+    })
+    intent.pending = request
+    this.emit()
+    return request
+  }
+}

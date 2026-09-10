@@ -47,13 +47,13 @@ describe('Index Fase I2: code splitting', () => {
       'dashboard/admin.dashboard.v2',
       'control/admin.control.v2',
       'incidencias/admin.incidencias.v2',
-      'catalogo/admin.catalogo.v2',
+      'catalogo/admin.catalogo.page.v3',
       'grupos/admin.grupos.v2',
       'dispositivos/admin.dispositivos.v2',
     ]
 
     for (const page of pages) {
-      expect(adminApp).toContain("import('./" + page + "')")
+      expect(adminApp).toContain(`import("./${page}")`)
     }
   })
 

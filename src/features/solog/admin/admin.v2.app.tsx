@@ -33,8 +33,8 @@ const Control = lazy(() =>
   })),
 );
 const Catalog = lazy(() =>
-  import("./catalogo/admin.catalogo.v2").then((m) => ({
-    default: m.AdminCatalogV2,
+  import("./catalogo/admin.catalogo.page.v3").then((m) => ({
+    default: m.AdminCatalogV3,
   })),
 );
 const Groups = lazy(() =>
