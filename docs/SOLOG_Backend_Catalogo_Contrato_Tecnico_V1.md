@@ -19,11 +19,10 @@ Prevalencia para Catálogo:
 
 1. `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` — **fuente primaria técnica**.
 2. `SOLOG_Arquitectura_Catalogo_Responsabilidad_Comportamiento_Funciones_V1.md` — fuente primaria funcional.
-3. `Contrato_backend_ConeXion.md` — fuente primaria del backend ConeXion ↔ Supabase V2.
-4. `SOLOG_Integracion_ConeXion_Supabase_Contrato_V2.md` — contrato externo de integración.
-5. `SOLOG_Arquitectura_Responsabilidades_Plataformas_V1.md` — frontera de responsabilidades.
+3. `SOLOG_Arquitectura_Responsabilidades_Plataformas_V1.md` — frontera vigente entre ConeXion, Supabase y SOLOG.
+4. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — runtime compartido consolidado.
 
-Ante una contradicción técnica específica de Catálogo, prevalece este documento. Ante una contradicción con el contrato externo ConeXion ↔ Supabase V2, prevalece el contrato de integración externo salvo una nueva decisión explícita.
+Ante una contradicción técnica específica de Catálogo, prevalece este documento. El contrato ConeXion ↔ Supabase V2 desplegado continúa siendo autoridad externa para su propia API y no se modifica desde Catálogo sin una decisión explícita. Los documentos históricos de integración que no residen actualmente en `docs/` no forman parte de la cadena necesaria para implementar el frontend actual.
 
 Quedan reemplazados **solo para Catálogo** los contratos legacy basados en:
 
