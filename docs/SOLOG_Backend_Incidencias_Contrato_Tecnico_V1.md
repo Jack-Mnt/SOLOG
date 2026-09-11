@@ -1,6 +1,6 @@
 # SOLOG — Backend Incidencias — Contrato Técnico V1
 
-**Estado:** CONGELADO / DESPLEGADO / VALIDADO  
+**Estado:** HISTÓRICO / REEMPLAZADO POR `SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md`  
 **Fecha:** 2026-09-10  
 **Proyecto:** SOLOG  
 **Supabase:** `PuertoRicoOnline` (`fvtohxvcvsflzmftgfzs`)  
@@ -11,15 +11,15 @@
 
 ## 1. Autoridad y precedencia
 
-Este documento es la **fuente primaria técnica vigente del módulo Admin > Incidencias**.
+Este documento conserva trazabilidad de la primera versión del contrato de Incidencias, pero **ya no es la fuente técnica vigente**.
 
-Precedencia:
+Precedencia actual:
 
-1. `SOLOG_Backend_Incidencias_Contrato_Tecnico_V1.md` — fuente primaria para Incidencias.
-2. `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` — autoridad para el ciclo de propuestas y publicación una vez que Incidencias origina `eliminar_producto`.
-3. `SOLOG_Decisiones_Congeladas_Optimizacion_Global.md` — decisiones funcionales globales no reemplazadas aquí.
-4. `SOLOG_Backend_Contratos_Optimizacion_Global_V10.md` y contratos heredados — vigentes en sus módulos y en reglas comunes no sustituidas.
-5. Documentación anterior de Incidencias — histórica cuando contradiga este contrato.
+1. `SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md` — fuente primaria vigente para Incidencias.
+2. Este V1 — histórico para los puntos que V2 conserve explícitamente.
+3. `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` — autoridad para el ciclo de propuestas y publicación una vez que Incidencias origina `eliminar_producto`.
+4. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — reglas comunes y runtime compartido vigente.
+5. `SOLOG_Decisiones_Congeladas_Optimizacion_Global.md` — decisiones funcionales globales no reemplazadas.
 
 Este contrato **no modifica** los contratos de Catálogo, Grupos, Cajero, Control, Detalles, Dispositivos ni ConeXion salvo en la frontera explícitamente descrita.
 
