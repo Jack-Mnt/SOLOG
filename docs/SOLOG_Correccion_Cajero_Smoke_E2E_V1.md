@@ -4,7 +4,7 @@
 **Fecha:** 2026-09-04  
 **Proyecto:** SOLOG  
 **Nivel:** C — delta funcional con dependencia backend ya resuelta  
-**Backend requerido:** `SOLOG_Backend_Contratos_Optimizacion_Global_V7.md`  
+**Backend runtime vigente:** `SOLOG_Backend_Contratos_Runtime_Actual_V1.md`  
 **API contract version:** `2`
 
 ---
@@ -24,15 +24,15 @@ Todo comportamiento anterior que no sea modificado explícitamente por este arch
 Para esta implementación, la jerarquía es:
 
 1. **`SOLOG_Correccion_Cajero_Smoke_E2E_V1.md`** — fuente primaria del delta frontend descrito aquí.
-2. `SOLOG_Backend_Contratos_Optimizacion_Global_V7.md` — fuente primaria para contratos backend/frontend.
-3. `SOLOG_Decisiones_Congeladas_Optimizacion_Global.md` — decisiones funcionales globales.
-4. `SOLOG_Plan_Implementacion_Optimizacion_Global.md` — trazabilidad del plan general.
+2. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — fuente vigente para contratos/runtime compartidos del Cajero.
+3. `SOLOG_Decisiones_Congeladas_Optimizacion_Global.md` — decisiones funcionales globales no reemplazadas.
+4. `SOLOG_Cajero_C4_Smoke_Humano.md` — trazabilidad de la validación humana relacionada.
 5. Documentación histórica anterior, solo cuando no contradiga las fuentes anteriores.
 
 Ante contradicción:
 
 - este delta prevalece para los cambios de UI/UX y comportamiento local descritos aquí;
-- V7 prevalece para payloads, respuestas, errores, idempotencia, revisiones, atomicidad y estado autoritativo backend.
+- el runtime consolidado prevalece para la superficie backend vigente, payloads, respuestas, errores, idempotencia, revisiones, atomicidad y estado autoritativo.
 
 ---
 
