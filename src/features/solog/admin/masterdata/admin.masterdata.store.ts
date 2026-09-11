@@ -130,8 +130,8 @@ export class MasterDataStore implements MasterDataRevisionCoordinator {
       if (epoch !== this.epoch || this.intentState !== intent) throw new Error('Respuesta de Categorías descartada por cambio de contexto.')
       this.observeRevisions(result.revisions)
       this.intentState = undefined
-      await this.invalidateAndRefetchMasterData()
       this.emit()
+      await this.invalidateAndRefetchMasterData().catch(() => {})
       return result
     }).catch(async (error: unknown) => {
       if (this.live && epoch === this.epoch && this.intentState === intent && !this.authorizationError(error)) {

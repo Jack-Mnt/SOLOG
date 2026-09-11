@@ -7,6 +7,7 @@ import { MasterDataStore, type MasterDataReadTransport, type MasterDataRevisionC
 import { bootstrapFixture } from './fixtures/admin-v2.mjs'
 
 const now = '2026-09-11T12:00:00.000Z'
+const masterSnapshot = (revisions = { groups: 3, catalog: 10, categories: 1 }) => ({ contract_version: 1 as const, generated_at: now, complete: true as const, categories: [], groups: [], products: [], setup_required: [], totals: { categories: 0, groups: 0, products: 0, included: 0, excluded: 0 }, revisions })
 function coordinator(): MasterDataRevisionCoordinator & { refetches: number } {
   const floors = { groups: 3, catalog: 10, categories: 1 }
   const result = () => ({ contract_version: 1 as const, generated_at: now, complete: true as const, categories: [], groups: [], products: [], setup_required: [], totals: { categories: 0, groups: 0, products: 0, included: 0, excluded: 0 }, revisions: { ...floors } })
@@ -121,5 +122,51 @@ describe('Floors centrales de lecturas', () => {
     await store.catalog.publish()
     expect(store.peek('dashboard_cards', {}).data).toBeUndefined()
     expect(store.peek('control_groups', controlPayload).data).toBeDefined()
+  })
+  test('Grupo confirmado conserva éxito cuando falla la sincronización posterior', async () => {
+    let reads = 0
+    const masterRead = (async () => {
+      reads++
+      if (reads === 2) throw new Error('Network')
+      return masterSnapshot({ groups: reads === 1 ? 3 : 4, catalog: 10, categories: 1 })
+    }) as MasterDataReadTransport
+    const master = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, masterRead)
+    await master.ensureLoaded()
+    const groupsRead = (async () => ({ contract_version: 1 as const, generated_at: now, revisions: { groups: 3, catalog: 10 }, groups_active: 0, groups_unique: 0, groups_grouped: 0 })) as GroupsReadTransport
+    const mutate = (async () => ({ contract_version: 1 as const, generated_at: now, replay: false, result: { codigo: 'MEMBERSHIP_MOVED' }, revisions: { groups: 4, catalog: 10 } })) as GroupsMutateTransport
+    const store = new GroupsStore('admin-test', () => bootstrapFixture(), () => {}, groupsRead, mutate, master)
+    const result = await store.mutation('membership_move', { c_internos: [100], target_group_id: crypto.randomUUID() })
+    expect(result.result).toMatchObject({ codigo: 'MEMBERSHIP_MOVED' })
+    expect(store.intent()).toBeUndefined()
+    expect(master.revisionFloors().groups).toBe(4)
+    expect(master.data()).toMatchObject({ snapshot: undefined, derived: undefined, error: 'Network' })
+    await master.ensureLoaded()
+    expect(master.data().snapshot?.revisions.groups).toBe(4)
+  })
+  test('publicación confirmada no queda incierta cuando falla la sincronización posterior', async () => {
+    let reads = 0
+    const masterRead = (async () => {
+      reads++
+      if (reads === 2) throw new Error('Network')
+      return masterSnapshot({ groups: reads === 1 ? 3 : 4, catalog: reads === 1 ? 10 : 11, categories: 1 })
+    }) as MasterDataReadTransport
+    const master = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, masterRead)
+    await master.ensureLoaded()
+    const publicationIds: string[] = []
+    const publish = (async (operationId: string) => {
+      publicationIds.push(operationId)
+      return { ok: true as const, codigo: 'CATALOG_PUBLISHED', operation_id: operationId, replay: false, completion_recorded: true, version: 7, hash: 'hash', storage_path: 'catalog.json', productos: 1, grupos_activos: 1, cambios_incorporados: 1 }
+    }) as CatalogPublishTransport
+    const store = new CatalogStore('admin-test', () => bootstrapFixture(), () => {}, undefined, undefined, publish, master)
+    const result = await store.publish()
+    expect(result.completion_recorded).toBe(true)
+    expect(store.publication).toMatchObject({ result: { operation_id: publicationIds[0], completion_recorded: true } })
+    expect(store.publication.pending).toBeUndefined()
+    expect(store.publication.error).toBeUndefined()
+    expect(publicationIds).toHaveLength(1)
+    expect(master.data()).toMatchObject({ snapshot: undefined, derived: undefined, error: 'Network' })
+    await master.ensureLoaded()
+    expect(master.data().snapshot?.revisions).toMatchObject({ groups: 4, catalog: 11 })
+    expect(publicationIds).toHaveLength(1)
   })
 })

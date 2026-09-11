@@ -172,4 +172,26 @@ describe('Master Data V1: consistencia de snapshot y refetch', () => {
     expect(store.data().snapshot?.revisions.groups).toBe(4)
     expect(reads).toBe(3)
   })
+  test('Categoría confirmada conserva éxito cuando falla la sincronización posterior', async () => {
+    let reads = 0
+    const read = (async () => {
+      reads++
+      if (reads === 2) throw new Error('Network')
+      return fixture()
+    }) as MasterDataReadTransport
+    const mutate = (async () => {
+      revisions.categories = 2
+      return { contract_version: 1 as const, generated_at: now, replay: false, result: { codigo: 'CATEGORY_RENAMED' }, revisions: { ...revisions } }
+    }) as MasterDataMutateTransport
+    const store = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, read, mutate)
+    await store.ensureLoaded()
+    const result = await store.mutation('category_rename', { category_id: 'cat-1', nombre: 'Agua' })
+    expect(result.result).toMatchObject({ codigo: 'CATEGORY_RENAMED' })
+    expect(store.intent()).toBeUndefined()
+    expect(store.revisionFloors().categories).toBe(2)
+    expect(store.data()).toMatchObject({ snapshot: undefined, derived: undefined, error: 'Network' })
+    await expect(store.retryMutation()).rejects.toThrow('No hay')
+    await store.ensureLoaded()
+    expect(store.data().snapshot?.revisions.categories).toBe(2)
+  })
 })

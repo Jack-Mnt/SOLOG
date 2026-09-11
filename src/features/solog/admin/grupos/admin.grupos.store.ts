@@ -107,7 +107,9 @@ export class GroupsStore {
     const request = this.mutateRpc(intent.action, intent.payload).then(async result => {
       this.access()
       if (epoch !== this.epoch || this.intentState !== intent) throw new Error('Respuesta Grupos descartada por cambio de acceso.')
-      this.observeMutation(result.revisions); this.invalidate(); this.intentState = undefined; await this.coordinator?.invalidateAndRefetchMasterData(); this.emit(); return result
+      this.observeMutation(result.revisions); this.invalidate(); this.intentState = undefined; this.emit()
+      await this.coordinator?.invalidateAndRefetchMasterData().catch(() => {})
+      return result
     }).catch(async (error: unknown) => {
       if (this.live && epoch === this.epoch && this.intentState === intent && !this.authorizationError(error)) {
         intent.pending = undefined; intent.error = error instanceof Error ? error.message : 'Operación Grupos sin confirmar.'

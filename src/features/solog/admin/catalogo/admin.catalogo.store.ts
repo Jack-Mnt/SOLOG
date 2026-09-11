@@ -182,10 +182,10 @@ export class CatalogStore {
       this.access()
       if (epoch !== this.epoch) throw new Error('Respuesta de publicación descartada por cambio de acceso.')
       this.invalidate()
-      if (result.completion_recorded) await this.coordinator?.invalidateAndRefetchMasterData()
       this.publication = result.completion_recorded ? { result } : { operationId, result }
       if (result.completion_recorded) try { sessionStorage.removeItem(this.receiptKey()) } catch { /* Non-fatal. */ }
       this.emit()
+      if (result.completion_recorded) await this.coordinator?.invalidateAndRefetchMasterData().catch(() => {})
       return result
     }).catch((error: unknown) => {
       if (this.live && epoch === this.epoch && !this.authorizationError(error)) {
