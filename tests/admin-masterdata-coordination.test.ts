@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { CatalogStore, type CatalogMutateTransport, type CatalogReadTransport } from '../src/features/solog/admin/catalogo/admin.catalogo.store'
 import { GroupsStore, type GroupsMutateTransport, type GroupsReadTransport } from '../src/features/solog/admin/grupos/admin.grupos.store'
+import { AdminStore } from '../src/features/solog/admin/admin.v2.store'
+import { type adminRpc } from '../src/features/solog/admin/admin.v2'
 import type { MasterDataRevisionCoordinator } from '../src/features/solog/admin/masterdata/admin.masterdata.store'
 import { bootstrapFixture } from './fixtures/admin-v2.mjs'
 
@@ -28,5 +30,31 @@ describe('Coordinación Master Data V1', () => {
     expect(calls[0]).toMatchObject({ expected_groups_revision: 3, expected_catalog_revision: 10 })
     expect(shared.revisionFloors().groups).toBe(4)
     expect(shared.refetches).toBe(1)
+  })
+})
+
+describe('Floors centrales de lecturas', () => {
+  test('rechaza lectura Catálogo inferior al floor del coordinador', async () => {
+    const shared = coordinator()
+    shared.observeRevisions({ catalog: 12 })
+    const read = (async () => ({ contract_version: 3 as const, generated_at: now, revisions: { catalog: 11, groups: 3 }, catalog: { version_actual: null, publicado_at: null, incluidos: 0, excluidos: 0, total: 0 } })) as CatalogReadTransport
+    const store = new CatalogStore('admin-test', () => bootstrapFixture(), () => {}, read, undefined, undefined, shared)
+    await expect(store.load('status', {})).rejects.toThrow('obsoleta')
+    expect(store.peek('status', {}).data).toBeUndefined()
+  })
+  test('rechaza lectura Grupos inferior al floor del coordinador', async () => {
+    const shared = coordinator()
+    shared.observeRevisions({ groups: 4 })
+    const read = (async () => ({ contract_version: 1 as const, generated_at: now, revisions: { groups: 3, catalog: 10 }, groups_active: 0, groups_unique: 0, groups_grouped: 0 })) as GroupsReadTransport
+    const store = new GroupsStore('admin-test', () => bootstrapFixture(), () => {}, read, undefined, shared)
+    await expect(store.load('status', {})).rejects.toThrow('obsoleta')
+    expect(store.peek('status', {}).data).toBeUndefined()
+  })
+  test('AdminStore contrasta grupos contra el floor compartido tras su avance', async () => {
+    const rpc = (async () => ({ ...bootstrapFixture(), revisions: { groups: 3, catalog: 5 } })) as adminRpc
+    const store = new AdminStore('admin-test', rpc)
+    store.masterData.observeRevisions({ groups: 4 })
+    await expect(store.load('bootstrap', {})).rejects.toThrow('obsoleto')
+    expect(store.masterData.revisionFloors().groups).toBe(4)
   })
 })

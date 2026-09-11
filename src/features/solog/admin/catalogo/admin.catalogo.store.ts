@@ -70,7 +70,9 @@ export class CatalogStore {
     return true
   }
   private observeRead(revisions: CatalogRevisions) {
-    if (revisions.catalog < this.floors.catalog || revisions.groups < this.floors.groups) throw new Error('Respuesta Catálogo obsoleta: actualiza la fuente autoritativa.')
+    const central = this.coordinator?.revisionFloors()
+    const floor = central ? { catalog: central.catalog, groups: central.groups } : this.floors
+    if (revisions.catalog < floor.catalog || revisions.groups < floor.groups) throw new Error('Respuesta Catálogo obsoleta: actualiza la fuente autoritativa.')
     const changed = revisions.catalog > this.floors.catalog || revisions.groups > this.floors.groups
     this.floors = { catalog: Math.max(this.floors.catalog, revisions.catalog), groups: Math.max(this.floors.groups, revisions.groups) }
     if (changed) this.invalidate()

@@ -12,7 +12,6 @@ export class AdminStore {
   private version = 0
   private epoch = 0
   private live = true
-  private groups = -1
   private operational = new Map<string, number>()
   private selectedSite = ''
   bootstrap: AdminBootstrap | null = null
@@ -24,8 +23,10 @@ export class AdminStore {
     this.masterData = new MasterDataStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => { if (forbidden) { this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit() } })
     this.management = new ManagementStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
       if (forbidden) { this.management.resetAccess(); this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
-      if (revisions.groups !== undefined && revisions.groups > this.groups) {
-        this.groups = revisions.groups; this.invalidate(undefined, true); this.emit()
+      if (revisions.groups !== undefined) {
+        this.masterData.observeRevisions({ groups: revisions.groups })
+        this.management.observeGroups(this.masterData.revisionFloors().groups)
+        this.invalidate(undefined, true); this.emit()
       }
     }, undefined, undefined, undefined, undefined, () => this.catalog.refresh())
     this.catalog = new CatalogStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => {
@@ -33,7 +34,8 @@ export class AdminStore {
     }, undefined, undefined, undefined, this.masterData)
     this.groupsV1 = new GroupsStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
       if (forbidden) { this.groupsV1.resetAccess(); this.catalog.resetAccess(); this.management.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
-      if (revisions.groups > this.groups) { this.groups = revisions.groups; this.management.observeGroups(this.groups); this.invalidate(undefined, true); this.emit() }
+      this.masterData.observeRevisions(revisions)
+      if (revisions.groups >= 0) { this.management.observeGroups(this.masterData.revisionFloors().groups); this.invalidate(undefined, true); this.emit() }
     }, undefined, undefined, this.masterData)
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
@@ -65,8 +67,9 @@ export class AdminStore {
   }
   private observe(response: Envelope, site?: string) {
     if (response.revisions.groups !== undefined) {
-      if (response.revisions.groups < this.groups) throw new Error('Respuesta anterior a la revisión de grupos. Actualiza la consulta.')
-      if (response.revisions.groups > this.groups) { this.groups = response.revisions.groups; this.management.observeGroups(this.groups); this.invalidate(undefined, true) }
+      const floor = this.masterData.revisionFloors().groups
+      if (response.revisions.groups < floor) throw new Error('Respuesta anterior a la revisión de grupos. Actualiza la consulta.')
+      if (response.revisions.groups > floor) { this.masterData.observeRevisions({ groups: response.revisions.groups }); this.management.observeGroups(this.masterData.revisionFloors().groups); this.invalidate(undefined, true) }
     }
     if (site && response.revisions.operational !== undefined) this.observeSite(site, response.revisions.operational)
   }
@@ -89,18 +92,18 @@ export class AdminStore {
     const cached = this.entries.get(key)
     if (cached?.data && action !== 'export') return cached.data as AdminResponses[A]
     if (cached?.pending) return cached.pending as Promise<AdminResponses[A]>
-    const entry: Entry = { action, site, epoch: this.epoch, groups: this.groups }
+    const entry: Entry = { action, site, epoch: this.epoch, groups: this.masterData.revisionFloors().groups }
     this.entries.set(key, entry)
     const request = this.rpc(action, payload).then(response => {
       if (!this.live || entry.epoch !== this.epoch) throw new Error('Respuesta descartada: cambió el contexto Admin.')
       if (this.entries.get(key) !== entry) throw new Error('Respuesta descartada: la consulta fue invalidada.')
-      if (action !== 'bootstrap' && (response as Envelope).revisions.groups === undefined && entry.groups < this.groups) throw new Error('Respuesta anterior a la revisión de grupos. Actualiza la consulta.')
+      if (action !== 'bootstrap' && (response as Envelope).revisions.groups === undefined && entry.groups < this.masterData.revisionFloors().groups) throw new Error('Respuesta anterior a la revisión de grupos. Actualiza la consulta.')
       if ('site_id' in response && response.site_id !== site) throw new Error('Respuesta recibida para otra sede.')
       if (action === 'bootstrap') {
         const b = response as AdminBootstrap
         if (b.identity.id !== this.userId) throw new Error('Identidad administrativa no coincide con Auth.')
         // Validate the whole bootstrap before publishing identity/access or advancing any floor.
-        if (b.revisions.groups !== undefined && b.revisions.groups < this.groups) throw new Error('Bootstrap de grupos obsoleto.')
+        if (b.revisions.groups !== undefined && b.revisions.groups < this.masterData.revisionFloors().groups) throw new Error('Bootstrap de grupos obsoleto.')
         if (b.allowed_sites.some(s => s.operational_revision < (this.operational.get(s.id) ?? -1))) throw new Error('Bootstrap de sede obsoleto.')
         if (this.bootstrap && (b.identity.rol !== this.bootstrap.identity.rol || JSON.stringify(b.allowed_sites.map(s => s.id)) !== JSON.stringify(this.bootstrap.allowed_sites.map(s => s.id)))) { this.invalidate(); this.management.resetAccess(); this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess() }
         this.bootstrap = b

@@ -38,7 +38,9 @@ export class GroupsStore {
     this.epoch++; this.entries.clear(); this.intentState = undefined; this.changed(this.revisionsState, true); this.emit(); return true
   }
   private observeRead(revisions: GroupsRevisions) {
-    if (revisions.groups < this.revisionsState.groups || revisions.catalog < this.revisionsState.catalog) throw new Error('Respuesta Grupos obsoleta: actualiza la fuente autoritativa.')
+    const central = this.coordinator?.revisionFloors()
+    const floor = central ? { groups: central.groups, catalog: central.catalog } : this.revisionsState
+    if (revisions.groups < floor.groups || revisions.catalog < floor.catalog) throw new Error('Respuesta Grupos obsoleta: actualiza la fuente autoritativa.')
     const changed = revisions.groups > this.revisionsState.groups || revisions.catalog > this.revisionsState.catalog
     this.revisionsState = { groups: Math.max(this.revisionsState.groups, revisions.groups), catalog: Math.max(this.revisionsState.catalog, revisions.catalog) }
     if (changed) this.invalidate()

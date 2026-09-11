@@ -16,7 +16,8 @@ export class MasterDataStore implements MasterDataRevisionCoordinator {
   private floors: MasterDataRevisions = { groups: -1, catalog: -1, categories: -1 }
   private snapshotState?: MasterDataSnapshot
   private derivedState?: MasterDataDerived
-  private pending?: Promise<MasterDataSnapshot>
+  private pending?: { started: number; promise: Promise<MasterDataSnapshot> }
+  private startedReads = 0
   private errorState?: string
   private intentState?: Intent
   private epoch = 0
@@ -50,36 +51,59 @@ export class MasterDataStore implements MasterDataRevisionCoordinator {
     this.changed(this.revisionFloors())
   }
   revisionFloors() { return { ...this.floors } }
-  data() { this.access(); return { snapshot: this.snapshotState, derived: this.derivedState, error: this.errorState, pending: this.pending } }
+  data() { this.access(); return { snapshot: this.snapshotState, derived: this.derivedState, error: this.errorState, pending: this.pending?.promise } }
   intent() { return this.intentState }
-  async ensureLoaded() { this.access(); if (this.snapshotState) return this.snapshotState; return this.load(false) }
-  async refetchMasterData() { this.access(); return this.load(true) }
-  private load(force: boolean): Promise<MasterDataSnapshot> {
-    if (this.pending) return this.pending
-    if (!force && this.snapshotState) return Promise.resolve(this.snapshotState)
-    if (force) { this.snapshotState = undefined; this.derivedState = undefined; this.errorState = undefined; this.emit() }
+  async ensureLoaded() { this.access(); if (this.snapshotState) return this.snapshotState; return this.loadAtLeast(0) }
+  async refetchMasterData() {
+    this.access()
+    // A refetch cannot be satisfied by a bootstrap that started before this call.
+    return this.loadAtLeast((this.pending?.started ?? this.startedReads) + 1)
+  }
+  private loadAtLeast(minimumStarted: number): Promise<MasterDataSnapshot> {
+    if (this.pending) {
+      if (this.pending.started >= minimumStarted) return this.pending.promise
+      return this.pending.promise.catch(() => undefined).then(() => this.loadAtLeast(minimumStarted))
+    }
+    if (minimumStarted === 0 && this.snapshotState) return Promise.resolve(this.snapshotState)
+    return this.startLoad()
+  }
+  private snapshotMeetsFloors(snapshot: MasterDataSnapshot) {
+    const floors = this.revisionFloors()
+    return snapshot.revisions.groups >= floors.groups && snapshot.revisions.catalog >= floors.catalog && snapshot.revisions.categories >= floors.categories
+  }
+  private startLoad(): Promise<MasterDataSnapshot> {
     const epoch = this.epoch
+    const started = ++this.startedReads
     const request = this.read().then(snapshot => {
-      this.access()
       if (epoch !== this.epoch) throw new Error('Bootstrap Master Data descartado por cambio de contexto.')
+      this.access()
+      if (!this.snapshotMeetsFloors(snapshot)) throw new Error('Bootstrap Master Data obsoleto: no alcanza las revisiones autoritativas.')
       this.observeRevisions(snapshot.revisions)
       this.snapshotState = snapshot
       this.derivedState = deriveMasterData(snapshot)
       this.errorState = undefined
-      this.pending = undefined
+      if (this.pending?.started === started) this.pending = undefined
       this.emit()
       return snapshot
     }).catch((error: unknown) => {
-      if (this.live && epoch === this.epoch && !this.authorizationError(error)) { this.pending = undefined; this.errorState = error instanceof Error ? error.message : 'No se pudo cargar Master Data.'; this.emit() }
+      if (this.live && epoch === this.epoch && !this.authorizationError(error)) { if (this.pending?.started === started) this.pending = undefined; this.errorState = error instanceof Error ? error.message : 'No se pudo cargar Master Data.'; this.emit() }
       throw error
     })
-    this.pending = request
+    this.pending = { started, promise: request }
     this.emit()
     return request
   }
   async mutation(action: MasterDataMutationAction, input: MutationInput): Promise<MasterDataMutationResult> {
     this.access()
     if (this.intentState) throw new Error('Hay una operación de Categorías sin confirmar. Reinténtala antes de crear otra.')
+    if (action === 'category_reorder') {
+      const categoryIds = (input as { category_ids: string[] }).category_ids
+      const current = this.snapshotState?.categories.map(category => category.id)
+      const expected = new Set(current ?? [])
+      if (!current || categoryIds.length !== current.length || new Set(categoryIds).size !== categoryIds.length || categoryIds.some((id: string) => !expected.has(id))) {
+        throw new Error('El reordenamiento debe incluir exactamente las categorías del snapshot autoritativo.')
+      }
+    }
     const floors = this.revisionFloors()
     if (floors.categories < 0) throw new Error('Falta la revisión autoritativa de Categorías.')
     const intent: Intent = { action, payload: { ...input, operation_id: crypto.randomUUID(), expected_categories_revision: floors.categories } as MasterDataMutation }

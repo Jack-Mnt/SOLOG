@@ -55,7 +55,7 @@ describe('Master Data V1', () => {
   })
   test('conflicto descarta intención, refetch y obliga UUID nuevo', async () => {
     let attempt = 0
-    const { store, calls } = setup({ mutate: () => { if (!attempt++) { revisions = { groups: 4, catalog: 11, categories: 2 }; throw Object.assign(new Error('Conflict'), { code: 'SOLOG_MASTERDATA_REVISION_CONFLICT' }) }; return { contract_version: 1 as const, generated_at: now, replay: false, result: {}, revisions: { ...revisions, categories: 3 } } } })
+    const { store, calls } = setup({ mutate: () => { if (!attempt++) { revisions = { groups: 4, catalog: 11, categories: 2 }; throw Object.assign(new Error('Conflict'), { code: 'SOLOG_MASTERDATA_REVISION_CONFLICT' }) }; revisions.categories = 3; return { contract_version: 1 as const, generated_at: now, replay: false, result: {}, revisions: { ...revisions } } } })
     await store.ensureLoaded()
     await expect(store.mutation('category_rename', { category_id: 'cat-1', nombre: 'Nueva' })).rejects.toThrow('Conflict')
     expect(store.intent()).toBeUndefined()
@@ -68,5 +68,63 @@ describe('Master Data V1', () => {
     const base = { operation_id: crypto.randomUUID(), expected_categories_revision: 1 }
     expect(() => validateMasterDataMutation('category_reorder', { ...base, category_ids: ['a', 'b'] })).not.toThrow()
     expect(() => validateMasterDataMutation('category_reorder', { ...base, category_ids: ['a', 'a'] })).toThrow(MasterDataContractError)
+  })
+})
+
+describe('Master Data V1: consistencia de snapshot y refetch', () => {
+  function deferred<T>() {
+    let resolve!: (value: T) => void
+    let reject!: (reason?: unknown) => void
+    const promise = new Promise<T>((ok, fail) => { resolve = ok; reject = fail })
+    return { promise, resolve, reject }
+  }
+  test('rechaza bootstrap inferior al floor sin reemplazar el snapshot válido', async () => {
+    const { store } = setup()
+    const valid = await store.ensureLoaded()
+    store.observeRevisions({ groups: 4 })
+    revisions.groups = 3
+    await expect(store.refetchMasterData()).rejects.toThrow('obsoleto')
+    expect(store.data().snapshot).toBe(valid)
+    expect(store.revisionFloors().groups).toBe(4)
+  })
+  test('un refetch durante bootstrap en vuelo inicia una lectura posterior', async () => {
+    const first = deferred<ReturnType<typeof fixture>>()
+    const second = deferred<ReturnType<typeof fixture>>()
+    let calls = 0
+    const read = (async () => (++calls === 1 ? first.promise : second.promise)) as MasterDataReadTransport
+    const store = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, read)
+    const initial = store.ensureLoaded()
+    const refetch = store.refetchMasterData()
+    first.resolve(fixture())
+    await initial
+    await Promise.resolve()
+    expect(calls).toBe(2)
+    revisions.groups = 4
+    second.resolve(fixture())
+    await expect(refetch).resolves.toMatchObject({ revisions: { groups: 4 } })
+    expect(store.data().snapshot?.revisions.groups).toBe(4)
+  })
+  test('descarta respuesta tardía al disponer el contexto', async () => {
+    const pending = deferred<ReturnType<typeof fixture>>()
+    const read = (async () => pending.promise) as MasterDataReadTransport
+    const store = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, read)
+    const request = store.ensureLoaded()
+    store.dispose()
+    pending.resolve(fixture())
+    await expect(request).rejects.toThrow('descartado')
+  })
+  test('category_reorder exige la lista completa del snapshot antes de RPC', async () => {
+    const categories = [{ id: 'cat-1', nombre: 'Bebidas', orden: 0 }, { id: 'cat-2', nombre: 'Lácteos', orden: 1 }]
+    const calls: unknown[] = []
+    const read = (async () => ({ ...fixture(), categories, totals: { ...fixture().totals, categories: 2 } })) as MasterDataReadTransport
+    const mutate = (async (_action: string, payload: Record<string, unknown>) => { calls.push(payload); revisions.categories = 2; return { contract_version: 1 as const, generated_at: now, replay: false, result: {}, revisions: { ...revisions } } }) as MasterDataMutateTransport
+    const store = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, read, mutate)
+    await store.ensureLoaded()
+    await expect(store.mutation('category_reorder', { category_ids: ['cat-1'] })).rejects.toThrow('exactamente')
+    await expect(store.mutation('category_reorder', { category_ids: ['cat-1', 'missing'] })).rejects.toThrow('exactamente')
+    await expect(store.mutation('category_reorder', { category_ids: ['cat-1', 'cat-1'] })).rejects.toThrow('exactamente')
+    expect(calls).toHaveLength(0)
+    await store.mutation('category_reorder', { category_ids: ['cat-2', 'cat-1'] })
+    expect(calls).toHaveLength(1)
   })
 })
