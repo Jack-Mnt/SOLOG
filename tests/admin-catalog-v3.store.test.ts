@@ -111,13 +111,12 @@ describe('store Catálogo V3', () => {
   test('prepara resolución de precio con decisión explícita xN y sin cálculo proporcional', async () => {
     const { store, calls } = setup()
     await store.load('status', {})
-    await store.mutation('prepare_price', { propuesta_fingerprint: 'a'.repeat(64), resolution: 'separate_sku' })
+    await store.mutation('prepare_price', { propuesta_fingerprint: 'a'.repeat(64), resolution: 'separate_sku', package_action: 'not_applicable' })
     await store.load('status', {})
-    await store.mutation('prepare_price', { propuesta_fingerprint: 'b'.repeat(64), resolution: 'update_group_price', package_action: 'update', precio_paquete: 12 })
+    await store.mutation('prepare_price', { propuesta_fingerprint: 'b'.repeat(64), resolution: 'update_group_price', package_action: 'set', unidades_por_paquete: 12, precio_paquete: 36 })
     const prepared = calls.filter(call => call.action === 'prepare_price')
-    expect(prepared[0].payload).toMatchObject({ resolution: 'separate_sku' })
-    expect(prepared[0].payload.package_action).toBeUndefined()
-    expect(prepared[1].payload).toMatchObject({ resolution: 'update_group_price', package_action: 'update', precio_paquete: 12 })
+    expect(prepared[0].payload).toMatchObject({ resolution: 'separate_sku', package_action: 'not_applicable' })
+    expect(prepared[1].payload).toMatchObject({ resolution: 'update_group_price', package_action: 'set', unidades_por_paquete: 12, precio_paquete: 36 })
   })
   test('publica solo como admin y conserva el mismo operation_id después de una respuesta incierta', async () => {
     const ids: string[] = []

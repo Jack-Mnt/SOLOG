@@ -34,7 +34,13 @@ export interface CatalogMutations {
   proposal_action: CatalogMutationBase & { propuesta_fingerprint: string; action: 'approve' | 'ignore' | 'withdraw' }
   propose_product_state: CatalogMutationBase & { c_interno: number; action: 'exclude' | 'reincorporate' }
   prepare_product: CatalogMutationBase & ({ propuesta_fingerprint: string; mode: 'existing_group'; grupo_id: string; marca?: string | null } | { propuesta_fingerprint: string; mode: 'new_unit'; categoria_id: string; marca?: string | null })
-  prepare_price: CatalogMutationBase & ({ propuesta_fingerprint: string; resolution: 'separate_sku' } | { propuesta_fingerprint: string; resolution: 'update_group_price' | 'keep_structure'; package_action: 'keep' } | { propuesta_fingerprint: string; resolution: 'update_group_price' | 'keep_structure'; package_action: 'update'; precio_paquete: number })
+  prepare_price: CatalogMutationBase & (
+    | { propuesta_fingerprint: string; resolution: 'update_group_price' | 'keep_structure'; package_action: 'keep' | 'clear' }
+    | { propuesta_fingerprint: string; resolution: 'update_group_price' | 'keep_structure'; package_action: 'update'; precio_paquete: number }
+    | { propuesta_fingerprint: string; resolution: 'update_group_price' | 'keep_structure'; package_action: 'set'; unidades_por_paquete: number; precio_paquete: number }
+    | { propuesta_fingerprint: string; resolution: 'separate_sku'; package_action: 'clear' | 'not_applicable' }
+    | { propuesta_fingerprint: string; resolution: 'separate_sku'; package_action: 'set'; unidades_por_paquete: number; precio_paquete: number }
+  )
 }
 export type CatalogMutationAction = keyof CatalogMutations
 export interface CatalogMutationResult extends CatalogEnvelope { replay: boolean; result: CatalogPayload }
@@ -115,7 +121,12 @@ export function validateCatalogMutationPayload(action: CatalogMutationAction, va
   if (action === 'prepare_product') assert(typeof value.propuesta_fingerprint === 'string' && inSet(value.mode, ['existing_group', 'new_unit']) && (value.marca === undefined || nullableString(value.marca)) && (value.mode === 'existing_group' ? typeof value.grupo_id === 'string' : typeof value.categoria_id === 'string'), 'Payload prepare_product inválido.')
   if (action === 'prepare_price') {
     assert(typeof value.propuesta_fingerprint === 'string' && inSet(value.resolution, ['update_group_price', 'separate_sku', 'keep_structure']), 'Payload prepare_price inválido.')
-    if (value.resolution !== 'separate_sku') assert(inSet(value.package_action, ['keep', 'update']) && (value.package_action !== 'update' || number(value.precio_paquete) && value.precio_paquete > 0), 'Decisión de precio xN inválida.')
+    const resolution = value.resolution
+    const action = value.package_action
+    const set = action === 'set' && integer(value.unidades_por_paquete) && value.unidades_por_paquete > 1 && number(value.precio_paquete) && value.precio_paquete > 0
+    const update = action === 'update' && number(value.precio_paquete) && value.precio_paquete > 0
+    if (resolution === 'separate_sku') assert(action === 'clear' || action === 'not_applicable' || set, 'Decisión de valorizado para separación inválida.')
+    else assert(action === 'keep' || action === 'clear' || update || set, 'Decisión de valorizado inválida.')
   }
 }
 export function validateCatalogMutation(value: unknown): CatalogMutationResult {

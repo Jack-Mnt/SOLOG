@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AdminDialog } from '../admin.dialog'
+import { ValuationDialog, type ValuationDecision } from '../admin.valuation-dialog'
 import { useAdminStore } from '../admin.v2.context'
 import { useCatalogQuery, useCatalogStore } from './admin.catalogo.context'
 import type { CatalogMode, CatalogProduct, CatalogProposal, CatalogProposalStatus, CatalogSetupRequired } from './admin.catalogo.v3'
@@ -14,7 +15,6 @@ type ProductModeFilter = 'all' | CatalogMode
 type ProductSort = 'name' | 'code' | 'price_asc' | 'price_desc'
 type ProductSetupTarget = Pick<CatalogSetupRequired, 'propuesta_fingerprint' | 'c_interno' | 'producto' | 'precio' | 'tipo'>
 type PriceResolution = 'update_group_price' | 'separate_sku' | 'keep_structure'
-type PackageAction = '' | 'keep' | 'update'
 
 const surfaces: Array<{ id: CatalogSurface; label: string }> = [{ id: 'proposals', label: 'Propuestas' }, { id: 'products', label: 'Productos' }]
 const proposalStatuses: Array<{ id: CatalogProposalStatus; label: string }> = [{ id: 'pendiente', label: 'Pendientes' }, { id: 'aprobado', label: 'Aprobados' }, { id: 'ignorado', label: 'Ignorados' }, { id: 'incorporado', label: 'Incorporados' }]
@@ -23,6 +23,13 @@ const emergingTypes = new Set<CatalogProposal['tipo']>(['eliminar_producto', 'ex
 const emptyProducts: CatalogProduct[] = []
 const proposalLabels: Record<CatalogProposal['tipo'], string> = { agregar_producto: 'Agregar producto', eliminar_producto: 'Eliminar producto', excluir_producto: 'Excluir producto', reincorporar_producto: 'Reincorporar producto', nombre: 'Cambiar nombre', codigo: 'Cambiar código de barras', precio: 'Cambiar precio' }
 const resolutionLabels: Record<PriceResolution, string> = { update_group_price: 'Actualizar precio de todo el grupo', separate_sku: 'Separar SKU como Único', keep_structure: 'Conservar estructura del grupo' }
+function priceErrorMessage(reason: unknown) {
+  const code = reason && typeof reason === 'object' && 'code' in reason ? String(reason.code) : ''
+  if (code === 'INVALID_PACKAGE_CONFIGURATION' || code === 'SOLOG_INVALID_PACKAGE_CONFIGURATION') return 'La configuración de valorizado no es válida.'
+  if (code === 'INVALID_PACKAGE_PRICE' || code === 'SOLOG_INVALID_PACKAGE_PRICE') return 'El precio por paquete no es válido.'
+  if (code === 'PACKAGE_PRICE_DECISION_REQUIRED' || code === 'SOLOG_PACKAGE_PRICE_DECISION_REQUIRED') return 'Debes decidir explícitamente el valorizado antes de preparar.'
+  return reason instanceof Error ? reason.message : 'No se pudo preparar el precio.'
+}
 
 function CatalogStatus() {
   const status = useCatalogQuery('status', {})
@@ -126,35 +133,44 @@ function PriceResolutionDialog({ fingerprint, onClose, onComplete }: { fingerpri
   const store = useCatalogStore()
   const query = useCatalogQuery('price_options', { propuesta_fingerprint: fingerprint })
   const [resolution, setResolution] = useState<PriceResolution | ''>('')
-  const [packageAction, setPackageAction] = useState<PackageAction>('')
-  const [packagePrice, setPackagePrice] = useState('')
+  const [packageAction, setPackageAction] = useState<'keep' | 'clear' | 'not_applicable' | 'set' | ''>('')
+  const [preparedValuation, setPreparedValuation] = useState<{ unidades_por_paquete: number; precio_paquete: number } | null>(null)
+  const [valuation, setValuation] = useState(false)
   const [error, setError] = useState('')
   const intent = store.intent()
   if (!query.data) return <AdminDialog title="Resolver precio" onClose={onClose} closeDisabled={!!intent?.pending} wide><QueryState {...query} /></AdminDialog>
   const options = query.data
-  const requiresPackageDecision = options.package_decision_required && resolution !== '' && resolution !== 'separate_sku'
+  const initial = { unitsPerPackage: options.grupo.unidades_por_paquete, packagePrice: options.grupo.precio_paquete }
+  const selectResolution = (value: PriceResolution | '') => { setResolution(value); setPackageAction(''); setPreparedValuation(null); setError('') }
+  const chooseValuation = (decision: ValuationDecision) => { if (decision.enabled) { setPreparedValuation({ unidades_por_paquete: decision.unitsPerPackage!, precio_paquete: decision.packagePrice! }); setPackageAction('set') } else setPackageAction('clear'); setValuation(false) }
   const submit = () => {
     if (!resolution) { setError('Selecciona una resolución de precio.'); return }
     if (options.change_state !== 'aprobado') { setError('La propuesta ya no está aprobada. Actualiza la bandeja.'); return }
-    if (requiresPackageDecision && !packageAction) { setError('Decide explícitamente el precio xN.'); return }
-    if (requiresPackageDecision && packageAction === 'update' && (!Number.isFinite(Number(packagePrice)) || Number(packagePrice) <= 0)) { setError('Ingresa un precio xN mayor que cero.'); return }
+    if (!packageAction) { setError('Decide explícitamente la valorización por paquete.'); return }
+    if (packageAction === 'set' && !preparedValuation) { setError('Configura un valorizado válido antes de preparar.'); return }
     setError('')
-    const payload = resolution === 'separate_sku' ? { propuesta_fingerprint: fingerprint, resolution } : requiresPackageDecision && packageAction === 'update' ? { propuesta_fingerprint: fingerprint, resolution, package_action: 'update' as const, precio_paquete: Number(packagePrice) } : { propuesta_fingerprint: fingerprint, resolution, package_action: 'keep' as const }
-    void store.mutation('prepare_price', payload).then(onComplete).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo preparar el precio.'))
+    const done = () => onComplete()
+    const failed = (reason: unknown) => setError(priceErrorMessage(reason))
+    if (resolution === 'separate_sku') {
+      const payload = packageAction === 'set' ? { propuesta_fingerprint: fingerprint, resolution: 'separate_sku' as const, package_action: 'set' as const, ...preparedValuation! } : { propuesta_fingerprint: fingerprint, resolution: 'separate_sku' as const, package_action: packageAction === 'clear' ? 'clear' as const : 'not_applicable' as const }
+      void store.mutation('prepare_price', payload).then(done).catch(failed); return
+    }
+    const payload = packageAction === 'set' ? { propuesta_fingerprint: fingerprint, resolution, package_action: 'set' as const, ...preparedValuation! } : { propuesta_fingerprint: fingerprint, resolution, package_action: packageAction === 'clear' ? 'clear' as const : 'keep' as const }
+    void store.mutation('prepare_price', payload).then(done).catch(failed)
   }
-  const retry = () => { setError(''); void store.retryMutation().then(onComplete).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo confirmar la resolución.')) }
-  return <AdminDialog title="Resolver precio" description={`C. interno ${options.c_interno}`} onClose={onClose} closeDisabled={!!intent?.pending} wide>
-    <p>Precio propuesto: <Value value={options.nuevo_precio} money />. Esta resolución queda en staging; no publica cambios.</p>
-    <dl className="admin-catalog__proposal-summary"><div><dt>Grupo</dt><dd>{options.grupo.nombre}</dd></div><div><dt>Precio de grupo</dt><dd><Value value={options.grupo.precio} money /></dd></div><div><dt>Paquete</dt><dd>{options.grupo.unidades_por_paquete && options.grupo.unidades_por_paquete > 1 ? `x${options.grupo.unidades_por_paquete}` : 'No aplica'}</dd></div><div><dt>Resolución previa</dt><dd>{options.prepared_resolution ? 'Existe staging preparado' : 'Sin resolución preparada'}</dd></div></dl>
+  const retry = () => { setError(''); void store.retryMutation().then(onComplete).catch((reason: unknown) => setError(priceErrorMessage(reason))) }
+  const canKeep = resolution !== 'separate_sku'
+  return <><AdminDialog title="Resolver precio" description={`C. interno ${options.c_interno}`} onClose={onClose} closeDisabled={!!intent?.pending} wide>
+    <p>Precio propuesto: <Value value={options.nuevo_precio} money />. La resolución y el valorizado quedan en staging; se aplicarán solo al publicar Catálogo.</p>
+    <dl className="admin-catalog__proposal-summary"><div><dt>Grupo</dt><dd>{options.grupo.nombre}</dd></div><div><dt>Precio de grupo</dt><dd><Value value={options.grupo.precio} money /></dd></div><div><dt>Paquete actual</dt><dd>{initial.unitsPerPackage && initial.packagePrice ? `x${initial.unitsPerPackage} · S/ ${initial.packagePrice.toFixed(2)}` : 'Sin valorizado'}</dd></div><div><dt>Resolución previa</dt><dd>{options.prepared_resolution ? 'Existe staging preparado' : 'Sin resolución preparada'}</dd></div></dl>
     <div className="admin-v2-table admin-catalog__table"><table><thead><tr><th scope="col">SKU</th><th scope="col">Producto</th><th scope="col">Precio</th></tr></thead><tbody>{options.members.map((member) => <tr key={member.c_interno}><td>{member.c_interno}</td><th scope="row">{member.producto}</th><td><Value value={member.precio} money /></td></tr>)}</tbody></table></div>
-    <label>Resolución<select value={resolution} onChange={(event) => { setResolution(event.target.value as PriceResolution | ''); setPackageAction(''); setPackagePrice('') }}><option value="">Seleccionar</option>{options.options.map((option) => <option key={option} value={option}>{resolutionLabels[option]}</option>)}</select></label>
-    {requiresPackageDecision && <fieldset><legend>Precio xN</legend><p>Selecciona una decisión explícita. No se calcula proporcionalmente.</p><label><input type="radio" name="package-action" checked={packageAction === 'keep'} onChange={() => setPackageAction('keep')} /> Conservar precio xN vigente</label><label><input type="radio" name="package-action" checked={packageAction === 'update'} onChange={() => setPackageAction('update')} /> Actualizar precio xN</label>{packageAction === 'update' && <label>Nuevo precio xN<input required type="number" min="0.01" step="0.01" value={packagePrice} onChange={(event) => setPackagePrice(event.target.value)} /></label>}</fieldset>}
+    <label>Resolución<select value={resolution} onChange={(event) => selectResolution(event.target.value as PriceResolution | '')}><option value="">Seleccionar</option>{options.options.map((option) => <option key={option} value={option}>{resolutionLabels[option]}</option>)}</select></label>
+    {resolution && <fieldset><legend>Valorizado</legend>{canKeep && <button type="button" className="button button--secondary" aria-pressed={packageAction === 'keep'} onClick={() => setPackageAction('keep')}>Conservar valorizado</button>}<button type="button" className="button button--secondary" aria-pressed={packageAction === 'set' || packageAction === 'clear'} onClick={() => setValuation(true)}>Actualizar valorizado</button>{resolution === 'separate_sku' && <button type="button" className="button button--secondary" aria-pressed={packageAction === 'not_applicable'} onClick={() => setPackageAction('not_applicable')}>Sin valorizado</button>}{packageAction === 'clear' && <p>El valorizado se eliminará al publicar.</p>}{packageAction === 'set' && preparedValuation && <p>Se preparará x{preparedValuation.unidades_por_paquete} · S/ {preparedValuation.precio_paquete.toFixed(2)} al publicar.</p>}</fieldset>}
     {intent && <CatalogIntentNotice onRetry={retry} />}
     <button type="button" className="button" disabled={!!intent || options.change_state !== 'aprobado'} onClick={submit}>Preparar resolución</button>
     {error && <p role="alert">{error}</p>}
-  </AdminDialog>
+  </AdminDialog>{valuation && <ValuationDialog unitPrice={options.nuevo_precio} initial={initial} description="Este cambio queda en staging y se aplicará al publicar Catálogo." pending={!!intent?.pending} error={error} onClose={() => setValuation(false)} onConfirm={chooseValuation} />}</>
 }
-
 function ProductsSurface() {
   const query = useCatalogQuery('products', {})
   const [search, setSearch] = useState('')
