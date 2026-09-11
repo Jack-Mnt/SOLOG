@@ -1,6 +1,7 @@
 import { adminRpc, validateControlPayload, type AdminAction, type AdminBootstrap, type AdminPayloads, type AdminResponses, type Envelope } from './admin.v2'
 import { CatalogStore } from './catalogo/admin.catalogo.store'
 import { GroupsStore } from './grupos/admin.grupos.store'
+import { MasterDataStore } from './masterdata/admin.masterdata.store'
 import { ManagementStore } from './admin.management.store'
 import { orderedAdminSites } from './admin.site-ui'
 
@@ -18,20 +19,22 @@ export class AdminStore {
   readonly management: ManagementStore
   readonly catalog: CatalogStore
   readonly groupsV1: GroupsStore
+  readonly masterData: MasterDataStore
   constructor(readonly userId: string, private rpc: typeof adminRpc = adminRpc) {
+    this.masterData = new MasterDataStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => { if (forbidden) { this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit() } })
     this.management = new ManagementStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
-      if (forbidden) { this.management.resetAccess(); this.catalog.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
+      if (forbidden) { this.management.resetAccess(); this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
       if (revisions.groups !== undefined && revisions.groups > this.groups) {
         this.groups = revisions.groups; this.invalidate(undefined, true); this.emit()
       }
     }, undefined, undefined, undefined, undefined, () => this.catalog.refresh())
     this.catalog = new CatalogStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => {
-      if (forbidden) { this.catalog.resetAccess(); this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit() }
-    })
+      if (forbidden) { this.catalog.resetAccess(); this.management.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit() }
+    }, undefined, undefined, undefined, this.masterData)
     this.groupsV1 = new GroupsStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
-      if (forbidden) { this.groupsV1.resetAccess(); this.catalog.resetAccess(); this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
+      if (forbidden) { this.groupsV1.resetAccess(); this.catalog.resetAccess(); this.management.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
       if (revisions.groups > this.groups) { this.groups = revisions.groups; this.management.observeGroups(this.groups); this.invalidate(undefined, true); this.emit() }
-    })
+    }, undefined, undefined, this.masterData)
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   snapshot = () => this.version
@@ -73,9 +76,9 @@ export class AdminStore {
     if (revision > previous) { this.operational.set(site, revision); this.invalidate(site, true) }
   }
   current = () => this.live
-  dispose() { this.management.dispose(); this.catalog.dispose(); this.groupsV1.dispose(); this.live = false; this.epoch++; this.entries.clear(); this.bootstrap = null; this.operational.clear(); this.listeners.clear() }
+  dispose() { this.management.dispose(); this.catalog.dispose(); this.groupsV1.dispose(); this.masterData.dispose(); this.live = false; this.epoch++; this.entries.clear(); this.bootstrap = null; this.operational.clear(); this.listeners.clear() }
   // Explicit refresh invalidates requests in flight as well as cached pages/details.
-  refresh() { this.epoch++; this.entries.clear(); this.management.refresh(); this.catalog.refresh(); this.groupsV1.refresh(); this.emit() }
+  refresh() { this.epoch++; this.entries.clear(); this.management.refresh(); this.catalog.refresh(); this.groupsV1.refresh(); this.masterData.refresh(); this.emit() }
   async load<A extends AdminAction>(action: A, payload: AdminPayloads[A]): Promise<AdminResponses[A]> {
     validateControlPayload(action, payload)
     if (!this.live) throw new Error('El contexto Admin ya no está activo.')
@@ -99,8 +102,9 @@ export class AdminStore {
         // Validate the whole bootstrap before publishing identity/access or advancing any floor.
         if (b.revisions.groups !== undefined && b.revisions.groups < this.groups) throw new Error('Bootstrap de grupos obsoleto.')
         if (b.allowed_sites.some(s => s.operational_revision < (this.operational.get(s.id) ?? -1))) throw new Error('Bootstrap de sede obsoleto.')
-        if (this.bootstrap && (b.identity.rol !== this.bootstrap.identity.rol || JSON.stringify(b.allowed_sites.map(s => s.id)) !== JSON.stringify(this.bootstrap.allowed_sites.map(s => s.id)))) { this.invalidate(); this.management.resetAccess(); this.catalog.resetAccess(); this.groupsV1.resetAccess() }
+        if (this.bootstrap && (b.identity.rol !== this.bootstrap.identity.rol || JSON.stringify(b.allowed_sites.map(s => s.id)) !== JSON.stringify(this.bootstrap.allowed_sites.map(s => s.id)))) { this.invalidate(); this.management.resetAccess(); this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess() }
         this.bootstrap = b
+        this.masterData.observeRevisions({ groups: b.revisions.groups, catalog: b.revisions.catalog })
         b.allowed_sites.forEach(s => this.observeSite(s.id, s.operational_revision))
       }
       if (action === 'dashboard_cards') {
@@ -128,6 +132,7 @@ export class AdminStore {
         if (r.page !== p.page || r.page_size !== p.page_size || r.period.key !== p.period || (p.period === 'custom' && (r.period.from !== p.date_from || r.period.to !== p.date_to))) throw new Error('Página o período recibido incorrecto.')
       }
       this.observe(response, site)
+      if ((response as Envelope).revisions.groups !== undefined || (response as Envelope).revisions.catalog !== undefined) this.masterData.observeRevisions({ groups: (response as Envelope).revisions.groups, catalog: (response as Envelope).revisions.catalog })
       entry.data = response; entry.pending = undefined
       // bootstrap changes the role portion of the cache scope.
       this.entries.set(this.key(action, payload), entry)
@@ -137,7 +142,7 @@ export class AdminStore {
       if (this.live && entry.epoch === this.epoch && this.entries.get(key) === entry) {
         const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
         if (['SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_ADMIN_ROLE_REQUIRED', 'SOLOG_SITE_FORBIDDEN'].includes(code)) {
-          this.management.resetAccess(); this.catalog.resetAccess()
+          this.management.resetAccess(); this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess()
           this.epoch++; this.entries.clear(); this.bootstrap = null
         }
         entry.pending = undefined; entry.error = error instanceof Error ? error.message : 'No se pudo consultar Admin.'

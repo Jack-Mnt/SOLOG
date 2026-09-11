@@ -1,4 +1,5 @@
 import type { AdminBootstrap } from '../admin.v2'
+import type { MasterDataRevisionCoordinator } from '../masterdata/admin.masterdata.store'
 import { CatalogPublicationError, catalogMutate, catalogRead, publishCatalog, type CatalogMutationAction, type CatalogMutationResult, type CatalogMutations, type CatalogPublicationResult, type CatalogReadAction, type CatalogReadPayloads, type CatalogReads, type CatalogRevisions } from './admin.catalogo.v3'
 
 type CatalogMutationInput<T> = T extends { operation_id: string; expected_catalog_revision: number; expected_groups_revision: number }
@@ -29,6 +30,7 @@ export class CatalogStore {
     private read: CatalogReadTransport = catalogRead,
     private mutateRpc: CatalogMutateTransport = catalogMutate,
     private publishRpc: CatalogPublishTransport = publishCatalog,
+    private coordinator?: MasterDataRevisionCoordinator,
   ) {
     try { const id = sessionStorage.getItem(this.receiptKey()); if (id && /^[0-9a-f-]{36}$/i.test(id)) this.publication.operationId = id } catch { /* Memory retry remains available. */ }
   }
@@ -72,10 +74,12 @@ export class CatalogStore {
     const changed = revisions.catalog > this.floors.catalog || revisions.groups > this.floors.groups
     this.floors = { catalog: Math.max(this.floors.catalog, revisions.catalog), groups: Math.max(this.floors.groups, revisions.groups) }
     if (changed) this.invalidate()
+    this.coordinator?.observeRevisions(revisions)
     this.changed(this.floors)
   }
   private observeMutation(revisions: CatalogRevisions) {
     this.floors = { catalog: Math.max(this.floors.catalog, revisions.catalog), groups: Math.max(this.floors.groups, revisions.groups) }
+    this.coordinator?.observeRevisions(revisions)
     this.changed(this.floors)
   }
   private definitive(error: unknown) {
@@ -88,7 +92,7 @@ export class CatalogStore {
     const entry = this.entries.get(this.key(action, payload))
     return { data: entry?.data as CatalogReads[A] | undefined, error: entry?.error }
   }
-  revisions() { return { ...this.floors } }
+  revisions() { const floors = this.coordinator?.revisionFloors(); return floors ? { catalog: floors.catalog, groups: floors.groups } : { ...this.floors } }
   refresh() { this.epoch++; this.entries.clear(); this.emit() }
   resetAccess() { this.epoch++; this.entries.clear(); this.intentState = undefined; this.scope = ''; this.emit() }
   dispose() { this.live = false; this.epoch++; this.entries.clear(); this.intentState = undefined; this.listeners.clear() }
@@ -137,14 +141,15 @@ export class CatalogStore {
   async mutation<A extends CatalogMutationAction>(action: A, payload: CatalogMutationInput<CatalogMutations[A]>): Promise<CatalogMutationResult> {
     this.access()
     if (this.intentState) throw new Error('Hay una operación de Catálogo sin confirmar. Reinténtala antes de crear otra.')
-    if (this.floors.catalog < 0 || this.floors.groups < 0) throw new Error('Faltan revisiones autoritativas de Catálogo.')
+    const floors = this.revisions()
+    if (floors.catalog < 0 || floors.groups < 0) throw new Error('Faltan revisiones autoritativas de Catálogo.')
     const intent: Intent = {
       action,
       payload: {
         ...payload,
         operation_id: crypto.randomUUID(),
-        expected_catalog_revision: this.floors.catalog,
-        expected_groups_revision: this.floors.groups,
+        expected_catalog_revision: floors.catalog,
+        expected_groups_revision: floors.groups,
       } as CatalogMutations[CatalogMutationAction],
     }
     this.intentState = intent
@@ -161,10 +166,11 @@ export class CatalogStore {
     const operationId = this.publication.operationId ?? crypto.randomUUID()
     this.publication = { operationId }
     try { sessionStorage.setItem(this.receiptKey(), operationId) } catch { /* Keep the in-memory receipt. */ }
-    const request = this.publishRpc(operationId).then(result => {
+    const request = this.publishRpc(operationId).then(async result => {
       this.access()
       if (epoch !== this.epoch) throw new Error('Respuesta de publicación descartada por cambio de acceso.')
       this.invalidate()
+      if (result.completion_recorded) await this.coordinator?.refetchMasterData()
       this.publication = result.completion_recorded ? { result } : { operationId, result }
       if (result.completion_recorded) try { sessionStorage.removeItem(this.receiptKey()) } catch { /* Non-fatal. */ }
       this.emit()
@@ -205,6 +211,7 @@ export class CatalogStore {
         intent.error = error instanceof Error ? error.message : 'Operación Catálogo sin confirmar.'
         if (this.definitive(error)) {
           this.intentState = undefined
+          if ((error as { code?: string }).code === 'SOLOG_MASTERDATA_REVISION_CONFLICT') void this.coordinator?.refetchMasterData()
           this.invalidate()
         }
         this.emit()

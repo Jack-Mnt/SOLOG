@@ -1,4 +1,5 @@
 import type { AdminBootstrap } from '../admin.v2'
+import type { MasterDataRevisionCoordinator } from '../masterdata/admin.masterdata.store'
 import { groupsMutate, groupsRead, type GroupsMutationAction, type GroupsMutationResult, type GroupsMutations, type GroupsReadAction, type GroupsReadPayloads, type GroupsReads, type GroupsRevisions } from './admin.grupos.v1'
 
 type MutationInput<T> = T extends { operation_id: string; expected_groups_revision: number; expected_catalog_revision: number } ? Omit<T, 'operation_id' | 'expected_groups_revision' | 'expected_catalog_revision'> : never
@@ -16,7 +17,7 @@ export class GroupsStore {
   private epoch = 0
   private live = true
   private scope = ''
-  constructor(readonly userId: string, private auth: () => AdminBootstrap | null, private changed: (revisions: GroupsRevisions, forbidden?: boolean) => void = () => {}, private read: GroupsReadTransport = groupsRead, private mutateRpc: GroupsMutateTransport = groupsMutate) {}
+  constructor(readonly userId: string, private auth: () => AdminBootstrap | null, private changed: (revisions: GroupsRevisions, forbidden?: boolean) => void = () => {}, private read: GroupsReadTransport = groupsRead, private mutateRpc: GroupsMutateTransport = groupsMutate, private coordinator?: MasterDataRevisionCoordinator) {}
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => this.listeners.delete(listener) }
   snapshot = () => this.version
   private emit() { this.version++; this.listeners.forEach(listener => listener()) }
@@ -41,19 +42,21 @@ export class GroupsStore {
     const changed = revisions.groups > this.revisionsState.groups || revisions.catalog > this.revisionsState.catalog
     this.revisionsState = { groups: Math.max(this.revisionsState.groups, revisions.groups), catalog: Math.max(this.revisionsState.catalog, revisions.catalog) }
     if (changed) this.invalidate()
+    this.coordinator?.observeRevisions(revisions)
     this.changed(this.revisionsState)
   }
-  private observeMutation(revisions: GroupsRevisions) { this.revisionsState = { ...revisions }; this.changed(this.revisionsState) }
+  private observeMutation(revisions: GroupsRevisions) { this.revisionsState = { ...revisions }; this.coordinator?.observeRevisions(revisions); this.changed(this.revisionsState) }
   private retryable(error: unknown) {
     const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
     return !code || /SOLOG_LOCK_CONFLICT_RETRYABLE|IN_PROGRESS|UNKNOWN|EMPTY_RESPONSE|INVALID_CONTRACT_RESPONSE/.test(code)
   }
   private async refetchAuthoritative() {
     this.epoch++; this.invalidate(); this.emit()
-    await Promise.all([this.load('status', {}), this.load('reference', {})]).catch(() => {})
+    if (this.coordinator) await this.coordinator.refetchMasterData().catch(() => {})
+    else await Promise.all([this.load('status', {}), this.load('reference', {})]).catch(() => {})
   }
   peek<A extends GroupsReadAction>(action: A, payload: GroupsReadPayloads[A]) { this.access(); const entry = this.entries.get(this.key(action, payload)); return { data: entry?.data as GroupsReads[A] | undefined, error: entry?.error } }
-  revisions() { return { ...this.revisionsState } }
+  revisions() { const floors = this.coordinator?.revisionFloors(); return floors ? { groups: floors.groups, catalog: floors.catalog } : { ...this.revisionsState } }
   intent() { return this.intentState }
   refresh() { this.epoch++; this.entries.clear(); this.emit() }
   resetAccess() { this.epoch++; this.entries.clear(); this.intentState = undefined; this.scope = ''; this.emit() }
@@ -82,8 +85,9 @@ export class GroupsStore {
   async mutation<A extends GroupsMutationAction>(action: A, payload: MutationInput<GroupsMutations[A]>): Promise<GroupsMutationResult> {
     this.access()
     if (this.intentState) throw new Error('Hay una operación de Grupos sin confirmar. Reinténtala antes de crear otra.')
-    if (this.revisionsState.groups < 0 || this.revisionsState.catalog < 0) throw new Error('Faltan revisiones autoritativas de Grupos.')
-    const intent: Intent = { action, payload: { ...payload, operation_id: crypto.randomUUID(), expected_groups_revision: this.revisionsState.groups, expected_catalog_revision: this.revisionsState.catalog } as GroupsMutations[GroupsMutationAction] }
+    const revisions = this.revisions()
+    if (revisions.groups < 0 || revisions.catalog < 0) throw new Error('Faltan revisiones autoritativas de Grupos.')
+    const intent: Intent = { action, payload: { ...payload, operation_id: crypto.randomUUID(), expected_groups_revision: revisions.groups, expected_catalog_revision: revisions.catalog } as GroupsMutations[GroupsMutationAction] }
     this.intentState = intent
     return this.execute(intent)
   }
@@ -93,10 +97,10 @@ export class GroupsStore {
     if (intent.pending) return intent.pending
     intent.error = undefined
     const epoch = this.epoch
-    const request = this.mutateRpc(intent.action, intent.payload).then(result => {
+    const request = this.mutateRpc(intent.action, intent.payload).then(async result => {
       this.access()
       if (epoch !== this.epoch || this.intentState !== intent) throw new Error('Respuesta Grupos descartada por cambio de acceso.')
-      this.observeMutation(result.revisions); this.invalidate(); this.intentState = undefined; this.emit(); return result
+      this.observeMutation(result.revisions); this.invalidate(); this.intentState = undefined; await this.coordinator?.refetchMasterData(); this.emit(); return result
     }).catch(async (error: unknown) => {
       if (this.live && epoch === this.epoch && this.intentState === intent && !this.authorizationError(error)) {
         intent.pending = undefined; intent.error = error instanceof Error ? error.message : 'Operación Grupos sin confirmar.'
