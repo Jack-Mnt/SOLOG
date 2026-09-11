@@ -15,7 +15,8 @@ Se complementa con:
 
 - `SOLOG_Arquitectura_Responsabilidades_Plataformas_V1.md`, que prevalece para los límites generales entre ConeXion, Supabase y SOLOG.
 - `SOLOG_Arquitectura_Catalogo_Responsabilidad_Comportamiento_Funciones_V1.md`, que prevalece para las operaciones propias de Catálogo.
-- El futuro contrato técnico de backend de Grupos, que deberá implementar esta definición sin reinterpretarla.
+- `SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`, contrato técnico desplegado que implementa esta definición sin reinterpretarla.
+- `SOLOG_Arquitectura_Admin_MasterData_Cache_Rutas_V1.md`, que prevalece para la UI/lecturas actuales de Grupos, la caché compartida y la administración de Categorías.
 
 Ante una contradicción:
 
@@ -596,39 +597,35 @@ El futuro backend/frontend debe retirar o aislar estas rutas legacy cuando ya no
 
 ---
 
-## 20. Alcance técnico diferido
+## 20. Alcance técnico de este documento
 
-Este documento congela **comportamiento funcional y fronteras de responsabilidad**.
+Este documento congela **comportamiento funcional y fronteras de responsabilidad**; no es la fuente de payloads/RPC ni de implementación React.
 
-No congela todavía:
+Los aspectos backend que originalmente quedaron diferidos ya están congelados en:
 
-- nombres definitivos de RPC;
-- payloads y responses exactos;
-- códigos de error;
-- funciones internas;
-- esquema de auditoría;
-- estrategia exacta de locks;
-- política exacta de revisión/concurrencia;
-- permisos/grants;
-- detalles de implementación del store frontend;
-- composición concreta de archivos o componentes React.
+`SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`
 
-Estas decisiones deberán definirse en el contrato técnico de backend después de implementar y validar Supabase.
+La estrategia actual de lectura, caché compartida, UI principal y Categorías se complementa y, cuando corresponde, queda sustituida por:
+
+`SOLOG_Arquitectura_Admin_MasterData_Cache_Rutas_V1.md`
+`SOLOG_Backend_Admin_MasterData_Contrato_Tecnico_V1.md`
+
+Los detalles concretos de composición de archivos/componentes React siguen siendo una decisión de implementación frontend y no una regla funcional de esta V1.
 
 ---
 
-## 21. Siguiente fase
+## 21. Gate técnico posterior — COMPLETADO
 
-Con esta definición funcional congelada, el siguiente bloque es:
+El contrato técnico de Grupos V1 ya fue diseñado, desplegado y congelado; la reconciliación con Motor y las invariantes de composición/valorizado quedaron incorporadas en backend.
 
-1. diseñar el contrato técnico de Grupos V1;
-2. implementar primero el backend en Supabase mediante ChatGPT;
-3. corregir el bloqueo de reconciliación Motor detectado en el preflight;
-4. validar con casos sintéticos de composición, valorizado, concurrencia e integración;
-5. congelar `SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`;
-6. solo después preparar el baseline y plan de Codex para frontend.
+Para el frontend actual, el siguiente trabajo es construir baseline y plan contra:
 
-No debe enviarse a Codex una implementación frontend dependiente de contratos backend todavía incompletos o no desplegados.
+1. esta definición funcional;
+2. `SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`;
+3. `SOLOG_Arquitectura_Admin_MasterData_Cache_Rutas_V1.md`;
+4. `SOLOG_Backend_Admin_MasterData_Contrato_Tecnico_V1.md`.
+
+Codex no debe rediseñar backend ni modificar Supabase salvo petición explícita del usuario.
 
 ---
 
