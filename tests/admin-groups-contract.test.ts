@@ -10,16 +10,15 @@ describe('A4 contrato maestro V6 y frontera Catálogo V3', () => {
     expect(adapter).not.toContain('.from(')
   })
 
-  test('Grupos conserva grupos y paquete, pero no clasifica SKU hacia o desde Excluido', async () => {
+  test('Grupos activo usa V1 y deja la infraestructura master V2 como compatibilidad transitoria', async () => {
     const ui = await Bun.file('src/features/solog/admin/grupos/admin.grupos.v2.tsx').text()
-    expect(ui).toContain("store.mutation('group_change_save'")
-    expect(ui).toContain('member_codes: members')
-    expect(ui).toContain("p.estado === 'Excluido' ? <span>Gestionar en Catálogo</span>")
-    expect(ui).toContain("useState<'Único' | 'Agrupado'>")
-    expect(ui).not.toContain("setMode(e.target.value as GroupProduct['estado'])")
-    expect(ui).toContain("import { PackagePrice } from '../admin.package-price.v2'")
+    const adapter = await Bun.file('src/features/solog/admin/grupos/admin.grupos.v1.ts').text()
+    expect(ui).toContain("useGroupsQuery('groups'")
+    expect(ui).toContain("store.mutation('group_create'")
+    expect(adapter).toContain('rpc_solog_admin_groups_read_v1')
+    expect(adapter).toContain('rpc_solog_admin_groups_v1')
+    for (const legacy of ['group_change_save', 'group_products', 'update_package_price', 'PackagePrice', 'useManagement']) expect(ui).not.toContain(legacy)
   })
-
   test('Catálogo activo usa V3 y la pantalla V2 retirada no conserva autoridad', async () => {
     const active = await Bun.file('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx').text()
     expect(await Bun.file('src/features/solog/admin/catalogo/admin.catalogo.v2.tsx').exists()).toBe(false)
