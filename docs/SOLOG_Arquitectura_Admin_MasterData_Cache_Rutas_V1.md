@@ -23,7 +23,7 @@ Este documento congela la nueva arquitectura administrativa para:
 Para estos temas, este documento prevalece sobre descripciones anteriores de navegación, pestañas, estrategia de lectura, caché y UI de:
 
 - `SOLOG_Arquitectura_Catalogo_Responsabilidad_Comportamiento_Funciones_V1.md`;
-- `SOLOG_UI_Catalogo_Plan_Implementacion_V1.md`;
+- documentación histórica de UI de Catálogo ya archivada;
 - `SOLOG_Arquitectura_Grupos_Responsabilidad_Comportamiento_Funciones_V1.md`;
 - `SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`;
 - `SOLOG_Decisiones_Congeladas_Optimizacion_Global.md`;
@@ -31,7 +31,7 @@ Para estos temas, este documento prevalece sobre descripciones anteriores de nav
 
 La prevalencia es **solo para este alcance**. Las responsabilidades de dominio, reglas comerciales, mutaciones, invariantes, publicación, Motor y seguridad de los documentos anteriores continúan vigentes donde este documento no las modifica.
 
-`Delta_Admin_lecturas_V1.md` fue una nota de avance para no perder decisiones intermedias. **No es autoritativa y queda reemplazada por este documento.**
+La nota intermedia usada durante el diseño de lecturas Admin fue archivada. **No es autoritativa y queda reemplazada por este documento.**
 
 ---
 
@@ -715,19 +715,22 @@ Se mantienen lazy por estado; no se obliga a descargar historial de otros estado
 
 ---
 
-# 13. Backend requerido antes de Codex
+# 13. Gate backend antes de Codex — COMPLETADO
 
-Este documento congela arquitectura funcional y estrategia de datos.
+El gate técnico exigido por esta arquitectura ya fue completado el 2026-09-11.
 
-Antes de enviar a Codex una implementación frontend dependiente:
+Fuente técnica vigente:
 
-1. ChatGPT debe diseñar el contrato técnico del master data compartido;
-2. desplegarlo en Supabase;
-3. validar autorización, revisiones, payload y egress;
-4. definir las mutaciones mínimas de Categorías;
-5. congelar el contrato backend correspondiente.
+`SOLOG_Backend_Admin_MasterData_Contrato_Tecnico_V1.md`
 
-Codex no debe modificar Supabase salvo petición explícita del usuario.
+Quedaron desplegadas y validadas:
+
+- la lectura `bootstrap` del master data compartido;
+- las revisiones `groups`, `catalog` y `categories`;
+- las mutaciones `category_create`, `category_rename` y `category_reorder`;
+- autorización, idempotencia, locks, conflictos de revisión y egress.
+
+Por tanto, Codex ya puede preparar baseline/plan e implementar el **frontend** contra este contrato. No debe modificar Supabase salvo petición explícita del usuario; una necesidad backend no cubierta debe devolverse a ChatGPT como bloqueo.
 
 ---
 
