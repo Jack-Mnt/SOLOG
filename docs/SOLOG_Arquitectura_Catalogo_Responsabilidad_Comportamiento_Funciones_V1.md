@@ -19,15 +19,23 @@ Ante contradicciones sobre este módulo, prevalece sobre:
 - reglas anteriores de `SOLOG_Decisiones_Congeladas_Optimizacion_Global.md` que entren en conflicto con esta redefinición;
 - cualquier documento anterior que mezcle responsabilidades de Catálogo y Grupos.
 
-Este documento **no reemplaza ni modifica** el contrato externo ConeXion ↔ Supabase. Para esa integración continúan siendo autoritativos:
+Este documento **no reemplaza ni modifica** el contrato externo ConeXion ↔ Supabase.
 
-1. `Contrato_backend_ConeXion.md`;
-2. `SOLOG_Integracion_ConeXion_Supabase_Contrato_V2.md`;
-3. `SOLOG_Arquitectura_Responsabilidades_Plataformas_V1.md`.
+Dentro de este repositorio, la fuente vigente para esa frontera es:
+
+- `SOLOG_Arquitectura_Responsabilidades_Plataformas_V1.md`.
+
+El contrato ConeXion ↔ Supabase V2 desplegado continúa siendo autoridad para su propia API externa; los documentos históricos de integración que no residen actualmente en `docs/` no son necesarios para reconstruir la responsabilidad de Catálogo.
 
 Regla de compatibilidad:
 
 > Catálogo puede modificar la forma en que SOLOG prepara, valida y publica una nueva versión, pero no puede alterar sin una decisión independiente el contrato ConeXion ↔ Supabase V2 ya congelado.
+
+### Vigencia posterior de UI y navegación
+
+Desde 2026-09-11, `SOLOG_Arquitectura_Admin_MasterData_Cache_Rutas_V1.md` prevalece sobre este documento para navegación, ubicación visual de Productos, estrategia de lecturas y caché compartida.
+
+Por tanto, toda referencia posterior en esta V1 a `Catálogo > Productos` o a una pestaña `Productos` debe interpretarse como **responsabilidad funcional de ciclo de vida**, actualmente expuesta mediante la ruta independiente `/admin/productos`, no como una pestaña que deba conservarse dentro de Catálogo.
 
 ---
 
