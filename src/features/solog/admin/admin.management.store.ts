@@ -13,7 +13,7 @@ export class ManagementStore {
   private intents = new Map<Domain, Intent>()
   results = new Map<Domain, MutationResult>()
   publication: { operationId?: string; pending?: Promise<PublicationResult>; result?: PublicationResult; error?: string } = {}
-  constructor(readonly userId: string, private auth: () => AdminBootstrap | null, private changed: (revisions: Revisions, forbidden?: boolean) => void, private read = managementRead, private mutateRpc = managementMutate, private publishRpc = publishManagement, private now = Date.now) {
+  constructor(readonly userId: string, private auth: () => AdminBootstrap | null, private changed: (revisions: Revisions, forbidden?: boolean) => void, private read = managementRead, private mutateRpc = managementMutate, private publishRpc = publishManagement, private now = Date.now, private catalogProposalConfirmed: () => void = () => {}) {
     // Only an operation receipt, never operational data or a catalog cache.
     try { const id = sessionStorage.getItem(this.receiptKey()); if (id && /^[0-9a-f-]{36}$/i.test(id)) this.publication.operationId = id } catch { /* Memory retry remains available. */ }
   }
@@ -131,7 +131,11 @@ export class ManagementStore {
       const fresh = Object.fromEntries(Object.entries(result.revisions).filter(([name, rev]) => rev !== undefined && rev >= (this.floors.get(this.revKey(name, intent.site)) ?? -1)))
       this.observe(fresh, intent.site)
       this.invalidate(e => d === 'master' ? domain(e.action) === 'master' : d === 'devices' ? domain(e.action) === 'devices' && (!e.payload.site_id || e.payload.site_id === intent.site) : domain(e.action) === 'incidents' && (!intent.site || !e.payload.site_id || e.payload.site_id === intent.site) && (e.action === 'summary' || e.payload.family_key === intent.payload.family_key))
-      if (intent.action === 'propose_delete') this.invalidate(e => domain(e.action) === 'master')
+      if (intent.action === 'propose_delete') {
+        this.invalidate(e => domain(e.action) === 'master')
+        // Catálogo V3 is the next authority. Clear only its public cache after a confirmed or replayed proposal.
+        this.catalogProposalConfirmed()
+      }
       this.results.set(d, result); this.intents.delete(d); this.emit(); return result
     }).catch((error: unknown) => {
       if (this.live && accessEpoch === this.accessEpoch) {

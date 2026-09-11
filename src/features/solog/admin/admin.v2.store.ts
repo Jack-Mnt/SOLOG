@@ -22,7 +22,7 @@ export class AdminStore {
       if (revisions.groups !== undefined && revisions.groups > this.groups) {
         this.groups = revisions.groups; this.invalidate(undefined, true); this.emit()
       }
-    })
+    }, undefined, undefined, undefined, undefined, () => this.catalog.refresh())
     this.catalog = new CatalogStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => {
       if (forbidden) { this.catalog.resetAccess(); this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit() }
     })

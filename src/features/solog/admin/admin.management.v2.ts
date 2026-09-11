@@ -17,8 +17,12 @@ export interface MasterGroup { id: string; nombre: string; categoria_id: string;
 export interface MasterProduct extends GroupProduct { categoria_id: string; categoria: string; grupo_id: string | null; grupo: string | null; propuesta: Payload | null }
 export interface MasterPage<T> extends MasterEnvelope { rows: T[]; limit: number; offset: number }
 export interface PriceOptions extends MasterEnvelope { propuesta_fingerprint: string; change_id: string | null; change_state: string; grupo_id: string; c_interno: number; nuevo_precio: number; unidades_por_paquete: number | null; members: { c_interno: number; producto: string; precio: number }[]; options: ('update_group_price' | 'separate_sku')[] }
-export interface Family { family_key: string; tipo: string; c_interno: number | null; c_interno_original: string | null; datos: Payload; representative_id: string; representative_site_id: string; cases: number; occurrences: number; sites: number; pending_cases: number; suppressed_cases: number; first_seen_at: string; last_seen_at: string; active_suppression_until: string | null; deletion_proposed: boolean }
-export interface Incident { id: string; sede_id: string; sede: string; c_interno: number | null; c_interno_original: string | null; tipo: string; estado: string; datos: Payload; first_seen_at: string; last_seen_at: string; occurrence_count: number; primer_snapshot_id: string | null; ultimo_snapshot_id: string | null }
+export const incidentTypes = ['producto_ausente', 'codigo_interno_invalido', 'codigo_interno_duplicado', 'stock_invalido'] as const
+export const incidentStates = ['pendiente', 'suprimida', 'resuelta'] as const
+export type IncidentType = typeof incidentTypes[number]
+export type IncidentState = typeof incidentStates[number]
+export interface Family { family_key: string; tipo: IncidentType; c_interno: number | null; c_interno_original: string | null; datos: Payload; representative_id: string; representative_site_id: string; cases: number; occurrences: number; sites: number; pending_cases: number; suppressed_cases: number; resolved_cases: number; active_cases: number; active: boolean; family_state: IncidentState; first_seen_at: string; last_seen_at: string; resolved_at: string | null; active_suppression_until: string | null; scope_suppression_until: string | null; reactivate_available: boolean; deletion_proposed: boolean }
+export interface Incident { id: string; sede_id: string; sede: string; c_interno: number | null; c_interno_original: string | null; tipo: IncidentType; estado: IncidentState; datos: Payload; first_seen_at: string; last_seen_at: string; resuelta_at: string | null; active: boolean; occurrence_count: number; primer_snapshot_id: string | null; ultimo_snapshot_id: string | null }
 export interface Device { id: string; site_id: string; site: string; estado: 'pendiente' | 'autorizado'; solicitado_por: string; solicitante: string; solicitado_at: string; autorizado_at: string | null; revocado_at: string | null; ultimo_acceso_at: string | null; revision: number }
 export interface Reads {
   status: MasterEnvelope & { catalog: { version_actual: number | null; publicado_at: string | null } }
@@ -62,6 +66,24 @@ export function domain(action: ReadAction | MutationAction): Domain {
 export class ManagementError extends Error { constructor(readonly code: string, readonly uncertain = false) { super(code) } }
 const object = (v: unknown): v is Payload => !!v && typeof v === 'object' && !Array.isArray(v)
 const revision = (v: unknown) => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0
+const timestamp = (v: unknown) => typeof v === 'string' && Number.isFinite(Date.parse(v))
+const nullableTimestamp = (v: unknown) => v === null || timestamp(v)
+const nullableString = (v: unknown) => v === null || typeof v === 'string'
+const incidentType = (v: unknown): v is IncidentType => incidentTypes.includes(v as IncidentType)
+const incidentState = (v: unknown): v is IncidentState => incidentStates.includes(v as IncidentState)
+function validFamily(value: Payload) {
+  const counts = ['cases', 'occurrences', 'sites', 'pending_cases', 'suppressed_cases', 'resolved_cases', 'active_cases']
+  if (typeof value.family_key !== 'string' || !/^[a-f0-9]{64}$/i.test(value.family_key) || !incidentType(value.tipo) || !nullableString(value.c_interno_original) || !object(value.datos) || typeof value.representative_id !== 'string' || typeof value.representative_site_id !== 'string' || !counts.every(key => revision(value[key])) || typeof value.active !== 'boolean' || !incidentState(value.family_state) || !timestamp(value.first_seen_at) || !timestamp(value.last_seen_at) || !nullableTimestamp(value.resolved_at) || !nullableTimestamp(value.active_suppression_until) || !nullableTimestamp(value.scope_suppression_until) || typeof value.reactivate_available !== 'boolean' || typeof value.deletion_proposed !== 'boolean') return false
+  if (value.c_interno !== null && !revision(value.c_interno)) return false
+  if (value.reactivate_available !== (value.scope_suppression_until !== null)) return false
+  if (value.active !== Number(value.active_cases) > 0) return false
+  return value.active ? value.family_state !== 'resuelta' : value.family_state === 'resuelta'
+}
+function validIncident(value: Payload) {
+  if (typeof value.id !== 'string' || typeof value.sede_id !== 'string' || typeof value.sede !== 'string' || !nullableString(value.c_interno_original) || !incidentType(value.tipo) || !incidentState(value.estado) || !object(value.datos) || !timestamp(value.first_seen_at) || !timestamp(value.last_seen_at) || !nullableTimestamp(value.resuelta_at) || typeof value.active !== 'boolean' || !revision(value.occurrence_count) || !nullableString(value.primer_snapshot_id) || !nullableString(value.ultimo_snapshot_id)) return false
+  if (value.c_interno !== null && !revision(value.c_interno)) return false
+  return value.active === (value.estado === 'pendiente' || value.estado === 'suprimida')
+}
 function envelope(v: unknown): asserts v is Payload {
   if (!object(v) || v.contract_version !== 2 || typeof v.generated_at !== 'string' || !Number.isFinite(Date.parse(v.generated_at))) throw new ManagementError('Respuesta incompatible con contrato v2')
 }
@@ -77,8 +99,8 @@ export function validateRead<A extends ReadAction>(action: A, value: unknown): R
   if (action === 'publication_preview' && (!object(value.preview) || typeof value.preview.ok !== 'boolean' || typeof value.preview.puede_publicar !== 'boolean')) throw new ManagementError('Preview incompatible')
   if (action === 'price_mismatch_options' && (!Array.isArray(value.options) || !Array.isArray(value.members) || typeof value.grupo_id !== 'string')) throw new ManagementError('Opciones incompatibles')
   if (action === 'list' && !(value.devices as Payload[]).every(v => typeof v.id === 'string' && typeof v.site_id === 'string' && revision(v.revision) && ['pendiente', 'autorizado'].includes(String(v.estado)))) throw new ManagementError('Dispositivos incompatibles')
-  if (action === 'summary' && (!object(value.period) || typeof value.period.from !== 'string' || typeof value.period.to !== 'string' || !Number.isFinite(Date.parse(value.period.to)) || !(value.families as Payload[]).every(v => typeof v.family_key === 'string' && ['cases', 'occurrences', 'sites', 'pending_cases', 'suppressed_cases'].every(k => revision(v[k]))))) throw new ManagementError('Familias incompatibles')
-  if (action === 'detail' && (!revision(value.page) || !revision(value.page_size) || Number(value.page_size) < 1 || Number(value.page_size) > 100)) throw new ManagementError('Página incompatible')
+  if (action === 'summary' && (!object(value.period) || typeof value.period.from !== 'string' || typeof value.period.to !== 'string' || !Number.isFinite(Date.parse(value.period.to)) || !(value.families as Payload[]).every(validFamily))) throw new ManagementError('Familias incompatibles')
+  if (action === 'detail' && (!revision(value.page) || !revision(value.page_size) || Number(value.page_size) < 1 || Number(value.page_size) > 100 || !(value.items as Payload[]).every(validIncident))) throw new ManagementError('Página incompatible')
   return value as unknown as Reads[A]
 }
 export async function managementRead<A extends ReadAction>(action: A, payload: ReadPayloads[A]): Promise<Reads[A]> {

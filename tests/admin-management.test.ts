@@ -2,13 +2,13 @@ import { describe, test, expect } from 'bun:test'
 import { ManagementStore } from '../src/features/solog/admin/admin.management.store'
 import { validateRead, ManagementError, type ReadAction, type MutationAction, type Payload, type Revisions, type Mutations, type PublicationResult, type managementRead, type managementMutate } from '../src/features/solog/admin/admin.management.v2'
 import { bootstrapFixture } from './fixtures/admin-v2.mjs'
-import { managementFixture, mutationFixture } from './fixtures/admin-management.mjs'
+import { managementFixture, mutationFixture, now } from './fixtures/admin-management.mjs'
 
-function harness(options: { mutate?: (a: MutationAction, p: Payload) => unknown; read?: (a: ReadAction, p: Payload) => unknown; publish?: (id: string) => Promise<PublicationResult> } = {}) {
+function harness(options: { mutate?: (a: MutationAction, p: Payload) => unknown; read?: (a: ReadAction, p: Payload) => unknown; publish?: (id: string) => Promise<PublicationResult>; catalogProposalConfirmed?: () => void } = {}) {
   const calls: { action: string; payload: Payload }[] = [], changes: Revisions[] = [], auth = bootstrapFixture()
   const read = async (a: ReadAction, p: Payload) => { calls.push({ action: a, payload: structuredClone(p) }); return options.read ? options.read(a,p) : managementFixture(a,p) }
   const mutate = async (a: MutationAction, p: Payload) => { calls.push({ action: a, payload: structuredClone(p) }); return options.mutate ? options.mutate(a,p) : mutationFixture(a,p) }
-  const store = new ManagementStore('admin-test', () => auth, r => changes.push(r), read as typeof managementRead, mutate as typeof managementMutate, (options.publish ?? (async id => ({ ok: true, codigo: 'CATALOG_PUBLISHED', operation_id: id }))) as (id: string) => Promise<PublicationResult>)
+  const store = new ManagementStore('admin-test', () => auth, r => changes.push(r), read as typeof managementRead, mutate as typeof managementMutate, (options.publish ?? (async id => ({ ok: true, codigo: 'CATALOG_PUBLISHED', operation_id: id }))) as (id: string) => Promise<PublicationResult>, undefined, options.catalogProposalConfirmed)
   return { store, calls, changes, auth }
 }
 describe('A4–A6 reads and cache', () => {
@@ -16,6 +16,24 @@ describe('A4–A6 reads and cache', () => {
     const p = action === 'detail' ? { page: 0, page_size: 100, family_key: 'a'.repeat(64) } : { propuesta_fingerprint: 'fp', limit: 50, offset: 0 }
     const r = managementFixture(action,p); expect(validateRead(action,r)).toBe(r)
     expect(() => validateRead(action,{ ...r, contract_version: 1 })).toThrow()
+  })
+  test('summary y detail exigen el contrato operativo V2 y la reactivación por scope', () => {
+    const summary = managementFixture('summary', {})
+    expect(validateRead('summary', summary)).toBe(summary)
+    const family = summary.families[0]
+    expect(() => validateRead('summary', { ...summary, families: [{ ...family, tipo: 'precio_modificado' }] })).toThrow('Familias')
+    expect(() => validateRead('summary', { ...summary, families: [{ ...family, resolved_cases: undefined }] })).toThrow('Familias')
+    expect(() => validateRead('summary', { ...summary, families: [{ ...family, active: false, active_cases: 1, family_state: 'resuelta' }] })).toThrow('Familias')
+    expect(() => validateRead('summary', { ...summary, families: [{ ...family, active_suppression_until: '2026-10-04T12:00:00Z', scope_suppression_until: null, reactivate_available: true }] })).toThrow('Familias')
+    const affectedByOtherScope = { ...family, family_state: 'suprimida', pending_cases: 0, suppressed_cases: 2, active_suppression_until: '2026-10-04T12:00:00Z', scope_suppression_until: null, reactivate_available: false }
+    expect(validateRead('summary', { ...summary, families: [affectedByOtherScope] }).families[0].reactivate_available).toBe(false)
+    const ownScopeSuppression = { ...affectedByOtherScope, scope_suppression_until: '2026-10-04T12:00:00Z', reactivate_available: true }
+    expect(validateRead('summary', { ...summary, families: [ownScopeSuppression] }).families[0].reactivate_available).toBe(true)
+    const resolved = { ...family, pending_cases: 0, suppressed_cases: 0, resolved_cases: 2, active_cases: 0, active: false, family_state: 'resuelta', resolved_at: now }
+    expect(validateRead('summary', { ...summary, families: [resolved] }).families[0].family_state).toBe('resuelta')
+    const detail = managementFixture('detail', { family_key: family.family_key, page: 0, page_size: 100 })
+    expect(validateRead('detail', detail)).toBe(detail)
+    expect(() => validateRead('detail', { ...detail, items: [{ ...detail.items[0], estado: 'resuelta', active: true }] })).toThrow('Página')
   })
   test('master limit/offset; no generic data; device list has row revisions only', () => {
     expect(() => validateRead('groups',managementFixture('groups',{limit:51,offset:0}))).toThrow()
@@ -59,9 +77,10 @@ describe('A4–A6 mutation intentions',()=>{
     const {store}=harness();await store.load('list',{site_id:'site-a'});await store.load('list',{site_id:'site-b'});await store.load('status',{});await store.mutation('revoke',{device_id:'site-a-device-0'},2,'site-a')
     expect(store.peek('list',{site_id:'site-a'}).data).toBeUndefined();expect(store.peek('list',{site_id:'site-b'}).data).toBeDefined();expect(store.peek('status',{}).data).toBeDefined()
   })
-  test('propose deletion invalidates catalog and affected family, not devices',async()=>{
-    const {store}=harness();await store.load('status',{});await store.load('summary',{});await store.load('list',{});await store.mutation('propose_delete',{family_key:'fp',scope:'global'},4)
-    expect(store.peek('status',{}).data).toBeUndefined();expect(store.peek('summary',{}).data).toBeUndefined();expect(store.peek('list',{}).data).toBeDefined()
+  test('propose deletion invalidates catalog V3 and affected family, not devices',async()=>{
+    let catalogInvalidations=0
+    const {store}=harness({catalogProposalConfirmed:()=>{catalogInvalidations++}});await store.load('status',{});await store.load('summary',{});await store.load('list',{});await store.mutation('propose_delete',{family_key:'fp',scope:'global'},4)
+    expect(catalogInvalidations).toBe(1);expect(store.peek('status',{}).data).toBeUndefined();expect(store.peek('summary',{}).data).toBeUndefined();expect(store.peek('list',{}).data).toBeDefined()
   })
   test('old replay never rolls revisions back',async()=>{
     const {store}=harness({mutate:(a,p)=>mutationFixture(a,p,true,{groups:2,catalog:4,incidents:3,devices:1})});await store.load('status',{});await store.mutation('update_package_price',{grupo_id:'g',precio_paquete:8},3);await store.load('status',{});expect(store.peek('status',{}).data?.revisions.groups).toBe(3)

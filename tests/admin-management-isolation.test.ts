@@ -61,3 +61,18 @@ test('different Auth users never share a management dataset',async()=>{
   const second=new ManagementStore('other',()=>other,()=>{},read);expect(second.peek('status',{}).data).toBeUndefined()
   first.dispose();expect(first.peek('status',{}).data).toBeUndefined()
 })
+
+test('rejections de evidencia o supresión obsoleta descartan la intención y fuerzan una recarga autoritativa', async () => {
+  for (const code of ['SOLOG_INCIDENT_NOT_CURRENT', 'SOLOG_INCIDENT_SUPPRESSION_NOT_ACTIVE'] as const) {
+    let reads = 0
+    const read = (async (action, payload) => { reads++; return managementFixture(action, payload) }) as typeof managementRead
+    const mutate = (async () => { throw new SologApiError(code) }) as typeof managementMutate
+    const store = new ManagementStore('admin-test', bootstrapFixture, () => {}, read, mutate)
+    await store.load('summary', {})
+    await expect(store.mutation('reactivate', { family_key: 'fp', scope: 'global' }, 4)).rejects.toThrow()
+    expect(store.intent('incidents')).toBeUndefined()
+    expect(store.peek('summary', {}).data).toBeUndefined()
+    await store.load('summary', {})
+    expect(reads).toBe(2)
+  }
+})

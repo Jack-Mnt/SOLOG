@@ -78,6 +78,8 @@ export const SOLOG_BACKEND_ERROR_CODES = [
   'SOLOG_DETALLE_NOT_FOUND',
   'SOLOG_INVALID_INCIDENT_ACTION',
   'SOLOG_INCIDENT_ACTION_NOT_ALLOWED',
+  'SOLOG_INCIDENT_NOT_CURRENT',
+  'SOLOG_INCIDENT_SUPPRESSION_NOT_ACTIVE',
   'SOLOG_INVALID_CATALOG_ACTION',
   'SOLOG_CATALOG_CHANGE_NOT_FOUND',
   'SOLOG_CATALOG_CONFLICT',
@@ -190,6 +192,10 @@ const ERROR_MESSAGES: Partial<Record<SologErrorCode, string>> = {
     'La decisión seleccionada no es válida para esta incidencia.',
   SOLOG_INCIDENT_ACTION_NOT_ALLOWED:
     'La decisión seleccionada no es válida para esta incidencia.',
+  SOLOG_INCIDENT_NOT_CURRENT:
+    'La incidencia ya no está vigente. Se actualizó la información disponible.',
+  SOLOG_INCIDENT_SUPPRESSION_NOT_ACTIVE:
+    'La supresión correspondiente al ámbito seleccionado ya no está activa. Se actualizó la información disponible.',
   SOLOG_INVALID_CATALOG_ACTION:
     'La decisión seleccionada no es válida para este cambio de catálogo.',
   SOLOG_CATALOG_CHANGE_NOT_FOUND:
