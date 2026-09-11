@@ -471,8 +471,11 @@ SOLOG Admin / Catálogo
 
 SOLOG Admin / Grupos
     │
-    ├── administra estructura SOLOG
-    └── puede originar propuestas
+    └── administra estructura SOLOG
+
+Cambios comerciales del SKU
+    │
+    └── Productos / Incidencias
             │
             ▼
         Catálogo
