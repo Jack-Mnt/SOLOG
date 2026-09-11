@@ -6,7 +6,7 @@ Bloque Cajero: **IMPLEMENTACIÓN TÉCNICA COMPLETADA — VALIDACIÓN HUMANA PEND
 
 C4 puede aprobarse técnicamente con pruebas automatizadas/simuladas. El cierre definitivo de Cajero y el gate C4/G3 requieren este reporte humano. Codex no ha ejecutado este flujo en producción ni alterado dispositivos, snapshots, sesiones o datos backend.
 
-Contrato: `SOLOG_Backend_Contratos_Optimizacion_Global_V4.md`; las APIs mantienen `contract_version = 2`.
+Contrato runtime vigente: `SOLOG_Backend_Contratos_Runtime_Actual_V1.md`; las APIs de Cajero mantienen `contract_version = 2`. El antiguo V4 queda únicamente como antecedente histórico ya consolidado.
 
 ## 1. Preparación y seguridad
 
