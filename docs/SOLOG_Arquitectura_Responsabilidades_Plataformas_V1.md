@@ -4,7 +4,8 @@
 **Proyecto:** SOLOG  
 **Nivel:** C — Arquitectura / contratos entre plataformas  
 **Fuente primaria para responsabilidades entre ConeXion, Supabase y SOLOG:** este documento.  
-**Prevalencia:** ante contradicciones sobre límites de responsabilidad entre plataformas, este documento prevalece sobre documentación anterior. Las reglas funcionales específicas de módulos que todavía no estén definidas aquí continúan pendientes de redefinición y no deben inferirse de implementaciones legacy.
+**Prevalencia:** ante contradicciones sobre límites generales de responsabilidad entre ConeXion, Supabase y SOLOG, este documento prevalece sobre documentación anterior. Los contratos funcionales/técnicos posteriores de cada módulo prevalecen dentro de su dominio cuando concretan o sustituyen expresamente una regla de esta V1.
+**Revisión de vigencia:** 2026-09-11 — las fronteras generales continúan vigentes; las fases que aquí figuraban como pendientes ya fueron concretadas por contratos posteriores. La antigua capacidad de Grupos para originar propuestas comerciales quedó sustituida por la separación actual Productos/Catálogo.
 
 ---
 
@@ -336,11 +337,11 @@ La exclusión o reincorporación de un SKU afecta lo que ConeXion debe procesar,
 
 A nivel de frontera arquitectónica, Grupos es propietario de la estructura interna de conteo Supabase ↔ SOLOG.
 
-Puede modificar directamente, una vez definidas las funciones concretas:
+Puede modificar directamente:
 
 - grupos de conteo;
 - integrantes;
-- modalidad `Único` / `Agrupado`;
+- modalidad derivada `Único` / `Agrupado`;
 - categoría operativa SOLOG;
 - unidades por paquete;
 - precio por paquete;
@@ -348,15 +349,19 @@ Puede modificar directamente, una vez definidas las funciones concretas:
 
 Los cambios anteriores no requieren una nueva versión del catálogo compartido mientras no alteren las propiedades compartidas del SKU.
 
-Grupos puede originar propuestas hacia Catálogo cuando durante su operación se detecte la necesidad de cambiar:
+### Vigencia posterior
 
-- nombre del SKU;
+La redefinición funcional posterior de Grupos y la separación de `Productos` como superficie administrativa independiente sustituyen la antigua idea de que Grupos origine propuestas comerciales.
+
+En el diseño vigente, Grupos **no es una superficie para proponer ni gestionar**:
+
+- nombre comercial del SKU;
 - código de barras;
-- precio;
+- precio unitario;
 - exclusión;
 - reincorporación.
 
-Grupos no aprueba ni publica esas propuestas.
+Esas acciones pertenecen al ciclo de vida administrado por Productos/Catálogo o a las incidencias/candidatos que alimentan Catálogo. Grupos puede aportar contexto estructural o bloquear cambios incompatibles con staging activo, pero no crea una vía comercial paralela.
 
 ---
 
@@ -490,31 +495,41 @@ Queda expresamente congelado que:
 9. **SOLOG Cajero consume grupos preparados por Supabase y crea `conteo_detalle`.**
 10. **El Motor de Conteos comienza a partir del conteo físico registrado.**
 11. **Grupos administra directamente la estructura interna SOLOG.**
-12. **Grupos puede originar propuestas de cambios compartidos, pero no aprobarlas ni publicarlas.**
+12. **Grupos no origina ni administra cambios comerciales del SKU; esas intenciones se canalizan por Productos/Catálogo o por las incidencias/candidatos que alimentan Catálogo.**
 13. **Catálogo es propietario de aprobación, versionado y publicación hacia ConeXion.**
 14. **No existe una operación funcional de “cambiar código interno”.**
 15. **La exclusión/reincorporación de SKU es un cambio propuesto hacia Catálogo.**
 
 ---
 
-## 13. Fuera de alcance de esta V1
+## 13. Alcance originalmente diferido y estado actual
 
-Este documento no congela todavía:
+Esta V1 dejó deliberadamente fuera el detalle de:
 
-- funciones exactas de cada botón de Grupos;
-- operaciones de crear/fusionar/dividir grupos;
-- UX del módulo Grupos;
-- UX del módulo Catálogo;
-- flujo detallado de aprobación de propuestas;
-- contrato final del nuevo artefacto de catálogo;
-- cambios SQL/RPC necesarios;
-- migración desde el estado actual;
+- funciones y UX concretas de Grupos;
+- UX de Catálogo;
+- flujo detallado de propuestas;
+- contrato técnico de Catálogo y Grupos;
+- SQL/RPC;
+- estrategia de lecturas/caché del Admin;
 - limpieza de funciones legacy.
 
-Estos puntos deben definirse en bloques posteriores antes de implementación.
+Esos puntos **ya no están pendientes de definición** para el bloque actual. Se concretaron posteriormente, principalmente en:
+
+- `SOLOG_Arquitectura_Catalogo_Responsabilidad_Comportamiento_Funciones_V1.md`;
+- `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md`;
+- `SOLOG_Arquitectura_Grupos_Responsabilidad_Comportamiento_Funciones_V1.md`;
+- `SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`;
+- `SOLOG_Arquitectura_Admin_MasterData_Cache_Rutas_V1.md`;
+- `SOLOG_Backend_Admin_MasterData_Contrato_Tecnico_V1.md`;
+- `SOLOG_Backend_Contratos_Runtime_Actual_V1.md`.
+
+La limpieza de superficies legacy sigue siendo posterior y solo debe hacerse tras comprobar consumidores reales.
 
 ---
 
-## 14. Próxima fase
+## 14. Estado posterior
 
-Con las responsabilidades entre plataformas congeladas, la siguiente fase es redefinir funcionalmente los módulos pendientes de SOLOG Admin, empezando por las operaciones completas de **Grupos** y después continuando con los módulos restantes sin reinterpretar los límites establecidos en este documento.
+Este documento permanece como **fuente de frontera entre plataformas**, no como plan de trabajo vigente.
+
+Para el frontend Admin actual, la implementación debe seguir las fuentes funcionales/técnicas posteriores del módulo correspondiente. El bloque inmediato ya no es redefinir Grupos ni diseñar backend: es implementar el frontend contra los contratos congelados, sin reinterpretar estas fronteras.
