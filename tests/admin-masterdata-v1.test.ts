@@ -17,6 +17,14 @@ function setup(options: { mutate?: (action: string, payload: Record<string, unkn
 describe('Master Data V1', () => {
   test('valida bootstrap completo, compactación nullable y relaciones', () => {
     expect(validateMasterDataBootstrap(fixture()).totals.products).toBe(2)
+    const compact = fixture()
+    const excluded = compact.products[1] as Partial<(typeof compact.products)[number]>
+    delete excluded.c_barras
+    delete excluded.marca
+    delete excluded.grupo_id
+    const normalized = validateMasterDataBootstrap(compact)
+    expect(normalized.products[1]).toMatchObject({ c_barras: null, marca: null, grupo_id: null })
+    expect('c_barras' in excluded).toBe(false)
     expect(() => validateMasterDataBootstrap({ ...fixture(), complete: false })).toThrow(MasterDataContractError)
     expect(() => validateMasterDataBootstrap({ ...fixture(), totals: { ...fixture().totals, products: 3 } })).toThrow(MasterDataContractError)
     expect(() => validateMasterDataBootstrap({ ...fixture(), products: [{ ...fixture().products[0], grupo_id: 'missing' }] })).toThrow(MasterDataContractError)
@@ -126,5 +134,42 @@ describe('Master Data V1: consistencia de snapshot y refetch', () => {
     expect(calls).toHaveLength(0)
     await store.mutation('category_reorder', { category_ids: ['cat-2', 'cat-1'] })
     expect(calls).toHaveLength(1)
+  })
+  test('mutación de Categoría invalida snapshot mientras espera el bootstrap', async () => {
+    const refresh = deferred<ReturnType<typeof fixture>>()
+    let reads = 0
+    const read = (async () => ++reads === 1 ? fixture() : refresh.promise) as MasterDataReadTransport
+    const mutate = (async () => {
+      revisions.categories = 2
+      return { contract_version: 1 as const, generated_at: now, replay: false, result: {}, revisions: { ...revisions } }
+    }) as MasterDataMutateTransport
+    const store = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, read, mutate)
+    await store.ensureLoaded()
+    const mutation = store.mutation('category_rename', { category_id: 'cat-1', nombre: 'Agua' })
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(store.data().snapshot).toBeUndefined()
+    expect(store.data().derived).toBeUndefined()
+    refresh.resolve(fixture())
+    await mutation
+    expect(store.data().snapshot?.revisions.categories).toBe(2)
+  })
+  test('refetch invalidante fallido no rehabilita snapshot y un retry carga el nuevo', async () => {
+    let reads = 0
+    const read = (async () => {
+      reads++
+      if (reads === 2) throw new Error('Network')
+      return fixture()
+    }) as MasterDataReadTransport
+    const store = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, read)
+    await store.ensureLoaded()
+    store.observeRevisions({ groups: 4 })
+    revisions.groups = 4
+    await expect(store.invalidateAndRefetchMasterData()).rejects.toThrow('Network')
+    expect(store.data().snapshot).toBeUndefined()
+    expect(store.data().error).toBe('Network')
+    await store.ensureLoaded()
+    expect(store.data().snapshot?.revisions.groups).toBe(4)
+    expect(reads).toBe(3)
   })
 })

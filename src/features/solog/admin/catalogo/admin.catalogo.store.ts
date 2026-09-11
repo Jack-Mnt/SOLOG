@@ -84,6 +84,10 @@ export class CatalogStore {
     this.coordinator?.observeRevisions(revisions)
     this.changed(this.floors)
   }
+  private cacheIsCurrent(revisions: CatalogRevisions) {
+    const floor = this.coordinator?.revisionFloors()
+    return !floor || revisions.catalog >= floor.catalog && revisions.groups >= floor.groups
+  }
   private definitive(error: unknown) {
     const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
     return code.startsWith('SOLOG_') && !/RETRYABLE|IN_PROGRESS|UNKNOWN|EMPTY_RESPONSE|INVALID_CONTRACT_RESPONSE/.test(code)
@@ -91,7 +95,12 @@ export class CatalogStore {
 
   peek<A extends CatalogReadAction>(action: A, payload: CatalogReadPayloads[A]) {
     this.access()
-    const entry = this.entries.get(this.key(action, payload))
+    const key = this.key(action, payload)
+    const entry = this.entries.get(key)
+    if (entry?.data && !this.cacheIsCurrent(entry.data.revisions)) {
+      this.entries.delete(key)
+      return { data: undefined, error: undefined }
+    }
     return { data: entry?.data as CatalogReads[A] | undefined, error: entry?.error }
   }
   revisions() { const floors = this.coordinator?.revisionFloors(); return floors ? { catalog: floors.catalog, groups: floors.groups } : { ...this.floors } }
@@ -104,7 +113,8 @@ export class CatalogStore {
     this.access()
     const key = this.key(action, payload)
     const cached = this.entries.get(key)
-    if (cached?.data) return cached.data as CatalogReads[A]
+    if (cached?.data && this.cacheIsCurrent(cached.data.revisions)) return cached.data as CatalogReads[A]
+    if (cached?.data) this.entries.delete(key)
     if (cached?.pending) return cached.pending as Promise<CatalogReads[A]>
     const entry: Entry = { action, payload }
     const epoch = this.epoch
@@ -172,7 +182,7 @@ export class CatalogStore {
       this.access()
       if (epoch !== this.epoch) throw new Error('Respuesta de publicación descartada por cambio de acceso.')
       this.invalidate()
-      if (result.completion_recorded) await this.coordinator?.refetchMasterData()
+      if (result.completion_recorded) await this.coordinator?.invalidateAndRefetchMasterData()
       this.publication = result.completion_recorded ? { result } : { operationId, result }
       if (result.completion_recorded) try { sessionStorage.removeItem(this.receiptKey()) } catch { /* Non-fatal. */ }
       this.emit()
@@ -213,7 +223,7 @@ export class CatalogStore {
         intent.error = error instanceof Error ? error.message : 'Operación Catálogo sin confirmar.'
         if (this.definitive(error)) {
           this.intentState = undefined
-          if ((error as { code?: string }).code === 'SOLOG_MASTERDATA_REVISION_CONFLICT') void this.coordinator?.refetchMasterData()
+          if ((error as { code?: string }).code === 'SOLOG_MASTERDATA_REVISION_CONFLICT') void this.coordinator?.invalidateAndRefetchMasterData()
           this.invalidate()
         }
         this.emit()

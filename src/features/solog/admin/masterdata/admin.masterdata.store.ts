@@ -5,6 +5,7 @@ export interface MasterDataRevisionCoordinator {
   observeRevisions(revisions: Partial<MasterDataRevisions>): void
   revisionFloors(): MasterDataRevisions
   refetchMasterData(): Promise<MasterDataSnapshot>
+  invalidateAndRefetchMasterData(): Promise<MasterDataSnapshot>
 }
 type Intent = { action: MasterDataMutationAction; payload: MasterDataMutation; pending?: Promise<MasterDataMutationResult>; error?: string }
 type MutationInput = Omit<MasterDataMutation, 'operation_id' | 'expected_categories_revision'>
@@ -57,6 +58,14 @@ export class MasterDataStore implements MasterDataRevisionCoordinator {
   async refetchMasterData() {
     this.access()
     // A refetch cannot be satisfied by a bootstrap that started before this call.
+    return this.loadAtLeast((this.pending?.started ?? this.startedReads) + 1)
+  }
+  async invalidateAndRefetchMasterData() {
+    this.access()
+    this.snapshotState = undefined
+    this.derivedState = undefined
+    this.errorState = undefined
+    this.emit()
     return this.loadAtLeast((this.pending?.started ?? this.startedReads) + 1)
   }
   private loadAtLeast(minimumStarted: number): Promise<MasterDataSnapshot> {
@@ -121,7 +130,7 @@ export class MasterDataStore implements MasterDataRevisionCoordinator {
       if (epoch !== this.epoch || this.intentState !== intent) throw new Error('Respuesta de Categorías descartada por cambio de contexto.')
       this.observeRevisions(result.revisions)
       this.intentState = undefined
-      await this.refetchMasterData()
+      await this.invalidateAndRefetchMasterData()
       this.emit()
       return result
     }).catch(async (error: unknown) => {
@@ -129,7 +138,7 @@ export class MasterDataStore implements MasterDataRevisionCoordinator {
         intent.pending = undefined
         intent.error = error instanceof Error ? error.message : 'Operación de Categorías sin confirmar.'
         const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
-        if (!this.retryable(error)) { this.intentState = undefined; if (code === 'SOLOG_MASTERDATA_REVISION_CONFLICT') await this.refetchMasterData().catch(() => {}); this.emit() } else this.emit()
+        if (!this.retryable(error)) { this.intentState = undefined; if (code === 'SOLOG_MASTERDATA_REVISION_CONFLICT') await this.invalidateAndRefetchMasterData().catch(() => {}); this.emit() } else this.emit()
       }
       throw error
     })

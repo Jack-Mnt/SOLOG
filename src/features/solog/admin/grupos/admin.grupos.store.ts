@@ -48,16 +48,20 @@ export class GroupsStore {
     this.changed(this.revisionsState)
   }
   private observeMutation(revisions: GroupsRevisions) { this.revisionsState = { ...revisions }; this.coordinator?.observeRevisions(revisions); this.changed(this.revisionsState) }
+  private cacheIsCurrent(revisions: GroupsRevisions) {
+    const floor = this.coordinator?.revisionFloors()
+    return !floor || revisions.groups >= floor.groups && revisions.catalog >= floor.catalog
+  }
   private retryable(error: unknown) {
     const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
     return !code || /SOLOG_LOCK_CONFLICT_RETRYABLE|IN_PROGRESS|UNKNOWN|EMPTY_RESPONSE|INVALID_CONTRACT_RESPONSE/.test(code)
   }
   private async refetchAuthoritative() {
     this.epoch++; this.invalidate(); this.emit()
-    if (this.coordinator) await this.coordinator.refetchMasterData().catch(() => {})
+    if (this.coordinator) await this.coordinator.invalidateAndRefetchMasterData().catch(() => {})
     else await Promise.all([this.load('status', {}), this.load('reference', {})]).catch(() => {})
   }
-  peek<A extends GroupsReadAction>(action: A, payload: GroupsReadPayloads[A]) { this.access(); const entry = this.entries.get(this.key(action, payload)); return { data: entry?.data as GroupsReads[A] | undefined, error: entry?.error } }
+  peek<A extends GroupsReadAction>(action: A, payload: GroupsReadPayloads[A]) { this.access(); const key = this.key(action, payload), entry = this.entries.get(key); if (entry?.data && !this.cacheIsCurrent(entry.data.revisions)) { this.entries.delete(key); return { data: undefined, error: undefined } } return { data: entry?.data as GroupsReads[A] | undefined, error: entry?.error } }
   revisions() { const floors = this.coordinator?.revisionFloors(); return floors ? { groups: floors.groups, catalog: floors.catalog } : { ...this.revisionsState } }
   intent() { return this.intentState }
   refresh() { this.epoch++; this.entries.clear(); this.emit() }
@@ -67,7 +71,8 @@ export class GroupsStore {
   async load<A extends GroupsReadAction>(action: A, payload: GroupsReadPayloads[A]): Promise<GroupsReads[A]> {
     this.access()
     const key = this.key(action, payload), cached = this.entries.get(key)
-    if (cached?.data) return cached.data as GroupsReads[A]
+    if (cached?.data && this.cacheIsCurrent(cached.data.revisions)) return cached.data as GroupsReads[A]
+    if (cached?.data) this.entries.delete(key)
     if (cached?.pending) return cached.pending as Promise<GroupsReads[A]>
     const entry: Entry = { action, payload }, epoch = this.epoch
     this.entries.set(key, entry)
@@ -102,7 +107,7 @@ export class GroupsStore {
     const request = this.mutateRpc(intent.action, intent.payload).then(async result => {
       this.access()
       if (epoch !== this.epoch || this.intentState !== intent) throw new Error('Respuesta Grupos descartada por cambio de acceso.')
-      this.observeMutation(result.revisions); this.invalidate(); this.intentState = undefined; await this.coordinator?.refetchMasterData(); this.emit(); return result
+      this.observeMutation(result.revisions); this.invalidate(); this.intentState = undefined; await this.coordinator?.invalidateAndRefetchMasterData(); this.emit(); return result
     }).catch(async (error: unknown) => {
       if (this.live && epoch === this.epoch && this.intentState === intent && !this.authorizationError(error)) {
         intent.pending = undefined; intent.error = error instanceof Error ? error.message : 'Operación Grupos sin confirmar.'

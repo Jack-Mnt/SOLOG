@@ -12,6 +12,8 @@ export class AdminStore {
   private version = 0
   private epoch = 0
   private live = true
+  // Invalidation cursor only; MasterDataStore remains the revision authority.
+  private propagatedGroupsRevision = -1
   private operational = new Map<string, number>()
   private selectedSite = ''
   bootstrap: AdminBootstrap | null = null
@@ -20,13 +22,14 @@ export class AdminStore {
   readonly groupsV1: GroupsStore
   readonly masterData: MasterDataStore
   constructor(readonly userId: string, private rpc: typeof adminRpc = adminRpc) {
-    this.masterData = new MasterDataStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => { if (forbidden) { this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit() } })
+    this.masterData = new MasterDataStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
+      if (forbidden) { this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
+      this.propagateGroupsInvalidation(revisions.groups)
+    })
     this.management = new ManagementStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
       if (forbidden) { this.management.resetAccess(); this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
       if (revisions.groups !== undefined) {
         this.masterData.observeRevisions({ groups: revisions.groups })
-        this.management.observeGroups(this.masterData.revisionFloors().groups)
-        this.invalidate(undefined, true); this.emit()
       }
     }, undefined, undefined, undefined, undefined, () => this.catalog.refresh())
     this.catalog = new CatalogStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => {
@@ -35,7 +38,6 @@ export class AdminStore {
     this.groupsV1 = new GroupsStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
       if (forbidden) { this.groupsV1.resetAccess(); this.catalog.resetAccess(); this.management.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
       this.masterData.observeRevisions(revisions)
-      if (revisions.groups >= 0) { this.management.observeGroups(this.masterData.revisionFloors().groups); this.invalidate(undefined, true); this.emit() }
     }, undefined, undefined, this.masterData)
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
@@ -50,6 +52,13 @@ export class AdminStore {
     this.emit()
   }
   private emit() { this.version++; this.listeners.forEach(fn => fn()) }
+  private propagateGroupsInvalidation(revision: number) {
+    if (revision <= this.propagatedGroupsRevision) return
+    this.propagatedGroupsRevision = revision
+    this.management.observeGroups(revision)
+    this.invalidate(undefined, true)
+    this.emit()
+  }
   key<A extends AdminAction>(action: A, payload: AdminPayloads[A]) {
     return JSON.stringify([this.userId, this.bootstrap?.identity.rol, action, Object.entries(payload).sort(([a], [b]) => a.localeCompare(b))])
   }
@@ -69,7 +78,7 @@ export class AdminStore {
     if (response.revisions.groups !== undefined) {
       const floor = this.masterData.revisionFloors().groups
       if (response.revisions.groups < floor) throw new Error('Respuesta anterior a la revisión de grupos. Actualiza la consulta.')
-      if (response.revisions.groups > floor) { this.masterData.observeRevisions({ groups: response.revisions.groups }); this.management.observeGroups(this.masterData.revisionFloors().groups); this.invalidate(undefined, true) }
+      if (response.revisions.groups > floor) this.masterData.observeRevisions({ groups: response.revisions.groups })
     }
     if (site && response.revisions.operational !== undefined) this.observeSite(site, response.revisions.operational)
   }

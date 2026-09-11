@@ -40,7 +40,13 @@ export function validateMasterDataBootstrap(value: unknown): MasterDataSnapshot 
   assert(new Set(value.categories.map(item => item.id)).size === value.categories.length && new Set(value.groups.map(item => item.id)).size === value.groups.length && new Set(value.products.map(item => item.c_interno)).size === value.products.length, 'Master Data V1 contiene identificadores duplicados.')
   const categories = new Set(value.categories.map(item => item.id)), groups = new Set(value.groups.map(item => item.id))
   assert(value.groups.every(item => categories.has(item.categoria_id)) && value.products.every(item => categories.has(item.categoria_id) && (item.estado === 'Excluido' || item.grupo_id !== null && groups.has(item.grupo_id))), 'Relaciones Master Data V1 inválidas.')
-  return value as unknown as MasterDataSnapshot
+  const products = value.products.map(item => ({
+    ...item,
+    c_barras: item.c_barras ?? null,
+    marca: item.marca ?? null,
+    grupo_id: item.grupo_id ?? null,
+  })) as MasterDataProduct[]
+  return { ...value, products } as unknown as MasterDataSnapshot
 }
 export function validateMasterDataMutation(action: MasterDataMutationAction, value: unknown): MasterDataMutation {
   assert(object(value) && typeof value.operation_id === 'string' && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value.operation_id) && integer(value.expected_categories_revision), 'Payload base Master Data V1 inválido.')
