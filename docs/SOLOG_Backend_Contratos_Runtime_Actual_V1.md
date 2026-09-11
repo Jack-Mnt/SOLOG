@@ -652,7 +652,7 @@ No se sustituye por Control porque la semántica y el detalle son diferentes.
 
 ---
 
-# 9. Control V10
+# 9. Control — runtime vigente consolidado
 
 La implementación vigente usa:
 
@@ -820,7 +820,7 @@ public.rpc_solog_admin_groups_v1(...)
 
 Este runtime consolidado no redefine sus mutaciones.
 
-Las lecturas de Grupos serán parcialmente reemplazadas por el futuro contrato de master data compartido, sin alterar las mutaciones V1 salvo delta explícito.
+Para nuevas implementaciones frontend, las lecturas principales de Grupos quedan parcialmente sustituidas por `SOLOG_Backend_Admin_MasterData_Contrato_Tecnico_V1.md` cuando el dato ya esté incluido o sea derivable desde su `bootstrap`. Las mutaciones de Grupos V1 no cambian salvo delta explícito.
 
 ---
 
@@ -893,7 +893,7 @@ activate/deactivate
 merge
 ```
 
-Este contrato es la fuente técnica para la futura caché compartida de Productos, Grupos, Categorías y referencias de Catálogo.
+Este contrato es la fuente técnica del master data utilizado por la caché compartida de Productos, Grupos, Categorías y referencias de Catálogo definida en `SOLOG_Arquitectura_Admin_MasterData_Cache_Rutas_V1.md`.
 
 ---
 
