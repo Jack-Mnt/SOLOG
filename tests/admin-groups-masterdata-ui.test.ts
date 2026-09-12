@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { deriveMasterData, type MasterDataSnapshot } from '../src/features/solog/admin/masterdata/admin.masterdata.v1'
+import { MasterDataStore, type MasterDataMutateTransport, type MasterDataReadTransport } from '../src/features/solog/admin/masterdata/admin.masterdata.store'
 import { deriveGroupRows, filterAndSortGroups, groupCandidates } from '../src/features/solog/admin/grupos/admin.grupos.model'
+import { bootstrapFixture } from './fixtures/admin-v2.mjs'
 
 const source = (path: string) => Bun.file(path).text()
 const snapshot: MasterDataSnapshot = {
@@ -38,6 +40,9 @@ describe('Grupos derivados de Master Data', () => {
     expect(filterAndSortGroups(rows, { search: 'papas', categoryId: 'cat-b', type: 'Único', valuation: 'none', sort: 'members_desc' }).map(group => group.id)).toEqual(['group-b'])
     expect(filterAndSortGroups(rows, { search: '', categoryId: 'all', type: 'all', valuation: 'configured', sort: 'category' }).map(group => group.id)).toEqual(['group-a'])
     expect(filterAndSortGroups(rows, { search: '', categoryId: 'all', type: 'all', valuation: 'all', sort: 'valuation' }).map(group => group.id)).toEqual(['group-a', 'group-b'])
+    expect(filterAndSortGroups(rows, { search: '', categoryId: 'all', type: 'all', valuation: 'all', sort: 'unit_price' }).map(group => group.id)).toEqual(['group-a', 'group-b'])
+    const tied = rows.map(group => ({ ...group, precio: 3 })).reverse()
+    expect(filterAndSortGroups(tied, { search: '', categoryId: 'all', type: 'all', valuation: 'all', sort: 'unit_price' }).map(group => group.nombre)).toEqual(['Gaseosas', 'Papas únicas'])
   })
 
   test('los candidatos son incluidos, compatibles y ajenos al grupo destino', () => {
@@ -48,13 +53,56 @@ describe('Grupos derivados de Master Data', () => {
 })
 
 describe('Categorías desde Grupos', () => {
-  test('limita la UI a create, rename y reorder completo', async () => {
+  test('limita la UI a create, rename y reorder completo sin permitir NOOP', async () => {
     const ui = await source('src/features/solog/admin/grupos/admin.categories.dialog.tsx')
     expect(ui).toContain("store.mutation('category_create'")
     expect(ui).toContain("store.mutation('category_rename'")
     expect(ui).toContain("store.mutation('category_reorder', { category_ids: order })")
     expect(ui).toContain('categoryCounts')
+    expect(ui).toContain('!hasCurrentOrderDraft')
+    expect(ui).toContain('setOrderDraft({ revision: categoryRevision, ids: next })')
+    expect(ui).toContain('order.length !== masterData.snapshot.categories.length')
+    expect(ui).toContain("if (action === 'category_create') setCreateName('')")
+    expect(ui).toContain("if (action === 'category_rename') { setEditing(null); setEditName('') }")
+    expect(ui).toContain("if (action === 'category_reorder') setOrderDraft(null)")
     for (const forbidden of ['category_delete', 'category_merge', 'category_disable', 'category_enable']) expect(ui).not.toContain(forbidden)
+  })
+
+  test('retry de create, rename y reorder conserva exactamente operation_id y payload', async () => {
+    const cases = [
+      ['category_create', { nombre: 'Nueva' }],
+      ['category_rename', { category_id: 'cat-a', nombre: 'Bebidas frías' }],
+      ['category_reorder', { category_ids: ['cat-b', 'cat-a'] }],
+    ] as const
+    for (const [action, input] of cases) {
+      let attempts = 0
+      let current = snapshot
+      const payloads: Record<string, unknown>[] = []
+      const read = (async () => current) as MasterDataReadTransport
+      const mutate = (async (_action, payload) => {
+        payloads.push(structuredClone(payload))
+        if (!attempts++) throw Object.assign(new Error('Lock'), { code: 'SOLOG_LOCK_CONFLICT_RETRYABLE' })
+        current = { ...snapshot, revisions: { ...snapshot.revisions, categories: 3 } }
+        return { contract_version: 1 as const, generated_at: snapshot.generated_at, replay: true, result: {}, revisions: current.revisions }
+      }) as MasterDataMutateTransport
+      const store = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, read, mutate)
+      await store.ensureLoaded()
+      await expect(store.mutation(action, input)).rejects.toThrow('Lock')
+      await store.retryMutation()
+      expect(payloads).toHaveLength(2)
+      expect(payloads[1]).toEqual(payloads[0])
+      expect(payloads[1].operation_id).toBe(payloads[0].operation_id)
+      expect(store.intent()).toBeUndefined()
+    }
+  })
+
+  test('Valorizado contiene precio unitario, paquete y edición independiente', async () => {
+    const ui = await source('src/features/solog/admin/grupos/admin.grupos.v2.tsx')
+    expect(ui).toContain('className="admin-groups__valuation"')
+    expect(ui).toContain('<Value value={group.precio} money /> / unidad')
+    expect(ui).toContain('<small><Valuation group={group} /></small>')
+    expect(ui).toContain('Editar valorizado de')
+    expect(ui).not.toContain('value={group.precio} onChange')
   })
 
   test('la UI activa no importa el hook de lecturas Grupos V1', async () => {

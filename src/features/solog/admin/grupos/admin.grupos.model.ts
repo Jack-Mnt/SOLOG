@@ -2,7 +2,7 @@ import type { MasterDataDerived, MasterDataGroup, MasterDataProduct, MasterDataS
 
 export type GroupDerivedType = 'Único' | 'Agrupado'
 export type GroupValuationFilter = 'all' | 'configured' | 'none'
-export type GroupSort = 'name' | 'category' | 'type' | 'valuation' | 'members_asc' | 'members_desc'
+export type GroupSort = 'name' | 'category' | 'type' | 'unit_price' | 'valuation' | 'members_asc' | 'members_desc'
 
 export interface DerivedGroupRow extends MasterDataGroup {
   categoryName: string
@@ -37,6 +37,8 @@ export function filterAndSortGroups(rows: DerivedGroupRow[], filters: { search: 
     ? left.categoryName.localeCompare(right.categoryName, 'es-PE') || left.nombre.localeCompare(right.nombre, 'es-PE')
     : filters.sort === 'type'
       ? left.derivedType.localeCompare(right.derivedType, 'es-PE') || left.nombre.localeCompare(right.nombre, 'es-PE')
+      : filters.sort === 'unit_price'
+        ? left.precio - right.precio || left.nombre.localeCompare(right.nombre, 'es-PE')
       : filters.sort === 'valuation'
         ? Number(right.unidades_por_paquete !== null) - Number(left.unidades_por_paquete !== null) || left.nombre.localeCompare(right.nombre, 'es-PE')
     : filters.sort === 'members_asc'

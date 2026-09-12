@@ -153,14 +153,13 @@
   overflow-wrap: anywhere;
   font-weight: 600;
 }
-.admin-groups__table tbody th > span,
-.admin-groups__table tbody th > small {
+.admin-groups__valuation > span,
+.admin-groups__valuation > small {
   display: block;
 }
-.admin-groups__table tbody th > small {
+.admin-groups__valuation > small {
   margin-top: 3px;
   color: var(--color-text-secondary);
-  font-weight: 400;
 }
 .admin-groups__table tbody th > .icon-button,
 .admin-groups__table tbody td > .icon-button {
