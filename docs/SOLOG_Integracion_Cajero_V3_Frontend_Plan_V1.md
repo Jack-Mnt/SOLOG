@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero V3 Frontend — Plan V1
 
-**Estado:** PROPUESTO — pendiente de aprobación
+**Estado:** APROBADO Y CONGELADO
 
 **Fecha:** 12 de septiembre de 2026
 
