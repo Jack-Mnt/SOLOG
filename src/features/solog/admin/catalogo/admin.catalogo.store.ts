@@ -8,7 +8,7 @@ type CatalogMutationInput<T> = T extends { operation_id: string; expected_catalo
 export type CatalogQueryAction = Exclude<CatalogReadAction, 'reference' | 'products'>
 export type CatalogQueryPayloads = Pick<CatalogReadPayloads, CatalogQueryAction>
 type Entry = { action: CatalogQueryAction; payload: Record<string, unknown>; data?: CatalogReads[CatalogQueryAction]; error?: string; pending?: Promise<CatalogReads[CatalogQueryAction]> }
-type Intent = { action: CatalogMutationAction; payload: CatalogMutations[CatalogMutationAction]; pending?: Promise<CatalogMutationResult>; error?: string }
+type Intent = { action: CatalogMutationAction; payload: CatalogMutations[CatalogMutationAction]; proposal?: CatalogReads['proposals']['rows'][number]; pending?: Promise<CatalogMutationResult>; error?: string }
 type ProductProposalStatus = 'pendiente' | 'aprobado' | 'none'
 type ProductStateOverlay = { action?: 'exclude' | 'reincorporate'; status: ProductProposalStatus; masterGeneration: number }
 export interface CatalogConfirmedSetup {
@@ -156,8 +156,8 @@ export class CatalogStore {
     }
     return undefined
   }
-  private applyProposalActionOverlay(payload: CatalogMutations['proposal_action']) {
-    const proposal = this.cachedProposal(payload.propuesta_fingerprint)
+  private applyProposalActionOverlay(payload: CatalogMutations['proposal_action'], proposalContext?: CatalogReads['proposals']['rows'][number]) {
+    const proposal = proposalContext ?? this.cachedProposal(payload.propuesta_fingerprint)
     if (!proposal) return
     const masterGeneration = this.masterGeneration()
     if (proposal.tipo === 'excluir_producto' || proposal.tipo === 'reincorporar_producto' || proposal.tipo === 'eliminar_producto') {
@@ -226,7 +226,7 @@ export class CatalogStore {
   }
 
   intent() { return this.intentState }
-  async mutation<A extends CatalogMutationAction>(action: A, payload: CatalogMutationInput<CatalogMutations[A]>): Promise<CatalogMutationResult> {
+  async mutation<A extends CatalogMutationAction>(action: A, payload: CatalogMutationInput<CatalogMutations[A]>, context?: { proposal?: CatalogReads['proposals']['rows'][number] }): Promise<CatalogMutationResult> {
     this.access()
     if (this.intentState) throw new Error('Hay una operación de Catálogo sin confirmar. Reinténtala antes de crear otra.')
     const floors = this.revisions()
@@ -239,6 +239,7 @@ export class CatalogStore {
         expected_catalog_revision: floors.catalog,
         expected_groups_revision: floors.groups,
       } as CatalogMutations[CatalogMutationAction],
+      proposal: context?.proposal,
     }
     this.intentState = intent
     return this.execute(intent)
@@ -300,7 +301,7 @@ export class CatalogStore {
         const payload = intent.payload as CatalogMutations['prepare_product']
         this.productSetupOverlay.set(payload.propuesta_fingerprint, { hidden: true, masterGeneration: this.masterGeneration() })
       }
-      if (intent.action === 'proposal_action') this.applyProposalActionOverlay(intent.payload as CatalogMutations['proposal_action'])
+      if (intent.action === 'proposal_action') this.applyProposalActionOverlay(intent.payload as CatalogMutations['proposal_action'], intent.proposal)
       this.invalidate()
       this.intentState = undefined
       this.emit()
