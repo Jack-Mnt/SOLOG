@@ -4,11 +4,13 @@ import {
   ScanSearch,
   TriangleAlert,
   BookOpenCheck,
+  PackageSearch,
   Layers,
   Tablet,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  type LucideIcon,
 } from "lucide-react";
 import { PanelLoader } from "../../../components/panel-loader";
 import { navigateTo, type AdminRoute } from "../../../lib/router";
@@ -37,6 +39,11 @@ const Catalog = lazy(() =>
     default: m.AdminCatalogV3,
   })),
 );
+const Products = lazy(() =>
+  import("./productos/admin.productos.v1").then((m) => ({
+    default: m.AdminProductsV1,
+  })),
+);
 const Groups = lazy(() =>
   import("./grupos/admin.grupos.v2").then((m) => ({
     default: m.AdminGroupsV2,
@@ -52,14 +59,23 @@ const Devices = lazy(() =>
     default: m.AdminDevicesV2,
   })),
 );
-const navigation = [
-  ["/admin", "Dashboard", LayoutDashboard],
-  ["/admin/control", "Control", ScanSearch],
-  ["/admin/incidencias", "Incidencias", TriangleAlert],
-  ["/admin/catalogo", "Catálogo", BookOpenCheck],
-  ["/admin/grupos", "Grupos", Layers],
-  ["/admin/dispositivos", "Dispositivos", Tablet],
-] as const;
+type NavigationItem = readonly [AdminRoute, string, LucideIcon];
+const navigationGroups: ReadonlyArray<{ label: string; items: readonly NavigationItem[] }> = [
+  { label: "OPERACIÓN", items: [
+    ["/admin", "Dashboard", LayoutDashboard],
+    ["/admin/control", "Control", ScanSearch],
+    ["/admin/incidencias", "Incidencias", TriangleAlert],
+  ] },
+  { label: "INVENTARIO", items: [
+    ["/admin/catalogo", "Catálogo", BookOpenCheck],
+    ["/admin/productos", "Productos", PackageSearch],
+    ["/admin/grupos", "Grupos", Layers],
+  ] },
+  { label: "SISTEMA", items: [
+    ["/admin/dispositivos", "Dispositivos", Tablet],
+  ] },
+];
+const navigation = navigationGroups.flatMap((group) => group.items);
 
 function Shell({
   route,
@@ -119,12 +135,10 @@ function Shell({
           </button>
         </div>
         <nav className="admin-main-tabs" aria-label="Módulos administrativos">
-          {["OPERACIÓN", "GESTIÓN"].map((group, index) => (
-            <div className="admin-main-tabs__group" key={group}>
-              <span className="admin-main-tabs__label">{group}</span>
-              {navigation
-                .slice(index * 3, index * 3 + 3)
-                .map(([path, label, Icon]) => (
+          {navigationGroups.map((group) => (
+            <div className="admin-main-tabs__group" key={group.label}>
+              <span className="admin-main-tabs__label">{group.label}</span>
+              {group.items.map(([path, label, Icon]) => (
                   <button
                     key={path}
                     className={
@@ -138,7 +152,7 @@ function Shell({
                     <Icon size={20} />
                     <span>{label}</span>
                   </button>
-                ))}
+              ))}
             </div>
           ))}
         </nav>
@@ -186,6 +200,8 @@ function Shell({
               <Control />
             ) : route === "/admin/catalogo" ? (
               <Catalog />
+            ) : route === "/admin/productos" ? (
+              <Products />
             ) : route === "/admin/grupos" ? (
               <Groups />
             ) : route === "/admin/incidencias" ? (

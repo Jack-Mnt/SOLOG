@@ -48,6 +48,7 @@ describe('Index Fase I2: code splitting', () => {
       'control/admin.control.v2',
       'incidencias/admin.incidencias.v2',
       'catalogo/admin.catalogo.page.v3',
+      'productos/admin.productos.v1',
       'grupos/admin.grupos.v2',
       'dispositivos/admin.dispositivos.v2',
     ]

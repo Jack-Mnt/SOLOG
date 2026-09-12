@@ -6,6 +6,7 @@ export type AdminRoute =
   | '/admin/control'
   | '/admin/incidencias'
   | '/admin/catalogo'
+  | '/admin/productos'
   | '/admin/grupos'
   | '/admin/dispositivos'
 
@@ -16,6 +17,7 @@ export const ADMIN_ROUTES: AdminRoute[] = [
   '/admin/control',
   '/admin/incidencias',
   '/admin/catalogo',
+  '/admin/productos',
   '/admin/grupos',
   '/admin/dispositivos',
 ]
