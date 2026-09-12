@@ -12,11 +12,12 @@ export interface ValuationDialogProps {
   description?: string
   pending?: boolean
   error?: string
+  onRetry?: () => void
   onClose: () => void
   onConfirm: (decision: ValuationDecision) => void
 }
 
-export function ValuationDialog({ unitPrice, initial, description, pending = false, error, onClose, onConfirm }: ValuationDialogProps) {
+export function ValuationDialog({ unitPrice, initial, description, pending = false, error, onRetry, onClose, onConfirm }: ValuationDialogProps) {
   const [enabled, setEnabled] = useState(initial.unitsPerPackage !== null && initial.packagePrice !== null)
   const [units, setUnits] = useState(initial.unitsPerPackage ? String(initial.unitsPerPackage) : '6')
   const [packagePrice, setPackagePrice] = useState(initial.packagePrice ? money(initial.packagePrice) : money(unitPrice * 6))
@@ -38,6 +39,7 @@ export function ValuationDialog({ unitPrice, initial, description, pending = fal
     <label><input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} /> Valorización por paquete</label>
     {enabled && <fieldset><legend>Unidades por paquete</legend><div className="admin-v2-actions">{valuationPresets.map(value => <button type="button" className="button button--secondary" aria-pressed={!customUnits && Number(units) === value} onClick={() => chooseUnits(value)} key={value}>x{value}</button>)}<button type="button" className="button button--secondary" aria-pressed={customUnits} onClick={() => setCustomUnits(true)}>Otro</button></div>{customUnits && <label>Otro número de unidades<input required type="number" min="2" step="1" value={units} onChange={(event) => setOtherUnits(event.target.value)} /></label>}<label>Precio por paquete<input required type="number" min="0.01" step="0.01" value={packagePrice} onChange={(event) => { setPackagePrice(event.target.value); setPriceEdited(true) }} /></label><p>Referencia sugerida: S/ {money(suggestedPackagePrice(Number(units) > 1 ? Number(units) : 0, unitPrice))}. No reemplaza un precio ingresado manualmente.</p></fieldset>}
     {(localError || error) && <p role="alert">{localError || error}</p>}
+    {error && onRetry && <button type="button" className="button button--secondary" disabled={pending} onClick={onRetry}>Reintentar misma operación</button>}
     <button type="button" className="button" disabled={pending} onClick={submit}>{pending ? 'Guardando…' : 'Confirmar valorizado'}</button>
   </AdminDialog>
 }

@@ -10,10 +10,11 @@ describe('A4 contrato maestro V6 y frontera Catálogo V3', () => {
     expect(adapter).not.toContain('.from(')
   })
 
-  test('Grupos activo usa V1 y deja la infraestructura master V2 como compatibilidad transitoria', async () => {
+  test('Grupos activo lee Master Data y usa V1 solo para mutaciones', async () => {
     const ui = await Bun.file('src/features/solog/admin/grupos/admin.grupos.v2.tsx').text()
     const adapter = await Bun.file('src/features/solog/admin/grupos/admin.grupos.v1.ts').text()
-    expect(ui).toContain("useGroupsQuery('groups'")
+    expect(ui).toContain('useMasterData()')
+    expect(ui).not.toContain('useGroupsQuery')
     expect(ui).toContain("store.mutation('group_create'")
     expect(adapter).toContain('rpc_solog_admin_groups_read_v1')
     expect(adapter).toContain('rpc_solog_admin_groups_v1')

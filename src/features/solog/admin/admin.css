@@ -61,6 +61,10 @@
   min-width: 0;
 }
 .admin-groups__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 18px;
 }
 .admin-groups__heading h2 {
@@ -71,6 +75,12 @@
   margin: 0;
   color: var(--color-text-secondary);
   font-size: 0.875rem;
+}
+.admin-groups__heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 .admin-groups__navigation {
   display: inline-flex;
@@ -125,7 +135,7 @@
   background: #fff;
 }
 .admin-groups__table table {
-  min-width: 960px;
+  min-width: 760px;
 }
 .admin-groups__table thead {
   background: #f8fafc;
@@ -142,6 +152,20 @@
   white-space: normal;
   overflow-wrap: anywhere;
   font-weight: 600;
+}
+.admin-groups__table tbody th > span,
+.admin-groups__table tbody th > small {
+  display: block;
+}
+.admin-groups__table tbody th > small {
+  margin-top: 3px;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+.admin-groups__table tbody th > .icon-button,
+.admin-groups__table tbody td > .icon-button {
+  margin-left: 6px;
+  vertical-align: middle;
 }
 .admin-groups__table tbody tr:hover {
   background: #f8fafc;
@@ -168,6 +192,46 @@
   margin: 0;
   padding: 4px 20px;
   white-space: normal;
+}
+.admin-groups__candidates .admin-v2-picker {
+  max-height: 280px;
+  overflow: auto;
+}
+.admin-categories__create,
+.admin-categories__rename {
+  margin-bottom: 14px;
+}
+.admin-categories__list {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+}
+.admin-categories__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.admin-categories__row span,
+.admin-categories__row small {
+  display: block;
+}
+.admin-categories__row small {
+  margin-top: 2px;
+  color: var(--color-text-secondary);
+}
+@media (max-width: 760px) {
+  .admin-groups__heading,
+  .admin-categories__row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .admin-groups__heading-actions {
+    justify-content: flex-start;
+  }
 }
 
 .admin-catalog {

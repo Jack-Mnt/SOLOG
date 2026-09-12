@@ -1,85 +1,127 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { Pencil, Tags, Users } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { ValuationDialog, type ValuationDecision } from '../admin.valuation-dialog'
+import { useMasterData } from '../masterdata/admin.masterdata.context'
+import type { MasterDataGroup, MasterDataProduct } from '../masterdata/admin.masterdata.v1'
 import { QueryState, Value } from '../admin.v2.presentation'
-import { useGroupsQuery, useGroupsStore } from './admin.grupos.context'
-import type { GroupsGroup, GroupsProduct } from './admin.grupos.v1'
+import { AdminCategoriesDialog } from './admin.categories.dialog'
+import { useGroupsStore } from './admin.grupos.context'
+import { GroupCandidatePicker, GroupMembersDialog } from './admin.grupos.members-dialog'
+import { deriveGroupRows, filterAndSortGroups, type DerivedGroupRow, type GroupDerivedType, type GroupSort, type GroupValuationFilter } from './admin.grupos.model'
+import { groupsErrorMessage } from './admin.grupos.messages'
 
-function message(error: unknown) {
-  const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
-  if (code === 'SOLOG_MASTERDATA_REVISION_CONFLICT') return 'La estructura cambió. Se recargaron los datos; revisa y vuelve a confirmar.'
-  if (code === 'SOLOG_LOCK_CONFLICT_RETRYABLE') return 'Otro cambio está en curso. Puedes reintentar la misma operación.'
-  if (code === 'SOLOG_CATALOG_STAGING_CONFLICT') return 'Existe una preparación activa de Catálogo sobre esta estructura. Resuélvela o retírala antes de continuar.'
-  if (code === 'SOLOG_GROUP_PRICE_MISMATCH' || code === 'SOLOG_GROUP_NOT_COMPATIBLE') return 'Los SKU seleccionados no son compatibles con el precio del grupo destino.'
-  if (code === 'SOLOG_GROUP_NAME_CONFLICT') return 'Ya existe una estructura activa con ese nombre. Ajusta la máscara y vuelve a intentar.'
-  if (code === 'SOLOG_INVALID_GROUP_VALUATION') return 'La configuración de valorizado no es válida.'
-  if (code === 'SOLOG_GROUP_VALUATION_NOOP') return 'El valorizado ya tiene esa configuración.'
-  if (code.includes('NOOP')) return 'La operación no produjo cambios porque la estructura ya está en ese estado.'
-  return error instanceof Error ? error.message : 'No se pudo guardar el cambio de Grupos.'
+function Valuation({ group }: { group: Pick<MasterDataGroup, 'unidades_por_paquete' | 'precio_paquete'> }) {
+  return group.unidades_por_paquete !== null && group.precio_paquete !== null ? <>x{group.unidades_por_paquete} · <Value value={group.precio_paquete} money /></> : <>Sin valorizado</>
 }
-function Valuation({ group }: { group: Pick<GroupsGroup, 'unidades_por_paquete' | 'precio_paquete'> }) {
-  return group.unidades_por_paquete && group.precio_paquete ? <>x{group.unidades_por_paquete} · <Value value={group.precio_paquete} money /></> : <>Sin valorizado</>
-}
+
 function MutationError({ error, retry }: { error: string; retry: () => void }) {
-  const store = useGroupsStore(), intent = store.intent()
-  return <div className="notice notice--error" role="alert"><p>{error}</p>{intent && <button type="button" className="button button--secondary" onClick={() => void retry()}>Reintentar misma operación</button>}</div>
+  const intent = useGroupsStore().intent()
+  return <div className="notice notice--error" role="alert"><p>{error}</p>{intent && !intent.pending && <button type="button" className="button button--secondary" onClick={retry}>Reintentar misma operación</button>}</div>
 }
-function CandidatePicker({ selected, onChange, price }: { selected: GroupsProduct[]; onChange: (rows: GroupsProduct[]) => void; price?: number }) {
-  const [search, setSearch] = useState(''), [filter, setFilter] = useState(''), [offset, setOffset] = useState(0)
-  const query = useGroupsQuery('products', { buscar: filter || undefined, precio: price, limit: 50, offset })
-  const candidates = query.data
-  const selectedCodes = new Set(selected.map(row => row.c_interno))
-  const toggle = (candidate: GroupsProduct) => onChange(selectedCodes.has(candidate.c_interno) ? selected.filter(row => row.c_interno !== candidate.c_interno) : [...selected, candidate])
-  return <section className="admin-groups__candidates" aria-label="Seleccionar SKU incluidos"><h3>SKU incluidos compatibles</h3><label>Buscar SKU<input value={search} onChange={event => setSearch(event.target.value)} /></label><button type="button" className="button button--secondary" onClick={() => { setFilter(search); setOffset(0) }}>Buscar SKU</button><p>{selected.length ? `${selected.length} SKU seleccionados` : 'Selecciona SKU incluidos.'}{price !== undefined && <> · precio requerido: <Value value={price} money /></>}</p>{candidates ? <><div className="admin-v2-picker">{candidates.rows.map(candidate => <label key={candidate.c_interno}><input type="checkbox" checked={selectedCodes.has(candidate.c_interno)} onChange={() => toggle(candidate)} />{candidate.c_interno} · {candidate.producto} · <Value value={candidate.precio} money /> · {candidate.grupo}</label>)}</div>{!candidates.rows.length && <p>No hay SKU compatibles para esta búsqueda.</p>}<div className="admin-groups__pager"><button type="button" className="button button--secondary" disabled={!offset} onClick={() => setOffset(Math.max(0, offset - 50))}>Anterior</button><button type="button" className="button button--secondary" disabled={candidates.rows.length < candidates.limit} onClick={() => setOffset(offset + candidates.limit)}>Siguiente</button></div></> : <QueryState {...query} />}</section>
-}
-function CreateGroup({ onClose }: { onClose: () => void }) {
-  const store = useGroupsStore(), reference = useGroupsQuery('reference', {})
-  const [name, setName] = useState(''), [category, setCategory] = useState(''), [members, setMembers] = useState<GroupsProduct[]>([]), [error, setError] = useState('')
+
+function CreateGroupDialog({ onClose }: { onClose: () => void }) {
+  const masterData = useMasterData()
+  const store = useGroupsStore()
+  const [name, setName] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [members, setMembers] = useState<MasterDataProduct[]>([])
+  const [error, setError] = useState('')
   const selectedPrice = members[0]?.precio
   const save = async (event: FormEvent) => {
     event.preventDefault()
     if (members.length < 2) { setError('Selecciona al menos dos SKU para crear el grupo.'); return }
-    try { setError(''); await store.mutation('group_create', { nombre: name.trim(), categoria_id: category, member_codes: members.map(member => member.c_interno) }); onClose() } catch (reason) { setError(message(reason)) }
+    try {
+      setError('')
+      await store.mutation('group_create', { nombre: name.trim(), categoria_id: categoryId, member_codes: members.map(member => member.c_interno) })
+      onClose()
+    } catch (reason) { setError(groupsErrorMessage(reason)) }
   }
-  return <AdminDialog title="Crear grupo" description="Crea una estructura de conteo con dos o más SKU compatibles." onClose={onClose} closeDisabled={!!store.intent()?.pending} wide>{!reference.data ? <QueryState {...reference} /> : <form className="admin-v2-form" onSubmit={event => void save(event)}><label>Nombre o máscara<input required value={name} onChange={event => setName(event.target.value)} /></label><label>Categoría<select required value={category} onChange={event => setCategory(event.target.value)}><option value="">Seleccionar</option>{reference.data.categories.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}</select></label><CandidatePicker selected={members} onChange={setMembers} price={selectedPrice} /><p>El precio unitario se toma del Catálogo y el backend confirma la compatibilidad.</p><button className="button" disabled={!!store.intent() || members.length < 2}>Crear grupo</button></form>}{error && <MutationError error={error} retry={() => store.retryMutation().then(onClose).catch(reason => setError(message(reason)))} />}</AdminDialog>
+  const retry = () => { setError(''); void store.retryMutation().then(onClose).catch(reason => setError(groupsErrorMessage(reason))) }
+  return <AdminDialog title="Crear grupo" description="Crea una estructura de conteo con dos o más SKU incluidos y compatibles." onClose={onClose} closeDisabled={!!store.intent()?.pending} wide>
+    {!masterData.snapshot || !masterData.derived ? <QueryState error={masterData.error} retry={masterData.retry} /> : <form className="admin-v2-form" onSubmit={event => void save(event)}>
+      <label>Nombre o máscara<input required value={name} onChange={event => setName(event.target.value)} /></label>
+      <label>Categoría<select required value={categoryId} onChange={event => setCategoryId(event.target.value)}><option value="">Seleccionar</option>{masterData.snapshot.categories.map(category => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
+      <GroupCandidatePicker snapshot={masterData.snapshot} derived={masterData.derived} selected={members} onChange={setMembers} price={selectedPrice} />
+      <p>El precio unitario se toma del Catálogo y el backend confirma la compatibilidad.</p>
+      <button className="button" disabled={!!store.intent() || !name.trim() || !categoryId || members.length < 2}>Crear grupo</button>
+    </form>}
+    {error && <MutationError error={error} retry={retry} />}
+  </AdminDialog>
 }
-function EditGroup({ group, onClose }: { group: GroupsGroup; onClose: () => void }) {
-  const store = useGroupsStore(), reference = useGroupsQuery('reference', {})
-  const [name, setName] = useState(group.nombre), [category, setCategory] = useState(group.categoria_id), [error, setError] = useState('')
-  const categoryChanged = category !== group.categoria_id
+
+function EditGroupDialog({ group, onClose }: { group: DerivedGroupRow; onClose: () => void }) {
+  const masterData = useMasterData()
+  const store = useGroupsStore()
+  const [name, setName] = useState(group.nombre)
+  const [categoryId, setCategoryId] = useState(group.categoria_id)
+  const [error, setError] = useState('')
+  const categoryChanged = categoryId !== group.categoria_id
   const save = async (event: FormEvent) => {
     event.preventDefault()
-    try { setError(''); await store.mutation('group_update', { grupo_id: group.id, nombre: name.trim(), categoria_id: category }); onClose() } catch (reason) { setError(message(reason)) }
+    try { setError(''); await store.mutation('group_update', { grupo_id: group.id, nombre: name.trim(), categoria_id: categoryId }); onClose() } catch (reason) { setError(groupsErrorMessage(reason)) }
   }
-  return <AdminDialog title="Editar grupo" description="La máscara operativa no modifica el nombre comercial de los SKU." onClose={onClose} closeDisabled={!!store.intent()?.pending}>{!reference.data ? <QueryState {...reference} /> : <form className="admin-v2-form" onSubmit={event => void save(event)}><label>Nombre o máscara<input required value={name} onChange={event => setName(event.target.value)} /></label><label>Categoría<select required value={category} onChange={event => setCategory(event.target.value)}>{reference.data.categories.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}</select></label><p>Precio unitario: <Value value={group.precio} money /></p>{categoryChanged && <p className="notice">La categoría se aplicará a todos los integrantes del grupo.</p>}<button className="button" disabled={!!store.intent()}>Guardar cambios</button></form>}{error && <MutationError error={error} retry={() => store.retryMutation().then(onClose).catch(reason => setError(message(reason)))} />}</AdminDialog>
+  const retry = () => { setError(''); void store.retryMutation().then(onClose).catch(reason => setError(groupsErrorMessage(reason))) }
+  return <AdminDialog title="Editar máscara y categoría" description="La máscara operativa no modifica el nombre comercial de los SKU." onClose={onClose} closeDisabled={!!store.intent()?.pending}>
+    {!masterData.snapshot ? <QueryState error={masterData.error} retry={masterData.retry} /> : <form className="admin-v2-form" onSubmit={event => void save(event)}>
+      <label>Nombre o máscara<input required value={name} onChange={event => setName(event.target.value)} /></label>
+      <label>Categoría<select required value={categoryId} onChange={event => setCategoryId(event.target.value)}>{masterData.snapshot.categories.map(category => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
+      <p>Precio unitario: <Value value={group.precio} money /> · solo lectura.</p>
+      {categoryChanged && <p className="notice">La categoría se aplicará a todos los integrantes del grupo.</p>}
+      <button className="button" disabled={!!store.intent() || !name.trim() || !categoryId}>Guardar cambios</button>
+    </form>}
+    {error && <MutationError error={error} retry={retry} />}
+  </AdminDialog>
 }
-function MoveMembers({ groups, initial = [], onClose }: { groups: GroupsGroup[]; initial?: GroupsProduct[]; onClose: () => void }) {
-  const store = useGroupsStore(), [members, setMembers] = useState(initial), [destination, setDestination] = useState(''), [error, setError] = useState('')
-  const target = groups.find(group => group.id === destination)
-  const selectedPrice = target?.precio ?? members[0]?.precio
-  const save = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!target || !members.length) { setError('Selecciona uno o más SKU y el grupo destino.'); return }
-    try { setError(''); await store.mutation('membership_move', { grupo_destino_id: target.id, member_codes: members.map(member => member.c_interno) }); onClose() } catch (reason) { setError(message(reason)) }
+
+function GroupValuationDialog({ group, onClose }: { group: DerivedGroupRow; onClose: () => void }) {
+  const store = useGroupsStore()
+  const [error, setError] = useState('')
+  const save = async (decision: ValuationDecision) => {
+    try {
+      setError('')
+      await store.mutation('valuation_save', decision.enabled ? { grupo_id: group.id, enabled: true, unidades_por_paquete: decision.unitsPerPackage!, precio_paquete: decision.packagePrice! } : { grupo_id: group.id, enabled: false })
+      onClose()
+    } catch (reason) { setError(groupsErrorMessage(reason)) }
   }
-  return <AdminDialog title="Mover SKU" description="El movimiento es atómico: todos los SKU se mueven o no se aplica ninguno." onClose={onClose} closeDisabled={!!store.intent()?.pending} wide><form className="admin-v2-form" onSubmit={event => void save(event)}><label>Grupo destino<select required value={destination} onChange={event => setDestination(event.target.value)}><option value="">Seleccionar</option>{groups.map(group => <option key={group.id} value={group.id}>{group.nombre} · <Value value={group.precio} money /></option>)}</select></label>{target && members.some(member => member.categoria_id !== target.categoria_id) && <p className="notice">La categoría operativa de los SKU seleccionados cambiará a {target.categoria}.</p>}<CandidatePicker selected={members} onChange={setMembers} price={selectedPrice} /><button className="button" disabled={!!store.intent() || !target || !members.length}>Mover SKU seleccionados</button></form>{error && <MutationError error={error} retry={() => store.retryMutation().then(onClose).catch(reason => setError(message(reason)))} />}</AdminDialog>
+  const retry = () => { setError(''); void store.retryMutation().then(onClose).catch(reason => setError(groupsErrorMessage(reason))) }
+  return <ValuationDialog unitPrice={group.precio} initial={{ unitsPerPackage: group.unidades_por_paquete, packagePrice: group.precio_paquete }} description="Este cambio se aplica inmediatamente en Grupos y se confirma con la fuente autoritativa." pending={!!store.intent()?.pending} error={error} onRetry={store.intent() ? retry : undefined} onClose={onClose} onConfirm={decision => void save(decision)} />
 }
-function GroupDetail({ groupId, onClose, onEdit, onMove }: { groupId: string; onClose: () => void; onEdit: (group: GroupsGroup) => void; onMove: () => void }) {
-  const store = useGroupsStore(), query = useGroupsQuery('group_detail', { grupo_id: groupId })
-  const [error, setError] = useState(''), [valuation, setValuation] = useState(false)
-  if (!query.data) return <AdminDialog title="Detalle de grupo" onClose={onClose} wide><QueryState {...query} /></AdminDialog>
-  const group = query.data.group
-  const separate = async (cInterno: number) => { try { setError(''); await store.mutation('make_unique', { c_interno: cInterno }); onClose() } catch (reason) { setError(message(reason)) } }
-  const saveValuation = async (decision: ValuationDecision) => { try { setError(''); await store.mutation('valuation_save', decision.enabled ? { grupo_id: group.id, enabled: true, unidades_por_paquete: decision.unitsPerPackage!, precio_paquete: decision.packagePrice! } : { grupo_id: group.id, enabled: false }); setValuation(false) } catch (reason) { setError(message(reason)) } }
-  return <><AdminDialog title={group.nombre} description="Estructura de conteo vigente" onClose={onClose} closeDisabled={!!store.intent()?.pending} wide><dl className="admin-groups__detail"><div><dt>Máscara</dt><dd>{group.nombre}</dd></div><div><dt>Categoría</dt><dd>{group.categoria}</dd></div><div><dt>Tipo derivado</dt><dd>{group.tipo}</dd></div><div><dt>Precio unitario</dt><dd><Value value={group.precio} money /></dd></div><div><dt>Valorizado</dt><dd><Valuation group={group} /> <button type="button" className="button button--secondary" disabled={!!store.intent()} onClick={() => setValuation(true)}>Editar valorizado</button></dd></div></dl><div className="admin-groups__actions"><button type="button" className="button button--secondary" onClick={() => onEdit(group)}>Editar máscara/categoría</button><button type="button" className="button button--secondary" onClick={onMove}>Agregar o mover SKU</button></div><h3>Integrantes</h3><div className="admin-v2-table"><table><thead><tr><th>SKU</th><th>Producto</th><th>Precio</th><th>Acción</th></tr></thead><tbody>{query.data.members.map(member => <tr key={member.c_interno}><td>{member.c_interno}</td><th scope="row">{member.producto}</th><td><Value value={member.precio} money /></td><td>{group.tipo === 'Agrupado' && <button type="button" className="button button--secondary" disabled={!!store.intent()} onClick={() => void separate(member.c_interno)}>Separar / dejar como Único</button>}</td></tr>)}</tbody></table></div>{error && <MutationError error={error} retry={() => store.retryMutation().then(onClose).catch(reason => setError(message(reason)))} />}</AdminDialog>{valuation && <ValuationDialog unitPrice={group.precio} initial={{ unitsPerPackage: group.unidades_por_paquete, packagePrice: group.precio_paquete }} description="Este cambio se aplica inmediatamente en Grupos." pending={!!store.intent()?.pending} error={error} onClose={() => setValuation(false)} onConfirm={decision => void saveValuation(decision)} />}</>
-}
-function GroupsSurface() {
-  const [search, setSearch] = useState(''), [filters, setFilters] = useState({ limit: 50, offset: 0 } as { buscar?: string; categoria_id?: string; tipo?: 'Único' | 'Agrupado'; limit: number; offset: number })
-  const [create, setCreate] = useState(false), [detail, setDetail] = useState<string | null>(null), [edit, setEdit] = useState<GroupsGroup | null>(null), [move, setMove] = useState(false)
-  const groups = useGroupsQuery('groups', filters), reference = useGroupsQuery('reference', {})
-  const availableGroups = useMemo(() => groups.data?.rows ?? [], [groups.data])
-  return <section><form className="admin-v2-filters admin-groups__filters" onSubmit={event => { event.preventDefault(); setFilters(current => ({ ...current, buscar: search || undefined, offset: 0 })) }}><label>Buscar grupo<input placeholder="Buscar por nombre o máscara" value={search} onChange={event => setSearch(event.target.value)} /></label><label>Categoría<select value={filters.categoria_id ?? ''} onChange={event => setFilters(current => ({ ...current, categoria_id: event.target.value || undefined, offset: 0 }))}><option value="">Todas</option>{reference.data?.categories.map(category => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label><label>Tipo derivado<select value={filters.tipo ?? ''} onChange={event => setFilters(current => ({ ...current, tipo: event.target.value as 'Único' | 'Agrupado' || undefined, offset: 0 }))}><option value="">Todos</option><option value="Único">Único</option><option value="Agrupado">Agrupado</option></select></label><button className="button button--secondary">Buscar</button><button type="button" className="button admin-groups__create" onClick={() => setCreate(true)}>Crear grupo</button></form>{groups.data ? <><div className="admin-v2-table admin-groups__table" role="region" aria-label="Lista de grupos" tabIndex={0}><table><thead><tr><th>Máscara</th><th>Categoría</th><th>Tipo derivado</th><th>Integrantes</th><th>Precio unitario</th><th>Valorizado</th><th>Acciones</th></tr></thead><tbody>{groups.data.rows.map(group => <tr key={group.id}><th scope="row">{group.nombre}</th><td>{group.categoria}</td><td>{group.tipo}</td><td>{group.member_count}</td><td className="admin-groups__money"><Value value={group.precio} money /></td><td><Valuation group={group} /></td><td><div className="admin-groups__actions"><button type="button" className="button button--secondary" onClick={() => setDetail(group.id)}>Ver detalle</button><button type="button" className="button button--secondary" onClick={() => setEdit(group)}>Editar</button></div></td></tr>)}{!groups.data.rows.length && <tr><td colSpan={7}>No hay grupos para los filtros seleccionados.</td></tr>}</tbody></table></div><div className="admin-groups__pager"><button type="button" className="button button--secondary" disabled={!filters.offset} onClick={() => setFilters(current => ({ ...current, offset: Math.max(0, current.offset - current.limit) }))}>Anterior</button><button type="button" className="button button--secondary" disabled={groups.data.rows.length < groups.data.limit} onClick={() => setFilters(current => ({ ...current, offset: current.offset + current.limit }))}>Siguiente</button></div></> : <QueryState {...groups} />}{create && <CreateGroup onClose={() => setCreate(false)} />}{detail && <GroupDetail groupId={detail} onClose={() => setDetail(null)} onEdit={group => { setDetail(null); setEdit(group) }} onMove={() => { setDetail(null); setMove(true) }} />}{edit && <EditGroup group={edit} onClose={() => setEdit(null)} />}{move && <MoveMembers groups={availableGroups} onClose={() => setMove(false)} />}</section>
-}
+
 export function AdminGroupsV2() {
-  return <section className="admin-groups"><header className="admin-groups__heading"><h2>Grupos de conteo</h2><p>Organiza SKU incluidos para el conteo. Único y Agrupado se derivan de la composición.</p></header><GroupsSurface /></section>
+  const masterData = useMasterData()
+  const [search, setSearch] = useState('')
+  const [categoryId, setCategoryId] = useState('all')
+  const [type, setType] = useState<'all' | GroupDerivedType>('all')
+  const [valuation, setValuation] = useState<GroupValuationFilter>('all')
+  const [sort, setSort] = useState<GroupSort>('name')
+  const [create, setCreate] = useState(false)
+  const [members, setMembers] = useState<string | null>(null)
+  const [edit, setEdit] = useState<string | null>(null)
+  const [valuationGroup, setValuationGroup] = useState<string | null>(null)
+  const [categories, setCategories] = useState(false)
+  const rows = useMemo(() => masterData.snapshot && masterData.derived ? deriveGroupRows(masterData.snapshot, masterData.derived) : [], [masterData.derived, masterData.snapshot])
+  const visible = useMemo(() => filterAndSortGroups(rows, { search, categoryId, type, valuation, sort }), [categoryId, rows, search, sort, type, valuation])
+  if (!masterData.snapshot || !masterData.derived) return <section className="admin-groups"><QueryState error={masterData.error} retry={masterData.retry} /></section>
+  const byId = new Map(rows.map(group => [group.id, group]))
+  const selectedMembers = members ? byId.get(members) : undefined
+  const selectedEdit = edit ? byId.get(edit) : undefined
+  const selectedValuation = valuationGroup ? byId.get(valuationGroup) : undefined
+  return <section className="admin-groups">
+    <header className="admin-groups__heading"><div><h2>Grupos de conteo</h2><p>Máscara y composición derivadas del Master Data compartido. El precio unitario es informativo.</p></div><div className="admin-groups__heading-actions"><button type="button" className="button button--secondary" onClick={() => setCategories(true)}><Tags size={17} aria-hidden="true" />Administrar categorías</button><button type="button" className="button" onClick={() => setCreate(true)}>Crear grupo</button></div></header>
+    <form className="admin-v2-filters admin-groups__filters" onSubmit={event => event.preventDefault()}>
+      <label>Buscar<input placeholder="Máscara, integrante, SKU o marca" value={search} onChange={event => setSearch(event.target.value)} /></label>
+      <label>Categoría<select value={categoryId} onChange={event => setCategoryId(event.target.value)}><option value="all">Todas</option>{masterData.snapshot.categories.map(category => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
+      <label>Integrantes<select value={type} onChange={event => setType(event.target.value as typeof type)}><option value="all">Todos</option><option value="Único">Único</option><option value="Agrupado">2+ SKU</option></select></label>
+      <label>Valorizado<select value={valuation} onChange={event => setValuation(event.target.value as GroupValuationFilter)}><option value="all">Todos</option><option value="configured">Configurado</option><option value="none">Sin valorizado</option></select></label>
+      <label>Orden<select value={sort} onChange={event => setSort(event.target.value as GroupSort)}><option value="name">Grupo</option><option value="category">Categoría</option><option value="type">Tipo derivado</option><option value="valuation">Valorizado primero</option><option value="members_desc">Más integrantes</option><option value="members_asc">Menos integrantes</option></select></label>
+    </form>
+    <p>{visible.length} de {rows.length} grupos.</p>
+    <div className="admin-v2-table admin-groups__table" role="region" aria-label="Lista de grupos" tabIndex={0}><table><thead><tr><th scope="col">Grupo</th><th scope="col">Categoría</th><th scope="col">Integrantes</th><th scope="col">Valorizado</th></tr></thead><tbody>{visible.map(group => <tr key={group.id}><th scope="row"><span>{group.nombre}</span><small>Precio unitario <Value value={group.precio} money /></small><button type="button" className="icon-button" aria-label={`Editar máscara y categoría de ${group.nombre}`} onClick={() => setEdit(group.id)}><Pencil size={16} /></button></th><td>{group.categoryName}</td><td><button type="button" className="button button--secondary" onClick={() => setMembers(group.id)}><Users size={16} aria-hidden="true" />{group.derivedType === 'Único' ? 'Único' : `${group.memberCount} SKU`}</button></td><td><span><Valuation group={group} /></span><button type="button" className="icon-button" aria-label={`Editar valorizado de ${group.nombre}`} onClick={() => setValuationGroup(group.id)}><Pencil size={16} /></button></td></tr>)}{!visible.length && <tr><td colSpan={4}>No hay grupos para los filtros seleccionados.</td></tr>}</tbody></table></div>
+    {create && <CreateGroupDialog onClose={() => setCreate(false)} />}
+    {selectedMembers && <GroupMembersDialog group={selectedMembers} snapshot={masterData.snapshot} derived={masterData.derived} onClose={() => setMembers(null)} />}
+    {selectedEdit && <EditGroupDialog group={selectedEdit} onClose={() => setEdit(null)} />}
+    {selectedValuation && <GroupValuationDialog group={selectedValuation} onClose={() => setValuationGroup(null)} />}
+    {categories && <AdminCategoriesDialog onClose={() => setCategories(false)} />}
+  </section>
 }
