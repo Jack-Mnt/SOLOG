@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test'
 import { deriveCajeroProgress, initialCajeroStockType } from '../src/features/solog/cajero/cajero.progress'
-import type { CashierPanel } from '../src/features/solog/cajero/cajero.v2'
-import { cashierFixture } from './fixtures/cashier-v4.mjs'
+import type { CashierV3Panel } from '../src/features/solog/cajero/cajero.v3'
+import { cashierV3Panel } from './fixtures/cashier-v3.mjs'
 
 function panel() {
-  const value = cashierFixture().panel_state as CashierPanel
+  const value = structuredClone(cashierV3Panel()) as CashierV3Panel
   const base = value.groups[0]!
   value.groups = [
     { ...base, grupo_id: 'p', stock_teorico: 4 },

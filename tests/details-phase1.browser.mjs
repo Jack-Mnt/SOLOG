@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
 import { summaryFixture } from './fixtures/details-v2.mjs'
-import { cashierFixture } from './fixtures/cashier-v4.mjs'
+import { cashierV3Bootstrap } from './fixtures/cashier-v3.mjs'
 
 const { chromium } = await import(process.env.SOLOG_PLAYWRIGHT_MODULE
   ? pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href : 'playwright')
@@ -60,14 +60,11 @@ await context.route('**/*', async (route) => {
   const payload = request.postDataJSON() ?? {}
   calls.push({ rpc, payload })
   if (rpc === 'rpc_solog_route_v2') return fulfill({ contract_version: 2, generated_at: serverNow, identity: bootstrap.usuario, route: '/cajero' })
-  if (rpc === 'rpc_solog_cashier_bootstrap_v2') {
+  if (rpc === 'rpc_solog_cashier_bootstrap_v3') {
     bootstrapStartedResolve()
     await new Promise((resolve) => { releaseBootstrap = resolve })
-    const cashier = cashierFixture()
+    const cashier = cashierV3Bootstrap('unauthorized')
     cashier.identity = bootstrap.usuario
-    cashier.device.autorizado = false
-    cashier.start_capability.allowed = false
-    cashier.start_capability.reason = 'SOLOG_DEVICE_UNAUTHORIZED'
     return fulfill(cashier)
   }
   if (rpc === 'rpc_solog_details_v2' && payload.p_action === 'summary') return fulfill(detailsSummary)

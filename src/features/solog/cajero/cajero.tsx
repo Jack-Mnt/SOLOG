@@ -85,9 +85,13 @@ export function Cajero({
             ) : null}
           </div>
         ) : null}
-        {session.needsCapabilityRefresh || session.effectiveMode === 'expired' ? (
+        {session.needsSynchronization || session.needsCapabilityRefresh || session.effectiveMode === 'expired' ? (
           <div className="cajero-alert cajero-alert--warning" role="status">
-            <p>{session.needsCapabilityRefresh ? 'El conteo fue iniciado. Falta confirmar su capacidad de captura.' : 'Consulta el estado actual antes de iniciar otro conteo.'}</p>
+            <p>{session.needsSynchronization
+              ? 'El conteo ya finalizó. Actualiza el panel para obtener el estado vigente.'
+              : session.needsCapabilityRefresh
+                ? 'El conteo fue iniciado. Falta confirmar su capacidad de captura.'
+                : 'Consulta el estado actual antes de iniciar otro conteo.'}</p>
             <button className="button button--secondary" type="button" disabled={session.sending}
               onClick={() => void session.refresh()}>Consultar estado de sesión</button>
           </div>

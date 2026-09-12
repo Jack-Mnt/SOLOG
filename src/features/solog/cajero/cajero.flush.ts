@@ -71,7 +71,7 @@ export class CashierDraftCoordinator {
           : buildNextCajeroRecountBatch(scope)
         if (!batch) break
         const before = this.pending(scope)
-        // mutate adopta state antes de resolver; solo después retiramos confirmados.
+        // mutate adopta el delta antes de resolver; solo después retiramos confirmados.
         this.confirm(scope, await this.store.mutate(action, { items: batch.items }))
         if (this.pending(scope) >= before) throw new Error('El envío no confirmó los borradores pendientes. Reintenta la operación.')
       }
@@ -89,10 +89,21 @@ export class CashierDraftCoordinator {
     }
     if (pendingAction) {
       const response = await this.store.retryPending()
-      if (scope && response && response.action !== 'finish') this.confirm(scope, response)
+      if (response?.action === 'finish') {
+        await this.store.synchronizeAfterFinish()
+        return
+      }
+      if (scope && response) this.confirm(scope, response)
     }
-    if (command === 'retry') return
+    if (command === 'retry') {
+      if (this.store.needsSynchronization) await this.store.synchronizeAfterFinish()
+      return
+    }
     if (!scope) {
+      if (command === 'finish' && this.store.finishResult) {
+        await this.store.synchronizeAfterFinish()
+        return
+      }
       if (command === 'finish' && !this.store.bootstrap?.panel_state?.session) return
       throw new Error('No hay un conteo activo.')
     }
@@ -104,7 +115,7 @@ export class CashierDraftCoordinator {
       if (this.store.bootstrap?.panel_state?.session?.estado !== 'finalizado') {
         await this.store.mutate('finish')
       }
-      await this.store.refresh()
+      await this.store.synchronizeAfterFinish()
     }
   }
 }

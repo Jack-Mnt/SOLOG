@@ -9,9 +9,9 @@ import { ManagementStore } from '../src/features/solog/admin/admin.management.st
 import { ManagementError, type managementRead, type managementMutate } from '../src/features/solog/admin/admin.management.v2'
 import { bootstrapFixture } from './fixtures/admin-v2.mjs'
 import { managementFixture, mutationFixture } from './fixtures/admin-management.mjs'
-import { CashierStore } from '../src/features/solog/cajero/cajero.v2.store'
-import { parseCashierBootstrap, panelFromState } from '../src/features/solog/cajero/cajero.v2.api'
-import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { CashierV3Store } from '../src/features/solog/cajero/cajero.v3.store'
+import { parseCashierV3Bootstrap } from '../src/features/solog/cajero/cajero.v3.api'
+import { cashierV3Bootstrap } from './fixtures/cashier-v3.mjs'
 
 test('G2 mismo origen, estado vigente y valores en Dashboard/Control/ambos exports', () => {
   const s = scenario()
@@ -99,15 +99,16 @@ test('G2 dos admins: conflicto no es éxito; recarga y nueva intención con revi
 })
 
 test('G2 publicación/cambio maestro no altera una sesión Cajero congelada', async () => {
-  const bootstrap = parseCashierBootstrap(cashierFixture()), state = startedFixture()
-  bootstrap.session_state = state; bootstrap.panel_state = panelFromState(state)
-  const cashier = new CashierStore('user-1','device',()=>{}, { bootstrap: async()=>bootstrap, mutate: async()=>{throw new Error('Sin escritura operativa')} })
+  const bootstrap = parseCashierV3Bootstrap(cashierV3Bootstrap('session'))
+  const cashier = new CashierV3Store('user-1','device',()=>{}, {
+    bootstrap: async()=>bootstrap, mutate: async()=>{throw new Error('Sin escritura operativa')},
+  })
   await cashier.refresh(); const frozen = structuredClone(cashier.bootstrap)
   const admin = new ManagementStore('admin-test',bootstrapFixture,()=>{},undefined,
     (async(a,p)=>mutationFixture(a,p)) as typeof managementMutate)
   await admin.mutation('update_package_price',{grupo_id:'group-1',precio_paquete:99},3)
   expect(cashier.bootstrap).toEqual(frozen)
-  expect(cashier.bootstrap?.panel_state.basis.groups_revision).toBe(7)
+  expect(cashier.bootstrap?.panel_state?.basis.groups_revision).toBe(7)
 })
 
 test('G2 familia estable: ignore/reactivate/propose mantienen scope y refrescan catálogo', async () => {
@@ -131,18 +132,21 @@ test('G2 familia estable: ignore/reactivate/propose mantienen scope y refrescan 
 })
 
 test('G2 revocación Admin se refleja al refrescar Cajero y limpia borradores', async () => {
-  const fixture = cashierFixture(); let clears = 0
+  const fixture = cashierV3Bootstrap('pre_session'); let clears = 0
   fixture.site.id = 'site-a'; fixture.device.id = 'site-a-device-0'
-  const cashier = new CashierStore('user-1','device',()=>{clears++},{
-    bootstrap:async()=>parseCashierBootstrap(structuredClone(fixture)),mutate:async()=>{throw new Error('No escritura')}
+  const cashier = new CashierV3Store('user-1','device',()=>{clears++},{
+    bootstrap:async()=>parseCashierV3Bootstrap(structuredClone(fixture)),
+    mutate:async()=>{throw new Error('No escritura')},
   })
   await cashier.refresh(); const previous = clears
   const admin = new ManagementStore('admin-test',bootstrapFixture,()=>{},undefined,
     (async(a,p)=>mutationFixture(a,p)) as typeof managementMutate)
   const revoked = await admin.mutation('revoke',{device_id:'site-a-device-0'},2,'site-a')
   expect(revoked.authorized_device).toBeNull()
-  // Explicit next backend bootstrap for this simulated device, not a frontend inference.
   fixture.device.autorizado = false; fixture.device.estado = 'revocado'; fixture.revisions.devices = 3
+  fixture.start_capability = { allowed: false, reason: 'SOLOG_DEVICE_UNAUTHORIZED' }
+  fixture.stock = { snapshot_id: null, capturado_at: null, confirmado_at: null, snapshot_expira_at: null, version_catalogo: null }
+  fixture.pre_session_summary = null
   await cashier.refresh()
   expect(cashier.bootstrap?.device.autorizado).toBe(false); expect(clears).toBeGreaterThan(previous)
 })

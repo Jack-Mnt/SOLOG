@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type { SologActiveSession, SologStockState } from '../types'
-import type { CashierBootstrap } from './cajero.v2'
 import type { CashierV3Bootstrap } from './cajero.v3'
 
 export const CAJERO_STOCK_UPDATED_LIMIT_MS = 90 * 60 * 1000
@@ -114,11 +113,8 @@ export function getCajeroStockPresentation(
   }
 }
 
-export function getCashierStockPresentation(bootstrap: CashierV3Bootstrap | CashierBootstrap, now: number): CajeroStockPresentation {
-  const stock = 'stock' in bootstrap ? bootstrap.stock : {
-    snapshot_id: bootstrap.start_capability.snapshot_id, capturado_at: bootstrap.start_capability.snapshot_at,
-    snapshot_expira_at: bootstrap.start_capability.snapshot_expira_at,
-  }
+export function getCashierStockPresentation(bootstrap: CashierV3Bootstrap, now: number): CajeroStockPresentation {
+  const stock = bootstrap.stock
   const panel = bootstrap.panel_state
   if (panel?.session?.estado === 'activo' && now >= Date.parse(panel?.session.expira_at) && now < Date.parse(panel?.session.recovery_until)) {
     return { state: 'near_expiry', label: 'Sesión en recuperación', countdown: null,

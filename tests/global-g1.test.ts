@@ -1,15 +1,10 @@
 import { expect, test } from 'bun:test'
-import { CashierStore } from '../src/features/solog/cajero/cajero.v2.store'
-import { parseCashierBootstrap } from '../src/features/solog/cajero/cajero.v2.api'
 import { DetailsStore } from '../src/features/solog/detalles/detalles.store'
 import type { detailsRpc } from '../src/features/solog/detalles/detalles.v2'
 import { AdminStore } from '../src/features/solog/admin/admin.v2.store'
 import type { adminRpc } from '../src/features/solog/admin/admin.v2'
 import { ManagementStore } from '../src/features/solog/admin/admin.management.store'
 import { ManagementError, type managementRead, type managementMutate } from '../src/features/solog/admin/admin.management.v2'
-import { cashierFixture, startedFixture, capabilityFixture } from './fixtures/cashier-v4.mjs'
-import { panelFromState } from '../src/features/solog/cajero/cajero.v2.api'
-import type { CashierAction, CashierMutation } from '../src/features/solog/cajero/cajero.v2'
 import { SologApiError } from '../src/features/solog/errors'
 import { summaryFixture, detailFixture } from './fixtures/details-v2.mjs'
 import { bootstrapFixture, responseFixture } from './fixtures/admin-v2.mjs'
@@ -21,32 +16,6 @@ function deferred<T>() {
   return { promise, resolve, reject }
 }
 
-for (const action of ['start', 'save_batch', 'recount_save_batch', 'finish'] as CashierAction[]) {
-  test('G1 Cajero '+action+' conserva intención y estado autoritativo al recuperar replay', async () => {
-    const sent: Record<string, unknown>[] = []
-    const bootstrap = parseCashierBootstrap(cashierFixture())
-    const state = startedFixture()
-    if (action !== 'start') { bootstrap.session_state = state; bootstrap.panel_state = panelFromState(state) }
-    if (action !== 'start') bootstrap.session_capability = capabilityFixture(state, bootstrap.server_now)
-    const result = { contract_version: 2, generated_at: bootstrap.generated_at, replay: true, action,
-      conteo_id: 'session-1', revisions: { groups: 7, devices: 2, operational: 11 }, state } as CashierMutation
-    if (action === 'save_batch' || action === 'recount_save_batch') { result.saved = 1; result.items = [] }
-    const store = new CashierStore('user-1', 'token', () => {}, {
-      bootstrap: async () => bootstrap,
-      mutate: async (_a, p) => { sent.push(p); if (sent.length === 1) throw new Error('timeout'); return result },
-    })
-    await store.refresh()
-    const body = action === 'save_batch'
-      ? { items: [{ grupo_id: 'group-1', stock_fisico: 10, contado_at: bootstrap.generated_at }] }
-      : action === 'recount_save_batch' ? { items: [{ detalle_id: 'detail-origin', stock_fisico: 10, contado_at: bootstrap.generated_at }] } : {}
-    await expect(store.mutate(action, body)).rejects.toThrow('timeout')
-    const clock = store.serverOffsetMs
-    expect((await store.retryPending())?.replay).toBe(true)
-    expect(sent[0]).toEqual(sent[1]); expect(store.bootstrap?.panel_state.kpis).toEqual(result.state!.kpis)
-    expect(store.serverOffsetMs).toBe(clock); expect(store.hasPendingIntent).toBe(false)
-  })
-}
-
 test('G1 Detalles error de acceso tardío no borra resumen de otra sede', async () => {
   const delayed = deferred<unknown>(); const fixture = summaryFixture()
   const store = new DetailsStore('user', 'token', (async a =>
@@ -56,31 +25,6 @@ test('G1 Detalles error de acceso tardío no borra resumen de otra sede', async 
   delayed.reject(new SologApiError('SOLOG_AUTH_REQUIRED'))
   await expect(old).rejects.toThrow('contexto')
   expect(store.summary?.site.id).toBe('site-2')
-})
-
-test('G1 Cajero serializa refresh con mutaciones: bootstrap previo no pisa start', async () => {
-  const delayed = deferred<ReturnType<typeof parseCashierBootstrap>>()
-  let calls = 0, mutations = 0
-  const store = new CashierStore('user-1', 'token', () => {}, {
-    bootstrap: async () => ++calls === 1 ? parseCashierBootstrap(cashierFixture()) : delayed.promise,
-    mutate: async () => { mutations++; throw new Error('No debe ejecutarse') },
-  })
-  await store.refresh()
-  const refresh = store.refresh()
-  await expect(store.mutate('start')).rejects.toThrow('actualización')
-  expect(mutations).toBe(0)
-  delayed.resolve(parseCashierBootstrap(cashierFixture())); await refresh
-})
-
-for (const revision of ['operational', 'devices'] as const) test('G1 Cajero rechaza regresión '+revision, async () => {
-  const fixture = cashierFixture()
-  const store = new CashierStore('user-1', 'token', () => {}, {
-    bootstrap: async () => parseCashierBootstrap(structuredClone(fixture)), mutate: async () => { throw new Error('No mutation') },
-  })
-  await store.refresh(); const previous = store.bootstrap
-  fixture.revisions[revision]--
-  await expect(store.refresh()).rejects.toThrow('obsoleta')
-  expect(store.bootstrap).toBe(previous)
 })
 
 test('G1 Detalles no restaura autorización de dispositivo antigua', async () => {

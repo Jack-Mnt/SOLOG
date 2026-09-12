@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { cashierHistoryDate, CashierHistoryCache, parseCashierHistory, type CashierHistory, type CashierHistoryPeriod } from '../src/features/solog/cajero/cajero.history'
 import { getCajeroStockPresentation, getCashierStockPresentation } from '../src/features/solog/cajero/cajero.stock'
-import { CashierStore } from '../src/features/solog/cajero/cajero.v2.store'
-import { parseCashierBootstrap } from '../src/features/solog/cajero/cajero.v2.api'
-import { cashierFixture, startedFixture } from './fixtures/cashier-v4.mjs'
+import { parseCashierV3Bootstrap } from '../src/features/solog/cajero/cajero.v3.api'
+import { cashierV3Bootstrap } from './fixtures/cashier-v3.mjs'
 const now = Date.parse('2026-09-03T20:30:00Z')
 function history(period: CashierHistoryPeriod = 'today', revision = 10): CashierHistory {
   return { contract_version: 2, generated_at: new Date(now).toISOString(), period,
@@ -77,30 +76,6 @@ describe('C4 historial V4', () => {
   })
 })
 describe('C4 tiempo y expiración', () => {
-  test('retry de intención comprometida conserva UUID al expirar y reemplaza KPI una sola vez', async () => {
-    const b = parseCashierBootstrap(cashierFixture())
-    const state = startedFixture()
-    b.panel_state = { ...state, basis: b.panel_state.basis, source: 'session', frozen: true }
-    const payloads: Record<string, unknown>[] = []
-    const store = new CashierStore('user-1', 'token', () => {}, {
-      bootstrap: async () => b,
-      mutate: async (action, payload) => {
-        payloads.push(payload)
-        if (payloads.length === 1) throw new Error('respuesta perdida')
-        return { contract_version: 2, generated_at: b.server_now, action, replay: true,
-          conteo_id: state.session.id, revisions: b.revisions, state }
-      },
-    })
-    await store.refresh()
-    await expect(store.mutate('save_batch', { items: [{ grupo_id: 'group-1', stock_fisico: 9, contado_at: b.server_now }] })).rejects.toThrow()
-    store.serverOffsetMs += 3 * 3600000
-    const offset = store.serverOffsetMs
-    await store.retryPending()
-    expect(payloads[0]).toEqual(payloads[1])
-    expect(store.hasPendingIntent).toBe(false)
-    expect(store.serverOffsetMs).toBe(offset)
-    expect(store.bootstrap?.panel_state.kpis).toEqual(state.kpis)
-  })
   test('fronteras 90/110/117 y vencimiento autoritativo', () => {
     const stock = { snapshot_at: new Date(now).toISOString(), snapshot_expira_at: new Date(now + 120 * 60000).toISOString(), disponible: true, vigente: true }
     const session = { expira_at: stock.snapshot_expira_at }
@@ -109,34 +84,12 @@ describe('C4 tiempo y expiración', () => {
     }
     expect(getCajeroStockPresentation(stock, session, now + 117 * 60000).countdown).toBe('03:00')
   })
-  test('nuevo snapshot no extiende sesión congelada', () => {
-    const b = parseCashierBootstrap(cashierFixture())
-    const state = startedFixture()
-    b.panel_state = { ...state, basis: b.panel_state.basis, source: 'session', frozen: true }
-    b.start_capability.snapshot_id = 'newer'
-    const expiry = Date.parse(state.session.expira_at)
+  test('nuevo snapshot no extiende sesión congelada V3', () => {
+    const b = parseCashierV3Bootstrap(cashierV3Bootstrap('session'))
+    b.stock.snapshot_id = 'newer'
+    const expiry = Date.parse(b.panel_state!.session.expira_at)
     expect(getCashierStockPresentation(b, expiry - 60000).countdown).toBe('01:00')
     expect(getCashierStockPresentation(b, expiry).label).toBe('Sesión en recuperación')
-    expect(getCashierStockPresentation(b, Date.parse(state.session.recovery_until)).state).toBe('expired')
-  })
-  test('V8 permite entrega y finish en recuperación, no después de recovery_until', async () => {
-    let calls = 0
-    const b = parseCashierBootstrap(cashierFixture())
-    const state = startedFixture()
-    state.session.expira_at = b.server_now
-    b.session_capability = { mode: 'recovery', capture_allowed: false, pending_delivery_allowed: true, recovery_until: state.session.recovery_until }
-    b.panel_state = { ...state, basis: b.panel_state.basis, source: 'session', frozen: true }
-    const store = new CashierStore('user-1', 'token', () => {}, {
-      bootstrap: async () => b,
-      mutate: async (action) => { calls++; return { contract_version: 2, generated_at: b.server_now, action, replay: false, conteo_id: state.session.id, revisions: b.revisions, state } },
-    })
-    await store.refresh()
-    await store.mutate('recount_save_batch', { items: [{ detalle_id: 'detail-origin', stock_fisico: 8, contado_at: b.server_now }] })
-    expect(calls).toBe(1)
-    await store.mutate('finish')
-    expect(calls).toBe(2)
-    store.serverOffsetMs = Date.parse(state.session.recovery_until) - Date.now()
-    await expect(store.mutate('finish')).rejects.toMatchObject({ code: 'SOLOG_SESSION_EXPIRED' })
-    expect(calls).toBe(2)
+    expect(getCashierStockPresentation(b, Date.parse(b.panel_state!.session.recovery_until)).state).toBe('expired')
   })
 })

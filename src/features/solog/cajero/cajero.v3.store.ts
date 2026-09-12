@@ -3,7 +3,7 @@ import { SologApiError } from '../errors'
 import { fetchCashierV3Bootstrap, mutateCashierV3 } from './cajero.v3.api'
 import { applyCashierV3PanelDelta } from './cajero.v3.panel'
 import type {
-  CashierV3Action, CashierV3Bootstrap, CashierV3MutationResult, CashierV3Panel,
+  CashierV3Action, CashierV3Bootstrap, CashierV3FinishResult, CashierV3MutationResult, CashierV3Panel,
   CashierV3RecountBatchResult, CashierV3SaveBatchResult,
 } from './cajero.v3'
 import { cashierCapability } from './cajero.capability'
@@ -65,9 +65,12 @@ export class CashierV3Store {
   revision = 0
   busy = false
   serverOffsetMs = 0
+  finishResult: CashierV3FinishResult | null = null
+  synchronizationError: unknown = null
   private expiredSessions = new Set<string>()
   private recoverySessions = new Set<string>()
   get needsCapabilityRefresh() { return false }
+  get needsSynchronization() { return this.finishResult !== null && this.synchronizationError !== null }
   get capability() {
     const result = cashierCapability(this.bootstrap, Date.now() + this.serverOffsetMs)
     const id = this.bootstrap?.panel_state?.session.id
@@ -102,6 +105,8 @@ export class CashierV3Store {
     this.history.clear()
     this.generation++
     this.bootstrap = null
+    this.finishResult = null
+    this.synchronizationError = null
     this.intent = null
     this.expiredSessions.clear()
     this.recoverySessions.clear()
@@ -132,6 +137,7 @@ export class CashierV3Store {
         throw new Error('Respuesta de Cajero obsoleta. Vuelve a consultar.')
       }
       this.bootstrap = next
+      this.synchronizationError = null
       this.serverOffsetMs = Date.parse(next.server_now) - Date.now()
       if (previousScope !== this.scope || !next.device.autorizado) this.invalidate()
       if (previous?.identity.id !== next.identity.id || previous?.site.id !== next.site.id || previous?.device.id !== next.device.id) this.history.clear()
@@ -139,6 +145,12 @@ export class CashierV3Store {
         previous?.device.id !== next.device.id || previous?.revisions.devices !== next.revisions.devices ||
         previousRevision !== next.revisions.operational || !next.device.autorizado) this.history.invalidate(next.revisions.operational)
       this.emit()
+    }).catch((error: unknown) => {
+      if (generation === this.generation) {
+        this.synchronizationError = error
+        this.emit()
+      }
+      throw error
     }).finally(() => { if (this.loading === request) this.loading = null })
     this.loading = request
     return request
@@ -156,6 +168,15 @@ export class CashierV3Store {
     return this.mutate(this.intent.action, body)
   }
   async start() { return this.mutate('start') }
+  async synchronizeAfterFinish() {
+    if (!this.finishResult) return true
+    try {
+      await this.refresh()
+      return true
+    } catch {
+      return false
+    }
+  }
   async mutate(action: CashierV3Action, body: Record<string, unknown> = {}): Promise<CashierV3MutationResult> {
     const b = this.bootstrap
     if (this.loading) throw new Error('Espera a que termine la actualización del panel.')
@@ -222,6 +243,8 @@ export class CashierV3Store {
       if (response.action === 'start') {
         if (response.panel_state.session.usuario_id !== this.userId || response.panel_state.session.sede_id !== b.site.id ||
           response.revisions.groups !== response.panel_state.session.groups_revision) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+        this.finishResult = null
+        this.synchronizationError = null
         this.bootstrap = { ...b, generated_at: response.generated_at, server_now: response.generated_at,
           revisions: response.revisions, stock: response.stock,
           session_capability: response.session_capability, pre_session_summary: null, panel_state: response.panel_state }
@@ -232,8 +255,11 @@ export class CashierV3Store {
           revisions: response.revisions, session_capability: response.session_capability,
           panel_state: applyCashierV3PanelDelta(currentPanel!, response.panel_delta) }
       } else {
+        this.finishResult = response
+        this.synchronizationError = null
         this.bootstrap = { ...b, generated_at: response.generated_at, server_now: response.generated_at,
-          revisions: response.revisions, session_capability: response.session_capability }
+          revisions: response.revisions, session_capability: response.session_capability,
+          pre_session_summary: null, panel_state: null }
         this.invalidate()
       }
       if (!response.replay) this.serverOffsetMs = Math.max(this.serverOffsetMs, Date.parse(response.generated_at) - Date.now())

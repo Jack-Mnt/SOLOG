@@ -153,10 +153,12 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const executeDraftCommand = useCallback(async (command: Parameters<CashierDraftCoordinator['run']>[0]) => {
     try {
       await draftCoordinator.run(command)
-      setError(null)
+      setError(store.needsSynchronization
+        ? 'El conteo finalizó correctamente, pero no se pudo actualizar el panel. Reintenta la sincronización.'
+        : null)
       return true
     } catch (e) { await handleError(e); return false }
-  }, [draftCoordinator, handleError])
+  }, [draftCoordinator, handleError, store])
   const retryPending = useCallback(() => executeDraftCommand('retry'), [executeDraftCommand])
   const sendPending = useCallback(() => executeDraftCommand('normal'), [executeDraftCommand])
   const flushPendingDrafts = useCallback(() => executeDraftCommand('global'), [executeDraftCommand])
@@ -216,7 +218,7 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const loadHistory = useCallback((period: CashierHistoryPeriod) => store.history.load(period, () => Date.now() + store.serverOffsetMs), [store])
   return {
     activeScope, blockReason, canCapture, canDeliver, effectiveMode, inactive,
-    needsCapabilityRefresh: store.needsCapabilityRefresh,
+    needsCapabilityRefresh: store.needsCapabilityRefresh, needsSynchronization: store.needsSynchronization,
     recoveryUntil: currentSession?.recovery_until ?? null,
     error, pendingCount, normalPendingCount, recountPendingCount,
     pendingIntent: store.hasPendingIntent, pendingAction: store.pendingAction, sending: store.busy || orchestrating, starting: store.busy || orchestrating,
