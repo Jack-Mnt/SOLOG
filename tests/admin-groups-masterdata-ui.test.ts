@@ -101,6 +101,8 @@ describe('Categorías desde Grupos', () => {
     expect(ui).toContain('className="admin-groups__valuation"')
     expect(ui).toContain('<Value value={group.precio} money /> / unidad')
     expect(ui).toContain('<small><Valuation group={group} /></small>')
+    expect(ui).toContain('Sin paquete')
+    expect(ui).not.toContain('<th scope="col">Editar</th>')
     expect(ui).toContain('Editar valorizado de')
     expect(ui).not.toContain('value={group.precio} onChange')
   })
