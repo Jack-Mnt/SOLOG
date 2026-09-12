@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSologErrorMessageFromUnknown } from "../errors";
-import type { CashierBootstrap } from "./cajero.v2";
+import type { CashierV3Bootstrap } from "./cajero.v3";
 import {
   CajeroCaptureModal,
   type CajeroCaptureView,
@@ -53,7 +53,7 @@ export function CajeroConteo({
   bootstrap,
   session,
 }: {
-  bootstrap: CashierBootstrap;
+  bootstrap: CashierV3Bootstrap;
   session: CajeroSessionController;
 }) {
   const [selectedType, setSelectedType] = useState<CajeroStockType | null>(
@@ -68,7 +68,7 @@ export function CajeroConteo({
   const requestVersion = useRef(0);
   const activeScope = session.activeScope;
   const activeCountId = activeScope?.conteo_id ?? null;
-  const hasActiveSession = Boolean(bootstrap.panel_state.session);
+  const hasActiveSession = Boolean(bootstrap.panel_state?.session);
   const loadOperationalGroups = session.loadOperationalGroups;
 
   const loadGroups = useCallback(async () => {
@@ -104,7 +104,7 @@ export function CajeroConteo({
     };
   }, [loadGroups, session.cacheRevision]);
 
-  if (!bootstrap.panel_state.session || !activeScope) {
+  if (!bootstrap.panel_state?.session || !activeScope) {
     return (
       <section className="cajero-module" aria-labelledby="cajero-conteo-title">
         <div className="cajero-module__heading">

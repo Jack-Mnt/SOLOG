@@ -1,10 +1,11 @@
 import type { CashierBootstrap } from './cajero.v2'
+import type { CashierV3Bootstrap } from './cajero.v3'
 
 export type CashierEffectiveMode = 'none' | 'active' | 'recovery' | 'expired'
 
 // El reloj solo restringe la capacidad recibida. Nunca inventa permisos backend.
-export function cashierCapability(b: CashierBootstrap | null, now: number) {
-  const session = b?.panel_state.session
+export function cashierCapability(b: CashierV3Bootstrap | CashierBootstrap | null, now: number) {
+  const session = b?.panel_state?.session
   const capability = b?.session_capability
   let mode: CashierEffectiveMode = 'none'
   if (session) {

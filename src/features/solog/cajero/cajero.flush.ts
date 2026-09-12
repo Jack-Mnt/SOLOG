@@ -1,5 +1,5 @@
-import type { CashierStore } from './cajero.v2.store'
-import type { CashierCountSavedItem, CashierMutation, CashierRecountSavedItem } from './cajero.v2'
+import type { CashierV3Store } from './cajero.v3.store'
+import type { CashierV3CountSavedItem, CashierV3MutationResult, CashierV3RecountSavedItem } from './cajero.v3'
 import type { CajeroBufferScope } from './cajero.types'
 import {
   buildNextCajeroBatch, buildNextCajeroRecountBatch, readCajeroBuffer,
@@ -13,7 +13,7 @@ type Command = 'normal' | 'global' | 'finish' | 'retry'
 export class CashierDraftCoordinator {
   private running: { command: Command; promise: Promise<void> } | null = null
   private listeners = new Set<() => void>()
-  constructor(private store: CashierStore) {}
+  constructor(private store: CashierV3Store) {}
   getSnapshot = () => this.running !== null
   subscribe = (listener: () => void) => {
     this.listeners.add(listener)
@@ -37,7 +37,7 @@ export class CashierDraftCoordinator {
 
   private scope(): CajeroBufferScope | null {
     const b = this.store.bootstrap
-    const session = b?.panel_state.session
+    const session = b?.panel_state?.session
     return b && session && b.device.id ? {
       usuario_id: b.identity.id, sede_id: b.site.id, dispositivo_id: b.device.id,
       conteo_id: session.id, groups_revision: session.groups_revision,
@@ -51,15 +51,15 @@ export class CashierDraftCoordinator {
   private pending(scope: CajeroBufferScope) {
     return readCajeroBuffer(scope).items.length + readCajeroRecountDrafts(scope).items.length
   }
-  private confirm(scope: CajeroBufferScope, response: CashierMutation) {
+  private confirm(scope: CajeroBufferScope, response: CashierV3MutationResult) {
     this.assertScope(scope)
     if (response.action === 'save_batch') {
-      for (const item of (response.items ?? []) as CashierCountSavedItem[]) {
+      for (const item of (response.items ?? []) as CashierV3CountSavedItem[]) {
         removeCajeroObservation(scope, item.grupo_id)
         removeCajeroExpressionDrafts(scope, [item.grupo_id])
       }
     } else if (response.action === 'recount_save_batch') {
-      removeCajeroRecountDrafts(scope, ((response.items ?? []) as CashierRecountSavedItem[]).map((item) => item.detalle_id))
+      removeCajeroRecountDrafts(scope, ((response.items ?? []) as CashierV3RecountSavedItem[]).map((item) => item.detalle_id))
     }
   }
   private async flushPendingDrafts(scope: CajeroBufferScope, normalOnly: boolean) {
@@ -89,12 +89,11 @@ export class CashierDraftCoordinator {
     }
     if (pendingAction) {
       const response = await this.store.retryPending()
-      if (response?.action === 'start') await this.store.refresh()
       if (scope && response && response.action !== 'finish') this.confirm(scope, response)
     }
     if (command === 'retry') return
     if (!scope) {
-      if (command === 'finish' && !this.store.bootstrap?.panel_state.session) return
+      if (command === 'finish' && !this.store.bootstrap?.panel_state?.session) return
       throw new Error('No hay un conteo activo.')
     }
     this.assertScope(scope)
@@ -102,7 +101,7 @@ export class CashierDraftCoordinator {
     if (command === 'finish') {
       this.assertScope(scope)
       // Un retry de finish ya comprometido no crea una segunda finalización.
-      if (this.store.bootstrap?.panel_state.session?.estado !== 'finalizado') {
+      if (this.store.bootstrap?.panel_state?.session?.estado !== 'finalizado') {
         await this.store.mutate('finish')
       }
       await this.store.refresh()

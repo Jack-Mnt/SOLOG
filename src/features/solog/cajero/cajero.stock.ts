@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { SologActiveSession, SologStockState } from '../types'
 import type { CashierBootstrap } from './cajero.v2'
+import type { CashierV3Bootstrap } from './cajero.v3'
 
 export const CAJERO_STOCK_UPDATED_LIMIT_MS = 90 * 60 * 1000
 export const CAJERO_STOCK_NEAR_LIMIT_MS = 110 * 60 * 1000
@@ -113,30 +114,33 @@ export function getCajeroStockPresentation(
   }
 }
 
-export function getCashierStockPresentation(bootstrap: CashierBootstrap, now: number): CajeroStockPresentation {
-  const panel = bootstrap.panel_state
-  const capability = bootstrap.start_capability
-  if (panel.session?.estado === 'activo' && now >= Date.parse(panel.session.expira_at) && now < Date.parse(panel.session.recovery_until)) {
-    return { state: 'near_expiry', label: 'Sesión en recuperación', countdown: null,
-      elapsedMs: null, stockExpiresAtMs: null, sessionExpiresAtMs: Date.parse(panel.session.expira_at) }
+export function getCashierStockPresentation(bootstrap: CashierV3Bootstrap | CashierBootstrap, now: number): CajeroStockPresentation {
+  const stock = 'stock' in bootstrap ? bootstrap.stock : {
+    snapshot_id: bootstrap.start_capability.snapshot_id, capturado_at: bootstrap.start_capability.snapshot_at,
+    snapshot_expira_at: bootstrap.start_capability.snapshot_expira_at,
   }
-  if (panel.source === 'session' && panel.basis.snapshot_referencia_id !== capability.snapshot_id) {
-    const remaining = Date.parse(panel.session.expira_at) - now
+  const panel = bootstrap.panel_state
+  if (panel?.session?.estado === 'activo' && now >= Date.parse(panel?.session.expira_at) && now < Date.parse(panel?.session.recovery_until)) {
+    return { state: 'near_expiry', label: 'Sesión en recuperación', countdown: null,
+      elapsedMs: null, stockExpiresAtMs: null, sessionExpiresAtMs: Date.parse(panel?.session.expira_at) }
+  }
+  if (panel?.source === 'session' && panel?.basis.snapshot_referencia_id !== stock.snapshot_id) {
+    const remaining = Date.parse(panel?.session.expira_at) - now
     // Helper desplegado: expira a 1:59; banda final desde 1:57.
     const countdown = remaining > 0 && remaining <= 2 * 60_000
     return {
       state: remaining <= 0 ? 'expired' : countdown ? 'countdown' : 'updated',
-      label: now >= Date.parse(panel.session.expira_at) ? 'Sesión vencida' : 'Sesión con referencia congelada',
+      label: now >= Date.parse(panel?.session.expira_at) ? 'Sesión vencida' : 'Sesión con referencia congelada',
       countdown: countdown ? formatCajeroCountdown(remaining) : null, elapsedMs: null, stockExpiresAtMs: null,
-      sessionExpiresAtMs: Date.parse(panel.session.expira_at),
+      sessionExpiresAtMs: Date.parse(panel?.session.expira_at),
     }
   }
   return getCajeroStockPresentation({
-    snapshot_at: capability.snapshot_at,
-    snapshot_expira_at: capability.snapshot_expira_at,
-    disponible: capability.snapshot_id !== null,
-    vigente: capability.snapshot_expira_at !== null && now < Date.parse(capability.snapshot_expira_at),
-  }, panel.session, now)
+    snapshot_at: stock.capturado_at,
+    snapshot_expira_at: stock.snapshot_expira_at,
+    disponible: stock.snapshot_id !== null,
+    vigente: stock.snapshot_expira_at !== null && now < Date.parse(stock.snapshot_expira_at),
+  }, panel?.session ?? null, now)
 }
 
 export type CajeroStartRestriction = 'stock_expired' | 'stock_too_close' | null

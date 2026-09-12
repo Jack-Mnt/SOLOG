@@ -1,7 +1,7 @@
 import { AlertTriangle, RefreshCw, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { replaceRoute } from '../../../lib/router'
-import type { CashierBootstrap } from './cajero.v2'
+import type { CashierV3Bootstrap } from './cajero.v3'
 import { CajeroConteo } from './cajero.conteo'
 import { CajeroDiario } from './cajero.diario'
 import { CajeroBottomNavigation, CajeroHeader } from './cajero.header'
@@ -40,7 +40,7 @@ export function Cajero({
   route,
   onLogout,
 }: {
-  bootstrap: CashierBootstrap
+  bootstrap: CashierV3Bootstrap
   route: CajeroRoute
   onLogout: () => Promise<void>
 }) {

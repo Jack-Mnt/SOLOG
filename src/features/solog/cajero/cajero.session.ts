@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { getSologErrorMessageFromUnknown, SologApiError } from '../errors'
 import type { SologOperationalBootstrap } from '../types'
 import type { CashierHistoryPeriod } from './cajero.history'
-import { useCashier } from './cajero.v2.context'
+import { useCashierV3 } from './cajero.v3.context'
 import { CashierDraftCoordinator } from './cajero.flush'
 import {
   clearCajeroMemory, getCajeroBufferRevision,
@@ -79,12 +79,12 @@ export function isCajeroInactive(lastActivity: number, now: number): boolean {
 
 
 export function useCajeroSession(onLogout: () => Promise<void>) {
-  const store = useCashier()
+  const store = useCashierV3()
   const draftCoordinator = useMemo(() => new CashierDraftCoordinator(store), [store])
   const orchestrating = useSyncExternalStore(draftCoordinator.subscribe, draftCoordinator.getSnapshot, () => false)
   const bootstrap = store.bootstrap!
   const panel = bootstrap.panel_state
-  const currentSession = panel.session
+  const currentSession = panel?.session ?? null
   const [error, setError] = useState<string | null>(null)
   const [, setClock] = useState(0)
   const [inactive, setInactive] = useState(false)
@@ -129,7 +129,7 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   }, [currentSession, serverOffsetMs, store])
   const captureTimestamp = useCallback(() => {
     const b = store.bootstrap
-    const s = b?.panel_state.session
+    const s = b?.panel_state?.session
     if (!s || !store.capability.captureAllowed || inactive || draftCoordinator.getSnapshot() || store.busy || store.hasPendingIntent) {
       throw new SologApiError('SOLOG_SESSION_EXPIRED')
     }
@@ -142,11 +142,11 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
     }
   }, [store])
   const startSession = useCallback(async () => {
-    const session = store.bootstrap?.panel_state.session
+    const session = store.bootstrap?.panel_state?.session
     if (session?.estado === 'activo' && !store.needsCapabilityRefresh && store.capability.mode !== 'expired') return store.capability.captureAllowed
     try {
       if (store.capability.mode === 'expired' && !store.hasPendingIntent) await store.refresh()
-      await store.startAndRefresh(); setError(null); return true
+      await store.start(); setError(null); return true
     }
     catch (e) { await handleError(e); return false }
   }, [store, handleError])
@@ -188,15 +188,15 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
     }
   }, [currentSession])
   const views = useMemo(() => {
-    const lookup = new Map(panel.groups.map((g) => [g.grupo_id, g]))
+    const lookup = new Map((panel?.groups ?? []).map((g) => [g.grupo_id, g]))
     const result = {} as Record<CajeroCachedView, CajeroGroupsResponse>
     for (const view of ['conteo', 'conteo_diario', 'revisar'] as const) {
       const queue: Array<{ grupo_id: string; detalle_id?: string; ultima_diferencia?: number; contado_at?: string }> =
-        view === 'revisar' ? panel.review_queue : panel.count_queue.map((grupo_id) => ({ grupo_id }))
+        view === 'revisar' ? (panel?.review_queue ?? []) : (panel?.count_queue ?? []).map((grupo_id) => ({ grupo_id }))
       result[view] = {
-        conteo_id: panel.session?.id ?? null, vista: view,
-        snapshot_actual_id: panel.basis.snapshot_referencia_id,
-        snapshot_actual_at: panel.basis.snapshot_referencia_id === bootstrap.start_capability.snapshot_id ? bootstrap.start_capability.snapshot_at : null,
+        conteo_id: panel?.session.id ?? null, vista: view,
+        snapshot_actual_id: panel?.basis.snapshot_referencia_id ?? null,
+        snapshot_actual_at: panel?.basis.snapshot_referencia_id === bootstrap.stock.snapshot_id ? bootstrap.stock.capturado_at : null,
         server_now: bootstrap.server_now,
         grupos: queue.map((item) => {
           const g = lookup.get(item.grupo_id)!
@@ -209,7 +209,7 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
       }
     }
     return result
-  }, [panel, bootstrap.server_now, bootstrap.start_capability])
+  }, [panel, bootstrap.server_now, bootstrap.stock])
   const getCachedOperationalGroups = useCallback((view: CajeroCachedView) => views[view], [views])
   const loadOperationalGroups = useCallback(async (view: CajeroCachedView) => views[view], [views])
   const getCachedHistory = useCallback((period: CashierHistoryPeriod) => store.history.get(period, Date.now() + store.serverOffsetMs), [store])
@@ -221,9 +221,9 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
     error, pendingCount, normalPendingCount, recountPendingCount,
     pendingIntent: store.hasPendingIntent, pendingAction: store.pendingAction, sending: store.busy || orchestrating, starting: store.busy || orchestrating,
     startSession, sendPending, flushPendingDrafts, retrySend: retryPending, logoutSafely, finishSession, serverOffsetMs,
-    periodComplete: panel.kpis.coverage_percent === 100,
-    dailyPending: Math.max(0, panel.kpis.count_pending - normalPendingCount),
-    reviewPending: panel.kpis.review_pending, cacheRevision: store.revision,
+    periodComplete: (panel?.kpis.coverage_percent ?? bootstrap.pre_session_summary?.coverage_percent ?? 0) === 100,
+    dailyPending: Math.max(0, (panel?.kpis.count_pending ?? bootstrap.pre_session_summary?.count_pending ?? 0) - normalPendingCount),
+    reviewPending: panel?.kpis.review_pending ?? bootstrap.pre_session_summary?.review_pending ?? 0, cacheRevision: store.revision,
     captureTimestamp, getCachedOperationalGroups, loadOperationalGroups,
     getCachedHistory, loadHistory, clearError: () => setError(null),
     refresh: async () => { try { await store.refresh(); setError(null) } catch (e) { await handleError(e) } },

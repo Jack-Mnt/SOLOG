@@ -14,7 +14,7 @@ import {
 import { navigateTo } from "../../../lib/router";
 import { PaletteSwitcher } from "../../theme/palette-switcher";
 
-import type { CashierBootstrap } from "./cajero.v2";
+import type { CashierV3Bootstrap } from "./cajero.v3";
 import { deriveCajeroProgress } from "./cajero.progress";
 import { readCajeroBuffer } from "./cajero.storage";
 import type { CajeroSessionController } from "./cajero.session";
@@ -71,16 +71,15 @@ export function CajeroInicio({
   bootstrap,
   session,
 }: {
-  bootstrap: CashierBootstrap;
+  bootstrap: CashierV3Bootstrap;
   session: CajeroSessionController;
 }) {
   const now = useCajeroServerClock(session.serverOffsetMs);
-  const stockAvailable =
-    bootstrap.panel_state.basis.snapshot_referencia_id !== null;
+  const stockAvailable = bootstrap.stock.snapshot_id !== null;
   const stockPresentation = getCashierStockPresentation(bootstrap, now);
   const canStart =
     bootstrap.start_capability.allowed &&
-    !bootstrap.panel_state.session &&
+    !bootstrap.panel_state?.session &&
     session.pendingCount === 0;
   const startRestriction = bootstrap.start_capability.reason;
   const periodComplete = session.periodComplete;
@@ -91,10 +90,17 @@ export function CajeroInicio({
       : session.reviewPending > 0
         ? "/cajero/revisar"
         : null;
-  const coverage = bootstrap.panel_state.kpis;
-  const progress = deriveCajeroProgress(bootstrap.panel_state,
-    session.activeScope ? readCajeroBuffer(session.activeScope).items : []);
-  const coveragePercentage = progress.coveragePercent;
+  const coverage = bootstrap.panel_state?.kpis ?? bootstrap.pre_session_summary!;
+  const progress = bootstrap.panel_state
+    ? deriveCajeroProgress(bootstrap.panel_state,
+        session.activeScope ? readCajeroBuffer(session.activeScope).items : [])
+    : null;
+  const coverageCount = progress?.coverageCount ?? coverage.coverage_counted;
+  const coveragePercentage = progress?.coveragePercent ?? coverage.coverage_percent;
+  const stockProgress = (type: 'zero' | 'negative') => progress?.select(type) ?? {
+    completed: bootstrap.pre_session_summary?.stock_types[type].covered ?? 0,
+    total: bootstrap.pre_session_summary?.stock_types[type].total ?? 0,
+  };
 
   const begin = async () => {
     if (operationalRoute && (await session.startSession()))
@@ -139,7 +145,7 @@ export function CajeroInicio({
                 {startRestriction === "SOLOG_STOCK_EXPIRED"
                   ? "Actualiza el inventario desde ConeXion para comenzar un nuevo conteo."
                   : startRestriction === "SOLOG_STOCK_TOO_CLOSE_TO_EXPIRY" &&
-                      !bootstrap.panel_state.session
+                      !bootstrap.panel_state?.session
                     ? "El stock está próximo a vencer. Actualiza el inventario antes de iniciar un nuevo conteo."
                     : formatCajeroElapsed(stockPresentation.elapsedMs)}
               </p>
@@ -148,7 +154,7 @@ export function CajeroInicio({
 
           <div className="cajero-stock-card__actions">
             {operationalRoute ? (
-              bootstrap.panel_state.session ? (
+              bootstrap.panel_state?.session ? (
                 <button
                   className="button"
                   disabled={!session.canCapture}
@@ -169,7 +175,7 @@ export function CajeroInicio({
                 </button>
               )
             ) : null}
-            {bootstrap.panel_state.session ? (
+            {bootstrap.panel_state?.session ? (
               <button
                 className="button button--secondary"
                 disabled={session.sending || !session.canDeliver}
@@ -238,7 +244,7 @@ export function CajeroInicio({
             <div className="cajero-coverage-card__copy">
               <span>Cobertura de la quincena</span>
               <h2 id="cajero-coverage-title">
-                {progress.coverageCount} / {coverage.groups_total}
+                {coverageCount} / {coverage.groups_total}
               </h2>
             </div>
             <div
@@ -278,7 +284,7 @@ export function CajeroInicio({
               <PackageOpen aria-hidden="true" size={23} />
               <span>Stock 0</span>
               <div className="cajero-home-metric__value">
-                <strong>{progress.select("zero").completed}/{progress.select("zero").total}</strong>
+                <strong>{stockProgress("zero").completed}/{stockProgress("zero").total}</strong>
                 <small>grupos</small>
               </div>
             </button>
@@ -291,7 +297,7 @@ export function CajeroInicio({
               <MinusCircle aria-hidden="true" size={23} />
               <span>Stock negativo</span>
               <div className="cajero-home-metric__value">
-                <strong>{progress.select("negative").completed}/{progress.select("negative").total}</strong>
+                <strong>{stockProgress("negative").completed}/{stockProgress("negative").total}</strong>
                 <small>grupos</small>
               </div>
             </button>

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { navigateTo } from '../../../lib/router'
-import type { CashierBootstrap } from './cajero.v2'
+import type { CashierV3Bootstrap } from './cajero.v3'
 import {
   formatCajeroClock,
   formatCajeroElapsed,
@@ -36,7 +36,7 @@ export function CajeroHeader({
   sede,
   onLogout,
 }: {
-  bootstrap: CashierBootstrap
+  bootstrap: CashierV3Bootstrap
   serverOffsetMs: number
   sede: string
   onLogout: () => void
@@ -119,7 +119,7 @@ export function CajeroHeader({
                   <dl>
                     <div><dt>Estado del inventario</dt><dd>{formatCajeroElapsed(presentation.elapsedMs)}</dd></div>
                     {stockExpiresAt ? <div><dt>Vigente hasta</dt><dd>{stockExpiresAt}</dd></div> : null}
-                    {bootstrap.panel_state.session && sessionExpiresAt ? (
+                    {bootstrap.panel_state?.session && sessionExpiresAt ? (
                       <div><dt>Sesión hasta</dt><dd>{sessionExpiresAt}</dd></div>
                     ) : null}
                   </dl>

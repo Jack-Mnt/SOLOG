@@ -1,4 +1,4 @@
-import type { CashierPanel } from './cajero.v2'
+import type { CashierV3Panel } from './cajero.v3'
 import type { CajeroStockType } from './cajero.types'
 
 export function initialCajeroStockType(search: string): CajeroStockType | null {
@@ -8,7 +8,7 @@ export function initialCajeroStockType(search: string): CajeroStockType | null {
 
 /** Visual progress only; the backend remains authoritative for period completion. */
 export function deriveCajeroProgress(
-  panel: Pick<CashierPanel, 'groups' | 'count_queue' | 'kpis'>,
+  panel: Pick<CashierV3Panel, 'groups' | 'count_queue' | 'kpis'>,
   drafts: readonly { grupo_id: string }[],
 ) {
   const queued = new Set(panel.count_queue)

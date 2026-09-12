@@ -1,11 +1,11 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { PanelLoader } from '../../../components/panel-loader'
 import { isCashierRoute, replaceRoute, usePathname } from '../../../lib/router'
-import { CashierProvider, useCashier } from './cajero.v2.context'
+import { CashierV3Provider, useCashierV3 } from './cajero.v3.context'
 const Cajero = lazy(() => import('./cajero').then((module) => ({ default: module.Cajero })))
 
 function Panel({ onLogout }: { onLogout: () => Promise<void> }) {
-  const store = useCashier()
+  const store = useCashierV3()
   const b = store.bootstrap!
   const pathname = usePathname()
   useEffect(() => {
@@ -16,5 +16,5 @@ function Panel({ onLogout }: { onLogout: () => Promise<void> }) {
   return <Suspense fallback={<PanelLoader />}><Cajero bootstrap={b} route={isCashierRoute(pathname) ? pathname : '/cajero'} onLogout={onLogout} /></Suspense>
 }
 export function CajeroApp({ userId, onLogout }: { userId: string; onLogout: () => Promise<void> }) {
-  return <CashierProvider key={userId} userId={userId} onLogout={onLogout}><Panel onLogout={onLogout} /></CashierProvider>
+  return <CashierV3Provider key={userId} userId={userId} onLogout={onLogout}><Panel onLogout={onLogout} /></CashierV3Provider>
 }
