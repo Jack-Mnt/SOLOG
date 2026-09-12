@@ -65,7 +65,7 @@ function ProposalDetail({ proposal, onClose }: { proposal: CatalogProposal; onCl
   const intent = store.intent()
   const run = (action: ProposalAction) => {
     setError('')
-    void store.mutation('proposal_action', { propuesta_fingerprint: proposal.propuesta_fingerprint, action }).then(onClose).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo actualizar la propuesta.'))
+    void store.mutation('proposal_action', { propuesta_fingerprint: proposal.propuesta_fingerprint, action }, { proposal }).then(onClose).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo actualizar la propuesta.'))
   }
   const retry = () => { setError(''); void store.retryMutation().then(onClose).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo confirmar la propuesta.')) }
   const blocked = proposal.estado === 'aprobado' && proposal.block_reason !== null
