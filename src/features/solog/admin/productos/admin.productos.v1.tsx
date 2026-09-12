@@ -45,7 +45,9 @@ export function AdminProductsV1() {
   const visible = useMemo(() => paginateProducts(products, page), [page, products])
   if (!masterData.snapshot || !masterData.derived) return <QueryState error={masterData.error} retry={masterData.retry} />
   const derived = masterData.derived
-  const setupRequired = masterData.snapshot.setup_required.filter((item) => !catalog.productSetupPrepared(item.propuesta_fingerprint))
+  const setupFromSnapshot = masterData.snapshot.setup_required.filter((item) => !catalog.productSetupPrepared(item.propuesta_fingerprint))
+  const setupFingerprints = new Set(setupFromSnapshot.map(item => item.propuesta_fingerprint))
+  const setupRequired = [...setupFromSnapshot, ...catalog.confirmedSetupRequired().filter(item => !setupFingerprints.has(item.propuesta_fingerprint))]
   return <section className="admin-catalog admin-products">
     {setupRequired.length > 0 && <section className="admin-catalog__section admin-catalog__section--urgent"><header><h3>Configuración pendiente</h3><span>{setupRequired.length}</span></header><div className="admin-catalog__proposal-context">{setupRequired.map((item) => <span key={item.propuesta_fingerprint}>{item.c_interno} · {item.producto} · configuración requerida antes de publicar <button type="button" className="button button--secondary" onClick={() => setSetup(item)}>Configurar</button></span>)}</div></section>}
     <section className="admin-catalog__section"><header><div><h2>Productos</h2><p>{products.length} de {masterData.snapshot.totals.products} productos cargados completos.</p></div></header>
@@ -54,8 +56,8 @@ export function AdminProductsV1() {
         const category = derived.categoryById.get(product.categoria_id)?.nombre ?? '—'
         const group = product.grupo_id ? derived.groupById.get(product.grupo_id)?.nombre ?? '—' : null
         const actionLabel = product.estado === 'Excluido' ? 'Proponer reincorporación' : 'Proponer exclusión'
-        const stagedAction = catalog.confirmedProductState(product.c_interno)
-        const proposalState = stagedAction ? 'pendiente' : product.propuesta?.estado
+        const proposalOverride = catalog.confirmedProductProposalStatus(product.c_interno)
+        const proposalState = proposalOverride === 'none' ? undefined : proposalOverride ?? product.propuesta?.estado
         return <tr key={product.c_interno}><th scope="row">{product.producto}</th><td>{product.c_interno}</td><td>{category}</td><td>{group ?? '—'}</td><td className="admin-catalog__money"><Value value={product.precio} money /></td><td>{product.estado === 'Excluido' ? 'Excluido' : 'Incluido'} · {product.estado}{proposalState ? ` · propuesta ${proposalState}` : ''}</td><td><button type="button" className="button button--secondary" disabled={!!proposalState} onClick={() => setSelected(product)}>{proposalState ? 'Propuesta en revisión' : actionLabel}</button></td></tr>
       })}{!products.length && <tr><td colSpan={7}>No hay productos que coincidan con los filtros locales.</td></tr>}</tbody></table></div>
       {products.length > 0 && <div className="admin-control__pagination" aria-label="Paginación de productos"><button type="button" className="button button--secondary" disabled={visible.currentPage === 0} onClick={() => setPage(visible.currentPage - 1)}>Anterior</button><span>Página {visible.currentPage + 1} de {visible.pageCount} · {visible.offset + 1}–{Math.min(visible.offset + visible.rows.length, products.length)} de {products.length}</span><button type="button" className="button button--secondary" disabled={visible.currentPage + 1 >= visible.pageCount} onClick={() => setPage(visible.currentPage + 1)}>Siguiente</button></div>}
