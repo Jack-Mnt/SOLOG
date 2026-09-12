@@ -14,11 +14,10 @@ export function deriveCajeroProgress(
   const queued = new Set(panel.count_queue)
   const captured = new Set(drafts.map((draft) => draft.grupo_id))
   const groups = panel.groups.filter((group) => queued.has(group.grupo_id))
-  const coverageCount = Math.min(panel.kpis.groups_total, panel.kpis.coverage_counted +
-    groups.filter((group) => !group.cobertura_periodo && captured.has(group.grupo_id)).length)
+  const coverageCount = panel.kpis.coverage_counted
   return {
     coverageCount,
-    coveragePercent: panel.kpis.groups_total > 0 ? Math.round(coverageCount / panel.kpis.groups_total * 100) : 0,
+    coveragePercent: panel.kpis.coverage_percent,
     select(type: CajeroStockType, categoryId?: string) {
       const selected = groups.filter((group) =>
         (categoryId === undefined || group.categoria_id === categoryId) &&

@@ -2,10 +2,57 @@ import { CashierHistoryCache, cashierHistoryDate } from './cajero.history'
 import { SologApiError } from '../errors'
 import { fetchCashierV3Bootstrap, mutateCashierV3 } from './cajero.v3.api'
 import { applyCashierV3PanelDelta } from './cajero.v3.panel'
-import type { CashierV3Action, CashierV3Bootstrap, CashierV3MutationResult } from './cajero.v3'
+import type {
+  CashierV3Action, CashierV3Bootstrap, CashierV3MutationResult, CashierV3Panel,
+  CashierV3RecountBatchResult, CashierV3SaveBatchResult,
+} from './cajero.v3'
 import { cashierCapability } from './cajero.capability'
 
 interface Intent { action: CashierV3Action; payload: Record<string, unknown>; content: string; recoveryUntil?: number }
+function sameIds(left: readonly string[], right: readonly string[]) {
+  return left.length === right.length && new Set(left).size === left.length && left.every((id) => right.includes(id))
+}
+function sameInstant(left: unknown, right: string) {
+  return typeof left === 'string' && Date.parse(left) === Date.parse(right)
+}
+function assertBatchConfirmation(intent: Intent, panel: CashierV3Panel, response: CashierV3SaveBatchResult | CashierV3RecountBatchResult) {
+  const sent = intent.payload.items as Array<Record<string, unknown>>
+  if (!Array.isArray(sent) || response.items.length !== sent.length) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+  if (response.session_capability.mode === 'none' ||
+    !sameInstant(response.session_capability.recovery_until, panel.session.recovery_until)) {
+    throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+  }
+  if (response.action === 'save_batch') {
+    const byClient = new Map(sent.map((item) => [item.client_observation_id, item]))
+    for (const item of response.items) {
+      const source = byClient.get(item.client_observation_id)
+      if (!source || source.grupo_id !== item.grupo_id || source.stock_fisico !== item.stock_fisico ||
+        !sameInstant(source.contado_at, item.contado_at)) {
+        throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+      }
+    }
+    const groups = response.items.map((item) => item.grupo_id)
+    if (!sameIds(response.panel_delta.count_queue_remove, groups) || response.panel_delta.review_queue_remove.length > 0 ||
+      !sameIds(response.panel_delta.groups_patch.map((patch) => patch.grupo_id), groups)) {
+      throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+    }
+  } else {
+    const byDetail = new Map(sent.map((item) => [item.detalle_id, item]))
+    const reviewGroups = new Map(panel.review_queue.map((item) => [item.detalle_id, item.grupo_id]))
+    for (const item of response.items) {
+      const source = byDetail.get(item.detalle_id)
+      if (!source || !sameInstant(source.contado_at, item.recontado_at) || reviewGroups.get(item.detalle_id) !== item.grupo_id) {
+        throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+      }
+    }
+    const details = response.items.map((item) => item.detalle_id)
+    const groups = response.items.map((item) => item.grupo_id)
+    if (!sameIds(response.panel_delta.review_queue_remove, details) || response.panel_delta.count_queue_remove.length > 0 ||
+      !sameIds(response.panel_delta.groups_patch.map((patch) => patch.grupo_id), groups)) {
+      throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+    }
+  }
+}
 export interface CashierV3Transport {
   bootstrap: typeof fetchCashierV3Bootstrap
   mutate: typeof mutateCashierV3
@@ -180,6 +227,7 @@ export class CashierV3Store {
           session_capability: response.session_capability, pre_session_summary: null, panel_state: response.panel_state }
         this.invalidate()
       } else if (response.action === 'save_batch' || response.action === 'recount_save_batch') {
+        assertBatchConfirmation(intent, currentPanel!, response)
         this.bootstrap = { ...b, generated_at: response.generated_at, server_now: response.generated_at,
           revisions: response.revisions, session_capability: response.session_capability,
           panel_state: applyCashierV3PanelDelta(currentPanel!, response.panel_delta) }
@@ -203,7 +251,7 @@ export class CashierV3Store {
       return response
     }).catch((error: unknown) => {
       if (generation === this.generation && error instanceof SologApiError &&
-        !['SOLOG_INVALID_CONTRACT_RESPONSE', 'SOLOG_UNKNOWN_ERROR'].includes(error.code)) {
+        !['SOLOG_INVALID_CONTRACT_RESPONSE', 'SOLOG_UNKNOWN_ERROR', 'SOLOG_LOCK_CONFLICT_RETRYABLE'].includes(error.code)) {
         this.intent = null
         if (error.code === 'SOLOG_SESSION_EXPIRED' && panel) this.expiredSessions.add(panel.session.id)
         if (['SOLOG_DEVICE_UNAUTHORIZED', 'SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_SESSION_EXPIRED'].includes(error.code)) {

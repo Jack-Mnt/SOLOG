@@ -17,12 +17,12 @@ function panel() {
   value.kpis = { ...value.kpis, groups_total: 5, coverage_counted: 1, coverage_percent: 20 }
   return value
 }
-test('coverage and stock/category progress intersect current queue and unique normal drafts', () => {
+test('authoritative KPI and stock/category draft progress remain separate', () => {
   const value = panel()
   expect(deriveCajeroProgress(value, []).coverageCount).toBe(1)
   const progress = deriveCajeroProgress(value, ['z', 'z', 'n', 'covered', 'unknown'].map(grupo_id => ({ grupo_id })))
-  expect(progress.coverageCount).toBe(3)
-  expect(progress.coveragePercent).toBe(60)
+  expect(progress.coverageCount).toBe(1)
+  expect(progress.coveragePercent).toBe(20)
   expect(progress.select('zero')).toMatchObject({ total: 2, completed: 1 })
   expect(progress.select('zero', 'other')).toMatchObject({ total: 1, completed: 0 })
   expect(progress.select('negative')).toMatchObject({ total: 1, completed: 1 })
@@ -43,6 +43,7 @@ test('coverage caps at denominator and handles empty state', () => {
   value.kpis.coverage_counted = 5
   expect(deriveCajeroProgress(value, [{ grupo_id: 'z' }]).coverageCount).toBe(5)
   value.kpis.groups_total = 0
+  value.kpis.coverage_percent = 0
   expect(deriveCajeroProgress(value, []).coveragePercent).toBe(0)
 })
 test('stock query is an optional initial filter, not a new route', () => {
