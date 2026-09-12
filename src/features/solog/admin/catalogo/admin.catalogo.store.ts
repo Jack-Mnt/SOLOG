@@ -9,7 +9,16 @@ export type CatalogQueryAction = Exclude<CatalogReadAction, 'reference' | 'produ
 export type CatalogQueryPayloads = Pick<CatalogReadPayloads, CatalogQueryAction>
 type Entry = { action: CatalogQueryAction; payload: Record<string, unknown>; data?: CatalogReads[CatalogQueryAction]; error?: string; pending?: Promise<CatalogReads[CatalogQueryAction]> }
 type Intent = { action: CatalogMutationAction; payload: CatalogMutations[CatalogMutationAction]; pending?: Promise<CatalogMutationResult>; error?: string }
-type ProductStateOverlay = { action: 'exclude' | 'reincorporate'; masterGeneration: number }
+type ProductProposalStatus = 'pendiente' | 'aprobado' | 'none'
+type ProductStateOverlay = { action?: 'exclude' | 'reincorporate'; status: ProductProposalStatus; masterGeneration: number }
+export interface CatalogConfirmedSetup {
+  propuesta_fingerprint: string
+  tipo: 'agregar_producto' | 'reincorporar_producto'
+  c_interno: number
+  producto: string
+  precio: number
+}
+type ProductSetupOverlay = { hidden: boolean; target?: CatalogConfirmedSetup; masterGeneration: number }
 
 export type CatalogReadTransport = typeof catalogRead
 export type CatalogMutateTransport = typeof catalogMutate
@@ -25,7 +34,7 @@ export class CatalogStore {
   private live = true
   private scope = ''
   private productStateOverlay = new Map<number, ProductStateOverlay>()
-  private preparedProductOverlay = new Map<string, number>()
+  private productSetupOverlay = new Map<string, ProductSetupOverlay>()
   publication: { operationId?: string; pending?: Promise<CatalogPublicationResult>; result?: CatalogPublicationResult; error?: string } = {}
 
   constructor(
@@ -65,7 +74,7 @@ export class CatalogStore {
     return JSON.stringify([this.userId, this.scope, action, Object.entries(payload).sort(([left], [right]) => left.localeCompare(right))])
   }
   private invalidate() { this.entries.clear() }
-  private clearStagingOverlay() { this.productStateOverlay.clear(); this.preparedProductOverlay.clear() }
+  private clearStagingOverlay() { this.productStateOverlay.clear(); this.productSetupOverlay.clear() }
   private authorizationError(error: unknown) {
     const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
     if (!['SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_ADMIN_ROLE_REQUIRED', 'AUTH_REQUIRED', 'AUTH_INVALID', 'USER_DISABLED', 'ADMIN_REQUIRED'].includes(code)) return false
@@ -117,15 +126,63 @@ export class CatalogStore {
   retry<A extends CatalogQueryAction>(action: A, payload: CatalogQueryPayloads[A]) { this.entries.delete(this.key(action, payload)); this.emit() }
 
   private masterGeneration() { return this.coordinator?.snapshotGeneration?.() ?? 0 }
-  confirmedProductState(cInterno: number) {
+  private activeProductOverlay(cInterno: number) {
     const staged = this.productStateOverlay.get(cInterno)
     if (staged && this.masterGeneration() > staged.masterGeneration) { this.productStateOverlay.delete(cInterno); return undefined }
-    return staged?.action
+    return staged
   }
-  productSetupPrepared(fingerprint: string) {
-    const generation = this.preparedProductOverlay.get(fingerprint)
-    if (generation !== undefined && this.masterGeneration() > generation) { this.preparedProductOverlay.delete(fingerprint); return false }
-    return generation !== undefined
+  confirmedProductState(cInterno: number) { return this.activeProductOverlay(cInterno)?.action }
+  confirmedProductProposalStatus(cInterno: number) { return this.activeProductOverlay(cInterno)?.status }
+
+  private activeSetupOverlay(fingerprint: string) {
+    const staged = this.productSetupOverlay.get(fingerprint)
+    if (staged && this.masterGeneration() > staged.masterGeneration) { this.productSetupOverlay.delete(fingerprint); return undefined }
+    return staged
+  }
+  productSetupPrepared(fingerprint: string) { return this.activeSetupOverlay(fingerprint)?.hidden === true }
+  confirmedSetupRequired() {
+    const result: CatalogConfirmedSetup[] = []
+    for (const [fingerprint] of this.productSetupOverlay) {
+      const staged = this.activeSetupOverlay(fingerprint)
+      if (staged && !staged.hidden && staged.target) result.push(staged.target)
+    }
+    return result
+  }
+  private cachedProposal(fingerprint: string) {
+    for (const entry of this.entries.values()) {
+      if (entry.action !== 'proposals' || !entry.data) continue
+      const proposal = (entry.data as CatalogReads['proposals']).rows.find(item => item.propuesta_fingerprint === fingerprint)
+      if (proposal) return proposal
+    }
+    return undefined
+  }
+  private applyProposalActionOverlay(payload: CatalogMutations['proposal_action']) {
+    const proposal = this.cachedProposal(payload.propuesta_fingerprint)
+    if (!proposal) return
+    const masterGeneration = this.masterGeneration()
+    if (proposal.tipo === 'excluir_producto' || proposal.tipo === 'reincorporar_producto' || proposal.tipo === 'eliminar_producto') {
+      const current = this.productStateOverlay.get(proposal.c_interno)
+      const action = proposal.tipo === 'excluir_producto' ? 'exclude' : proposal.tipo === 'reincorporar_producto' ? 'reincorporate' : current?.action
+      const status: ProductProposalStatus = payload.action === 'approve' ? 'aprobado' : payload.action === 'withdraw' ? 'pendiente' : 'none'
+      this.productStateOverlay.set(proposal.c_interno, { action, status, masterGeneration })
+    }
+    if (proposal.tipo === 'agregar_producto' || proposal.tipo === 'reincorporar_producto') {
+      if (payload.action === 'approve') {
+        this.productSetupOverlay.set(payload.propuesta_fingerprint, {
+          hidden: false,
+          masterGeneration,
+          target: {
+            propuesta_fingerprint: payload.propuesta_fingerprint,
+            tipo: proposal.tipo,
+            c_interno: proposal.c_interno,
+            producto: proposal.producto ?? proposal.catalogo_actual.producto ?? `SKU ${proposal.c_interno}`,
+            precio: proposal.catalogo_actual.precio ?? 0,
+          },
+        })
+      } else {
+        this.productSetupOverlay.set(payload.propuesta_fingerprint, { hidden: true, masterGeneration })
+      }
+    }
   }
 
   async load<A extends CatalogQueryAction>(action: A, payload: CatalogQueryPayloads[A]): Promise<CatalogReads[A]> {
@@ -237,15 +294,13 @@ export class CatalogStore {
       this.observeMutation(result.revisions)
       if (intent.action === 'propose_product_state') {
         const payload = intent.payload as CatalogMutations['propose_product_state']
-        this.productStateOverlay.set(payload.c_interno, { action: payload.action, masterGeneration: this.masterGeneration() })
+        this.productStateOverlay.set(payload.c_interno, { action: payload.action, status: 'pendiente', masterGeneration: this.masterGeneration() })
       }
       if (intent.action === 'prepare_product') {
         const payload = intent.payload as CatalogMutations['prepare_product']
-        this.preparedProductOverlay.set(payload.propuesta_fingerprint, this.masterGeneration())
+        this.productSetupOverlay.set(payload.propuesta_fingerprint, { hidden: true, masterGeneration: this.masterGeneration() })
       }
-      if (intent.action === 'proposal_action' && (intent.payload as CatalogMutations['proposal_action']).action === 'withdraw') {
-        this.preparedProductOverlay.delete((intent.payload as CatalogMutations['proposal_action']).propuesta_fingerprint)
-      }
+      if (intent.action === 'proposal_action') this.applyProposalActionOverlay(intent.payload as CatalogMutations['proposal_action'])
       this.invalidate()
       this.intentState = undefined
       this.emit()
