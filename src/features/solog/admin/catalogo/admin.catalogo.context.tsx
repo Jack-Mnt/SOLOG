@@ -1,13 +1,13 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { useAdminStore } from '../admin.v2.context'
-import type { CatalogReadAction, CatalogReadPayloads } from './admin.catalogo.v3'
+import type { CatalogQueryAction, CatalogQueryPayloads } from './admin.catalogo.store'
 
 export function useCatalogStore() {
   const store = useAdminStore().catalog
   useSyncExternalStore(store.subscribe, store.snapshot)
   return store
 }
-export function useCatalogQuery<A extends CatalogReadAction>(action: A, payload: CatalogReadPayloads[A]) {
+export function useCatalogQuery<A extends CatalogQueryAction>(action: A, payload: CatalogQueryPayloads[A]) {
   const store = useCatalogStore()
   const key = JSON.stringify(payload)
   const version = store.snapshot()
@@ -15,7 +15,7 @@ export function useCatalogQuery<A extends CatalogReadAction>(action: A, payload:
   useEffect(() => {
     let active = true
     queueMicrotask(() => {
-      const request = JSON.parse(key) as CatalogReadPayloads[A]
+      const request = JSON.parse(key) as CatalogQueryPayloads[A]
       const cached = store.peek(action, request)
       if (active && !cached.data && !cached.error) void store.load(action, request).catch(() => {})
     })

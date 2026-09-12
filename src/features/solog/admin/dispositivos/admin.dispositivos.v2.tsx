@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Inbox, MapPinCheck, MapPinOff, ShieldOff, Tablet } from "lucide-react";
+import { Inbox, MapPinOff, ShieldOff, Tablet } from "lucide-react";
 import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";

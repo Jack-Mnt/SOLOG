@@ -5,8 +5,11 @@ import { CatalogPublicationError, catalogMutate, catalogRead, publishCatalog, ty
 type CatalogMutationInput<T> = T extends { operation_id: string; expected_catalog_revision: number; expected_groups_revision: number }
   ? Omit<T, 'operation_id' | 'expected_catalog_revision' | 'expected_groups_revision'>
   : never
-type Entry = { action: CatalogReadAction; payload: Record<string, unknown>; data?: CatalogReads[CatalogReadAction]; error?: string; pending?: Promise<CatalogReads[CatalogReadAction]> }
+export type CatalogQueryAction = Exclude<CatalogReadAction, 'reference' | 'products'>
+export type CatalogQueryPayloads = Pick<CatalogReadPayloads, CatalogQueryAction>
+type Entry = { action: CatalogQueryAction; payload: Record<string, unknown>; data?: CatalogReads[CatalogQueryAction]; error?: string; pending?: Promise<CatalogReads[CatalogQueryAction]> }
 type Intent = { action: CatalogMutationAction; payload: CatalogMutations[CatalogMutationAction]; pending?: Promise<CatalogMutationResult>; error?: string }
+type ProductStateOverlay = { action: 'exclude' | 'reincorporate'; masterGeneration: number }
 
 export type CatalogReadTransport = typeof catalogRead
 export type CatalogMutateTransport = typeof catalogMutate
@@ -21,6 +24,8 @@ export class CatalogStore {
   private epoch = 0
   private live = true
   private scope = ''
+  private productStateOverlay = new Map<number, ProductStateOverlay>()
+  private preparedProductOverlay = new Map<string, number>()
   publication: { operationId?: string; pending?: Promise<CatalogPublicationResult>; result?: CatalogPublicationResult; error?: string } = {}
 
   constructor(
@@ -50,15 +55,17 @@ export class CatalogStore {
       this.epoch++
       this.entries.clear()
       this.intentState = undefined
+      this.clearStagingOverlay()
     }
     this.scope = scope
     return bootstrap
   }
   private receiptKey() { return `solog:catalog:publication:v3:${this.userId}` }
-  private key(action: CatalogReadAction, payload: Record<string, unknown>) {
+  private key(action: CatalogQueryAction, payload: Record<string, unknown>) {
     return JSON.stringify([this.userId, this.scope, action, Object.entries(payload).sort(([left], [right]) => left.localeCompare(right))])
   }
   private invalidate() { this.entries.clear() }
+  private clearStagingOverlay() { this.productStateOverlay.clear(); this.preparedProductOverlay.clear() }
   private authorizationError(error: unknown) {
     const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
     if (!['SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_ADMIN_ROLE_REQUIRED', 'AUTH_REQUIRED', 'AUTH_INVALID', 'USER_DISABLED', 'ADMIN_REQUIRED'].includes(code)) return false
@@ -93,7 +100,7 @@ export class CatalogStore {
     return code.startsWith('SOLOG_') && !/RETRYABLE|IN_PROGRESS|UNKNOWN|EMPTY_RESPONSE|INVALID_CONTRACT_RESPONSE/.test(code)
   }
 
-  peek<A extends CatalogReadAction>(action: A, payload: CatalogReadPayloads[A]) {
+  peek<A extends CatalogQueryAction>(action: A, payload: CatalogQueryPayloads[A]) {
     this.access()
     const key = this.key(action, payload)
     const entry = this.entries.get(key)
@@ -105,11 +112,23 @@ export class CatalogStore {
   }
   revisions() { const floors = this.coordinator?.revisionFloors(); return floors ? { catalog: floors.catalog, groups: floors.groups } : { ...this.floors } }
   refresh() { this.epoch++; this.entries.clear(); this.emit() }
-  resetAccess() { this.epoch++; this.entries.clear(); this.intentState = undefined; this.scope = ''; this.emit() }
-  dispose() { this.live = false; this.epoch++; this.entries.clear(); this.intentState = undefined; this.listeners.clear() }
-  retry<A extends CatalogReadAction>(action: A, payload: CatalogReadPayloads[A]) { this.entries.delete(this.key(action, payload)); this.emit() }
+  resetAccess() { this.epoch++; this.entries.clear(); this.intentState = undefined; this.clearStagingOverlay(); this.scope = ''; this.emit() }
+  dispose() { this.live = false; this.epoch++; this.entries.clear(); this.intentState = undefined; this.clearStagingOverlay(); this.listeners.clear() }
+  retry<A extends CatalogQueryAction>(action: A, payload: CatalogQueryPayloads[A]) { this.entries.delete(this.key(action, payload)); this.emit() }
 
-  async load<A extends CatalogReadAction>(action: A, payload: CatalogReadPayloads[A]): Promise<CatalogReads[A]> {
+  private masterGeneration() { return this.coordinator?.snapshotGeneration?.() ?? 0 }
+  confirmedProductState(cInterno: number) {
+    const staged = this.productStateOverlay.get(cInterno)
+    if (staged && this.masterGeneration() > staged.masterGeneration) { this.productStateOverlay.delete(cInterno); return undefined }
+    return staged?.action
+  }
+  productSetupPrepared(fingerprint: string) {
+    const generation = this.preparedProductOverlay.get(fingerprint)
+    if (generation !== undefined && this.masterGeneration() > generation) { this.preparedProductOverlay.delete(fingerprint); return false }
+    return generation !== undefined
+  }
+
+  async load<A extends CatalogQueryAction>(action: A, payload: CatalogQueryPayloads[A]): Promise<CatalogReads[A]> {
     this.access()
     const key = this.key(action, payload)
     const cached = this.entries.get(key)
@@ -119,7 +138,7 @@ export class CatalogStore {
     const entry: Entry = { action, payload }
     const epoch = this.epoch
     this.entries.set(key, entry)
-    const request = this.read(action, payload).then(result => {
+    const request = this.read(action, payload as CatalogReadPayloads[A]).then(result => {
       this.access()
       if (epoch !== this.epoch || this.entries.get(key) !== entry) throw new Error('Consulta Catálogo invalidada durante la carga.')
       if (action === 'proposals') {
@@ -185,7 +204,10 @@ export class CatalogStore {
       this.publication = result.completion_recorded ? { result } : { operationId, result }
       if (result.completion_recorded) try { sessionStorage.removeItem(this.receiptKey()) } catch { /* Non-fatal. */ }
       this.emit()
-      if (result.completion_recorded) await this.coordinator?.invalidateAndRefetchMasterData().catch(() => {})
+      if (result.completion_recorded) {
+        this.clearStagingOverlay()
+        await this.coordinator?.invalidateAndRefetchMasterData().catch(() => {})
+      }
       return result
     }).catch((error: unknown) => {
       if (this.live && epoch === this.epoch && !this.authorizationError(error)) {
@@ -213,17 +235,28 @@ export class CatalogStore {
       this.access()
       if (epoch !== this.epoch || this.intentState !== intent) throw new Error('Respuesta Catálogo descartada por cambio de acceso.')
       this.observeMutation(result.revisions)
+      if (intent.action === 'propose_product_state') {
+        const payload = intent.payload as CatalogMutations['propose_product_state']
+        this.productStateOverlay.set(payload.c_interno, { action: payload.action, masterGeneration: this.masterGeneration() })
+      }
+      if (intent.action === 'prepare_product') {
+        const payload = intent.payload as CatalogMutations['prepare_product']
+        this.preparedProductOverlay.set(payload.propuesta_fingerprint, this.masterGeneration())
+      }
+      if (intent.action === 'proposal_action' && (intent.payload as CatalogMutations['proposal_action']).action === 'withdraw') {
+        this.preparedProductOverlay.delete((intent.payload as CatalogMutations['proposal_action']).propuesta_fingerprint)
+      }
       this.invalidate()
       this.intentState = undefined
       this.emit()
       return result
-    }).catch((error: unknown) => {
+    }).catch(async (error: unknown) => {
       if (this.live && epoch === this.epoch && this.intentState === intent && !this.authorizationError(error)) {
         intent.pending = undefined
         intent.error = error instanceof Error ? error.message : 'Operación Catálogo sin confirmar.'
         if (this.definitive(error)) {
           this.intentState = undefined
-          if ((error as { code?: string }).code === 'SOLOG_MASTERDATA_REVISION_CONFLICT') void this.coordinator?.invalidateAndRefetchMasterData()
+          if ((error as { code?: string }).code === 'SOLOG_MASTERDATA_REVISION_CONFLICT') await this.coordinator?.invalidateAndRefetchMasterData().catch(() => {})
           this.invalidate()
         }
         this.emit()

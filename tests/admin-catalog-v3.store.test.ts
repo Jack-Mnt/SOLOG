@@ -38,12 +38,12 @@ describe('store Catálogo V3', () => {
   test('una respuesta con revisión nueva invalida conjuntos anteriores, sin usar bootstrap como revisión', async () => {
     const { store } = setup()
     await store.load('status', {})
-    await store.load('reference', {})
+    await store.load('proposals', {})
     revisions = { catalog: 8, groups: 4 }
     store.retry('status', {})
     await store.load('status', {})
     expect(store.revisions()).toEqual(revisions)
-    expect(store.peek('reference', {}).data).toBeUndefined()
+    expect(store.peek('proposals', {}).data).toBeUndefined()
   })
   test('rechaza una lectura con revisión anterior a la fuente V3', async () => {
     const { store } = setup()
@@ -83,18 +83,18 @@ describe('store Catálogo V3', () => {
   test('toda mutación exitosa invalida caché aunque las revisiones no cambien', async () => {
     const { store } = setup()
     await store.load('status', {})
-    await store.load('reference', {})
+    await store.load('proposals', {})
     await store.mutation('proposal_action', { propuesta_fingerprint: 'a'.repeat(64), action: 'ignore' })
     expect(store.peek('status', {}).data).toBeUndefined()
-    expect(store.peek('reference', {}).data).toBeUndefined()
+    expect(store.peek('proposals', {}).data).toBeUndefined()
   })
   test('proponer estado de Producto solo crea una propuesta e invalida el conjunto completo', async () => {
     const { store, calls } = setup()
-    await store.load('products', {})
+    await store.load('status', {})
     await store.mutation('propose_product_state', { c_interno: 100, action: 'exclude' })
     const mutation = calls.find(call => call.action === 'propose_product_state')
     expect(mutation?.payload).toMatchObject({ c_interno: 100, action: 'exclude', expected_catalog_revision: 7, expected_groups_revision: 3 })
-    expect(store.peek('products', {}).data).toBeUndefined()
+    expect(store.confirmedProductState(100)).toBe('exclude')
   })
   test('prepara onboarding en staging para grupo existente y grupo unitario nuevo', async () => {
     const { store, calls } = setup()

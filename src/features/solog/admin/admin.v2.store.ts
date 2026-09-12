@@ -35,10 +35,10 @@ export class AdminStore {
     this.catalog = new CatalogStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => {
       if (forbidden) { this.catalog.resetAccess(); this.management.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit() }
     }, undefined, undefined, undefined, this.masterData)
-    this.groupsV1 = new GroupsStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
+    this.groupsV1 = new GroupsStore(userId, () => this.live ? this.bootstrap : null, this.masterData, (revisions, forbidden) => {
       if (forbidden) { this.groupsV1.resetAccess(); this.catalog.resetAccess(); this.management.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
       this.masterData.observeRevisions(revisions)
-    }, undefined, undefined, this.masterData)
+    }, undefined, () => this.catalog.refresh())
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   snapshot = () => this.version

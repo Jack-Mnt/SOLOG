@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Check,
-  CheckCircle,
   ChevronDown,
   ChevronUp,
   CircleCheck,

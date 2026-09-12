@@ -44,16 +44,14 @@ async function previewAndPublish(store: CatalogStore) {
 }
 
 describe('Catálogo V3 integración', () => {
-  test('carga conjuntos completos por estado y Productos solo bajo demanda', async () => {
+  test('carga conjuntos completos por estado sin conservar la lectura Productos en el store activo', async () => {
     const { store, calls } = harness()
     await store.load('proposals', {})
     await store.load('proposals', { estado: 'aprobado' })
     await store.load('proposals', { estado: 'ignorado' })
     await store.load('proposals', { estado: 'incorporado' })
-    expect(calls.filter(call => call.action === 'products')).toHaveLength(0)
-    await store.load('products', {})
     expect(calls.filter(call => call.action === 'proposals').map(call => call.payload.estado ?? 'pendiente')).toEqual(['pendiente', 'aprobado', 'ignorado', 'incorporado'])
-    expect(store.peek('products', {}).data).toMatchObject({ complete: true, total: 0, rows: [] })
+    expect(calls.filter(call => call.action === 'products')).toHaveLength(0)
   })
   test('carga pendientes inicialmente y completa el alta con grupo existente hasta publicación', async () => {
     const { store, calls } = harness()
@@ -99,7 +97,6 @@ describe('Catálogo V3 integración', () => {
     const { store, calls } = harness('moderador')
     await store.load('status', {})
     await store.load('proposals', { estado: 'aprobado' })
-    await store.load('reference', {})
     await store.load('publication_preview', {})
     await store.mutation('prepare_product', { propuesta_fingerprint: fingerprint, mode: 'new_unit', categoria_id: 'category-1', marca: null })
     await expect(store.publish()).rejects.toThrow('Solo admin')

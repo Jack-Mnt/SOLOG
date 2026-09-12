@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { CatalogStore, type CatalogMutateTransport, type CatalogPublishTransport, type CatalogReadTransport } from '../src/features/solog/admin/catalogo/admin.catalogo.store'
-import { GroupsStore, type GroupsMutateTransport, type GroupsReadTransport } from '../src/features/solog/admin/grupos/admin.grupos.store'
+import { GroupsStore, type GroupsMutateTransport } from '../src/features/solog/admin/grupos/admin.grupos.store'
 import { AdminStore } from '../src/features/solog/admin/admin.v2.store'
 import { type adminRpc } from '../src/features/solog/admin/admin.v2'
 import { MasterDataStore, type MasterDataReadTransport, type MasterDataRevisionCoordinator } from '../src/features/solog/admin/masterdata/admin.masterdata.store'
@@ -28,9 +28,8 @@ describe('Coordinación Master Data V1', () => {
   })
   test('Grupos toma floors centrales y una mutación confirmada refetch master', async () => {
     const shared = coordinator(), calls: Record<string, unknown>[] = []
-    const read = (async () => ({ contract_version: 1 as const, generated_at: now, revisions: { groups: 3, catalog: 10 }, groups_active: 0, groups_unique: 0, groups_grouped: 0 })) as GroupsReadTransport
     const mutate = (async (_action: string, payload: Record<string, unknown>) => { calls.push(payload); return { contract_version: 1 as const, generated_at: now, replay: false, result: {}, revisions: { groups: 4, catalog: 10 } } }) as GroupsMutateTransport
-    const store = new GroupsStore('admin-test', () => bootstrapFixture(), () => {}, read, mutate, shared)
+    const store = new GroupsStore('admin-test', () => bootstrapFixture(), shared, () => {}, mutate)
     await store.mutation('make_unique', { c_interno: 100 })
     expect(calls[0]).toMatchObject({ expected_groups_revision: 3, expected_catalog_revision: 10 })
     expect(shared.revisionFloors().groups).toBe(4)
@@ -44,14 +43,6 @@ describe('Floors centrales de lecturas', () => {
     shared.observeRevisions({ catalog: 12 })
     const read = (async () => ({ contract_version: 3 as const, generated_at: now, revisions: { catalog: 11, groups: 3 }, catalog: { version_actual: null, publicado_at: null, incluidos: 0, excluidos: 0, total: 0 } })) as CatalogReadTransport
     const store = new CatalogStore('admin-test', () => bootstrapFixture(), () => {}, read, undefined, undefined, shared)
-    await expect(store.load('status', {})).rejects.toThrow('obsoleta')
-    expect(store.peek('status', {}).data).toBeUndefined()
-  })
-  test('rechaza lectura Grupos inferior al floor del coordinador', async () => {
-    const shared = coordinator()
-    shared.observeRevisions({ groups: 4 })
-    const read = (async () => ({ contract_version: 1 as const, generated_at: now, revisions: { groups: 3, catalog: 10 }, groups_active: 0, groups_unique: 0, groups_grouped: 0 })) as GroupsReadTransport
-    const store = new GroupsStore('admin-test', () => bootstrapFixture(), () => {}, read, undefined, shared)
     await expect(store.load('status', {})).rejects.toThrow('obsoleta')
     expect(store.peek('status', {}).data).toBeUndefined()
   })
@@ -74,18 +65,6 @@ describe('Floors centrales de lecturas', () => {
     await store.load('status', {})
     expect(calls).toBe(2)
   })
-  test('no reutiliza cache Grupos inferior al coordinator', async () => {
-    const shared = coordinator()
-    let revision = 3, calls = 0
-    const read = (async () => { calls++; return { contract_version: 1 as const, generated_at: now, revisions: { groups: revision, catalog: 10 }, groups_active: 0, groups_unique: 0, groups_grouped: 0 } }) as GroupsReadTransport
-    const store = new GroupsStore('admin-test', () => bootstrapFixture(), () => {}, read, undefined, shared)
-    await store.load('status', {})
-    shared.observeRevisions({ groups: 4 })
-    revision = 4
-    expect(store.peek('status', {}).data).toBeUndefined()
-    await store.load('status', {})
-    expect(calls).toBe(2)
-  })
   test('mutación de Grupos invalida snapshot mientras espera refetch', async () => {
     let resolveRefresh!: (value: ReturnType<typeof emptyMaster>) => void
     const refresh = new Promise<ReturnType<typeof emptyMaster>>(resolve => { resolveRefresh = resolve })
@@ -94,9 +73,8 @@ describe('Floors centrales de lecturas', () => {
     const masterRead = (async () => ++reads === 1 ? emptyMaster() : refresh) as MasterDataReadTransport
     const master = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, masterRead)
     await master.ensureLoaded()
-    const groupsRead = (async () => ({ contract_version: 1 as const, generated_at: now, revisions: { groups: 3, catalog: 10 }, groups_active: 0, groups_unique: 0, groups_grouped: 0 })) as GroupsReadTransport
     const mutate = (async () => ({ contract_version: 1 as const, generated_at: now, replay: false, result: {}, revisions: { groups: 4, catalog: 10 } })) as GroupsMutateTransport
-    const store = new GroupsStore('admin-test', () => bootstrapFixture(), () => {}, groupsRead, mutate, master)
+    const store = new GroupsStore('admin-test', () => bootstrapFixture(), master, () => {}, mutate)
     const mutation = store.mutation('make_unique', { c_interno: 100 })
     await Promise.resolve()
     await Promise.resolve()
@@ -132,9 +110,8 @@ describe('Floors centrales de lecturas', () => {
     }) as MasterDataReadTransport
     const master = new MasterDataStore('admin-test', () => bootstrapFixture(), () => {}, masterRead)
     await master.ensureLoaded()
-    const groupsRead = (async () => ({ contract_version: 1 as const, generated_at: now, revisions: { groups: 3, catalog: 10 }, groups_active: 0, groups_unique: 0, groups_grouped: 0 })) as GroupsReadTransport
     const mutate = (async () => ({ contract_version: 1 as const, generated_at: now, replay: false, result: { codigo: 'MEMBERSHIP_MOVED' }, revisions: { groups: 4, catalog: 10 } })) as GroupsMutateTransport
-    const store = new GroupsStore('admin-test', () => bootstrapFixture(), () => {}, groupsRead, mutate, master)
+    const store = new GroupsStore('admin-test', () => bootstrapFixture(), master, () => {}, mutate)
     const result = await store.mutation('membership_move', { c_internos: [100], target_group_id: crypto.randomUUID() })
     expect(result.result).toMatchObject({ codigo: 'MEMBERSHIP_MOVED' })
     expect(store.intent()).toBeUndefined()

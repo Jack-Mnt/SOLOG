@@ -6,6 +6,7 @@ export interface MasterDataRevisionCoordinator {
   revisionFloors(): MasterDataRevisions
   refetchMasterData(): Promise<MasterDataSnapshot>
   invalidateAndRefetchMasterData(): Promise<MasterDataSnapshot>
+  snapshotGeneration?(): number
 }
 type Intent = { action: MasterDataMutationAction; payload: MasterDataMutation; pending?: Promise<MasterDataMutationResult>; error?: string }
 type MutationInput = Omit<MasterDataMutation, 'operation_id' | 'expected_categories_revision'>
@@ -23,6 +24,7 @@ export class MasterDataStore implements MasterDataRevisionCoordinator {
   private intentState?: Intent
   private epoch = 0
   private version = 0
+  private installedSnapshots = 0
   private live = true
   private scope = ''
   constructor(readonly userId: string, private auth: () => AdminBootstrap | null, private changed: (revisions: MasterDataRevisions, forbidden?: boolean) => void = () => {}, private read: MasterDataReadTransport = masterDataRead, private mutateRpc: MasterDataMutateTransport = masterDataMutate) {}
@@ -52,6 +54,7 @@ export class MasterDataStore implements MasterDataRevisionCoordinator {
     this.changed(this.revisionFloors())
   }
   revisionFloors() { return { ...this.floors } }
+  snapshotGeneration() { return this.installedSnapshots }
   data() { this.access(); return { snapshot: this.snapshotState, derived: this.derivedState, error: this.errorState, pending: this.pending?.promise } }
   intent() { return this.intentState }
   async ensureLoaded() { this.access(); if (this.snapshotState) return this.snapshotState; return this.loadAtLeast(0) }
@@ -90,6 +93,7 @@ export class MasterDataStore implements MasterDataRevisionCoordinator {
       this.observeRevisions(snapshot.revisions)
       this.snapshotState = snapshot
       this.derivedState = deriveMasterData(snapshot)
+      this.installedSnapshots++
       this.errorState = undefined
       if (this.pending?.started === started) this.pending = undefined
       this.emit()

@@ -82,30 +82,6 @@
   justify-content: flex-end;
   gap: 8px;
 }
-.admin-groups__navigation {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 18px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: #f8fafc;
-}
-.admin-groups__navigation button {
-  padding: 8px 18px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-.admin-groups__navigation button[aria-pressed="true"] {
-  background: var(--color-primary);
-  color: var(--color-on-primary, #fff);
-}
-.admin-groups__navigation button:focus-visible,
 .admin-groups__table:focus-visible,
 .admin-groups__filters .button:focus-visible,
 .admin-groups__actions .button:focus-visible {
@@ -125,9 +101,6 @@
   min-height: 38px;
   padding: 8px 14px;
   font-size: 0.85rem;
-}
-.admin-groups__filters > .admin-groups__create {
-  margin-left: auto;
 }
 .admin-groups__table {
   border: 1px solid var(--color-border);
@@ -168,10 +141,6 @@
 }
 .admin-groups__table tbody tr:hover {
   background: #f8fafc;
-}
-.admin-groups__table .admin-groups__money {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 .admin-groups__table thead th:nth-child(4) {
   text-align: right;
