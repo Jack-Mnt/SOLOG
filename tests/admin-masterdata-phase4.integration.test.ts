@@ -78,6 +78,79 @@ describe('Fase 4: integración transversal Admin Master Data', () => {
     expect(store.productSetupPrepared(fingerprint)).toBe(false)
   })
 
+  test('proposal_action mantiene Productos y setup_required coherentes sin bootstrap', async () => {
+    const harness = masterHarness()
+    await harness.master.ensureLoaded()
+    let catalogRevision = 10
+    const setupFingerprint = 'b'.repeat(64)
+    const productFingerprint = 'c'.repeat(64)
+    const proposal = (fingerprint: string, tipo: 'agregar_producto' | 'excluir_producto', estado: 'pendiente' | 'aprobado') => ({
+      propuesta_fingerprint: fingerprint,
+      cambio_id: null,
+      c_interno: tipo === 'agregar_producto' ? 101 : 100,
+      tipo,
+      estado,
+      seccion: tipo === 'agregar_producto' ? 'urgente' as const : 'emergente' as const,
+      datos: {},
+      producto: tipo === 'agregar_producto' ? 'Nuevo' : 'Producto',
+      sedes: [],
+      occurrence_count: 1,
+      first_seen_at: now,
+      last_seen_at: now,
+      catalogo_actual: { producto: tipo === 'agregar_producto' ? null : 'Producto', c_barras: null, precio: 2, marca: null, estado: tipo === 'agregar_producto' ? null : 'Único' as const, categoria: null, grupo: null },
+      stale: false,
+      publicable: estado === 'aprobado',
+      block_reason: estado === 'aprobado' && tipo === 'agregar_producto' ? 'configuracion_requerida' : null,
+      setup: null,
+      price_resolution: null,
+      aprobado_at: estado === 'aprobado' ? now : null,
+      ignorado_at: null,
+      version_aplicada: null,
+      incorporado_at: null,
+    })
+    let requestedFingerprint = setupFingerprint
+    const read = (async (_action, payload) => {
+      const estado = (payload as { estado?: 'pendiente' | 'aprobado' }).estado ?? 'pendiente'
+      const tipo = requestedFingerprint === setupFingerprint ? 'agregar_producto' as const : 'excluir_producto' as const
+      const row = proposal(requestedFingerprint, tipo, estado)
+      return {
+        contract_version: 3 as const,
+        generated_at: now,
+        revisions: { groups: 3, catalog: catalogRevision },
+        estado,
+        rows: [row],
+        total: 1,
+        complete: true as const,
+        counts: { pendiente: estado === 'pendiente' ? 1 : 0, aprobado: estado === 'aprobado' ? 1 : 0, ignorado: 0, incorporado: 0 },
+      }
+    }) as CatalogReadTransport
+    const mutate = (async () => ({ contract_version: 3 as const, generated_at: now, replay: false, result: {}, revisions: { groups: 3, catalog: ++catalogRevision } })) as CatalogMutateTransport
+    const store = new CatalogStore('admin-test', () => bootstrapFixture(), () => {}, read, mutate, undefined, harness.master)
+
+    await store.load('proposals', { estado: 'pendiente' })
+    await store.mutation('proposal_action', { propuesta_fingerprint: setupFingerprint, action: 'approve' })
+    expect(store.confirmedSetupRequired().map(item => item.propuesta_fingerprint)).toContain(setupFingerprint)
+    expect(harness.reads()).toBe(1)
+
+    await store.load('proposals', { estado: 'aprobado' })
+    await store.mutation('proposal_action', { propuesta_fingerprint: setupFingerprint, action: 'withdraw' })
+    expect(store.productSetupPrepared(setupFingerprint)).toBe(true)
+    expect(store.confirmedSetupRequired().map(item => item.propuesta_fingerprint)).not.toContain(setupFingerprint)
+    expect(harness.reads()).toBe(1)
+
+    requestedFingerprint = productFingerprint
+    await store.load('proposals', { estado: 'pendiente' })
+    await store.mutation('proposal_action', { propuesta_fingerprint: productFingerprint, action: 'approve' })
+    expect(store.confirmedProductProposalStatus(100)).toBe('aprobado')
+    await store.load('proposals', { estado: 'aprobado' })
+    await store.mutation('proposal_action', { propuesta_fingerprint: productFingerprint, action: 'withdraw' })
+    expect(store.confirmedProductProposalStatus(100)).toBe('pendiente')
+    await store.load('proposals', { estado: 'pendiente' })
+    await store.mutation('proposal_action', { propuesta_fingerprint: productFingerprint, action: 'ignore' })
+    expect(store.confirmedProductProposalStatus(100)).toBe('none')
+    expect(harness.reads()).toBe(1)
+  })
+
   test('cada mutación Grupos invalida y recarga el snapshot completo', async () => {
     const cases: Array<[GroupsMutationAction, Record<string, unknown>]> = [
       ['group_create', { nombre: 'Nuevo', categoria_id: 'cat-a', member_codes: [100, 101] }],
