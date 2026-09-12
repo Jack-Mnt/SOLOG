@@ -5,7 +5,7 @@ test('Dashboard no conserva RPC ni KPI globales legacy', async () => {
   expect(api).not.toContain('rpc_solog_dashboard')
   const page = await Bun.file('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx').text()
   expect(page).toMatch(/useAdminQuery\(["']dashboard_cards["'],\s*\{\}\)/)
-  expect(page).toContain("useAdminQuery('shift_grid', { site_id: site, period })")
+  expect(page).toMatch(/useAdminQuery\(["']shift_grid["'],\s*\{\s*site_id:\s*site,\s*period\s*\}\)/)
   expect(page).toContain('data.data.totals.map')
   expect(page).not.toContain('.reduce(')
 })
