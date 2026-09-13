@@ -100,6 +100,12 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   const recountPendingCount = activeScope ? readCajeroRecountDrafts(activeScope).items.length : 0
   const pendingCount = normalPendingCount + recountPendingCount
   const capability = store.capability
+  const synchronizingAfterFinish = Boolean(
+    store.finishResult &&
+    !store.needsSynchronization &&
+    bootstrap.panel_state === null &&
+    bootstrap.pre_session_summary === null,
+  )
   const effectiveMode = capability.mode
   const blockReason: CajeroBlockReason | null = effectiveMode === 'expired' ? 'expired' : effectiveMode === 'recovery' ? 'recovery' : inactive ? 'inactive' : null
   const canCapture = Boolean(activeScope && capability.captureAllowed && !inactive && !orchestrating && !store.busy && !store.hasPendingIntent)
@@ -219,6 +225,7 @@ export function useCajeroSession(onLogout: () => Promise<void>) {
   return {
     activeScope, blockReason, canCapture, canDeliver, effectiveMode, inactive,
     needsCapabilityRefresh: store.needsCapabilityRefresh, needsSynchronization: store.needsSynchronization,
+    synchronizingAfterFinish,
     recoveryUntil: currentSession?.recovery_until ?? null,
     error, pendingCount, normalPendingCount, recountPendingCount,
     pendingIntent: store.hasPendingIntent, pendingAction: store.pendingAction, sending: store.busy || orchestrating, starting: store.busy || orchestrating,

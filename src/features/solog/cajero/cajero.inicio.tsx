@@ -90,13 +90,13 @@ export function CajeroInicio({
       : session.reviewPending > 0
         ? "/cajero/revisar"
         : null;
-  const coverage = bootstrap.panel_state?.kpis ?? bootstrap.pre_session_summary!;
+  const coverage = bootstrap.panel_state?.kpis ?? bootstrap.pre_session_summary ?? null;
   const progress = bootstrap.panel_state
     ? deriveCajeroProgress(bootstrap.panel_state,
         session.activeScope ? readCajeroBuffer(session.activeScope).items : [])
     : null;
-  const coverageCount = progress?.coverageCount ?? coverage.coverage_counted;
-  const coveragePercentage = progress?.coveragePercent ?? coverage.coverage_percent;
+  const coverageCount = progress?.coverageCount ?? coverage?.coverage_counted ?? 0;
+  const coveragePercentage = progress?.coveragePercent ?? coverage?.coverage_percent ?? 0;
   const stockProgress = (type: 'zero' | 'negative') => progress?.select(type) ?? {
     completed: bootstrap.pre_session_summary?.stock_types[type].covered ?? 0,
     total: bootstrap.pre_session_summary?.stock_types[type].total ?? 0,
@@ -244,7 +244,7 @@ export function CajeroInicio({
             <div className="cajero-coverage-card__copy">
               <span>Cobertura de la quincena</span>
               <h2 id="cajero-coverage-title">
-                {coverageCount} / {coverage.groups_total}
+                {coverageCount} / {coverage?.groups_total ?? 0}
               </h2>
             </div>
             <div

@@ -17,26 +17,36 @@ function panel() {
   value.kpis = { ...value.kpis, groups_total: 5, coverage_counted: 1, coverage_percent: 20 }
   return value
 }
-test('authoritative KPI and stock/category draft progress remain separate', () => {
+test('coverage visual suma solo drafts normales únicos aún no cubiertos', () => {
   const value = panel()
   expect(deriveCajeroProgress(value, []).coverageCount).toBe(1)
   const progress = deriveCajeroProgress(value, ['z', 'z', 'n', 'covered', 'unknown'].map(grupo_id => ({ grupo_id })))
-  expect(progress.coverageCount).toBe(1)
-  expect(progress.coveragePercent).toBe(20)
+  expect(progress.coverageCount).toBe(3)
+  expect(progress.coveragePercent).toBe(60)
   expect(progress.select('zero')).toMatchObject({ total: 2, completed: 1 })
   expect(progress.select('zero', 'other')).toMatchObject({ total: 1, completed: 0 })
   expect(progress.select('negative')).toMatchObject({ total: 1, completed: 1 })
   expect(progress.select('positive', 'cat-1')).toMatchObject({ total: 2, completed: 1 })
 })
-test('authoritative success/replay cannot double count retained confirmed drafts', () => {
+test('respuesta autoritativa posterior al envío no duplica drafts ya cubiertos', () => {
   const value = panel()
   value.kpis.coverage_counted = 2
   value.groups.find(g => g.grupo_id === 'z')!.cobertura_periodo = true
   value.count_queue = value.count_queue.filter(id => id !== 'z')
   const progress = deriveCajeroProgress(value, [{ grupo_id: 'z' }])
   expect(progress.coverageCount).toBe(2)
-  expect(progress.select('zero')).toMatchObject({ total: 1, completed: 0 })
+  expect(progress.select('zero')).toMatchObject({ total: 2, completed: 1 })
   expect(deriveCajeroProgress(value, []).coverageCount).toBe(2)
+})
+test('Stock 0 y negativo conservan su denominador congelado después del envío', () => {
+  const value = panel()
+  value.groups.find(g => g.grupo_id === 'z')!.cobertura_periodo = true
+  value.groups.find(g => g.grupo_id === 'n')!.cobertura_periodo = true
+  value.count_queue = ['p', 'z2', 'covered']
+  value.kpis = { ...value.kpis, coverage_counted: 3, coverage_percent: 60 }
+  const progress = deriveCajeroProgress(value, [])
+  expect(progress.select('zero')).toMatchObject({ total: 2, completed: 1 })
+  expect(progress.select('negative')).toMatchObject({ total: 1, completed: 1 })
 })
 test('coverage caps at denominator and handles empty state', () => {
   const value = panel()

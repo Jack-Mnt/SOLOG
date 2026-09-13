@@ -11,19 +11,29 @@ export function deriveCajeroProgress(
   panel: Pick<CashierV3Panel, 'groups' | 'count_queue' | 'kpis'>,
   drafts: readonly { grupo_id: string }[],
 ) {
-  const queued = new Set(panel.count_queue)
-  const captured = new Set(drafts.map((draft) => draft.grupo_id))
-  const groups = panel.groups.filter((group) => queued.has(group.grupo_id))
-  const coverageCount = panel.kpis.coverage_counted
+  const groupsById = new Map(panel.groups.map((group) => [group.grupo_id, group]))
+  // Solo los drafts normales que todavía no forman parte de la cobertura
+  // autoritativa proyectan avance visual. Los reconteos no cubren período.
+  const draftIds = new Set(drafts
+    .map((draft) => draft.grupo_id)
+    .filter((grupoId) => groupsById.get(grupoId)?.cobertura_periodo === false))
+  const coverageCount = Math.min(panel.kpis.groups_total, panel.kpis.coverage_counted + draftIds.size)
+  const coveragePercent = panel.kpis.groups_total > 0
+    ? Math.round((coverageCount / panel.kpis.groups_total) * 100)
+    : 0
   return {
     coverageCount,
-    coveragePercent: panel.kpis.coverage_percent,
+    coveragePercent,
     select(type: CajeroStockType, categoryId?: string) {
-      const selected = groups.filter((group) =>
+      // El denominador de una sesión es el conjunto congelado, no la cola
+      // residual que el backend va reduciendo después de cada envío.
+      const selected = panel.groups.filter((group) =>
         (categoryId === undefined || group.categoria_id === categoryId) &&
         (type === 'positive' ? group.stock_teorico > 0 : type === 'zero' ? group.stock_teorico === 0 : group.stock_teorico < 0))
-      return { ids: new Set(selected.map((group) => group.grupo_id)), total: selected.length,
-        completed: selected.filter((group) => captured.has(group.grupo_id)).length }
+      const completed = new Set(selected
+        .filter((group) => group.cobertura_periodo || draftIds.has(group.grupo_id))
+        .map((group) => group.grupo_id))
+      return { ids: new Set(selected.map((group) => group.grupo_id)), total: selected.length, completed: completed.size }
     },
   }
 }
