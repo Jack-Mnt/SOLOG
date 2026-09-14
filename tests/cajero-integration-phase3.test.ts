@@ -168,7 +168,7 @@ describe('corrección visual y ergonómica', () => {
       Bun.file('src/features/solog/cajero/cajero.diario.tsx').text(),
       Bun.file('src/features/solog/cajero/cajero.operativo.tsx').text(),
       Bun.file('src/features/solog/cajero/cajero.captura.dialog.tsx').text(),
-      Bun.file('src/styles.css').text(),
+      Bun.file('src/features/solog/cajero/cajero.css').text(),
     ])
 
     expect(count).toContain('<p>Registra la realidad</p>')

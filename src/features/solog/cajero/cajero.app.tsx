@@ -1,3 +1,4 @@
+import './cajero.css'
 import { lazy, Suspense, useEffect } from 'react'
 import { PanelLoader } from '../../../components/panel-loader'
 import { isCashierRoute, replaceRoute, usePathname } from '../../../lib/router'
