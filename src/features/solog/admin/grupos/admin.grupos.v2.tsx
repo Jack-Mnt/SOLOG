@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { Pencil, Plus, Tags, Users } from "lucide-react";
+import { Pencil, Plus, RotateCcw, Save, Search, Tags, Users } from "lucide-react";
 import { AdminDialog } from "../admin.dialog";
 import {
   ValuationDialog,
@@ -55,6 +55,7 @@ function MutationError({ error, retry }: { error: string; retry: () => void }) {
           className="button button--secondary"
           onClick={retry}
         >
+          <RotateCcw size={16} aria-hidden="true" />
           Reintentar misma operación
         </button>
       )}
@@ -150,6 +151,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
               members.length < 2
             }
           >
+            <Plus size={16} aria-hidden="true" />
             Crear grupo
           </button>
         </form>
@@ -239,6 +241,7 @@ function EditGroupDialog({
             className="button"
             disabled={!!store.intent() || !name.trim() || !categoryId}
           >
+            <Save size={16} aria-hidden="true" />
             Guardar cambios
           </button>
         </form>
@@ -352,11 +355,14 @@ export function AdminGroupsV2() {
       >
         <label className="admin-toolbar__search">
           Buscar
-          <input
-            placeholder="Máscara, integrante, SKU o marca"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+          <span className="admin-filter-search-control">
+            <Search size={16} aria-hidden="true" />
+            <input
+              placeholder="Máscara, integrante, SKU o marca"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </span>
         </label>
         <label className="admin-toolbar__filter">
           Categoría
