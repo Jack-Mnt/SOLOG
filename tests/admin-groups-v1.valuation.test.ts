@@ -31,7 +31,7 @@ describe('Grupos V1: valorizado inmediato', () => {
   test('la pantalla usa el modal compartido y no reintroduce Master V2', async () => {
     const source = await Bun.file('src/features/solog/admin/grupos/admin.grupos.v2.tsx').text()
     expect(source).toContain('ValuationDialog')
-    expect(source).toContain("store.mutation('valuation_save'")
+    expect(source).toMatch(/store\.mutation\(\s*["']valuation_save["']/)
     expect(source).toContain('onRetry={store.intent() ? retry : undefined}')
     for (const forbidden of ['rpc_solog_admin_master_v2', 'rpc_solog_admin_master_read_v2', 'group_change_save', 'group_products', 'update_package_price']) expect(source).not.toContain(forbidden)
   })
