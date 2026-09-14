@@ -5,7 +5,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { ChevronDown, Download, Eye, Search, SearchX } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download, Eye, Search, SearchX } from "lucide-react";
 import { AdminDialog } from "../admin.dialog";
 import { useAdminQuery, useAdminStore } from "../admin.v2.context";
 import type {
@@ -364,9 +364,9 @@ function ControlResults({
       )}
       {view.total > 0 && (
         <div className="admin-control__pagination">
-          <button className="button button--secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Anterior</button>
+          <button className="button button--secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}><ChevronLeft size={16} aria-hidden="true" />Anterior</button>
           <span>Página {page + 1}</span>
-          <button className="button button--secondary" disabled={(page + 1) * 100 >= view.total} onClick={() => setPage(p => p + 1)}>Siguiente</button>
+          <button className="button button--secondary" disabled={(page + 1) * 100 >= view.total} onClick={() => setPage(p => p + 1)}>Siguiente<ChevronRight size={16} aria-hidden="true" /></button>
         </div>
       )}
       {group && (
