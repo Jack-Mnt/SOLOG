@@ -228,6 +228,7 @@ export function AdminDevicesV2() {
             disabled={!!store.intent("devices")}
             onClick={confirm}
           >
+            <Check size={16} aria-hidden="true" />
             Confirmar {labels[confirmation.action].toLowerCase()}
           </button>
           {error && <p role="alert">{error}</p>}
