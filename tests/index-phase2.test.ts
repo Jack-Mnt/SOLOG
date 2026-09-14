@@ -15,11 +15,14 @@ describe('Index Fase I2: loader accesible', () => {
   })
 
   test('respeta reducción de movimiento', async () => {
-    const styles = await readSource('src/styles.css')
+    const [foundations, shared] = await Promise.all([
+      readSource('src/foundations.css'),
+      readSource('src/shared.css'),
+    ])
 
-    expect(styles).toContain('@media (prefers-reduced-motion: reduce)')
-    expect(styles).toContain('.panel-loader__halo')
-    expect(styles).toContain('animation: none !important')
+    expect(foundations).toContain('@media (prefers-reduced-motion: reduce)')
+    expect(shared).toContain('.panel-loader__halo')
+    expect(shared).toContain('animation: none !important')
   })
 })
 

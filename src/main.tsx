@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/plus-jakarta-sans'
 import App from './app'
 import { applyPalette, getStoredPalette } from './features/theme/palette'
+import './foundations.css'
+import './shared.css'
 import './styles.css'
 
 applyPalette(getStoredPalette())
