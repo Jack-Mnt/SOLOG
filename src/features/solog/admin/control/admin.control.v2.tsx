@@ -395,8 +395,8 @@ export function AdminControlV2() {
   return (
     <section className="admin-control">
       <h2>Control de diferencias</h2>
-      <div className="admin-filter-bar admin-control__filters">
-        <div className="admin-filter-field admin-control__period-field">
+      <div className="admin-filter-bar admin-toolbar admin-control__filters">
+        <div className="admin-filter-field admin-toolbar__period admin-control__period-field">
           <span>Período</span>
           <ControlPeriodSelect
             key={site}
@@ -405,8 +405,15 @@ export function AdminControlV2() {
             range={cached?.period}
           />
         </div>
+        <label className="admin-filter-field admin-filter-search-field admin-toolbar__search">
+          Buscar grupo
+          <span className="admin-filter-search-control">
+            <Search size={16} aria-hidden="true" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} />
+          </span>
+        </label>
         {period === "custom" && (
-          <>
+          <div className="admin-toolbar__filters admin-control__custom-period-filters">
             <label className="admin-filter-field">
               Desde
               <input
@@ -423,24 +430,19 @@ export function AdminControlV2() {
                 onChange={(e) => setTo(e.target.value)}
               />
             </label>
-          </>
+          </div>
         )}
-        <label className="admin-filter-field admin-filter-search-field">
-          Buscar grupo
-          <span className="admin-filter-search-control">
-            <Search size={16} aria-hidden="true" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} />
-          </span>
-        </label>
-        <button
-          type="button"
-          disabled={!site}
-          className="button button--secondary admin-control__export"
-          onClick={() => setExportOpen(true)}
-        >
-          <Download size={16} aria-hidden="true" />
-          Descargar ajuste
-        </button>
+        <div className="admin-toolbar__actions">
+          <button
+            type="button"
+            disabled={!site}
+            className="button button--secondary admin-control__export"
+            onClick={() => setExportOpen(true)}
+          >
+            <Download size={16} aria-hidden="true" />
+            Descargar ajuste
+          </button>
+        </div>
       </div>
       {invalid && (
         <p role="alert">Selecciona un rango válido de hasta 92 días.</p>

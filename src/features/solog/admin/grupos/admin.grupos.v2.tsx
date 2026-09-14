@@ -345,7 +345,73 @@ export function AdminGroupsV2() {
             precio unitario es informativo.
           </p>
         </div>
-        <div className="admin-groups__heading-actions">
+      </header>
+      <form
+        className="admin-v2-filters admin-toolbar admin-groups__filters"
+        onSubmit={(event) => event.preventDefault()}
+      >
+        <label className="admin-toolbar__search">
+          Buscar
+          <input
+            placeholder="Máscara, integrante, SKU o marca"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </label>
+        <label className="admin-toolbar__filter">
+          Categoría
+          <select
+            value={categoryId}
+            onChange={(event) => setCategoryId(event.target.value)}
+          >
+            <option value="all">Todas</option>
+            {masterData.snapshot.categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="admin-toolbar__filter">
+          Integrantes
+          <select
+            value={type}
+            onChange={(event) => setType(event.target.value as typeof type)}
+          >
+            <option value="all">Todos</option>
+            <option value="Único">Único</option>
+            <option value="Agrupado">2+ SKU</option>
+          </select>
+        </label>
+        <label className="admin-toolbar__filter">
+          Valorizado
+          <select
+            value={valuation}
+            onChange={(event) =>
+              setValuation(event.target.value as GroupValuationFilter)
+            }
+          >
+            <option value="all">Todos</option>
+            <option value="configured">Configurado</option>
+            <option value="none">Sin valorizado</option>
+          </select>
+        </label>
+        <label className="admin-toolbar__sort">
+          Orden
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as GroupSort)}
+          >
+            <option value="name">Grupo</option>
+            <option value="category">Categoría</option>
+            <option value="type">Tipo derivado</option>
+            <option value="unit_price">Precio unitario</option>
+            <option value="valuation">Valorizado primero</option>
+            <option value="members_desc">Más integrantes</option>
+            <option value="members_asc">Menos integrantes</option>
+          </select>
+        </label>
+        <div className="admin-toolbar__actions admin-groups__actions">
           <button
             type="button"
             className="button button--secondary"
@@ -363,72 +429,6 @@ export function AdminGroupsV2() {
             Crear grupo
           </button>
         </div>
-      </header>
-      <form
-        className="admin-v2-filters admin-groups__filters"
-        onSubmit={(event) => event.preventDefault()}
-      >
-        <label>
-          Buscar
-          <input
-            placeholder="Máscara, integrante, SKU o marca"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </label>
-        <label>
-          Categoría
-          <select
-            value={categoryId}
-            onChange={(event) => setCategoryId(event.target.value)}
-          >
-            <option value="all">Todas</option>
-            {masterData.snapshot.categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Integrantes
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value as typeof type)}
-          >
-            <option value="all">Todos</option>
-            <option value="Único">Único</option>
-            <option value="Agrupado">2+ SKU</option>
-          </select>
-        </label>
-        <label>
-          Valorizado
-          <select
-            value={valuation}
-            onChange={(event) =>
-              setValuation(event.target.value as GroupValuationFilter)
-            }
-          >
-            <option value="all">Todos</option>
-            <option value="configured">Configurado</option>
-            <option value="none">Sin valorizado</option>
-          </select>
-        </label>
-        <label>
-          Orden
-          <select
-            value={sort}
-            onChange={(event) => setSort(event.target.value as GroupSort)}
-          >
-            <option value="name">Grupo</option>
-            <option value="category">Categoría</option>
-            <option value="type">Tipo derivado</option>
-            <option value="unit_price">Precio unitario</option>
-            <option value="valuation">Valorizado primero</option>
-            <option value="members_desc">Más integrantes</option>
-            <option value="members_asc">Menos integrantes</option>
-          </select>
-        </label>
       </form>
       <p>
         {visible.length} de {rows.length} grupos.

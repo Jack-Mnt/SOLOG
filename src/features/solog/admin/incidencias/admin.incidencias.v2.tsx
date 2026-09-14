@@ -195,9 +195,9 @@ export function AdminIncidentsV2() {
   const pending = !!store.intent("incidents");
   return (
     <section className="admin-incidents">
-      <div className="admin-v2-toolbar admin-incidents__toolbar">
-        <div className="admin-incidents__filters">
-          <label>
+      <div className="admin-v2-toolbar admin-toolbar admin-incidents__toolbar">
+        <div className="admin-toolbar__filters admin-incidents__filters">
+          <label className="admin-toolbar__filter">
             Ámbito de incidencias
             <select
               value={site}
@@ -216,7 +216,7 @@ export function AdminIncidentsV2() {
               ))}
             </select>
           </label>
-          <label>
+          <label className="admin-toolbar__filter">
             Tipo
             <select
               value={type}
@@ -232,7 +232,7 @@ export function AdminIncidentsV2() {
               ))}
             </select>
           </label>
-          <label>
+          <label className="admin-toolbar__filter">
             Estado
             <select
               value={state}
@@ -249,13 +249,15 @@ export function AdminIncidentsV2() {
             </select>
           </label>
         </div>
-        <button
-          type="button"
-          className="button button--secondary"
-          onClick={query.retry}
-        >
-          Actualizar incidencias
-        </button>
+        <div className="admin-toolbar__actions">
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={query.retry}
+          >
+            Actualizar incidencias
+          </button>
+        </div>
       </div>
       <p className="admin-incidents__help">
         Las acciones se aplican al ámbito seleccionado. Proponer eliminación no
