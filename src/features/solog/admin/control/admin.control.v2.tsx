@@ -205,7 +205,7 @@ function GroupDetail({ site, group, name, close }: { site: string; group: string
               <tr key={row.row_id}>
                 <td><time dateTime={row.event_at}>{eventDate(row.event_at)}</time></td>
                 <td>{eventTime(row.event_at)}</td>
-                <td><span className={`admin-control__badge admin-control__tone--${row.state === "Recontado" ? "info" : stateTone[row.state]}`}>{row.state}</span></td>
+                <td><span className={`admin-control__badge admin-status-badge admin-status-badge--${row.state === "Recontado" ? "info" : stateTone[row.state]} admin-control__tone--${row.state === "Recontado" ? "info" : stateTone[row.state]}`}>{row.state}</span></td>
                 <td className="admin-control__number"><Value value={row.theoretical} /></td>
                 <td className="admin-control__number"><Value value={row.physical} /></td>
                 <td className={`admin-control__number admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}>{row.difference > 0 ? "+" : ""}<Value value={row.difference} /></td>
@@ -246,12 +246,12 @@ function ControlResults({
   return (
     <>
       <div
-        className="admin-control__summary"
+        className="admin-control__summary admin-quick-filter-chips"
         aria-label="Resumen de resultados"
       >
         <button
           type="button"
-          className="admin-control__chip"
+          className="admin-control__chip admin-quick-filter-chip"
           aria-pressed={selectedState === ""}
           onClick={() => onStateChange("")}
         >
@@ -259,7 +259,7 @@ function ControlResults({
         </button>
         <button
           type="button"
-          className="admin-control__chip admin-control__tone--success"
+          className="admin-control__chip admin-quick-filter-chip admin-control__tone--success"
           aria-pressed={selectedState === "Coincide"}
           onClick={() => onStateChange("Coincide")}
         >
@@ -267,7 +267,7 @@ function ControlResults({
         </button>
         <button
           type="button"
-          className="admin-control__chip admin-control__tone--warning"
+          className="admin-control__chip admin-quick-filter-chip admin-control__tone--warning"
           aria-pressed={selectedState === "Recontar"}
           onClick={() => onStateChange("Recontar")}
         >
@@ -275,7 +275,7 @@ function ControlResults({
         </button>
         <button
           type="button"
-          className="admin-control__chip admin-control__tone--info"
+          className="admin-control__chip admin-quick-filter-chip admin-control__tone--info"
           aria-pressed={selectedState === "Confirmada"}
           onClick={() => onStateChange("Confirmada")}
         >
@@ -283,7 +283,7 @@ function ControlResults({
         </button>
         <button
           type="button"
-          className="admin-control__chip admin-control__tone--danger"
+          className="admin-control__chip admin-quick-filter-chip admin-control__tone--danger"
           aria-pressed={selectedState === "Inconsistente"}
           onClick={() => onStateChange("Inconsistente")}
         >
@@ -294,7 +294,11 @@ function ControlResults({
         </p>
       </div>
       {view.total > 0 ? (
-        <div className="admin-v2-table admin-control__table">
+        <>
+          <div className="admin-table-bar admin-control__table-bar">
+            <p className="admin-result-count">{view.total === data.items.length ? `${view.total} resultados` : `${view.total} de ${data.items.length} resultados`}</p>
+          </div>
+          <div className="admin-v2-table admin-control__table">
           <table>
             <thead>
               <tr>
@@ -319,7 +323,7 @@ function ControlResults({
                   </td>
                   <td>
                     <span
-                      className={`admin-control__badge admin-control__tone--${stateTone[row.state]}`}
+                      className={`admin-control__badge admin-status-badge admin-status-badge--${stateTone[row.state]} admin-control__tone--${stateTone[row.state]}`}
                     >
                       {row.state === "Recontar"
                         ? "Por recontar"
@@ -351,6 +355,7 @@ function ControlResults({
             </tbody>
           </table>
         </div>
+        </>
       ) : (
         <p className="admin-control__empty" role="status">
           <SearchX size={18} aria-hidden="true" />

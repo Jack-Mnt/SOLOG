@@ -4428,7 +4428,7 @@
   font-size: 0.72rem;
   text-align: center;
 }
-.admin-catalog__views button[aria-pressed="true"] {
+.admin-catalog__views button[aria-selected="true"] {
   border-color: var(--color-primary);
   color: var(--color-primary-active);
   background: var(--color-primary-soft);
@@ -5832,4 +5832,54 @@
   .admin-toolbar > .admin-toolbar__search { order: 2; }
   .admin-toolbar > .admin-toolbar__actions { order: 3; }
   .admin-control__filters > .admin-toolbar__period { order: 0; }
+}
+
+/* QuickFilterChip, StateView, badges y conteos — Fase D. */
+.admin-quick-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.admin-quick-filter-chips .admin-quick-filter-chip {
+  min-height: 34px;
+  border: 1px solid transparent;
+}
+.admin-quick-filter-chips .admin-quick-filter-chip[aria-pressed="true"] {
+  border-color: currentColor;
+}
+.admin-quick-filter-chips .admin-control__period {
+  margin-left: auto;
+}
+.admin-state-views button[aria-selected="true"] {
+  border-color: var(--color-primary);
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+}
+.admin-status-badge--info {
+  color: var(--color-info);
+  background: var(--color-info-soft);
+}
+.admin-groups__members {
+  min-height: 34px;
+  padding: 4px 7px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.admin-groups__members:hover:not(:disabled) {
+  border-color: var(--color-border);
+  background: var(--color-surface-secondary);
+  box-shadow: none;
+}
+.admin-groups__members .admin-attribute-badge {
+  min-height: 22px;
+  padding: 2px 6px;
+}
+.admin-table-bar + .admin-v2-table { margin-top: 0; }
+@media (max-width: 760px) {
+  .admin-quick-filter-chips .admin-control__period {
+    width: 100%;
+    margin-left: 0;
+  }
 }

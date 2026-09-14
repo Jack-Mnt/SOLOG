@@ -430,9 +430,9 @@ export function AdminGroupsV2() {
           </button>
         </div>
       </form>
-      <p>
-        {visible.length} de {rows.length} grupos.
-      </p>
+      <div className="admin-table-bar admin-groups__table-bar">
+        <p className="admin-result-count">{visible.length === rows.length ? `${rows.length} resultados` : `${visible.length} de ${rows.length} resultados`}</p>
+      </div>
       <div
         className="admin-v2-table admin-groups__table"
         role="region"
@@ -466,13 +466,15 @@ export function AdminGroupsV2() {
                 <td>
                   <button
                     type="button"
-                    className="button button--secondary"
+                    className="button button--secondary admin-groups__members"
                     onClick={() => setMembers(group.id)}
                   >
                     <Users size={16} aria-hidden="true" />
-                    {group.derivedType === "Único"
-                      ? "Único"
-                      : `${group.memberCount} SKU`}
+                    <span className="admin-attribute-badge">
+                      {group.derivedType === "Único"
+                        ? "Único"
+                        : `${group.memberCount} SKU`}
+                    </span>
                   </button>
                 </td>
                 <td className="admin-groups__valuation">

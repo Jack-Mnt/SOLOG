@@ -24,7 +24,7 @@ const stateLabels: Record<IncidentState, string> = {
 
 function StateBadge({ state }: { state: IncidentState }) {
   return (
-    <span className={`admin-incidents__state admin-incidents__state--${state}`}>
+    <span className={`admin-incidents__state admin-status-badge admin-status-badge--${state === "pendiente" ? "warning" : state === "resuelta" ? "success" : "info"} admin-incidents__state--${state}`}>
       {stateLabels[state]}
     </span>
   );
@@ -276,6 +276,9 @@ export function AdminIncidentsV2() {
             Período operativo: {query.data.period.from} — {query.data.period.to}{" "}
             · America/Lima
           </p>
+          <div className="admin-table-bar admin-incidents__table-bar">
+            <p className="admin-result-count">{families.length === query.data.families.length ? `${families.length} resultados` : `${families.length} de ${query.data.families.length} resultados`}</p>
+          </div>
           <div
             className="admin-v2-table admin-incidents__table"
             role="region"
