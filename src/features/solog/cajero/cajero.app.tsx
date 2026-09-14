@@ -1,3 +1,4 @@
+import '../../../operational.css'
 import './cajero.css'
 import { lazy, Suspense, useEffect } from 'react'
 import { PanelLoader } from '../../../components/panel-loader'
