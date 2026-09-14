@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Plus, RotateCcw } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { useCatalogStore } from '../catalogo/admin.catalogo.context'
 import { useMasterData } from '../masterdata/admin.masterdata.context'
@@ -10,7 +11,7 @@ export type ProductSetupTarget = Pick<MasterDataSetupRequired, 'propuesta_finger
 function CatalogIntentNotice({ onRetry }: { onRetry: () => void }) {
   const intent = useCatalogStore().intent()
   if (!intent) return null
-  return <div className="notice" role="status"><p>{intent.error ?? 'Operación en curso…'} · {intent.payload.operation_id}</p>{!intent.pending && <button type="button" className="button" onClick={onRetry}>Reintentar misma operación</button>}</div>
+  return <div className="notice" role="status"><p>{intent.error ?? 'Operación en curso…'} · {intent.payload.operation_id}</p>{!intent.pending && <button type="button" className="button" onClick={onRetry}><RotateCcw size={16} aria-hidden="true" />Reintentar misma operación</button>}</div>
 }
 
 export function ProductSetupDialog({ target, onClose, onComplete }: { target: ProductSetupTarget; onClose: () => void; onComplete: () => void }) {
@@ -40,7 +41,7 @@ export function ProductSetupDialog({ target, onClose, onComplete }: { target: Pr
       {mode === 'existing_group'
         ? <label>Grupo<select required value={groupId} onChange={(event) => setGroupId(event.target.value)}><option value="">Seleccionar</option>{masterData.snapshot.groups.map((group) => <option key={group.id} value={group.id}>{group.nombre} · {group.precio}</option>)}</select></label>
         : <label>Categoría<select required value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Seleccionar</option>{masterData.snapshot.categories.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>}
-      <button className="button" disabled={!!intent || !valid}>{target.tipo === 'reincorporar_producto' ? 'Preparar reincorporación' : 'Preparar producto'}</button>
+      <button className="button" disabled={!!intent || !valid}><Plus size={16} aria-hidden="true" />{target.tipo === 'reincorporar_producto' ? 'Preparar reincorporación' : 'Preparar producto'}</button>
     </form>}
     {intent && <CatalogIntentNotice onRetry={retry} />}{error && <p role="alert">{error}</p>}
   </AdminDialog>
