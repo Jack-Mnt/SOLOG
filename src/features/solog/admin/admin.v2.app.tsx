@@ -105,6 +105,7 @@ function Shell({
           </button>
         )}
         <button className="button button--secondary" onClick={logout}>
+          <LogOut size={16} aria-hidden="true" />
           Cerrar sesión
         </button>
       </section>
