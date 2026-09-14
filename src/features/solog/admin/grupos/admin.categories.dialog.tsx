@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { ArrowDown, ArrowUp, Pencil, Plus } from 'lucide-react'
+import { ArrowDown, ArrowUp, Pencil, Plus, RotateCcw, Save, X } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { useMasterData, useMasterDataStore } from '../masterdata/admin.masterdata.context'
 import { QueryState } from '../admin.v2.presentation'
@@ -66,9 +66,9 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
         const counts = masterData.derived!.categoryCounts.get(category.id) ?? { groups: 0, products: 0 }
         return <div className="admin-categories__row" role="listitem" key={category.id}><span><strong>{category.nombre}</strong><small>{counts.groups} grupos · {counts.products} productos</small></span><div className="admin-groups__actions"><button type="button" className="button button--secondary" aria-label={`Subir ${category.nombre}`} disabled={!!intent || index === 0} onClick={() => move(index, -1)}><ArrowUp size={15} /></button><button type="button" className="button button--secondary" aria-label={`Bajar ${category.nombre}`} disabled={!!intent || index === categories.length - 1} onClick={() => move(index, 1)}><ArrowDown size={15} /></button><button type="button" className="button button--secondary" onClick={() => { setEditing(category.id); setEditName(category.nombre) }}><Pencil size={15} aria-hidden="true" />Renombrar</button></div></div>
       })}</div>
-      <button type="button" className="button button--secondary" disabled={!!intent || !hasCurrentOrderDraft || order.length !== masterData.snapshot.categories.length} onClick={() => void saveOrder()}>Guardar orden completo</button>
-      {editing && <form className="admin-v2-form admin-categories__rename" onSubmit={event => void rename(event)}><label>Nuevo nombre<input autoFocus value={editName} onChange={event => setEditName(event.target.value)} /></label><div className="admin-groups__actions"><button className="button" disabled={!!intent || !editName.trim()}>Guardar nombre</button><button type="button" className="button button--secondary" onClick={() => setEditing(null)}>Cancelar</button></div></form>}
+      <button type="button" className="button button--secondary" disabled={!!intent || !hasCurrentOrderDraft || order.length !== masterData.snapshot.categories.length} onClick={() => void saveOrder()}><Save size={16} aria-hidden="true" />Guardar orden completo</button>
+      {editing && <form className="admin-v2-form admin-categories__rename" onSubmit={event => void rename(event)}><label>Nuevo nombre<input autoFocus value={editName} onChange={event => setEditName(event.target.value)} /></label><div className="admin-groups__actions"><button className="button" disabled={!!intent || !editName.trim()}><Save size={16} aria-hidden="true" />Guardar nombre</button><button type="button" className="button button--secondary" onClick={() => setEditing(null)}><X size={16} aria-hidden="true" />Cancelar</button></div></form>}
     </>}
-    {error && <div className="notice notice--error" role="alert"><p>{error}</p>{intent && !intent.pending && <button type="button" className="button button--secondary" onClick={retry}>Reintentar misma operación</button>}</div>}
+    {error && <div className="notice notice--error" role="alert"><p>{error}</p>{intent && !intent.pending && <button type="button" className="button button--secondary" onClick={retry}><RotateCcw size={16} aria-hidden="true" />Reintentar misma operación</button>}</div>}
   </AdminDialog>
 }
