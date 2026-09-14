@@ -45,7 +45,9 @@ export function AdminSort<T extends string>({ value, defaultValue, options, onCh
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
+  const items = useRef<(HTMLButtonElement | null)[]>([])
   const activeOption = options.find((option) => option.value === value)
+  const activeIndex = Math.max(0, options.findIndex((option) => option.value === value))
   const menuId = useId()
   const active = value !== defaultValue
 
@@ -59,8 +61,8 @@ export function AdminSort<T extends string>({ value, defaultValue, options, onCh
   }, [open])
 
   useEffect(() => {
-    if (open) root.current?.querySelector<HTMLButtonElement>('[role="menuitemradio"][aria-checked="true"]')?.focus()
-  }, [open])
+    if (open) items.current[activeIndex]?.focus()
+  }, [activeIndex, open])
 
   const close = () => {
     setOpen(false)
@@ -75,11 +77,28 @@ export function AdminSort<T extends string>({ value, defaultValue, options, onCh
   return <div
     className="admin-sort"
     ref={root}
+    onBlur={(event) => {
+      if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) {
+        setOpen(false)
+      }
+    }}
     onKeyDown={(event) => {
       if (event.key === 'Escape' && open) {
         event.preventDefault()
         close()
+        return
       }
+      if (!open || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
+      const target = event.target
+      if (!(target instanceof HTMLButtonElement) || target.getAttribute('role') !== 'menuitemradio') return
+      event.preventDefault()
+      const current = items.current.indexOf(target)
+      const next = event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? options.length - 1
+          : (current + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length
+      items.current[next]?.focus()
     }}
   >
     <IconButton
@@ -95,10 +114,12 @@ export function AdminSort<T extends string>({ value, defaultValue, options, onCh
       <ArrowDownWideNarrow size={17} aria-hidden="true" />
     </IconButton>
     {open && <div className="admin-sort__menu" id={menuId} role="menu" aria-label="Opciones de orden">
-      {options.map((option) => <button
+      {options.map((option, index) => <button
         type="button"
         role="menuitemradio"
         key={option.value}
+        ref={(node) => { items.current[index] = node }}
+        tabIndex={value === option.value ? 0 : -1}
         aria-checked={value === option.value}
         onClick={() => select(option.value)}
       >
