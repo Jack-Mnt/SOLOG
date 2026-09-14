@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { ChevronLeft, ChevronRight, CircleOff, Clock, RotateCcw, Search, Settings } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { useMasterData } from '../masterdata/admin.masterdata.context'
 import type { MasterDataProduct } from '../masterdata/admin.masterdata.v1'
@@ -11,7 +12,7 @@ import { filterAndSortProducts, paginateProducts, type ProductModeFilter, type P
 function CatalogIntentNotice({ onRetry }: { onRetry: () => void }) {
   const intent = useCatalogStore().intent()
   if (!intent) return null
-  return <div className="notice" role="status"><p>{intent.error ?? 'Operación en curso…'} · {intent.payload.operation_id}</p>{!intent.pending && <button type="button" className="button" onClick={onRetry}>Reintentar misma operación</button>}</div>
+  return <div className="notice" role="status"><p>{intent.error ?? 'Operación en curso…'} · {intent.payload.operation_id}</p>{!intent.pending && <button type="button" className="button" onClick={onRetry}><RotateCcw size={16} aria-hidden="true" />Reintentar misma operación</button>}</div>
 }
 
 function ProductStateProposal({ product, groupName, onClose }: { product: MasterDataProduct; groupName: string | null; onClose: () => void }) {
@@ -26,7 +27,7 @@ function ProductStateProposal({ product, groupName, onClose }: { product: Master
     <p>Esta acción solo crea una propuesta para revisión y publicación posterior. No modifica el estado del producto ahora.</p>
     <dl className="admin-catalog__proposal-summary"><div><dt>C. interno</dt><dd>{product.c_interno}</dd></div><div><dt>Estado actual</dt><dd>{product.estado === 'Excluido' ? 'Excluido' : 'Incluido'}</dd></div><div><dt>Modalidad</dt><dd>{product.estado}</dd></div><div><dt>Grupo</dt><dd>{groupName ?? '—'}</dd></div></dl>
     {intent && <CatalogIntentNotice onRetry={retry} />}
-    <button type="button" className="button" disabled={!!intent} onClick={submit}>{title}</button>
+    <button type="button" className="button" disabled={!!intent} onClick={submit}>{action === 'exclude' ? <CircleOff size={16} aria-hidden="true" /> : <RotateCcw size={16} aria-hidden="true" />}{title}</button>
     {error && <p role="alert">{error}</p>}
   </AdminDialog>
 }
@@ -50,10 +51,10 @@ export function AdminProductsV1() {
   const setupFingerprints = new Set(setupFromSnapshot.map(item => item.propuesta_fingerprint))
   const setupRequired = [...setupFromSnapshot, ...catalog.confirmedSetupRequired().filter(item => !setupFingerprints.has(item.propuesta_fingerprint))]
   return <section className="admin-catalog admin-products">
-    {setupRequired.length > 0 && <section className="admin-catalog__section admin-catalog__section--urgent"><header><h3>Configuración pendiente</h3><span>{setupRequired.length}</span></header><div className="admin-catalog__proposal-context">{setupRequired.map((item) => <span key={item.propuesta_fingerprint}>{item.c_interno} · {item.producto} · configuración requerida antes de publicar <button type="button" className="button button--secondary" onClick={() => setSetup(item)}>Configurar</button></span>)}</div></section>}
+    {setupRequired.length > 0 && <section className="admin-catalog__section admin-catalog__section--urgent"><header><h3>Configuración pendiente</h3><span>{setupRequired.length}</span></header><div className="admin-catalog__proposal-context">{setupRequired.map((item) => <span key={item.propuesta_fingerprint}>{item.c_interno} · {item.producto} · configuración requerida antes de publicar <button type="button" className="button button--secondary" onClick={() => setSetup(item)}><Settings size={16} aria-hidden="true" />Configurar</button></span>)}</div></section>}
     <section className="admin-catalog__section">
       <form className="admin-v2-filters admin-toolbar admin-catalog__filters" onSubmit={(event) => event.preventDefault()}>
-        <label className="admin-toolbar__search">Buscar<input value={search} onChange={(event) => { setSearch(event.target.value); setPage(0) }} placeholder="Producto, código, marca, categoría o grupo" /></label>
+        <label className="admin-toolbar__search">Buscar<span className="admin-filter-search-control"><Search size={16} aria-hidden="true" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(0) }} placeholder="Producto, código, marca, categoría o grupo" /></span></label>
         <label className="admin-toolbar__filter">Estado<select value={stateFilter} onChange={(event) => { setStateFilter(event.target.value as ProductStateFilter); setPage(0) }}><option value="all">Todos</option><option value="incluido">Incluidos</option><option value="excluido">Excluidos</option></select></label>
         <label className="admin-toolbar__filter">Modalidad<select value={modeFilter} onChange={(event) => { setModeFilter(event.target.value as ProductModeFilter); setPage(0) }}><option value="all">Todas</option><option value="Único">Único</option><option value="Agrupado">Agrupado</option><option value="Excluido">Excluido</option></select></label>
         <label className="admin-toolbar__filter">Categoría<select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setPage(0) }}><option value="all">Todas</option>{masterData.snapshot.categories.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
@@ -78,9 +79,9 @@ export function AdminProductsV1() {
         const actionLabel = product.estado === 'Excluido' ? 'Proponer reincorporación' : 'Proponer exclusión'
         const proposalOverride = catalog.confirmedProductProposalStatus(product.c_interno)
         const proposalState = proposalOverride === 'none' ? undefined : proposalOverride ?? product.propuesta?.estado
-        return <tr key={product.c_interno}><th scope="row">{product.producto}</th><td>{product.c_interno}</td><td>{category}</td><td>{group ?? '—'}</td><td className="admin-catalog__money"><Value value={product.precio} money /></td><td>{product.estado === 'Excluido' ? 'Excluido' : 'Incluido'} · {product.estado}{proposalState ? ` · propuesta ${proposalState}` : ''}</td><td><button type="button" className="button button--secondary" disabled={!!proposalState} onClick={() => setSelected(product)}>{proposalState ? 'Propuesta en revisión' : actionLabel}</button></td></tr>
+        return <tr key={product.c_interno}><th scope="row">{product.producto}</th><td>{product.c_interno}</td><td>{category}</td><td>{group ?? '—'}</td><td className="admin-catalog__money"><Value value={product.precio} money /></td><td>{product.estado === 'Excluido' ? 'Excluido' : 'Incluido'} · {product.estado}{proposalState ? ` · propuesta ${proposalState}` : ''}</td><td><button type="button" className="button button--secondary" disabled={!!proposalState} onClick={() => setSelected(product)}>{proposalState ? <Clock size={16} aria-hidden="true" /> : product.estado === 'Excluido' ? <RotateCcw size={16} aria-hidden="true" /> : <CircleOff size={16} aria-hidden="true" />}{proposalState ? 'Propuesta en revisión' : actionLabel}</button></td></tr>
       })}{!products.length && <tr><td colSpan={7}>No hay productos que coincidan con los filtros locales.</td></tr>}</tbody></table></div>
-      {products.length > 0 && <div className="admin-control__pagination" aria-label="Paginación de productos"><button type="button" className="button button--secondary" disabled={visible.currentPage === 0} onClick={() => setPage(visible.currentPage - 1)}>Anterior</button><span>Página {visible.currentPage + 1} de {visible.pageCount} · {visible.offset + 1}–{Math.min(visible.offset + visible.rows.length, products.length)} de {products.length}</span><button type="button" className="button button--secondary" disabled={visible.currentPage + 1 >= visible.pageCount} onClick={() => setPage(visible.currentPage + 1)}>Siguiente</button></div>}
+      {products.length > 0 && <div className="admin-control__pagination" aria-label="Paginación de productos"><button type="button" className="button button--secondary" disabled={visible.currentPage === 0} onClick={() => setPage(visible.currentPage - 1)}><ChevronLeft size={16} aria-hidden="true" />Anterior</button><span>Página {visible.currentPage + 1} de {visible.pageCount} · {visible.offset + 1}–{Math.min(visible.offset + visible.rows.length, products.length)} de {products.length}</span><button type="button" className="button button--secondary" disabled={visible.currentPage + 1 >= visible.pageCount} onClick={() => setPage(visible.currentPage + 1)}>Siguiente<ChevronRight size={16} aria-hidden="true" /></button></div>}
     </section>
     {selected && <ProductStateProposal product={selected} groupName={selected.grupo_id ? derived.groupById.get(selected.grupo_id)?.nombre ?? null : null} onClose={() => setSelected(null)} />}
     {setup && <ProductSetupDialog target={setup} onClose={() => setSetup(null)} onComplete={() => setSetup(null)} />}
