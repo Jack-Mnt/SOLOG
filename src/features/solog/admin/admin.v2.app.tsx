@@ -10,6 +10,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  RotateCcw,
   type LucideIcon,
 } from "lucide-react";
 import { PanelLoader } from "../../../components/panel-loader";
@@ -99,6 +100,7 @@ function Shell({
         <p>{bootstrap.error ?? "Validando acceso administrativo…"}</p>
         {bootstrap.error && (
           <button className="button" onClick={bootstrap.retry}>
+            <RotateCcw size={16} aria-hidden="true" />
             Reintentar
           </button>
         )}
