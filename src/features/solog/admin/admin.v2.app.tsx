@@ -17,6 +17,7 @@ import { navigateTo, type AdminRoute } from "../../../lib/router";
 import { PaletteSwitcher } from "../../theme/palette-switcher";
 import { AdminStore } from "./admin.v2.store";
 import { adminSiteLabel, orderedAdminSites } from "./admin.site-ui";
+import { IconButton } from "./admin.primitives";
 import {
   AdminV2Context,
   useAdminQuery,
@@ -125,14 +126,13 @@ function Shell({
               <small>{bootstrap.data.identity.rol}</small>
             </span>
           )}
-          <button
-            className="icon-button"
+          <IconButton
             aria-label="Cerrar sesión"
             title={`Cerrar sesión de ${bootstrap.data.identity.nombre}`}
             onClick={logout}
           >
             <LogOut size={18} />
-          </button>
+          </IconButton>
         </div>
         <nav className="admin-main-tabs" aria-label="Módulos administrativos">
           {navigationGroups.map((group) => (
