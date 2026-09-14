@@ -10,6 +10,9 @@ describe('Admin primitives closure delta', () => {
     const css = source('src/features/solog/admin/admin.css')
     expect(css).toMatch(/\.admin-v2-workspace\s+:where\(\.button\)\s*\{[^}]*min-height:\s*38px[^}]*padding:\s*8px 12px[^}]*border-radius:\s*10px[^}]*font-size:\s*0\.82rem/s)
     expect(css).not.toContain('admin-toolbar__sort')
+    for (const legacyToken of ['--color-warning-strong', '--color-success-strong', '--radius-card', '--shadow-soft']) {
+      expect(css).not.toContain(legacyToken)
+    }
   })
 
   test('AdminSort exposes roving focus and complete menu keyboard navigation', () => {
@@ -59,6 +62,8 @@ describe('Admin primitives closure delta', () => {
       'src/features/solog/admin/grupos/admin.grupos.members-dialog.tsx',
       'src/features/solog/admin/productos/admin.product-setup.dialog.tsx',
       'src/features/solog/admin/control/admin.control.v2.export-dialog.tsx',
+      'src/features/solog/admin/admin.management.presentation.tsx',
+      'src/features/solog/admin/admin.v2.presentation.tsx',
     ]
     const missing: string[] = []
     for (const file of files) {
