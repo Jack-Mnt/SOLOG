@@ -5016,14 +5016,14 @@
   background: var(--color-surface);
   color: var(--color-primary);
   font-size: 0.75rem;
-  box-shadow: inset 5px 0 var(--color-primary);
+  box-shadow: inset 4px 0 var(--color-primary);
   transform: none;
 }
 .admin-dashboard__actions:hover {
   color: var(--color-primary);
   border-color: var(--color-primary);
   background: var(--color-primary-subtle);
-  box-shadow: inset 5px 0 var(--color-primary);
+  box-shadow: inset 4px 0 var(--color-primary);
   transform: none;
 }
 .admin-dashboard__card > header > .icon-button:focus-visible,
@@ -5951,5 +5951,296 @@
   .admin-site-context__select:focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
+  }
+}
+
+
+/* Admin control density + responsive delta V1 — 2026-09-14.
+   Primary source: docs/SOLOG_UI_Admin_Controles_Densidad_Responsive_Delta_V1.md */
+.admin-v2-workspace .admin-sidebar {
+  --admin-sidebar-item-height: 44px;
+}
+
+/* Common action geometry. Sidebar is intentionally outside this scope. */
+.admin-v2-workspace .admin-workspace__main .button {
+  height: 36px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  gap: 7px;
+  box-shadow: none;
+  transform: none;
+}
+.admin-v2-workspace .admin-workspace__main .button > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+.admin-v2-workspace .admin-workspace__main .button:hover:not(:disabled) {
+  box-shadow: none;
+  transform: none;
+}
+.admin-v2-workspace .admin-workspace__main .button:not(.button--secondary):not(.button--danger):hover:not(:disabled) {
+  color: var(--color-primary-contrast);
+  border-color: var(--color-primary-hover);
+  background: var(--color-primary-hover);
+}
+.admin-v2-workspace .admin-workspace__main .button--secondary:hover:not(:disabled) {
+  color: var(--color-primary-active);
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+.admin-v2-workspace .admin-workspace__main .button--danger:hover:not(:disabled) {
+  color: var(--color-danger-hover);
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-danger-soft));
+}
+.admin-v2-workspace .admin-workspace__main .button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.admin-v2-workspace .admin-workspace__main .button:disabled {
+  box-shadow: none;
+  transform: none;
+}
+
+/* IconButton geometry. Dashboard percentage controls retain auto width because they also contain a value. */
+.admin-v2-workspace .admin-workspace__main .icon-button {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  box-shadow: none;
+  transform: none;
+}
+.admin-v2-workspace .admin-workspace__main .icon-button > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+.admin-v2-workspace .admin-workspace__main .icon-button:hover:not(:disabled) {
+  color: var(--color-primary-active);
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  box-shadow: none;
+  transform: none;
+}
+.admin-v2-workspace .admin-workspace__main .icon-button--danger:hover:not(:disabled) {
+  color: var(--color-danger-hover);
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-danger-soft));
+}
+.admin-v2-workspace .admin-workspace__main .icon-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.admin-v2-workspace .admin-dashboard__detail > .admin-v2-table .icon-button {
+  width: auto;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding-inline: 8px;
+}
+
+/* Search + filters share the same control height. */
+.admin-v2-workspace .admin-workspace__main :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
+  :where(input:not([type="checkbox"]):not([type="radio"]), select),
+.admin-v2-workspace .admin-workspace__main .admin-control__period-trigger {
+  height: 36px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+.admin-v2-workspace .admin-workspace__main .admin-filter-search-control > svg {
+  width: 16px;
+  height: 16px;
+}
+.admin-v2-workspace .admin-workspace__main .admin-filter-search-control input {
+  padding-left: 34px;
+}
+
+/* Filter hover and focus are intentionally distinct. */
+.admin-v2-workspace .admin-workspace__main :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
+  :where(input:not([type="checkbox"]):not([type="radio"]), select):hover:not(:disabled),
+.admin-v2-workspace .admin-workspace__main .admin-control__period-trigger:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+.admin-v2-workspace .admin-workspace__main :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
+  :where(input:not([type="checkbox"]):not([type="radio"]), select):focus-visible,
+.admin-v2-workspace .admin-workspace__main .admin-control__period-trigger:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-color: var(--color-focus);
+  box-shadow: none;
+}
+
+/* Quick filters are intentionally denser; StateView keeps normal control density. */
+.admin-v2-workspace .admin-quick-filter-chips .admin-quick-filter-chip {
+  height: 32px;
+  min-height: 32px;
+  padding: 5px 9px;
+  border-radius: 8px;
+}
+.admin-v2-workspace .admin-state-views > button {
+  height: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+/* Dashboard keeps its contextual left marker as an explicit exception. */
+.admin-v2-workspace .admin-dashboard__actions {
+  height: 36px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  box-shadow: inset 4px 0 var(--color-primary);
+}
+.admin-v2-workspace .admin-dashboard__actions > svg {
+  width: 16px;
+  height: 16px;
+}
+.admin-v2-workspace .admin-dashboard__actions:hover:not(:disabled) {
+  color: var(--color-primary-active);
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  box-shadow: inset 4px 0 var(--color-primary);
+}
+.admin-v2-workspace .admin-dashboard__actions:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow: inset 4px 0 var(--color-primary);
+}
+
+/* Devices keep danger semantics, but focus no longer reuses hover styling. */
+.admin-v2-workspace .admin-workspace__main .admin-device-revoke:hover:not(:disabled) {
+  color: var(--color-danger-hover);
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-danger-soft));
+}
+.admin-v2-workspace .admin-workspace__main .admin-device-revoke:focus-visible {
+  color: color-mix(in srgb, var(--color-danger) 78%, var(--color-text-primary));
+  border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
+  background: var(--color-danger-soft);
+  outline: 2px solid var(--color-danger);
+  outline-offset: 2px;
+}
+
+/* SiteContext B: contextual navigation integrated into the Navy topbar. */
+.admin-v2-workspace .admin-site-context__desktop > button {
+  width: 84px;
+  min-width: 80px;
+  height: 40px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 12px;
+  color: color-mix(in srgb, var(--color-text-inverse) 80%, transparent);
+  background: rgb(255 255 255 / 4%);
+  font-size: 0.9rem;
+  font-weight: 640;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+.admin-v2-workspace .admin-site-context__desktop > button:hover {
+  color: var(--color-text-inverse);
+  border-color: color-mix(in srgb, var(--color-primary) 58%, transparent);
+  background: var(--color-dark-surface-hover);
+}
+.admin-v2-workspace .admin-site-context__desktop > button[aria-pressed="true"] {
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 18%, var(--color-dark-surface-secondary));
+}
+.admin-v2-workspace .admin-site-context__desktop > button:focus-visible {
+  outline: 2px solid var(--color-primary-bright);
+  outline-offset: 2px;
+}
+
+/* Sidebar remains a larger navigation family. */
+.admin-v2-workspace .admin-sidebar .admin-tab,
+.admin-v2-workspace .admin-sidebar .admin-sidebar__collapse {
+  height: 44px;
+  min-height: 44px;
+}
+.admin-v2-workspace .admin-sidebar .admin-sidebar__collapse {
+  padding: 8px var(--admin-sidebar-item-padding);
+}
+.admin-v2-workspace .admin-sidebar .icon-button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border-radius: 12px;
+}
+.admin-v2-workspace .admin-sidebar .icon-button > svg,
+.admin-v2-workspace .admin-sidebar .admin-tab > svg,
+.admin-v2-workspace .admin-sidebar .admin-sidebar__collapse > svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+.admin-v2-workspace .admin-appearance > button {
+  height: 44px;
+  min-height: 44px;
+}
+
+/* Narrow Admin: compact content controls, while structural exceptions keep their size. */
+@media (max-width: 560px) {
+  .admin-v2-workspace .admin-workspace__main .button {
+    height: 32px;
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+  .admin-v2-workspace .admin-workspace__main .icon-button {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+  .admin-v2-workspace .admin-dashboard__detail > .admin-v2-table .icon-button {
+    width: auto;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+  .admin-v2-workspace .admin-workspace__main :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
+    :where(input:not([type="checkbox"]):not([type="radio"]), select),
+  .admin-v2-workspace .admin-workspace__main .admin-control__period-trigger {
+    height: 32px;
+    min-height: 32px;
+    padding-block: 6px;
+  }
+}
+
+/* Responsive SiteContext keeps the same contextual Navy treatment. */
+@media (max-width: 680px) {
+  .admin-v2-workspace .admin-site-context__select {
+    height: 40px;
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 1px solid rgb(255 255 255 / 14%);
+    border-radius: 12px;
+    color: var(--color-text-inverse);
+    background: var(--color-dark-surface-hover);
+    font-size: 0.9rem;
+    font-weight: 640;
+  }
+  .admin-v2-workspace .admin-site-context__select:focus-visible {
+    outline: 2px solid var(--color-primary-bright);
+    outline-offset: 2px;
+    border-color: var(--color-primary);
   }
 }
