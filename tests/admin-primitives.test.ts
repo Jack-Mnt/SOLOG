@@ -6,13 +6,34 @@ const root = path.resolve(import.meta.dir, '..')
 const source = (file: string) => readFileSync(path.join(root, file), 'utf8')
 
 describe('Admin primitives closure delta', () => {
-  test('Button base restores compact legacy geometry without overriding module-specific sizes', () => {
+  test('Admin control density follows the frozen 36/32/40/44 geometry', () => {
     const css = source('src/features/solog/admin/admin.css')
-    expect(css).toMatch(/\.admin-v2-workspace\s+:where\(\.button\)\s*\{[^}]*min-height:\s*38px[^}]*padding:\s*8px 12px[^}]*border-radius:\s*10px[^}]*font-size:\s*0\.82rem/s)
+    expect(css).toMatch(/\.admin-v2-workspace \.admin-workspace__main \.button\s*\{[^}]*height:\s*36px[^}]*min-height:\s*36px[^}]*padding:\s*8px 12px[^}]*border-radius:\s*8px[^}]*font-size:\s*0\.8rem/s)
+    expect(css).toMatch(/\.admin-v2-workspace \.admin-workspace__main \.icon-button\s*\{[^}]*width:\s*36px[^}]*height:\s*36px[^}]*border-radius:\s*8px/s)
+    expect(css).toMatch(/\.admin-v2-workspace \.admin-quick-filter-chips \.admin-quick-filter-chip\s*\{[^}]*height:\s*32px[^}]*min-height:\s*32px/s)
+    expect(css).toMatch(/\.admin-v2-workspace \.admin-state-views > button\s*\{[^}]*height:\s*36px[^}]*min-height:\s*36px/s)
+    expect(css).toMatch(/\.admin-v2-workspace \.admin-site-context__desktop > button\s*\{[^}]*width:\s*84px[^}]*min-width:\s*80px[^}]*height:\s*40px[^}]*border-radius:\s*12px[^}]*font-size:\s*0\.9rem[^}]*font-weight:\s*640/s)
+    expect(css).toContain('--admin-sidebar-item-height: 44px')
+    expect(css).toMatch(/@media \(max-width: 560px\)[\s\S]*?\.admin-v2-workspace \.admin-workspace__main \.button\s*\{[^}]*height:\s*32px[^}]*min-height:\s*32px/s)
     expect(css).not.toContain('admin-toolbar__sort')
     for (const legacyToken of ['--color-warning-strong', '--color-success-strong', '--radius-card', '--shadow-soft']) {
       expect(css).not.toContain(legacyToken)
     }
+  })
+
+  test('Dashboard keeps the approved 4px contextual inset and shared icon size', () => {
+    const css = source('src/features/solog/admin/admin.css')
+    expect(css).toMatch(/\.admin-v2-workspace \.admin-dashboard__actions\s*\{[^}]*height:\s*36px[^}]*box-shadow:\s*inset 4px 0 var\(--color-primary\)/s)
+    expect(css).not.toContain('inset 5px 0 var(--color-primary)')
+    expect(css).toMatch(/\.admin-v2-workspace \.admin-dashboard__actions > svg\s*\{[^}]*width:\s*16px[^}]*height:\s*16px/s)
+  })
+
+  test('Hover and focus use separate interaction treatments', () => {
+    const css = source('src/features/solog/admin/admin.css')
+    expect(css).toMatch(/\.button--secondary:hover:not\(:disabled\)[^{]*\{[^}]*background:\s*var\(--color-primary-subtle\)/s)
+    expect(css).toMatch(/\.admin-workspace__main \.button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-focus\)[^}]*outline-offset:\s*2px/s)
+    expect(css).toMatch(/\.admin-site-context__desktop > button:hover\s*\{[^}]*background:\s*var\(--color-dark-surface-hover\)/s)
+    expect(css).toMatch(/\.admin-site-context__desktop > button\[aria-pressed="true"\]\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--color-primary\) 18%, var\(--color-dark-surface-secondary\)\)/s)
   })
 
   test('AdminSort exposes roving focus and complete menu keyboard navigation', () => {
