@@ -5472,7 +5472,7 @@
   gap: 6px;
   flex-wrap: wrap;
 }
-.admin-site-context > button {
+.admin-site-context__desktop > button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5487,13 +5487,13 @@
   font-size: 0.8125rem;
   font-weight: 600;
 }
-.admin-site-context > button {
+.admin-site-context__desktop > button {
   cursor: pointer;
 }
-.admin-site-context > button:hover {
+.admin-site-context__desktop > button:hover {
   background: var(--color-primary-subtle);
 }
-.admin-site-context > button[aria-pressed="true"] {
+.admin-site-context__desktop > button[aria-pressed="true"] {
   color: var(--color-primary-active);
   border-color: var(--color-primary);
   background: var(--color-primary-soft);
@@ -5689,7 +5689,7 @@
   .admin-site-context {
     width: 100%;
   }
-  .admin-site-context > button {
+  .admin-site-context__desktop > button {
     flex: 1 0 76px;
     min-width: 76px;
   }
@@ -5881,5 +5881,77 @@
   .admin-quick-filter-chips .admin-control__period {
     width: 100%;
     margin-left: 0;
+  }
+}
+
+/* AdminSort y selector de sede responsive — Fase E. */
+.admin-sort {
+  position: relative;
+  margin-left: auto;
+}
+.admin-sort__trigger--active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+.admin-sort__menu {
+  position: absolute;
+  z-index: 12;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  display: grid;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-default);
+}
+.admin-sort__menu > button {
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--color-text-primary);
+  background: transparent;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.admin-sort__menu > button:hover,
+.admin-sort__menu > button[aria-checked="true"] {
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+}
+.admin-sort__menu > button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -1px;
+}
+.admin-site-context__desktop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.admin-site-context__select { display: none; }
+@media (max-width: 680px) {
+  .admin-site-context__desktop { display: none; }
+  .admin-site-context__select {
+    display: block;
+    width: 100%;
+    min-height: 38px;
+    padding: 7px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+  .admin-site-context__select:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
   }
 }

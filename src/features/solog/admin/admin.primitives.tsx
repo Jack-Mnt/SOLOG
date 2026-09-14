@@ -1,4 +1,5 @@
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { ArrowDownWideNarrow } from 'lucide-react'
+import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
 type IconButtonVariant = 'default' | 'danger'
 type IconButtonSize = 'default' | 'compact'
@@ -27,3 +28,82 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
 )
 
 IconButton.displayName = 'IconButton'
+
+export type AdminSortOption<T extends string> = {
+  value: T
+  label: string
+}
+
+type AdminSortProps<T extends string> = {
+  value: T
+  defaultValue: T
+  options: readonly AdminSortOption<T>[]
+  onChange: (value: T) => void
+}
+
+export function AdminSort<T extends string>({ value, defaultValue, options, onChange }: AdminSortProps<T>) {
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const activeOption = options.find((option) => option.value === value)
+  const menuId = useId()
+  const active = value !== defaultValue
+
+  useEffect(() => {
+    if (!open) return
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !root.current?.contains(event.target)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [open])
+
+  useEffect(() => {
+    if (open) root.current?.querySelector<HTMLButtonElement>('[role="menuitemradio"][aria-checked="true"]')?.focus()
+  }, [open])
+
+  const close = () => {
+    setOpen(false)
+    trigger.current?.focus()
+  }
+
+  const select = (next: T) => {
+    onChange(next)
+    close()
+  }
+
+  return <div
+    className="admin-sort"
+    ref={root}
+    onKeyDown={(event) => {
+      if (event.key === 'Escape' && open) {
+        event.preventDefault()
+        close()
+      }
+    }}
+  >
+    <IconButton
+      ref={trigger}
+      className={active ? 'admin-sort__trigger admin-sort__trigger--active' : 'admin-sort__trigger'}
+      aria-label="Ordenar resultados"
+      title={activeOption && active ? `Ordenar: ${activeOption.label}` : 'Ordenar'}
+      aria-haspopup="menu"
+      aria-expanded={open}
+      aria-controls={menuId}
+      onClick={() => setOpen((current) => !current)}
+    >
+      <ArrowDownWideNarrow size={17} aria-hidden="true" />
+    </IconButton>
+    {open && <div className="admin-sort__menu" id={menuId} role="menu" aria-label="Opciones de orden">
+      {options.map((option) => <button
+        type="button"
+        role="menuitemradio"
+        key={option.value}
+        aria-checked={value === option.value}
+        onClick={() => select(option.value)}
+      >
+        {option.label}
+      </button>)}
+    </div>}
+  </div>
+}

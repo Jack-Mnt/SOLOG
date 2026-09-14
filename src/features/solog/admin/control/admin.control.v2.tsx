@@ -399,7 +399,6 @@ export function AdminControlV2() {
   const cached = currentPayload ? store.peek("control_groups", currentPayload).data : undefined;
   return (
     <section className="admin-control">
-      <h2>Control de diferencias</h2>
       <div className="admin-filter-bar admin-toolbar admin-control__filters">
         <div className="admin-filter-field admin-toolbar__period admin-control__period-field">
           <span>Período</span>

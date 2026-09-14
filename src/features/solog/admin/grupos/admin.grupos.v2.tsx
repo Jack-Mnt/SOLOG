@@ -11,6 +11,7 @@ import type {
   MasterDataProduct,
 } from "../masterdata/admin.masterdata.v1";
 import { QueryState, Value } from "../admin.v2.presentation";
+import { AdminSort } from "../admin.primitives";
 import { AdminCategoriesDialog } from "./admin.categories.dialog";
 import { useGroupsStore } from "./admin.grupos.context";
 import {
@@ -339,7 +340,6 @@ export function AdminGroupsV2() {
     <section className="admin-groups">
       <header className="admin-groups__heading">
         <div>
-          <h2>Grupos de conteo</h2>
           <p>
             Máscara y composición derivadas del Master Data compartido. El
             precio unitario es informativo.
@@ -396,21 +396,6 @@ export function AdminGroupsV2() {
             <option value="none">Sin valorizado</option>
           </select>
         </label>
-        <label className="admin-toolbar__sort">
-          Orden
-          <select
-            value={sort}
-            onChange={(event) => setSort(event.target.value as GroupSort)}
-          >
-            <option value="name">Grupo</option>
-            <option value="category">Categoría</option>
-            <option value="type">Tipo derivado</option>
-            <option value="unit_price">Precio unitario</option>
-            <option value="valuation">Valorizado primero</option>
-            <option value="members_desc">Más integrantes</option>
-            <option value="members_asc">Menos integrantes</option>
-          </select>
-        </label>
         <div className="admin-toolbar__actions admin-groups__actions">
           <button
             type="button"
@@ -432,6 +417,20 @@ export function AdminGroupsV2() {
       </form>
       <div className="admin-table-bar admin-groups__table-bar">
         <p className="admin-result-count">{visible.length === rows.length ? `${rows.length} resultados` : `${visible.length} de ${rows.length} resultados`}</p>
+        <AdminSort<GroupSort>
+          value={sort}
+          defaultValue="name"
+          onChange={setSort}
+          options={[
+            { value: "name", label: "Predeterminado" },
+            { value: "category", label: "Categoría" },
+            { value: "type", label: "Tipo derivado" },
+            { value: "unit_price", label: "Precio unitario" },
+            { value: "valuation", label: "Valorizado primero" },
+            { value: "members_desc", label: "Más integrantes" },
+            { value: "members_asc", label: "Menos integrantes" },
+          ]}
+        />
       </div>
       <div
         className="admin-v2-table admin-groups__table"

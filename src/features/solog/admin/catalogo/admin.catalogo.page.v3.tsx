@@ -158,5 +158,5 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
 export function AdminCatalogV3() {
   const [publishing, setPublishing] = useState(false)
   const store = useCatalogStore()
-  return <section className="admin-catalog"><header className="admin-catalog__header"><div><h2>Catálogo compartido</h2><CatalogStatus /></div><button type="button" className="button" onClick={() => setPublishing(true)}>{store.publication.operationId ? 'Recuperar publicación' : 'Revisar publicación'}</button></header><ProposalsSurface />{publishing && <PublicationDialog onClose={() => setPublishing(false)} />}</section>
+  return <section className="admin-catalog"><header className="admin-catalog__header"><div><CatalogStatus /></div><button type="button" className="button" onClick={() => setPublishing(true)}>{store.publication.operationId ? 'Recuperar publicación' : 'Revisar publicación'}</button></header><ProposalsSurface />{publishing && <PublicationDialog onClose={() => setPublishing(false)} />}</section>
 }

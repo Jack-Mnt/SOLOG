@@ -107,6 +107,7 @@ function Shell({
         </button>
       </section>
     );
+  const sites = orderedAdminSites(bootstrap.data.allowed_sites);
   return (
     <main
       className={`admin-workspace admin-v2-workspace${collapsed ? " admin-workspace--collapsed" : ""}`}
@@ -172,21 +173,27 @@ function Shell({
         <header className="admin-header">
           <h1>{navigation.find(([path]) => path === route)?.[1]}</h1>
           {route === "/admin/control" ? (
-            <div
-              className="admin-site-context"
-              role="group"
-              aria-label="Sede administrativa"
-            >
-              {orderedAdminSites(bootstrap.data.allowed_sites).map((site) => (
-                <button
-                  type="button"
-                  key={site.id}
-                  aria-pressed={store.siteId === site.id}
-                  onClick={() => store.selectSite(site.id)}
-                >
-                  {adminSiteLabel(site.nombre)}
-                </button>
-              ))}
+            <div className="admin-site-context" aria-label="Sede administrativa">
+              <div className="admin-site-context__desktop" role="group" aria-label="Sede administrativa">
+                {sites.map((site) => (
+                  <button
+                    type="button"
+                    key={site.id}
+                    aria-pressed={store.siteId === site.id}
+                    onClick={() => store.selectSite(site.id)}
+                  >
+                    {adminSiteLabel(site.nombre)}
+                  </button>
+                ))}
+              </div>
+              <select
+                className="admin-site-context__select"
+                aria-label="Sede administrativa"
+                value={store.siteId}
+                onChange={(event) => store.selectSite(event.target.value)}
+              >
+                {sites.map((site) => <option key={site.id} value={site.id}>{adminSiteLabel(site.nombre)}</option>)}
+              </select>
             </div>
           ) : (
             <img className="admin-header__context-logo" src="/logo-pr-light.png" alt="Puerto Rico" />
