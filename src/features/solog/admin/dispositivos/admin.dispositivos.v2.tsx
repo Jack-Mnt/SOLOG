@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Inbox, MapPinOff, ShieldOff, Tablet } from "lucide-react";
+import { Check, Inbox, MapPinOff, RefreshCw, ShieldCheck, ShieldOff, Tablet, X } from "lucide-react";
 import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
@@ -176,6 +176,7 @@ export function AdminDevicesV2() {
                               )
                             }
                           >
+                            {hasTablet ? <RefreshCw size={16} aria-hidden="true" /> : <ShieldCheck size={16} aria-hidden="true" />}
                             {hasTablet ? "Reemplazar tablet" : "Autorizar"}
                           </button>
                           <button
@@ -183,6 +184,7 @@ export function AdminDevicesV2() {
                             disabled={!!store.intent("devices")}
                             onClick={() => openAction(device, "reject")}
                           >
+                            <X size={16} aria-hidden="true" />
                             Rechazar
                           </button>
                         </div>
