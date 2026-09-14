@@ -5773,26 +5773,27 @@
   }
 }
 /* Admin primitives — Fase B. Base visual; la adopción por módulos comienza en Fase C. */
-.admin-v2-workspace .button {
-  min-height: 40px;
-  gap: 8px;
-  padding-inline: 15px;
-  border-radius: 12px;
+.admin-v2-workspace :where(.button) {
+  min-height: 38px;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
   box-shadow: none;
 }
-.admin-v2-workspace .button:hover:not(:disabled) { box-shadow: var(--shadow-default); }
-.admin-v2-workspace .button:focus-visible,
-.admin-v2-workspace .icon-button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-.admin-v2-workspace .button:disabled,
-.admin-v2-workspace .icon-button:disabled { box-shadow: none; cursor: not-allowed; opacity: 0.58; }
-.admin-v2-workspace .button--secondary { color: var(--color-primary); background: var(--color-surface); box-shadow: none; }
-.admin-v2-workspace .button--secondary:hover:not(:disabled) { border-color: var(--color-primary); background: var(--color-primary-soft); }
-.admin-v2-workspace .button--danger { border-color: color-mix(in srgb, var(--color-danger) 55%, var(--color-border)); color: var(--color-danger); background: var(--color-danger-soft); }
-.admin-v2-workspace .button--compact { min-height: 35px; padding-inline: 11px; border-radius: 10px; font-size: 0.78rem; }
-.admin-v2-workspace .icon-button { width: 40px; height: 40px; min-height: 40px; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-surface); box-shadow: none; }
-.admin-v2-workspace .icon-button:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-soft); }
-.admin-v2-workspace .icon-button--compact { width: 35px; height: 35px; min-height: 35px; border-radius: 10px; }
-.admin-v2-workspace .icon-button--danger:hover:not(:disabled) { border-color: var(--color-danger); color: var(--color-danger); background: var(--color-danger-soft); }
+.admin-v2-workspace :where(.button):hover:not(:disabled) { box-shadow: var(--shadow-default); }
+.admin-v2-workspace :where(.button):focus-visible,
+.admin-v2-workspace :where(.icon-button):focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.admin-v2-workspace :where(.button):disabled,
+.admin-v2-workspace :where(.icon-button):disabled { box-shadow: none; cursor: not-allowed; opacity: 0.58; }
+.admin-v2-workspace :where(.button--secondary) { color: var(--color-primary); background: var(--color-surface); box-shadow: none; }
+.admin-v2-workspace :where(.button--secondary):hover:not(:disabled) { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.admin-v2-workspace :where(.button--danger) { border-color: color-mix(in srgb, var(--color-danger) 55%, var(--color-border)); color: var(--color-danger); background: var(--color-danger-soft); }
+.admin-v2-workspace :where(.button--compact) { min-height: 34px; padding: 7px 10px; border-radius: 9px; font-size: 0.78rem; }
+.admin-v2-workspace :where(.icon-button) { width: 40px; height: 40px; min-height: 40px; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-surface); box-shadow: none; }
+.admin-v2-workspace :where(.icon-button):hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-soft); }
+.admin-v2-workspace :where(.icon-button--compact) { width: 35px; height: 35px; min-height: 35px; border-radius: 10px; }
+.admin-v2-workspace :where(.icon-button--danger):hover:not(:disabled) { border-color: var(--color-danger); color: var(--color-danger); background: var(--color-danger-soft); }
 .admin-toolbar,
 .admin-filter-bar { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-panel); background: var(--color-surface-secondary); box-shadow: none; }
 .admin-toolbar__search,
@@ -5817,16 +5818,13 @@
 }
 .admin-toolbar > .admin-toolbar__search { order: 1; }
 .admin-toolbar > .admin-toolbar__filter,
-.admin-toolbar > .admin-toolbar__sort,
 .admin-toolbar > .admin-toolbar__filters { order: 2; }
 .admin-toolbar > .admin-toolbar__actions { order: 3; }
 .admin-control__filters > .admin-toolbar__period { order: 0; }
 .admin-control__custom-period-filters { display: contents; }
 .admin-control__custom-period-filters > .admin-filter-field { order: 2; }
-.admin-toolbar__sort { font-size: 0.8rem; }
 @media (max-width: 760px) {
   .admin-toolbar > .admin-toolbar__filter,
-  .admin-toolbar > .admin-toolbar__sort,
   .admin-toolbar > .admin-toolbar__filters,
   .admin-control__custom-period-filters > .admin-filter-field { order: 1; }
   .admin-toolbar > .admin-toolbar__search { order: 2; }
