@@ -92,10 +92,12 @@ describe('S10-B: contrato V9 sin retirar compatibilidades vigentes', () => {
   })
 
   test('CSS no conserva tabla desmontada; Historial y H2 permanecen', () => {
-    const css = source('src/styles.css')
-    expect(css).not.toMatch(/\.cajero-count-table[\w-]*\b|\.cajero-review-reason\b/)
-    expect(css).toMatch(/\.cajero-history-list__detail\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/)
-    expect(css).toMatch(/\.cajero-history-list__detail dd\.cajero-history-value--discarded\s*\{[^}]*color:\s*var\(--danger,\s*#b42318\)[^}]*text-decoration:\s*line-through/)
+    const stylesCss = source('src/styles.css')
+    const operationalCss = source('src/operational.css')
+    const activeCss = stylesCss + '\n' + operationalCss
+    expect(activeCss).not.toMatch(/\.cajero-count-table[\w-]*\b|\.cajero-review-reason\b/)
+    expect(operationalCss).toMatch(/\.cajero-history-list__detail\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/)
+    expect(operationalCss).toMatch(/\.cajero-history-list__detail dd\.cajero-history-value--discarded\s*\{[^}]*color:\s*var\(--danger,\s*#b42318\)[^}]*text-decoration:\s*line-through/)
   })
 
   test('saneamiento y superficies activas permanecen, incluidas RPC dinámicas Admin', () => {
