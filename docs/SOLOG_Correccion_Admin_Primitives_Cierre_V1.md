@@ -42,6 +42,7 @@ No aplica a controles cuya semántica no es un Button de acción:
 - añadir icono Search a las búsquedas de Productos y Grupos;
 - añadir icono al Primary `Revisar publicación`;
 - retirar CSS muerto de `.admin-toolbar__sort`;
+- reemplazar referencias CSS huérfanas `--color-warning-strong`, `--color-success-strong`, `--radius-card` y `--shadow-soft` por tokens vigentes equivalentes;
 - añadir pruebas dirigidas para estas primitives y reglas.
 
 ## 4. Fuera de alcance
