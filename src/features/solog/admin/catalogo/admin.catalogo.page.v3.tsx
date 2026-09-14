@@ -45,7 +45,21 @@ function ProposalsSurface() {
   const urgent = rows.filter((proposal) => classifyProposal(proposal) === 'urgent')
   const emerging = rows.filter((proposal) => classifyProposal(proposal) === 'emerging')
   return <>
-    <div className="admin-catalog__views admin-state-views" role="tablist" aria-label="Estado de propuestas">{proposalStatuses.map((item) => <button type="button" role="tab" id={`admin-catalog-state-${item.id}`} key={item.id} aria-selected={status === item.id} aria-controls="admin-catalog-proposals-panel" onClick={() => setStatus(item.id)}>{item.label}{query.data && <strong>{query.data.counts[item.id]}</strong>}</button>)}</div>
+<div
+      className="admin-catalog__views admin-state-views"
+      role="tablist"
+      aria-label="Estado de propuestas"
+      onKeyDown={(event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+        event.preventDefault()
+        const current = proposalStatuses.findIndex((item) => item.id === status)
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? proposalStatuses.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + proposalStatuses.length) % proposalStatuses.length
+        setStatus(proposalStatuses[next].id)
+        event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus()
+      }}
+    >
+      {proposalStatuses.map((item) => <button type="button" role="tab" id={`admin-catalog-state-${item.id}`} key={item.id} aria-selected={status === item.id} aria-controls="admin-catalog-proposals-panel" onClick={() => setStatus(item.id)}>{item.label}{query.data && <strong>{query.data.counts[item.id]}</strong>}</button>)}
+    </div>
     <div id="admin-catalog-proposals-panel" role="tabpanel" aria-labelledby={`admin-catalog-state-${status}`}>
     {!query.data ? <QueryState {...query} /> : <div className="admin-catalog__pending"><ProposalSection title="Urgentes" rows={urgent} section="urgent" onSelect={setSelected} /><ProposalSection title="Emergentes" rows={emerging} section="emerging" onSelect={setSelected} /></div>}
     </div>
