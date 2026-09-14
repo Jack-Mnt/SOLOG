@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, CircleOff, Clock, Eye, RefreshCw, RotateCcw } from "lucide-react";
 import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
@@ -110,6 +111,7 @@ function FamilyDetail({
               disabled={!page}
               onClick={() => setPage(page - 1)}
             >
+              <ChevronLeft size={16} aria-hidden="true" />
               Anterior
             </button>
             <span>Página {page + 1}</span>
@@ -120,6 +122,7 @@ function FamilyDetail({
               onClick={() => setPage(page + 1)}
             >
               Siguiente
+              <ChevronRight size={16} aria-hidden="true" />
             </button>
           </div>
         </>
@@ -255,6 +258,7 @@ export function AdminIncidentsV2() {
             className="button button--secondary"
             onClick={query.retry}
           >
+            <RefreshCw size={16} aria-hidden="true" />
             Actualizar incidencias
           </button>
         </div>
@@ -331,6 +335,7 @@ export function AdminIncidentsV2() {
                           aria-label={`Ver repeticiones ${item.family_key}`}
                           onClick={() => setFamily(item)}
                         >
+                          <Eye size={16} aria-hidden="true" />
                           Ver detalle
                         </button>
                         {item.active && !item.reactivate_available && (
@@ -340,6 +345,7 @@ export function AdminIncidentsV2() {
                             disabled={pending}
                             onClick={() => act(item, "ignore_30d")}
                           >
+                            <Clock size={16} aria-hidden="true" />
                             Ignorar 30 días
                           </button>
                         )}
@@ -350,6 +356,7 @@ export function AdminIncidentsV2() {
                             disabled={pending}
                             onClick={() => act(item, "reactivate")}
                           >
+                            <RotateCcw size={16} aria-hidden="true" />
                             Reactivar incidencia
                           </button>
                         )}
@@ -360,6 +367,7 @@ export function AdminIncidentsV2() {
                             disabled={pending}
                             onClick={() => act(item, "propose_delete")}
                           >
+                            <CircleOff size={16} aria-hidden="true" />
                             Proponer eliminación
                           </button>
                         )}
