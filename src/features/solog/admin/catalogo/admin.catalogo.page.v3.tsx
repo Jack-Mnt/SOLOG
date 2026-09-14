@@ -47,7 +47,7 @@ function ProposalsSurface() {
   const emerging = rows.filter((proposal) => classifyProposal(proposal) === 'emerging')
   return <>
 <div
-      className="admin-catalog__views admin-state-views"
+      className="admin-catalog__views admin-state-views admin-section-secondary-row"
       role="tablist"
       aria-label="Estado de propuestas"
       onKeyDown={(event) => {

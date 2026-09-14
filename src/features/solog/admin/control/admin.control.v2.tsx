@@ -246,7 +246,7 @@ function ControlResults({
   return (
     <>
       <div
-        className="admin-control__summary admin-quick-filter-chips"
+        className="admin-control__summary admin-quick-filter-chips admin-section-secondary-row"
         aria-label="Resumen de resultados"
       >
         <button
@@ -295,11 +295,12 @@ function ControlResults({
       </div>
       {view.total > 0 ? (
         <>
-          <div className="admin-table-bar admin-control__table-bar">
+          <div className="admin-table-bar admin-control__table-bar admin-result-count-row">
             <p className="admin-result-count">{view.total === data.items.length ? `${view.total} resultados` : `${view.total} de ${data.items.length} resultados`}</p>
           </div>
-          <div className="admin-v2-table admin-control__table">
-          <table>
+          <div className="admin-table-section admin-control__table">
+            <div className="admin-v2-table">
+              <table>
             <thead>
               <tr>
                 <th>Grupo</th>
@@ -354,7 +355,8 @@ function ControlResults({
               ))}
             </tbody>
           </table>
-        </div>
+            </div>
+          </div>
         </>
       ) : (
         <p className="admin-control__empty" role="status">
@@ -399,7 +401,7 @@ export function AdminControlV2() {
   const cached = currentPayload ? store.peek("control_groups", currentPayload).data : undefined;
   return (
     <section className="admin-control">
-      <div className="admin-filter-bar admin-toolbar admin-control__filters">
+      <div className="admin-filter-bar admin-toolbar admin-toolbar-surface admin-control__filters">
         <div className="admin-filter-field admin-toolbar__period admin-control__period-field">
           <span>Período</span>
           <ControlPeriodSelect

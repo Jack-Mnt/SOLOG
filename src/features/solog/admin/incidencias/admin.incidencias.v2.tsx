@@ -198,7 +198,7 @@ export function AdminIncidentsV2() {
   const pending = !!store.intent("incidents");
   return (
     <section className="admin-incidents">
-      <div className="admin-v2-toolbar admin-toolbar admin-incidents__toolbar">
+      <div className="admin-v2-toolbar admin-toolbar admin-toolbar-surface admin-incidents__toolbar">
         <div className="admin-toolbar__filters admin-incidents__filters">
           <label className="admin-toolbar__filter">
             Ámbito de incidencias
@@ -263,7 +263,7 @@ export function AdminIncidentsV2() {
           </button>
         </div>
       </div>
-      <p className="admin-incidents__help">
+      <p className="admin-incidents__help admin-section-secondary-row">
         Las acciones se aplican al ámbito seleccionado. Proponer eliminación no
         elimina, no suprime, no aprueba ni publica.
       </p>
@@ -276,20 +276,16 @@ export function AdminIncidentsV2() {
       {error && <p role="alert">{error}</p>}
       {query.data ? (
         <>
-          <p className="admin-incidents__period">
+          <p className="admin-incidents__period admin-section-secondary-row">
             Período operativo: {query.data.period.from} — {query.data.period.to}{" "}
             · America/Lima
           </p>
-          <div className="admin-table-bar admin-incidents__table-bar">
+          <div className="admin-table-bar admin-incidents__table-bar admin-result-count-row">
             <p className="admin-result-count">{families.length === query.data.families.length ? `${families.length} resultados` : `${families.length} de ${query.data.families.length} resultados`}</p>
           </div>
-          <div
-            className="admin-v2-table admin-incidents__table"
-            role="region"
-            aria-label="Familias de incidencias"
-            tabIndex={0}
-          >
-            <table>
+          <div className="admin-table-section admin-incidents__table">
+            <div className="admin-v2-table" role="region" aria-label="Familias de incidencias" tabIndex={0}>
+              <table>
               <thead>
                 <tr>
                   <th>Incidencia</th>
@@ -389,6 +385,7 @@ export function AdminIncidentsV2() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       ) : (

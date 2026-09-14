@@ -343,14 +343,14 @@ export function AdminGroupsV2() {
     <section className="admin-groups">
       <header className="admin-groups__heading">
         <div>
-          <p>
+          <p className="admin-section-intro">
             Máscara y composición derivadas del Master Data compartido. El
             precio unitario es informativo.
           </p>
         </div>
       </header>
       <form
-        className="admin-v2-filters admin-toolbar admin-groups__filters"
+        className="admin-v2-filters admin-toolbar admin-toolbar-surface admin-groups__filters"
         onSubmit={(event) => event.preventDefault()}
       >
         <label className="admin-toolbar__search">
@@ -421,7 +421,7 @@ export function AdminGroupsV2() {
           </button>
         </div>
       </form>
-      <div className="admin-table-bar admin-groups__table-bar">
+      <div className="admin-table-bar admin-groups__table-bar admin-result-count-row">
         <p className="admin-result-count">{visible.length === rows.length ? `${rows.length} resultados` : `${visible.length} de ${rows.length} resultados`}</p>
         <AdminSort<GroupSort>
           value={sort}
@@ -438,13 +438,9 @@ export function AdminGroupsV2() {
           ]}
         />
       </div>
-      <div
-        className="admin-v2-table admin-groups__table"
-        role="region"
-        aria-label="Lista de grupos"
-        tabIndex={0}
-      >
-        <table>
+      <div className="admin-table-section admin-groups__table">
+        <div className="admin-v2-table" role="region" aria-label="Lista de grupos" tabIndex={0}>
+          <table>
           <thead>
             <tr>
               <th scope="col">Grupo</th>
@@ -509,6 +505,7 @@ export function AdminGroupsV2() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
       {create && <CreateGroupDialog onClose={() => setCreate(false)} />}
       {selectedMembers && (

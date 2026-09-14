@@ -4251,7 +4251,7 @@
   justify-content: flex-end;
   gap: 8px;
 }
-.admin-groups__table:focus-visible,
+.admin-groups__table .admin-v2-table:focus-visible,
 .admin-groups__filters .button:focus-visible,
 .admin-groups__actions .button:focus-visible {
   outline: 2px solid var(--color-focus);
@@ -4270,11 +4270,6 @@
   min-height: 38px;
   padding: 8px 14px;
   font-size: 0.85rem;
-}
-.admin-groups__table {
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: #fff;
 }
 .admin-groups__table table {
   min-width: 760px;
@@ -4792,12 +4787,8 @@
   background: var(--color-danger-soft);
   color: color-mix(in srgb, var(--color-danger) 75%, var(--color-text-primary));
 }
-.admin-control > .admin-control__table {
-  margin: 0;
+.admin-control > .admin-control__table > .admin-v2-table {
   max-height: min(65vh, 680px);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
   isolation: isolate;
 }
 .admin-control > .admin-control__table table {
@@ -5874,7 +5865,53 @@
   min-height: 22px;
   padding: 2px 6px;
 }
-.admin-table-bar + .admin-v2-table { margin-top: 0; }
+.admin-table-bar + .admin-v2-table,
+.admin-table-bar + .admin-table-section { margin-top: 0; }
+/* Admin sections — Bloque A. Jerarquía previa a tablas sin alterar su carcasa. */
+.admin-v2-workspace .admin-toolbar-surface {
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: none;
+}
+.admin-v2-workspace .admin-toolbar-surface label,
+.admin-v2-workspace .admin-toolbar-surface .admin-control__period-field > span {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.admin-v2-workspace .admin-section-intro {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.admin-v2-workspace .admin-section-secondary-row {
+  min-width: 0;
+}
+.admin-v2-workspace .admin-result-count-row {
+  margin-top: 12px;
+}
+/* Admin tables — Bloque B. El shell exterior conserva el scroll en su contenedor interno. */
+.admin-v2-workspace .admin-table-section {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+.admin-v2-workspace .admin-table-section > .admin-v2-table {
+  max-width: 100%;
+  margin: 0;
+  overflow: auto;
+}
+.admin-v2-workspace .admin-table-section thead,
+.admin-v2-workspace .admin-table-section thead th {
+  background: var(--color-surface-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
 @media (max-width: 760px) {
   .admin-quick-filter-chips .admin-control__period {
     width: 100%;

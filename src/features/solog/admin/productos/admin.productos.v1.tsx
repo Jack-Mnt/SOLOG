@@ -52,14 +52,14 @@ export function AdminProductsV1() {
   const setupRequired = [...setupFromSnapshot, ...catalog.confirmedSetupRequired().filter(item => !setupFingerprints.has(item.propuesta_fingerprint))]
   return <section className="admin-catalog admin-products">
     {setupRequired.length > 0 && <section className="admin-catalog__section admin-catalog__section--urgent"><header><h3>Configuración pendiente</h3><span>{setupRequired.length}</span></header><div className="admin-catalog__proposal-context">{setupRequired.map((item) => <span key={item.propuesta_fingerprint}>{item.c_interno} · {item.producto} · configuración requerida antes de publicar <button type="button" className="button button--secondary" onClick={() => setSetup(item)}><Settings size={16} aria-hidden="true" />Configurar</button></span>)}</div></section>}
-    <section className="admin-catalog__section">
-      <form className="admin-v2-filters admin-toolbar admin-catalog__filters" onSubmit={(event) => event.preventDefault()}>
+    <section className="admin-products__section">
+      <form className="admin-v2-filters admin-toolbar admin-toolbar-surface admin-catalog__filters" onSubmit={(event) => event.preventDefault()}>
         <label className="admin-toolbar__search">Buscar<span className="admin-filter-search-control"><Search size={16} aria-hidden="true" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(0) }} placeholder="Producto, código, marca, categoría o grupo" /></span></label>
         <label className="admin-toolbar__filter">Estado<select value={stateFilter} onChange={(event) => { setStateFilter(event.target.value as ProductStateFilter); setPage(0) }}><option value="all">Todos</option><option value="incluido">Incluidos</option><option value="excluido">Excluidos</option></select></label>
         <label className="admin-toolbar__filter">Modalidad<select value={modeFilter} onChange={(event) => { setModeFilter(event.target.value as ProductModeFilter); setPage(0) }}><option value="all">Todas</option><option value="Único">Único</option><option value="Agrupado">Agrupado</option><option value="Excluido">Excluido</option></select></label>
         <label className="admin-toolbar__filter">Categoría<select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setPage(0) }}><option value="all">Todas</option>{masterData.snapshot.categories.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
         </form>
-      <div className="admin-table-bar admin-products__table-bar">
+      <div className="admin-table-bar admin-products__table-bar admin-result-count-row">
         <p className="admin-result-count">{products.length === masterData.snapshot.totals.products ? `${products.length} resultados` : `${products.length} de ${masterData.snapshot.totals.products} resultados`}</p>
         <AdminSort<ProductSort>
           value={sort}
@@ -73,14 +73,14 @@ export function AdminProductsV1() {
           ]}
         />
       </div>
-      <div className="admin-v2-table admin-catalog__table"><table><thead><tr><th scope="col">Producto</th><th scope="col">C. interno</th><th scope="col">Categoría</th><th scope="col">Grupo</th><th scope="col">Precio</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>{visible.rows.map((product) => {
+      <div className="admin-table-section admin-catalog__table"><div className="admin-v2-table"><table><thead><tr><th scope="col">Producto</th><th scope="col">C. interno</th><th scope="col">Categoría</th><th scope="col">Grupo</th><th scope="col">Precio</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>{visible.rows.map((product) => {
         const category = derived.categoryById.get(product.categoria_id)?.nombre ?? '—'
         const group = product.grupo_id ? derived.groupById.get(product.grupo_id)?.nombre ?? '—' : null
         const actionLabel = product.estado === 'Excluido' ? 'Proponer reincorporación' : 'Proponer exclusión'
         const proposalOverride = catalog.confirmedProductProposalStatus(product.c_interno)
         const proposalState = proposalOverride === 'none' ? undefined : proposalOverride ?? product.propuesta?.estado
         return <tr key={product.c_interno}><th scope="row">{product.producto}</th><td>{product.c_interno}</td><td>{category}</td><td>{group ?? '—'}</td><td className="admin-catalog__money"><Value value={product.precio} money /></td><td>{product.estado === 'Excluido' ? 'Excluido' : 'Incluido'} · {product.estado}{proposalState ? ` · propuesta ${proposalState}` : ''}</td><td><button type="button" className="button button--secondary" disabled={!!proposalState} onClick={() => setSelected(product)}>{proposalState ? <Clock size={16} aria-hidden="true" /> : product.estado === 'Excluido' ? <RotateCcw size={16} aria-hidden="true" /> : <CircleOff size={16} aria-hidden="true" />}{proposalState ? 'Propuesta en revisión' : actionLabel}</button></td></tr>
-      })}{!products.length && <tr><td colSpan={7}>No hay productos que coincidan con los filtros locales.</td></tr>}</tbody></table></div>
+      })}{!products.length && <tr><td colSpan={7}>No hay productos que coincidan con los filtros locales.</td></tr>}</tbody></table></div></div>
       {products.length > 0 && <div className="admin-control__pagination" aria-label="Paginación de productos"><button type="button" className="button button--secondary" disabled={visible.currentPage === 0} onClick={() => setPage(visible.currentPage - 1)}><ChevronLeft size={16} aria-hidden="true" />Anterior</button><span>Página {visible.currentPage + 1} de {visible.pageCount} · {visible.offset + 1}–{Math.min(visible.offset + visible.rows.length, products.length)} de {products.length}</span><button type="button" className="button button--secondary" disabled={visible.currentPage + 1 >= visible.pageCount} onClick={() => setPage(visible.currentPage + 1)}>Siguiente<ChevronRight size={16} aria-hidden="true" /></button></div>}
     </section>
     {selected && <ProductStateProposal product={selected} groupName={selected.grupo_id ? derived.groupById.get(selected.grupo_id)?.nombre ?? null : null} onClose={() => setSelected(null)} />}
