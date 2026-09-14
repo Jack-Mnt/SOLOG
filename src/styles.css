@@ -1419,6 +1419,11 @@
   position: relative;
 }
 
+.cajero-stock-indicator__trigger:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .cajero-stock-indicator__trigger {
   min-height: 38px;
   display: inline-flex;
@@ -1806,6 +1811,13 @@
 
 .cajero-start-empty-state .button {
   margin-top: 0.9rem;
+}
+
+.cajero-session-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-default);
 }
 
 .cajero-session-card {
@@ -2793,194 +2805,6 @@
   flex-direction: row;
 }
 
-.cajero-history-tabs {
-  display: inline-flex;
-  align-self: flex-start;
-  gap: 2px;
-  flex: 0 0 auto;
-  padding: 3px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface-secondary);
-}
-
-.cajero-history-tabs button {
-  min-width: 76px;
-  min-height: 44px;
-  padding: 0.45rem 0.8rem;
-  border: 0;
-  border-radius: calc(var(--radius-control) - 3px);
-  color: var(--color-text-secondary);
-  background: transparent;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 800;
-  cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.cajero-history-tabs button:hover,
-.cajero-history-tabs button:focus-visible {
-  color: var(--color-primary);
-  background: var(--color-primary-subtle);
-}
-
-.cajero-history-tabs button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.cajero-history-tabs button.is-active {
-  color: var(--color-primary-contrast);
-  background: var(--color-primary);
-  box-shadow: var(--shadow-default);
-}
-
-.cajero-history-list {
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-default);
-}
-
-.cajero-history-list__head,
-.cajero-history-list__summary {
-  display: grid;
-  grid-template-columns:
-    minmax(180px, 1fr) minmax(90px, 0.28fr) minmax(120px, 0.34fr)
-    48px;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.cajero-history-list__head {
-  min-height: 42px;
-  padding: 0.65rem 1rem;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
-  background: var(--color-surface-secondary);
-  font-size: 0.72rem;
-  font-weight: 750;
-  text-transform: uppercase;
-  letter-spacing: 0.045em;
-}
-
-.cajero-history-list__head span:last-child {
-  text-align: center;
-}
-
-.cajero-history-list__rows article {
-  border-bottom: 1px solid var(--color-border);
-}
-
-.cajero-history-list__rows article:last-child {
-  border-bottom: 0;
-}
-
-.cajero-history-list__summary {
-  min-height: 62px;
-  padding: 0.7rem 1rem;
-  color: var(--color-text-secondary);
-  transition: background var(--transition-fast);
-}
-
-.cajero-history-list__rows article.is-expanded .cajero-history-list__summary {
-  background: var(--color-primary-subtle);
-}
-
-.cajero-history-list__summary > strong {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-text-primary);
-  font-size: 0.92rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cajero-history-list__summary .is-negative {
-  color: var(--color-danger);
-  font-weight: 800;
-}
-
-.cajero-history-list__summary .is-zero {
-  color: var(--color-success);
-  font-weight: 800;
-}
-
-.cajero-history-list__summary .is-positive {
-  color: var(--ui-blue);
-  font-weight: 800;
-}
-
-.cajero-history-list__summary button {
-  width: 44px;
-  height: 44px;
-  display: inline-grid;
-  place-items: center;
-  justify-self: end;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  color: var(--color-primary);
-  background: var(--color-surface);
-  cursor: pointer;
-}
-
-.cajero-history-list__summary button > span {
-  font-size: 1.15rem;
-  font-weight: 850;
-  line-height: 1;
-}
-
-.cajero-history-list__summary button:hover,
-.cajero-history-list__summary button:focus-visible {
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
-.cajero-history-list__summary button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.cajero-history-list__detail {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin: 0;
-  padding: 0.15rem 1rem 1rem;
-  background: var(--color-primary-subtle);
-}
-
-.cajero-history-list__detail > div {
-  min-width: 0;
-  display: grid;
-  gap: 0.3rem;
-}
-
-.cajero-history-list__detail dt,
-.cajero-history-list__detail dd {
-  margin: 0;
-}
-
-.cajero-history-list__detail dt {
-  color: var(--color-text-secondary);
-  font-size: 0.7rem;
-  font-weight: 750;
-  text-transform: uppercase;
-  letter-spacing: 0.035em;
-}
-
-.cajero-history-list__detail dd {
-  color: var(--color-text-primary);
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
 @media (max-width: 720px) {
   .cajero-review-list__head,
   .cajero-review-list__rows button {
@@ -3964,96 +3788,6 @@
   margin: 0;
   color: var(--color-text-primary);
   font-size: 0.92rem;
-}
-
-.cajero-selection-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.66rem;
-}
-
-.cajero-selection-level--stock .cajero-selection-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.cajero-selection-grid button {
-  min-width: 0;
-  min-height: 75px;
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  color: var(--color-text-secondary);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-default);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    background var(--transition-fast),
-    transform var(--transition-fast),
-    opacity var(--transition-fast);
-}
-
-.cajero-selection-grid button > svg {
-  color: var(--color-primary);
-}
-
-.cajero-selection-grid button > span {
-  min-width: 0;
-  display: grid;
-  gap: 0.2rem;
-}
-
-.cajero-selection-grid button strong,
-.cajero-selection-grid button small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cajero-selection-grid button strong {
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-}
-
-.cajero-selection-grid button small {
-  color: var(--color-text-secondary);
-  font-size: 0.76rem;
-}
-
-.cajero-selection-grid button:not(:disabled):hover,
-.cajero-selection-grid button:not(:disabled):focus-visible {
-  border-color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
-.cajero-selection-grid button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.cajero-selection-grid button.is-active {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--color-primary) 12%, transparent);
-}
-
-.cajero-selection-grid button.is-active strong {
-  color: var(--color-primary);
-}
-
-.cajero-selection-grid button:disabled {
-  opacity: 0.48;
-  box-shadow: none;
-  cursor: not-allowed;
 }
 
 @media (max-width: 720px) {

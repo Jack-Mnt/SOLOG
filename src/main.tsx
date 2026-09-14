@@ -5,6 +5,7 @@ import App from './app'
 import { applyPalette, getStoredPalette } from './features/theme/palette'
 import './foundations.css'
 import './shared.css'
+import './operational.css'
 import './styles.css'
 
 applyPalette(getStoredPalette())
