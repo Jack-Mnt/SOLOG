@@ -16,6 +16,55 @@ export interface CatalogProposal {
   propuesta_fingerprint: string; cambio_id: string | null; c_interno: number; tipo: CatalogProposalType; estado: CatalogProposalStatus; seccion: CatalogProposalSection; datos: CatalogPayload; producto: string | null; sedes: { id: string; nombre: string }[]; occurrence_count: number; first_seen_at: string; last_seen_at: string; catalogo_actual: CatalogCurrentProduct; stale: boolean; publicable: boolean | null; block_reason: string | null; setup: CatalogPayload | null; price_resolution: CatalogPayload | null; aprobado_at: string | null; ignorado_at: string | null; version_aplicada: number | null; incorporado_at: string | null
 }
 export interface CatalogProduct { c_interno: number; producto: string; c_barras: string | null; precio: number; marca: string | null; estado_catalogo: 'incluido' | 'excluido'; modo: CatalogMode; categoria_id: string; categoria: string; grupo_id: string | null; grupo: string | null; unidades_por_paquete: number | null; precio_paquete: number | null; propuesta_estado: CatalogProposalStatus | null }
+export type CatalogProposalChange =
+  | { kind: 'price'; previous: number | null; next: number | null }
+  | { kind: 'text'; previous: string | null; next: string | null }
+  | { kind: 'label'; label: string }
+
+function proposalField(data: CatalogPayload, keys: readonly string[]) {
+  for (const key of keys) if (key in data) return data[key]
+  return undefined
+}
+function proposalNumber(data: CatalogPayload, keys: readonly string[], fallback: number | null) {
+  const value = proposalField(data, keys)
+  return value === undefined ? fallback : typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+function proposalText(data: CatalogPayload, keys: readonly string[], fallback: string | null) {
+  const value = proposalField(data, keys)
+  return value === undefined ? fallback : typeof value === 'string' ? value : null
+}
+
+/** Normaliza únicamente la presentación de `datos`; no modifica el contrato remoto. */
+export function catalogProposalChange(proposal: Pick<CatalogProposal, 'tipo' | 'datos' | 'producto' | 'catalogo_actual'>): CatalogProposalChange {
+  switch (proposal.tipo) {
+    case 'precio':
+      return {
+        kind: 'price',
+        previous: proposalNumber(proposal.datos, ['precio_anterior', 'anterior'], proposal.catalogo_actual.precio),
+        next: proposalNumber(proposal.datos, ['precio_nuevo', 'nuevo'], null),
+      }
+    case 'nombre':
+      return {
+        kind: 'text',
+        previous: proposalText(proposal.datos, ['producto_anterior', 'anterior'], proposal.catalogo_actual.producto),
+        next: proposalText(proposal.datos, ['producto_nuevo', 'nuevo'], proposal.producto),
+      }
+    case 'codigo':
+      return {
+        kind: 'text',
+        previous: proposalText(proposal.datos, ['c_barras_anterior', 'anterior'], proposal.catalogo_actual.c_barras),
+        next: proposalText(proposal.datos, ['c_barras_nuevo', 'nuevo'], null),
+      }
+    case 'agregar_producto':
+      return { kind: 'label', label: 'Nuevo producto' }
+    case 'eliminar_producto':
+      return { kind: 'label', label: 'Eliminar producto' }
+    case 'excluir_producto':
+      return { kind: 'label', label: 'Excluir de conteo' }
+    case 'reincorporar_producto':
+      return { kind: 'label', label: 'Reincorporar' }
+  }
+}
 export interface CatalogSetupRequired { cambio_id: string; propuesta_fingerprint: string; tipo: 'agregar_producto' | 'reincorporar_producto'; c_interno: number; producto: string; precio: number; setup: null; block_reason: 'configuracion_requerida' }
 
 export interface CatalogReads {

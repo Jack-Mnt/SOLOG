@@ -67,3 +67,12 @@ describe('Catálogo V3: estructura principal', () => {
     expect(ui).not.toContain('catalog_change_action')
   })
 })
+test('la tabla de propuestas compone identidad y Cambio sin lecturas adicionales', async () => {
+  const ui = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+  expect(ui).toContain('<th scope="col">Producto</th><th scope="col">Cambio</th><th scope="col">Origen</th><th scope="col">Acción</th>')
+  expect(ui).not.toContain('<th scope="col">C. interno</th>')
+  expect(ui).toContain('admin-catalog__product-code')
+  expect(ui).toContain('admin-catalog__product-name')
+  expect(ui).toContain('catalogProposalChange(proposal)')
+  expect(ui).toContain("? 'Automático'")
+})

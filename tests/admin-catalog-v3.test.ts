@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { CatalogContractError, CatalogPublicationError, validateCatalogMutation, validateCatalogMutationPayload, validateCatalogPublication, validateCatalogRead, type CatalogMutationAction, type CatalogMutations, type CatalogReadAction } from '../src/features/solog/admin/catalogo/admin.catalogo.v3'
+import { CatalogContractError, CatalogPublicationError, catalogProposalChange, validateCatalogMutation, validateCatalogMutationPayload, validateCatalogPublication, validateCatalogRead, type CatalogMutationAction, type CatalogMutations, type CatalogProposal, type CatalogReadAction } from '../src/features/solog/admin/catalogo/admin.catalogo.v3'
 
 const now = '2026-09-10T12:00:00.000Z'
 const revisions = { catalog: 7, groups: 3 }
@@ -67,5 +67,21 @@ describe('Catálogo V3 contratos de mutación', () => {
   test('la respuesta de mutación exige envelope V3, replay y result', () => {
     expect(validateCatalogMutation({ ...envelope(), replay: false, result: {} }).revisions).toEqual(revisions)
     expect(() => validateCatalogMutation({ ...envelope(), replay: false })).toThrow(CatalogContractError)
+  })
+})
+describe('Catálogo V3: normalización frontend de Cambio', () => {
+  const changeProposal = (tipo: CatalogProposal['tipo'], datos: Record<string, unknown>) => ({ ...proposal, tipo, datos }) as CatalogProposal
+
+  test('normaliza precio, nombre y código con anterior y nuevo', () => {
+    expect(catalogProposalChange(changeProposal('precio', { precio_anterior: 1.5, precio_nuevo: 2 }))).toEqual({ kind: 'price', previous: 1.5, next: 2 })
+    expect(catalogProposalChange(changeProposal('nombre', { producto_anterior: 'Anterior', producto_nuevo: 'Nuevo' }))).toEqual({ kind: 'text', previous: 'Anterior', next: 'Nuevo' })
+    expect(catalogProposalChange(changeProposal('codigo', { c_barras_anterior: '12345', c_barras_nuevo: '67890' }))).toEqual({ kind: 'text', previous: '12345', next: '67890' })
+  })
+
+  test('mapea los cuatro cambios de estado a sus etiquetas congeladas', () => {
+    expect(catalogProposalChange(changeProposal('agregar_producto', {}))).toEqual({ kind: 'label', label: 'Nuevo producto' })
+    expect(catalogProposalChange(changeProposal('eliminar_producto', {}))).toEqual({ kind: 'label', label: 'Eliminar producto' })
+    expect(catalogProposalChange(changeProposal('excluir_producto', {}))).toEqual({ kind: 'label', label: 'Excluir de conteo' })
+    expect(catalogProposalChange(changeProposal('reincorporar_producto', {}))).toEqual({ kind: 'label', label: 'Reincorporar' })
   })
 })

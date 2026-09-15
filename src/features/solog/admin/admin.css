@@ -4663,6 +4663,19 @@
   overflow-wrap: anywhere;
   font-weight: 600;
 }
+.admin-catalog__product-code,
+.admin-catalog__product-name {
+  display: block;
+}
+.admin-catalog__product-code {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.admin-catalog__change {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .admin-catalog__table tbody tr:hover {
   background: var(--color-surface-secondary);
 }
@@ -4677,9 +4690,6 @@
 .admin-catalog__table .admin-catalog__money {
   text-align: right;
   font-variant-numeric: tabular-nums;
-}
-.admin-catalog__table thead th:nth-child(4) {
-  text-align: right;
 }
 .admin-catalog__review {
   width: 32px;

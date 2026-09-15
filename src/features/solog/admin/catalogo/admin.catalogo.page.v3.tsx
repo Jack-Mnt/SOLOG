@@ -5,7 +5,7 @@ import { ValuationDialog, type ValuationDecision } from '../admin.valuation-dial
 import { useAdminStore } from '../admin.v2.context'
 import { ProductSetupDialog, type ProductSetupTarget } from '../productos/admin.product-setup.dialog'
 import { useCatalogQuery, useCatalogStore } from './admin.catalogo.context'
-import type { CatalogProposal, CatalogProposalStatus } from './admin.catalogo.v3'
+import { catalogProposalChange, type CatalogProposal, type CatalogProposalStatus } from './admin.catalogo.v3'
 import { adminTimestamp } from '../admin.v2.format'
 import { QueryState, Value } from '../admin.v2.presentation'
 
@@ -68,10 +68,18 @@ function ProposalsSurface() {
   </>
 }
 function ProposalSection({ title, rows, section, onSelect }: { title: string; rows: CatalogProposal[]; section: ProposalSection; onSelect: (proposal: CatalogProposal) => void }) {
-  return <section className={`admin-catalog__section admin-catalog__section--${section}`}><header><h3>{title}</h3><span>{rows.length}</span></header><div className="admin-v2-table admin-catalog__table"><table><thead><tr><th scope="col">Tipo</th><th scope="col">Producto</th><th scope="col">C. interno</th><th scope="col">Origen</th><th scope="col">Acciones</th></tr></thead><tbody>{rows.map((proposal) => <ProposalRow key={proposal.propuesta_fingerprint} proposal={proposal} onSelect={onSelect} />)}{!rows.length && <tr><td colSpan={5}>No hay propuestas {title.toLowerCase()}.</td></tr>}</tbody></table></div></section>
+  return <section className={`admin-catalog__section admin-catalog__section--${section}`}><header><h3>{title}</h3><span>{rows.length}</span></header><div className="admin-v2-table admin-catalog__table"><table><thead><tr><th scope="col">Tipo</th><th scope="col">Producto</th><th scope="col">Cambio</th><th scope="col">Origen</th><th scope="col">Acción</th></tr></thead><tbody>{rows.map((proposal) => <ProposalRow key={proposal.propuesta_fingerprint} proposal={proposal} onSelect={onSelect} />)}{!rows.length && <tr><td colSpan={5}>No hay propuestas {title.toLowerCase()}.</td></tr>}</tbody></table></div></section>
+}
+function ProposalChange({ proposal }: { proposal: CatalogProposal }) {
+  const change = catalogProposalChange(proposal)
+  if (change.kind === 'price') return <><Value value={change.previous} money /> <span aria-hidden="true">→</span> <Value value={change.next} money /></>
+  if (change.kind === 'text') return <>{change.previous ?? '—'} <span aria-hidden="true">→</span> {change.next ?? '—'}</>
+  return <>{change.label}</>
 }
 function ProposalRow({ proposal, onSelect }: { proposal: CatalogProposal; onSelect: (proposal: CatalogProposal) => void }) {
-  return <tr><td>{proposalLabels[proposal.tipo]}</td><th scope="row">{proposal.producto ?? proposal.catalogo_actual.producto ?? '—'}</th><td>{proposal.c_interno}</td><td>{proposal.cambio_id === null ? 'Candidato automático' : proposal.sedes.map((site) => site.nombre).join(', ') || 'Historial Catálogo'}</td><td><button type="button" className="button button--secondary" onClick={() => onSelect(proposal)}><Eye size={16} aria-hidden="true" />Revisar</button></td></tr>
+  const product = proposal.producto ?? proposal.catalogo_actual.producto ?? '—'
+  const origin = proposal.cambio_id === null ? 'Automático' : proposal.sedes.map((site) => site.nombre).join(', ') || 'Historial Catálogo'
+  return <tr><td>{proposalLabels[proposal.tipo]}</td><th scope="row"><span className="admin-catalog__product-code">{proposal.c_interno}</span><span className="admin-catalog__product-name">{product}</span></th><td className="admin-catalog__change"><ProposalChange proposal={proposal} /></td><td><span className="admin-attribute-badge">{origin}</span></td><td><button type="button" className="button button--secondary" onClick={() => onSelect(proposal)}><Eye size={16} aria-hidden="true" />Revisar</button></td></tr>
 }
 
 function ProposalDetail({ proposal, onClose }: { proposal: CatalogProposal; onClose: () => void }) {
