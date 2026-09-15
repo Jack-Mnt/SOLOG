@@ -1,7 +1,7 @@
 import { ArrowDownWideNarrow } from 'lucide-react'
 import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
-type IconButtonVariant = 'default' | 'danger'
+type IconButtonVariant = 'default' | 'primary' | 'danger'
 type IconButtonSize = 'default' | 'compact'
 
 type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'children'> & {
@@ -19,6 +19,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       type={type}
       className={[
         'icon-button',
+        variant === 'primary' ? 'icon-button--primary' : '',
         variant === 'danger' ? 'icon-button--danger' : '',
         size === 'compact' ? 'icon-button--compact' : '',
         className,

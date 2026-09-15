@@ -303,9 +303,9 @@ function ControlResults({
               <table>
             <thead>
               <tr>
+                <th>Registrado</th>
                 <th>Grupo</th>
                 <th>Categoría</th>
-                <th>Origen</th>
                 <th>Estado</th>
                 <th className="admin-control__number">Diferencia</th>
                 <th className="admin-control__number">Valorizado</th>
@@ -315,13 +315,13 @@ function ControlResults({
             <tbody>
               {view.rows.map((row) => (
                 <tr key={row.case_id}>
-                  <td>{row.group_name}</td>
-                  <td>{row.category}</td>
                   <td>
                     <time dateTime={row.origin_at}>
                       {controlDate(row.origin_at, true)}
                     </time>
                   </td>
+                  <td>{row.group_name}</td>
+                  <td>{row.category}</td>
                   <td>
                     <span
                       className={`admin-control__badge admin-status-badge admin-status-badge--${stateTone[row.state]} admin-control__tone--${stateTone[row.state]}`}
