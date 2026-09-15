@@ -2,7 +2,10 @@
 
 **Estado:** APROBADO Y CONGELADO  
 **Clasificación:** Nivel B — implementación funcional frontend Admin  
-**Fuente primaria funcional:** `docs/SOLOG_UI_Admin_Composicion_Tablas_V1.md`
+**Fuente primaria funcional:** `docs/SOLOG_UI_Admin_Composicion_Tablas_V1.md`  
+**Delta post-revisión vigente:** `docs/SOLOG_Correccion_Admin_Primitives_Tablas_V1.md`
+
+> **Estado de ejecución:** F1–F4 y la revisión global técnica fueron completadas. Este plan se conserva como historial técnico de ejecución. Las correcciones posteriores se rigen por el delta post-revisión.
 
 ## Objetivo
 
@@ -167,4 +170,4 @@ No existen bloqueos conocidos.
 - Tablas, columnas y acciones específicas por StateView de Incidencias.
 - Trabajo adicional fuera de F1–F4.
 
-Cada fase puede ejecutarse posteriormente mediante una instrucción breve, por ejemplo: `Implementa F1 según el plan aprobado.`
+F1–F4 ya fueron ejecutadas. Para cualquier corrección posterior relacionada con este bloque debe utilizarse `docs/SOLOG_Correccion_Admin_Primitives_Tablas_V1.md` como fuente primaria del delta, sin reabrir ni reinterpretar las fases completadas.
