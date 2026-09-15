@@ -43,6 +43,16 @@ export function AdminProductsV1() {
   const [selected, setSelected] = useState<MasterDataProduct | null>(null)
   const [setup, setSetup] = useState<ProductSetupTarget | null>(null)
   const products = useMemo(() => masterData.snapshot && masterData.derived ? filterAndSortProducts(masterData.snapshot.products, masterData.derived, { search, mode: modeFilter, categoryId: categoryFilter, sort }) : [], [categoryFilter, masterData.derived, masterData.snapshot, modeFilter, search, sort])
+  const modeCounts = useMemo(() => {
+    if (!masterData.snapshot || !masterData.derived) return { all: 0, Único: 0, Agrupado: 0, Excluido: 0 }
+    const available = filterAndSortProducts(masterData.snapshot.products, masterData.derived, { search, mode: 'all', categoryId: categoryFilter, sort: 'name' })
+    return {
+      all: available.length,
+      Único: available.filter((product) => product.estado === 'Único').length,
+      Agrupado: available.filter((product) => product.estado === 'Agrupado').length,
+      Excluido: available.filter((product) => product.estado === 'Excluido').length,
+    }
+  }, [categoryFilter, masterData.derived, masterData.snapshot, search])
   const visible = useMemo(() => paginateProducts(products, page), [page, products])
   if (!masterData.snapshot || !masterData.derived) return <QueryState error={masterData.error} retry={masterData.retry} />
   const derived = masterData.derived
@@ -57,7 +67,7 @@ export function AdminProductsV1() {
         <label className="admin-toolbar__filter">Categoría<select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setPage(0) }}><option value="all">Todas</option>{masterData.snapshot.categories.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
         </form>
       <div className="admin-quick-filter-chips admin-products__mode-filters admin-section-secondary-row" role="group" aria-label="Modalidad">
-        {([['all', 'Todos'], ['Único', 'Únicos'], ['Agrupado', 'Agrupados'], ['Excluido', 'Excluidos']] as const).map(([value, label]) => <button key={value} type="button" className="admin-quick-filter-chip" aria-pressed={modeFilter === value} onClick={() => { setModeFilter(value); setPage(0) }}>{label}</button>)}
+        {([['all', 'Todos'], ['Único', 'Únicos'], ['Agrupado', 'Agrupados'], ['Excluido', 'Excluidos']] as const).map(([value, label]) => <button key={value} type="button" className="admin-quick-filter-chip" aria-pressed={modeFilter === value} onClick={() => { setModeFilter(value); setPage(0) }}><span>{label}</span><strong>{modeCounts[value]}</strong></button>)}
       </div>
       <div className="admin-table-bar admin-products__table-bar admin-result-count-row">
         <p className="admin-result-count">{products.length === masterData.snapshot.totals.products ? `${products.length} resultados` : `${products.length} de ${masterData.snapshot.totals.products} resultados`}</p>

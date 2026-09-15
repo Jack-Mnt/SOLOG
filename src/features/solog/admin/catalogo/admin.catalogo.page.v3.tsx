@@ -70,10 +70,20 @@ function ProposalsSurface() {
 function ProposalSection({ title, rows, section, onSelect }: { title: string; rows: CatalogProposal[]; section: ProposalSection; onSelect: (proposal: CatalogProposal) => void }) {
   return <section className={`admin-catalog__section admin-catalog__section--${section}`}><header><h3>{title}</h3><span>{rows.length}</span></header><div className="admin-v2-table admin-catalog__table"><table><thead><tr><th scope="col">Tipo</th><th scope="col">Producto</th><th scope="col">Cambio</th><th scope="col">Origen</th><th scope="col">Acción</th></tr></thead><tbody>{rows.map((proposal) => <ProposalRow key={proposal.propuesta_fingerprint} proposal={proposal} onSelect={onSelect} />)}{!rows.length && <tr><td colSpan={5}>No hay propuestas {title.toLowerCase()}.</td></tr>}</tbody></table></div></section>
 }
+function accessibleChangeValue(value: string | number | null, money = false) {
+  if (value === null) return 'sin valor'
+  return money ? new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(value as number) : String(value)
+}
 function ProposalChange({ proposal }: { proposal: CatalogProposal }) {
   const change = catalogProposalChange(proposal)
-  if (change.kind === 'price') return <><Value value={change.previous} money /> <span aria-hidden="true">→</span> <Value value={change.next} money /></>
-  if (change.kind === 'text') return <>{change.previous ?? '—'} <span aria-hidden="true">→</span> {change.next ?? '—'}</>
+  if (change.kind === 'price') {
+    const label = `Anterior: ${accessibleChangeValue(change.previous, true)}; cambia a nuevo: ${accessibleChangeValue(change.next, true)}`
+    return <><span aria-hidden="true"><Value value={change.previous} money /> <span>→</span> <Value value={change.next} money /></span><span className="admin-catalog__change-sr">{label}</span></>
+  }
+  if (change.kind === 'text') {
+    const label = `Anterior: ${accessibleChangeValue(change.previous)}; cambia a nuevo: ${accessibleChangeValue(change.next)}`
+    return <><span aria-hidden="true">{change.previous ?? '—'} <span>→</span> {change.next ?? '—'}</span><span className="admin-catalog__change-sr">{label}</span></>
+  }
   return <>{change.label}</>
 }
 function ProposalRow({ proposal, onSelect }: { proposal: CatalogProposal; onSelect: (proposal: CatalogProposal) => void }) {

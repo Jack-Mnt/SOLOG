@@ -4542,13 +4542,13 @@
   font-size: 0.78rem;
   white-space: nowrap;
 }
-.admin-catalog__views {
+.admin-state-views {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin: 12px 0;
 }
-.admin-catalog__views button {
+.admin-state-views > button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -4561,7 +4561,7 @@
   font-size: 0.78rem;
   cursor: pointer;
 }
-.admin-catalog__views button strong {
+.admin-state-views > button strong {
   min-width: 18px;
   padding: 1px 5px;
   border-radius: 99px;
@@ -4570,12 +4570,17 @@
   font-size: 0.72rem;
   text-align: center;
 }
-.admin-catalog__views button[aria-selected="true"] {
+.admin-state-views > button[aria-selected="true"] {
   border-color: var(--color-primary);
   color: var(--color-primary-active);
   background: var(--color-primary-soft);
 }
-.admin-catalog__views button:focus-visible,
+.admin-state-views > button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary-active);
+  background: var(--color-primary-subtle);
+}
+.admin-state-views > button:focus-visible,
 .admin-catalog__review:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
@@ -6149,21 +6154,11 @@
   align-items: center;
   gap: 8px;
 }
-.admin-quick-filter-chips .admin-quick-filter-chip {
-  min-height: 34px;
-  border: 1px solid transparent;
-}
-.admin-quick-filter-chips .admin-quick-filter-chip[aria-pressed="true"] {
-  border-color: currentColor;
-}
+
 .admin-quick-filter-chips .admin-control__period {
   margin-left: auto;
 }
-.admin-state-views button[aria-selected="true"] {
-  border-color: var(--color-primary);
-  color: var(--color-primary-active);
-  background: var(--color-primary-soft);
-}
+
 .admin-status-badge--info {
   color: var(--color-info);
   background: var(--color-info-soft);
@@ -6666,4 +6661,54 @@
     outline-offset: 2px;
     border-color: var(--color-primary);
   }
+}
+/* Primitives compartidas: QuickFilterChip replica Control y StateView replica Catálogo. */
+.admin-quick-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.admin-quick-filter-chip:not(.admin-control__tone--success):not(.admin-control__tone--info):not(.admin-control__tone--warning):not(.admin-control__tone--danger) {
+  background: var(--color-surface-secondary);
+}
+.admin-quick-filter-chip:hover:not(:disabled) {
+  border-color: currentColor;
+}
+.admin-quick-filter-chip[aria-pressed="true"] {
+  border-color: currentColor;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+  background-image: linear-gradient(
+    color-mix(in srgb, currentColor 7%, transparent),
+    color-mix(in srgb, currentColor 7%, transparent)
+  );
+}
+.admin-quick-filter-chip:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.admin-quick-filter-chip strong {
+  font-weight: 700;
+}
+.admin-catalog__change-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

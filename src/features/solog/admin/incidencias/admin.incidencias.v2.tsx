@@ -178,6 +178,16 @@ export function AdminIncidentsV2() {
       ),
     [query.data, state, type],
   );
+  const stateCounts = useMemo(() => {
+    const available = (query.data?.families ?? []).filter(
+      (item) => type === "all" || item.tipo === type,
+    );
+    return {
+      pendiente: available.filter((item) => item.family_state === "pendiente").length,
+      suprimida: available.filter((item) => item.family_state === "suprimida").length,
+      resuelta: available.filter((item) => item.family_state === "resuelta").length,
+    };
+  }, [query.data, type]);
   const act = (
     target: Family,
     action: "ignore_30d" | "reactivate" | "propose_delete",
@@ -308,7 +318,8 @@ export function AdminIncidentsV2() {
             tabIndex={state === view.state ? 0 : -1}
             onClick={() => setState(view.state)}
           >
-            {view.label}
+            <span>{view.label}</span>
+            <strong>{stateCounts[view.state]}</strong>
           </button>
         ))}
       </div>

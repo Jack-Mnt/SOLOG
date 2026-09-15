@@ -337,6 +337,34 @@ export function AdminGroupsV2() {
       filterAndSortGroups(rows, { search, categoryId, type, valuation, sort }),
     [categoryId, rows, search, sort, type, valuation],
   );
+  const typeCounts = useMemo(() => {
+    const available = filterAndSortGroups(rows, {
+      search,
+      categoryId,
+      type: "all",
+      valuation,
+      sort,
+    });
+    return {
+      all: available.length,
+      Único: available.filter((group) => group.derivedType === "Único").length,
+      Agrupado: available.filter((group) => group.derivedType === "Agrupado").length,
+    };
+  }, [categoryId, rows, search, sort, valuation]);
+  const valuationCounts = useMemo(() => {
+    const available = filterAndSortGroups(rows, {
+      search,
+      categoryId,
+      type,
+      valuation: "all",
+      sort,
+    });
+    return {
+      all: available.length,
+      configured: available.filter((group) => group.unidades_por_paquete !== null && group.precio_paquete !== null).length,
+      none: available.filter((group) => group.unidades_por_paquete === null || group.precio_paquete === null).length,
+    };
+  }, [categoryId, rows, search, sort, type]);
   if (!masterData.snapshot || !masterData.derived)
     return (
       <section className="admin-groups">
@@ -415,7 +443,8 @@ export function AdminGroupsV2() {
               aria-pressed={type === value}
               onClick={() => setType(value)}
             >
-              {label}
+              <span>{label}</span>
+              <strong>{typeCounts[value]}</strong>
             </button>
           ))}
         </div>
@@ -434,7 +463,8 @@ export function AdminGroupsV2() {
               aria-pressed={valuation === value}
               onClick={() => setValuation(value)}
             >
-              {label}
+              <span>{label}</span>
+              <strong>{valuationCounts[value]}</strong>
             </button>
           ))}
         </div>
