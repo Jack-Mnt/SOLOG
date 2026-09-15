@@ -21,6 +21,19 @@ Este documento congela únicamente la **composición funcional y visual de las t
 
 No autoriza implementación todavía.
 
+Las decisiones de este documento ya fueron contrastadas posteriormente contra:
+
+- el frontend actual del repositorio;
+- los contratos TypeScript vigentes;
+- los RPC consumidos por el Admin;
+- el backend Supabase desplegado en `PuertoRicoOnline`.
+
+Resultado de esa revisión:
+
+> **La composición propuesta es técnicamente viable con el backend actual. No se requieren cambios de backend, Supabase, RPC ni lógica de negocio para implementar este bloque.**
+
+Las únicas decisiones que permanecen abiertas son decisiones visuales/estructurales de frontend expresamente indicadas en este documento.
+
 ---
 
 # 2. Fuente primaria y precedencia
@@ -162,7 +175,21 @@ Semántica:
 - excluir → variante Danger;
 - reincorporar → variante Info/Primary.
 
-El botón abre un modal que explica la acción, por lo que no es necesario repetir la explicación completa en la tabla.
+La primitive `IconButton` actual se amplía de:
+
+```text
+Default | Danger
+```
+
+a:
+
+```text
+Default | Info/Primary | Danger
+```
+
+La nueva variante `Info/Primary` queda aprobada como parte de este bloque para acciones compactas positivas, reversibles o de reincorporación que necesiten una señal visual superior a `Default` sin usar semántica destructiva.
+
+El botón abre el modal existente que explica la acción, por lo que no es necesario repetir la explicación completa en la tabla.
 
 Debe mantener:
 
@@ -234,26 +261,58 @@ El filtro `Estado` deja de tratarse como filtro ordinario.
 
 Pasa a organizarse mediante **StateView**, porque representa una secuencia/workflow y no una selección arbitraria.
 
-## 7.2 Consecuencia aprobada
+Las tres vistas confirmadas por el contrato/backend actual son:
 
-Cada vista puede tener una **composición de tabla distinta**.
+```text
+Pendientes | Suprimidas | Resueltas
+```
 
-No se forzará una sola tabla con columnas idénticas para todos los estados.
+Correspondencia:
 
-## 7.3 Orden de definición
+- `Pendientes` → `family_state = pendiente`;
+- `Suprimidas` → `family_state = suprimida`;
+- `Resueltas` → `family_state = resuelta`.
 
-Antes de diseñar el modal:
+El mismo dataset de familias descargado por `summary` contiene la información necesaria para separar estas vistas. No se requiere una llamada distinta por StateView.
 
-1. separar las vistas de Incidencias;
-2. definir la composición de tabla de cada vista;
-3. congelar navegación/workflow;
-4. revisar después la composición del modal de detalle.
+## 7.2 Composición provisional aprobada
+
+En este bloque **no se define todavía una tabla específica para cada estado**.
+
+Para poder implementar la separación por StateView sin anticipar decisiones futuras:
+
+> **Pendientes, Suprimidas y Resueltas reutilizarán temporalmente la composición de la tabla actual de Incidencias.**
+
+Esto significa:
+
+- las tres vistas usan inicialmente las mismas columnas que existen hoy;
+- las tres vistas usan inicialmente la misma estructura de fila;
+- el cambio de StateView solo determina qué familias se muestran;
+- no se agregan, eliminan ni reinterpretan columnas específicas por estado en este bloque;
+- no se inventan acciones nuevas por estado en este bloque.
+
+Esta reutilización es deliberadamente provisional.
+
+## 7.3 Decisión futura preservada
+
+Se mantiene aprobado que cada StateView **podrá tener una composición distinta** cuando se abra el bloque específico de Incidencias.
+
+Queda expresamente fuera de esta versión decidir:
+
+- columnas definitivas de Pendientes;
+- columnas definitivas de Suprimidas;
+- columnas definitivas de Resueltas;
+- acciones disponibles en cada vista;
+- prioridad de información por estado;
+- diferencias de comportamiento entre vistas.
+
+La implementación actual no debe cerrar ni dificultar esas decisiones futuras.
 
 ## 7.4 Modal
 
 La composición del modal queda explícitamente pendiente.
 
-No debe condicionar la definición inicial de las vistas/tablas.
+No debe modificarse ni usarse como condicionante para esta separación inicial por StateView.
 
 ---
 
@@ -342,41 +401,171 @@ Tipo | Producto | Cambio | Origen | Acción
 
 La columna `Tipo` se conserva por ahora.
 
-No se elimina hasta validar que `Cambio` cubra suficientemente todos los casos.
+La revisión técnica confirmó que `Cambio` puede construirse con el payload actual sin consulta adicional.
 
 ---
 
-# 9. Dependencias pendientes antes de implementación
+# 9. Validación técnica de viabilidad
 
-## 9.1 Catálogo — datos para Cambio
+Esta sección registra la revisión realizada contra el frontend y backend reales después de congelar inicialmente la composición.
 
-Debe validarse que el payload actual de `CatalogProposal` expone, sin consulta adicional:
+## 9.1 Resultado global
 
-- valor anterior;
-- valor nuevo;
+Se confirmó:
 
-para todos los tipos relevantes:
+> **Todos los cambios de composición definidos en este documento son viables con los contratos y datos actuales.**
 
-- precio;
+No se requiere:
+
+- modificar tablas de Supabase;
+- agregar columnas de base de datos;
+- cambiar RPC existentes;
+- crear RPC nuevas;
+- cambiar lógica de negocio;
+- cambiar RLS;
+- cambiar flujo de publicación de Catálogo;
+- cambiar flujo operativo de Control;
+- cambiar motor de Incidencias.
+
+La implementación de este bloque debe permanecer en frontend.
+
+## 9.2 Control
+
+El contrato actual ya expone la información necesaria para:
+
+```text
+Registrado | Grupo | Categoría | Estado | Diferencia | Valorizado | Detalle
+```
+
+El backend operativo ya entrega los datos equivalentes a:
+
+- fecha/hora de registro;
+- grupo;
+- categoría;
+- estado;
+- diferencia;
+- valorizado;
+- detalle/cronología.
+
+Por tanto, renombrar `Origen` a `Registrado` y moverlo a la primera columna es un cambio exclusivamente compositivo.
+
+## 9.3 Productos
+
+El Master Data actual expone:
+
+- `estado: Único | Agrupado | Excluido`;
+- `grupo_id`;
+- catálogo de grupos;
+- nombre del grupo derivable por `grupo_id`.
+
+La revisión del backend desplegado confirmó además:
+
+- los productos `Único` incluidos tienen grupo;
+- los productos `Agrupado` tienen grupo;
+- los productos sin grupo corresponden al estado `Excluido`.
+
+Por tanto la composición:
+
+```text
+[ Único / Agrupado / Excluido ] [ Nombre del grupo ]
+```
+
+es compatible con el modelo actual.
+
+También se confirmó que el filtro Incluido/Excluido es redundante respecto a la modalidad y puede eliminarse sin perder capacidad funcional.
+
+## 9.4 Grupos
+
+La información necesaria para:
+
 - nombre;
-- código;
-- alta;
-- eliminación;
-- exclusión;
-- reincorporación.
+- categoría;
+- integrantes;
+- tipo derivado;
+- valorizado;
+- edición de grupo;
+- edición de valorizado;
 
-No asumir disponibilidad sin comprobar el contrato real.
+ya existe en el snapshot/estado actual de Master Data.
 
-## 9.2 Incidencias — StateView
+Mover las acciones a una columna final y transformar Integrantes/Valorizado en QuickFilterChip no requiere soporte adicional del backend.
 
-Antes de implementar se debe revisar:
+## 9.5 Incidencias
 
-- estados/familias reales;
-- cantidad de vistas;
-- nombres definitivos;
-- secuencia;
-- pertenencia de registros por vista;
-- si cada vista puede usar el dataset ya descargado o requiere distinta consulta.
+El contrato Admin actual expone tres estados de familia:
+
+```text
+pendiente | suprimida | resuelta
+```
+
+Por tanto las StateView quedan confirmadas como:
+
+```text
+Pendientes | Suprimidas | Resueltas
+```
+
+El `summary` existente ya devuelve las familias necesarias y cada familia incluye `family_state`, por lo que las tres vistas pueden derivarse del dataset ya descargado.
+
+No se necesita una consulta por StateView.
+
+La base de datos contiene además incidencias técnicas asociadas al descubrimiento de cambios de Catálogo, pero el RPC de Incidencias Admin filtra deliberadamente el conjunto operativo que corresponde a este módulo. Esa separación de responsabilidades se preserva.
+
+La revisión técnica **no define** qué columnas o acciones definitivas debe tener cada StateView. Esa decisión permanece abierta y se abordará en un bloque posterior.
+
+## 9.6 Catálogo — columna Cambio
+
+Se confirmó que `CatalogProposal` ya contiene:
+
+- `datos`;
+- `catalogo_actual`;
+- identidad del producto;
+- tipo de propuesta;
+- origen/contexto.
+
+El backend actual genera información suficiente para cada caso:
+
+### Precio, nombre y código
+
+Los candidatos contienen:
+
+```text
+anterior
+nuevo
+```
+
+por lo que pueden renderizarse directamente como:
+
+```text
+anterior → nuevo
+```
+
+### Excluir / reincorporar
+
+Las propuestas generadas por Productos contienen:
+
+```text
+anterior_estado
+nuevo_estado
+```
+
+por lo que no necesitan una consulta adicional.
+
+### Agregar / eliminar producto
+
+El tipo de propuesta y los datos actuales permiten mostrar las etiquetas congeladas:
+
+```text
+Nuevo producto
+Eliminar producto
+```
+
+Conclusión:
+
+> **La columna Cambio está soportada por el backend actual para todos los tipos contemplados en esta versión.**
+
+La única mejora necesaria es frontend: tipar o normalizar `CatalogProposal.datos` por tipo antes de renderizar, porque actualmente se representa genéricamente como `Record<string, unknown>`.
+
+Esto no requiere modificar el contrato de Supabase.
 
 ---
 
@@ -417,42 +606,71 @@ Pendiente:
 
 ## Incidencias
 
-Dirección estructural aprobada.
+StateView y alcance provisional aprobados.
 
-Pendiente:
+Confirmado:
 
-- definición de vistas;
-- composición por vista;
+- vistas `Pendientes | Suprimidas | Resueltas`;
+- separación por `family_state`;
+- reutilización temporal de la tabla actual en las tres vistas;
+- sin consultas adicionales por vista;
+- sin cambios backend.
+
+Pendiente para un bloque posterior:
+
+- composición definitiva por StateView;
+- columnas específicas por vista;
+- acciones específicas por vista;
 - revisión posterior del modal.
 
 ## Catálogo
 
-Composición propuesta aprobada.
+Composición y soporte de datos confirmados.
+
+Confirmado:
+
+- `Cambio` puede construirse con el payload actual;
+- no requiere consulta adicional;
+- no requiere cambios backend.
 
 Pendiente:
 
-- validar datos disponibles para `Cambio`;
+- tipado/normalización frontend de `CatalogProposal.datos`;
 - prioridad/alineación/ancho/responsive.
 
 ---
 
 # 11. Próximo paso
 
-Antes de preparar implementación:
+Las dependencias técnicas de backend de este bloque ya están cerradas.
 
-1. validar dependencias de Catálogo e Incidencias;
-2. completar composición de vistas de Incidencias;
-3. revisar prioridad de columnas;
-4. revisar alineación;
-5. definir anchos/wrapping;
-6. definir responsive;
-7. congelar el contrato final;
-8. recién entonces preparar instrucciones para Codex.
+Antes de preparar implementación quedan únicamente decisiones de presentación general de tablas:
+
+1. revisar prioridad de columnas;
+2. revisar alineación;
+3. definir anchos/wrapping;
+4. definir responsive;
+5. congelar el contrato visual final;
+6. recién entonces preparar instrucciones para Codex.
+
+La definición especializada de las tres tablas de Incidencias **no bloquea este flujo** y se tratará en un bloque posterior independiente.
+
+No deben introducirse cambios backend durante la implementación de este documento.
 
 ---
 
 # 12. Estado final
 
-> **SOLOG — UI Admin — Composición de Tablas V1: APROBADO Y CONGELADO.**
+> **SOLOG — UI Admin — Composición de Tablas V1: APROBADO, VALIDADO TÉCNICAMENTE Y CONGELADO.**
 
-Este documento congela únicamente las decisiones descritas. No autoriza implementación todavía.
+Se ha confirmado que las decisiones descritas son viables con el frontend y backend actuales.
+
+Este bloque:
+
+- no requiere cambios de backend;
+- no requiere cambios de Supabase;
+- no requiere ampliar contratos RPC;
+- no anticipa las columnas ni acciones definitivas de las StateView de Incidencias;
+- no autoriza implementación todavía.
+
+La futura especialización de `Pendientes`, `Suprimidas` y `Resueltas` deberá abrirse como una decisión independiente sin reinterpretar provisionalmente este documento.
