@@ -267,19 +267,27 @@ export function AdminIncidentsV2() {
         role="tablist"
         aria-label="Estado de incidencias"
         onKeyDown={(event) => {
-          const direction =
-            event.key === "ArrowRight" || event.key === "ArrowDown"
-              ? 1
-              : event.key === "ArrowLeft" || event.key === "ArrowUp"
-                ? -1
-                : 0;
-          if (!direction) return;
+          if (![
+            "ArrowRight",
+            "ArrowDown",
+            "ArrowLeft",
+            "ArrowUp",
+            "Home",
+            "End",
+          ].includes(event.key)) return;
           event.preventDefault();
           const currentIndex = stateViews.findIndex(
             (view) => view.state === state,
           );
+          const direction =
+            event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1;
           const nextIndex =
-            (currentIndex + direction + stateViews.length) % stateViews.length;
+            event.key === "Home"
+              ? 0
+              : event.key === "End"
+                ? stateViews.length - 1
+                : (currentIndex + direction + stateViews.length) %
+                  stateViews.length;
           const nextView = stateViews[nextIndex];
           setState(nextView.state);
           event.currentTarget
@@ -297,6 +305,7 @@ export function AdminIncidentsV2() {
             role="tab"
             aria-selected={state === view.state}
             aria-controls="admin-incidents-state-panel"
+            tabIndex={state === view.state ? 0 : -1}
             onClick={() => setState(view.state)}
           >
             {view.label}
