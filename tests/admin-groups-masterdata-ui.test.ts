@@ -150,6 +150,50 @@ describe('Composición F3 de Grupos e Incidencias', () => {
     expect(ui).toContain('tabIndex={state === view.state ? 0 : -1}')
     expect(ui).toContain('"Home"')
     expect(ui).toContain('"End"')
+    expect(ui).toContain('const stateCounts = useMemo')
+    expect(ui).toContain('(item) => type === "all" || item.tipo === type')
+    expect(ui).toContain('<strong>{stateCounts[view.state]}</strong>')
     expect(ui).toContain('useManagementQuery("summary", site ? { site_id: site } : {})')
+    expect(ui.match(/useManagementQuery\("summary"/g) ?? []).toHaveLength(1)
+  })
+
+  test('Grupos calcula contadores por eje ignorando solo el QuickFilterChip propio', async () => {
+    const ui = await source('src/features/solog/admin/grupos/admin.grupos.v2.tsx')
+    expect(ui).toContain('const typeCounts = useMemo')
+    expect(ui).toContain('type: "all"')
+    expect(ui).toContain('valuation,')
+    expect(ui).toContain('<strong>{typeCounts[value]}</strong>')
+    expect(ui).toContain('const valuationCounts = useMemo')
+    expect(ui).toContain('valuation: "all"')
+    expect(ui).toContain('<strong>{valuationCounts[value]}</strong>')
+
+    const derived = deriveMasterData(snapshot)
+    const rows = deriveGroupRows(snapshot, derived)
+
+    const typeAvailable = filterAndSortGroups(rows, {
+      search: '',
+      categoryId: 'all',
+      type: 'all',
+      valuation: 'configured',
+      sort: 'name',
+    })
+    expect({
+      all: typeAvailable.length,
+      Único: typeAvailable.filter(group => group.derivedType === 'Único').length,
+      Agrupado: typeAvailable.filter(group => group.derivedType === 'Agrupado').length,
+    }).toEqual({ all: 1, Único: 0, Agrupado: 1 })
+
+    const valuationAvailable = filterAndSortGroups(rows, {
+      search: '',
+      categoryId: 'all',
+      type: 'Único',
+      valuation: 'all',
+      sort: 'name',
+    })
+    expect({
+      all: valuationAvailable.length,
+      configured: valuationAvailable.filter(group => group.unidades_por_paquete !== null && group.precio_paquete !== null).length,
+      none: valuationAvailable.filter(group => group.unidades_por_paquete === null || group.precio_paquete === null).length,
+    }).toEqual({ all: 1, configured: 0, none: 1 })
   })
 })
