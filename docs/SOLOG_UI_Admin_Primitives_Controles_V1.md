@@ -4,7 +4,10 @@
 **Proyecto:** SOLOG  
 **Estado:** APROBADO Y CONGELADO  
 **Clasificación:** Nivel B — normalización visual frontend/Admin  
-**Fecha:** 2026-09-14
+**Fecha:** 2026-09-14  
+**Reconciliación posterior:** 2026-09-15
+
+> Las decisiones posteriores de `SOLOG_UI_Admin_Composicion_Tablas_V1.md` y del delta `SOLOG_Correccion_Admin_Primitives_Tablas_V1.md` amplían únicamente los contratos expresamente indicados aquí. Ante contradicción puntual sobre `IconButton`, `QuickFilterChip` o `StateView`, prevalece el delta posterior.
 
 ---
 
@@ -154,7 +157,7 @@ Button
    └─ size: Default | Compact
 
 IconButton
-└─ semantic: Default | Danger
+└─ semantic: Default | Primary | Danger
 ```
 
 ---
@@ -263,6 +266,14 @@ Para acciones repetidas o contextos densos:
 
 # 12. IconButton
 
+La semántica vigente queda:
+
+```text
+Default | Primary | Danger
+```
+
+`Primary` es la denominación técnica de la variante aprobada posteriormente como **Info/Primary**.
+
 ## Default
 
 Para:
@@ -281,6 +292,23 @@ Visual:
 - borde discreto;
 - sin sombra en reposo;
 - hover/focus visibles.
+
+## Primary
+
+Para acciones compactas positivas, reversibles o de reincorporación que necesiten una señal visual superior a `Default` sin utilizar semántica destructiva.
+
+Caso aprobado:
+
+- reincorporar un producto excluido.
+
+Visual:
+
+- borde primary;
+- texto/icono primary;
+- fondo primary-soft;
+- sin sombra en reposo;
+- hover primary más marcado;
+- focus explícito.
 
 ## Danger
 
@@ -418,6 +446,10 @@ Si existen demasiadas acciones, deben reevaluarse como:
 
 # 19. QuickFilterChip
 
+**Referencia visual autoritativa: Control.**
+
+La implementación genérica de QuickFilterChip debe absorber la geometría y apariencia común ya consolidada en Control. Las clases específicas de módulo solo pueden añadir semántica contextual cuando corresponda; no deben redefinir una segunda primitive visual.
+
 Caso de referencia: Control.
 
 Representa un subconjunto del **mismo dataset**.
@@ -439,11 +471,17 @@ Características:
 - `aria-pressed` cuando corresponda;
 - sin sombra permanente.
 
+Cuando el subconjunto sea cuantificable con el dataset ya cargado, el contador forma parte visible del control. No se debe crear una consulta backend adicional únicamente para obtener esos contadores.
+
 Los colores de Control se preservan porque aportan información operativa.
 
 ---
 
 # 20. StateView
+
+**Referencia visual autoritativa: Catálogo.**
+
+La implementación genérica de StateView debe reutilizar la geometría, borde, estado activo, contador, separación y comportamiento visual ya consolidados en Catálogo. Las clases específicas de módulo no deben recrear una variante visual paralela.
 
 Caso de referencia: Catálogo.
 
@@ -468,6 +506,8 @@ Características:
 - estado activo más estructural que QuickFilterChip;
 - semántica tipo tabs cuando técnicamente corresponda;
 - color semántico moderado.
+
+Cuando el dataset ya exponga los estados y sus registros, los contadores se calculan en frontend sobre los datos disponibles. No se añade una lectura remota únicamente para mostrar cantidades.
 
 ---
 
@@ -794,4 +834,6 @@ Ese bloque se definirá con mayor minuciosidad antes de cualquier implementació
 
 # 36. Estado final
 
-> **SOLOG — Admin Primitives de Controles V1: APROBADO Y CONGELADO.**
+> **SOLOG — Admin Primitives de Controles V1: APROBADO, CONGELADO Y RECONCILIADO.**
+
+La reconciliación posterior no reabre el sistema visual: documenta la extensión `Primary` de `IconButton` y fija a Control/Catálogo como referencias autoritativas de QuickFilterChip/StateView respectivamente.
