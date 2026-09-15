@@ -30,6 +30,11 @@ const stateLabels: Record<IncidentState, string> = {
   suprimida: "Suprimida",
   resuelta: "Resuelta",
 };
+const stateViews: Array<{ state: IncidentState; label: string }> = [
+  { state: "pendiente", label: "Pendientes" },
+  { state: "suprimida", label: "Suprimidas" },
+  { state: "resuelta", label: "Resueltas" },
+];
 
 function StateBadge({ state }: { state: IncidentState }) {
   return (
@@ -159,7 +164,7 @@ export function AdminIncidentsV2() {
   const store = useManagement();
   const [site, setSite] = useState("");
   const [type, setType] = useState<"all" | IncidentType>("all");
-  const [state, setState] = useState<"all" | IncidentState>("all");
+  const [state, setState] = useState<IncidentState>("pendiente");
   const [family, setFamily] = useState<Family | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -169,7 +174,7 @@ export function AdminIncidentsV2() {
       (query.data?.families ?? []).filter(
         (item) =>
           (type === "all" || item.tipo === type) &&
-          (state === "all" || item.family_state === state),
+          item.family_state === state,
       ),
     [query.data, state, type],
   );
@@ -245,22 +250,6 @@ export function AdminIncidentsV2() {
               ))}
             </select>
           </label>
-          <label className="admin-toolbar__filter">
-            Estado
-            <select
-              value={state}
-              onChange={(event) =>
-                setState(event.target.value as "all" | IncidentState)
-              }
-            >
-              <option value="all">Todos</option>
-              {Object.entries(stateLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
         <div className="admin-toolbar__actions">
           <button
@@ -272,6 +261,47 @@ export function AdminIncidentsV2() {
             Actualizar incidencias
           </button>
         </div>
+      </div>
+      <div
+        className="admin-incidents__state-views admin-state-views admin-section-secondary-row"
+        role="tablist"
+        aria-label="Estado de incidencias"
+        onKeyDown={(event) => {
+          const direction =
+            event.key === "ArrowRight" || event.key === "ArrowDown"
+              ? 1
+              : event.key === "ArrowLeft" || event.key === "ArrowUp"
+                ? -1
+                : 0;
+          if (!direction) return;
+          event.preventDefault();
+          const currentIndex = stateViews.findIndex(
+            (view) => view.state === state,
+          );
+          const nextIndex =
+            (currentIndex + direction + stateViews.length) % stateViews.length;
+          const nextView = stateViews[nextIndex];
+          setState(nextView.state);
+          event.currentTarget
+            .querySelector<HTMLButtonElement>(
+              `#admin-incidents-state-${nextView.state}`,
+            )
+            ?.focus();
+        }}
+      >
+        {stateViews.map((view) => (
+          <button
+            key={view.state}
+            id={`admin-incidents-state-${view.state}`}
+            type="button"
+            role="tab"
+            aria-selected={state === view.state}
+            aria-controls="admin-incidents-state-panel"
+            onClick={() => setState(view.state)}
+          >
+            {view.label}
+          </button>
+        ))}
       </div>
       <MutationNotice domain="incidents" />
       {notice && (
@@ -295,8 +325,9 @@ export function AdminIncidentsV2() {
           <div className="admin-table-section admin-incidents__table">
             <div
               className="admin-v2-table"
-              role="region"
-              aria-label="Familias de incidencias"
+              role="tabpanel"
+              id="admin-incidents-state-panel"
+              aria-labelledby={`admin-incidents-state-${state}`}
               tabIndex={0}
             >
               <table>

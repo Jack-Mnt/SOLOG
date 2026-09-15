@@ -1,12 +1,14 @@
 import { useMemo, useState, type FormEvent } from "react";
 import {
+  CircleDollarSign,
+  Package,
+  PackageOpen,
   Pencil,
   Plus,
   RotateCcw,
   Save,
   Search,
   Tags,
-  Users,
 } from "lucide-react";
 import { AdminDialog } from "../admin.dialog";
 import {
@@ -19,7 +21,7 @@ import type {
   MasterDataProduct,
 } from "../masterdata/admin.masterdata.v1";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminSort } from "../admin.primitives";
+import { AdminSort, IconButton } from "../admin.primitives";
 import { AdminCategoriesDialog } from "./admin.categories.dialog";
 import { useGroupsStore } from "./admin.grupos.context";
 import {
@@ -378,30 +380,6 @@ export function AdminGroupsV2() {
             ))}
           </select>
         </label>
-        <label className="admin-toolbar__filter">
-          Integrantes
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value as typeof type)}
-          >
-            <option value="all">Todos</option>
-            <option value="Único">Único</option>
-            <option value="Agrupado">2+ SKU</option>
-          </select>
-        </label>
-        <label className="admin-toolbar__filter">
-          Valorizado
-          <select
-            value={valuation}
-            onChange={(event) =>
-              setValuation(event.target.value as GroupValuationFilter)
-            }
-          >
-            <option value="all">Todos</option>
-            <option value="configured">Configurado</option>
-            <option value="none">Sin valorizado</option>
-          </select>
-        </label>
         <div className="admin-toolbar__actions admin-groups__actions">
           <button
             type="button"
@@ -421,6 +399,46 @@ export function AdminGroupsV2() {
           </button>
         </div>
       </form>
+      <div className="admin-groups__quick-filter-sets admin-section-secondary-row">
+        <div className="admin-quick-filter-chips" role="group" aria-label="Integrantes">
+          {(
+            [
+              ["all", "Todos"],
+              ["Único", "Único"],
+              ["Agrupado", "2+ SKU"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className="admin-quick-filter-chip"
+              aria-pressed={type === value}
+              onClick={() => setType(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="admin-quick-filter-chips" role="group" aria-label="Valorizado">
+          {(
+            [
+              ["all", "Todos"],
+              ["configured", "Configurado"],
+              ["none", "Sin valorizado"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className="admin-quick-filter-chip"
+              aria-pressed={valuation === value}
+              onClick={() => setValuation(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="admin-table-bar admin-groups__table-bar admin-result-count-row">
         <p className="admin-result-count">
           {visible.length === rows.length
@@ -456,6 +474,7 @@ export function AdminGroupsV2() {
                 <th scope="col">Categoría</th>
                 <th scope="col">Integrantes</th>
                 <th scope="col">Valorizado</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -463,23 +482,25 @@ export function AdminGroupsV2() {
                 <tr key={group.id}>
                   <th scope="row">
                     <span>{group.nombre}</span>
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label={`Editar nombre y categoría de ${group.nombre}`}
-                      onClick={() => setEdit(group.id)}
-                    >
-                      <Pencil size={16} />
-                    </button>
                   </th>
                   <td>{group.categoryName}</td>
                   <td>
                     <button
                       type="button"
                       className="button button--secondary admin-groups__members"
+                      aria-label={`Ver integrantes de ${group.nombre}`}
                       onClick={() => setMembers(group.id)}
                     >
-                      <Users size={16} aria-hidden="true" />
+                      <Package
+                        className="admin-groups__members-icon"
+                        size={16}
+                        aria-hidden="true"
+                      />
+                      <PackageOpen
+                        className="admin-groups__members-icon admin-groups__members-icon--hover"
+                        size={16}
+                        aria-hidden="true"
+                      />
                       <span className="admin-attribute-badge">
                         {group.derivedType === "Único"
                           ? "Único"
@@ -494,20 +515,30 @@ export function AdminGroupsV2() {
                     <small>
                       <Valuation group={group} />
                     </small>
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label={`Editar valorizado de ${group.nombre}`}
-                      onClick={() => setValuationGroup(group.id)}
-                    >
-                      <Pencil size={16} />
-                    </button>
+                  </td>
+                  <td>
+                    <div className="admin-groups__row-actions">
+                      <IconButton
+                        aria-label={`Editar nombre y categoría de ${group.nombre}`}
+                        title="Editar grupo"
+                        onClick={() => setEdit(group.id)}
+                      >
+                        <Pencil size={16} aria-hidden="true" />
+                      </IconButton>
+                      <IconButton
+                        aria-label={`Editar valorizado de ${group.nombre}`}
+                        title="Editar valorizado"
+                        onClick={() => setValuationGroup(group.id)}
+                      >
+                        <CircleDollarSign size={16} aria-hidden="true" />
+                      </IconButton>
+                    </div>
                   </td>
                 </tr>
               ))}
               {!visible.length && (
                 <tr>
-                  <td colSpan={4}>
+                  <td colSpan={5}>
                     No hay grupos para los filtros seleccionados.
                   </td>
                 </tr>

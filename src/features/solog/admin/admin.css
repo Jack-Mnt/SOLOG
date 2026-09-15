@@ -6174,6 +6174,25 @@
   min-height: 22px;
   padding: 2px 6px;
 }
+.admin-groups__quick-filter-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.admin-groups__members-icon--hover {
+  display: none;
+}
+.admin-groups__members:hover:not(:disabled) .admin-groups__members-icon:not(.admin-groups__members-icon--hover) {
+  display: none;
+}
+.admin-groups__members:hover:not(:disabled) .admin-groups__members-icon--hover {
+  display: block;
+}
+.admin-groups__row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .admin-table-bar + .admin-v2-table,
 .admin-table-bar + .admin-table-section {
   margin-top: 0;
