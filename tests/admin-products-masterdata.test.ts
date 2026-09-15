@@ -34,9 +34,9 @@ describe('Admin Productos con Master Data', () => {
 
   test('filtra y ordena el conjunto completo local usando relaciones derivadas', () => {
     const derived = deriveMasterData(snapshot)
-    expect(filterAndSortProducts(snapshot.products, derived, { search: 'gaseosas', state: 'all', mode: 'all', categoryId: 'all', sort: 'code' }).map(item => item.c_interno)).toEqual([10, 20])
-    expect(filterAndSortProducts(snapshot.products, derived, { search: '', state: 'excluido', mode: 'all', categoryId: 'all', sort: 'name' }).map(item => item.c_interno)).toEqual([30])
-    expect(filterAndSortProducts(snapshot.products, derived, { search: '', state: 'all', mode: 'all', categoryId: 'cat-a', sort: 'price_desc' }).map(item => item.c_interno)).toEqual([30, 10])
+    expect(filterAndSortProducts(snapshot.products, derived, { search: 'gaseosas', mode: 'all', categoryId: 'all', sort: 'code' }).map(item => item.c_interno)).toEqual([10, 20])
+    expect(filterAndSortProducts(snapshot.products, derived, { search: '', mode: 'Excluido', categoryId: 'all', sort: 'name' }).map(item => item.c_interno)).toEqual([30])
+    expect(filterAndSortProducts(snapshot.products, derived, { search: '', mode: 'all', categoryId: 'cat-a', sort: 'price_desc' }).map(item => item.c_interno)).toEqual([30, 10])
   })
 
   test('pagina localmente sin alterar ni truncar el dataset compartido', () => {

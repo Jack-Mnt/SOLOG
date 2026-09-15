@@ -4666,6 +4666,14 @@
 .admin-catalog__table tbody tr:hover {
   background: var(--color-surface-secondary);
 }
+.admin-products__mode-filters {
+  margin-top: 12px;
+}
+.admin-products__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 .admin-catalog__table .admin-catalog__money {
   text-align: right;
   font-variant-numeric: tabular-nums;
