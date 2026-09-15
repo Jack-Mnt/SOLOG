@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CircleOff, Clock, Eye, RefreshCw, RotateCcw } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleOff,
+  Clock,
+  Eye,
+  RefreshCw,
+  RotateCcw,
+} from "lucide-react";
 import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
@@ -25,7 +33,9 @@ const stateLabels: Record<IncidentState, string> = {
 
 function StateBadge({ state }: { state: IncidentState }) {
   return (
-    <span className={`admin-incidents__state admin-status-badge admin-status-badge--${state === "pendiente" ? "warning" : state === "resuelta" ? "success" : "info"} admin-incidents__state--${state}`}>
+    <span
+      className={`admin-incidents__state admin-status-badge admin-status-badge--${state === "pendiente" ? "warning" : state === "resuelta" ? "success" : "info"} admin-incidents__state--${state}`}
+    >
       {stateLabels[state]}
     </span>
   );
@@ -263,10 +273,6 @@ export function AdminIncidentsV2() {
           </button>
         </div>
       </div>
-      <p className="admin-incidents__help admin-section-secondary-row">
-        Las acciones se aplican al ámbito seleccionado. Proponer eliminación no
-        elimina, no suprime, no aprueba ni publica.
-      </p>
       <MutationNotice domain="incidents" />
       {notice && (
         <p className="notice" role="status">
@@ -277,114 +283,123 @@ export function AdminIncidentsV2() {
       {query.data ? (
         <>
           <p className="admin-incidents__period admin-section-secondary-row">
-            Período operativo: {query.data.period.from} — {query.data.period.to}{" "}
-            · America/Lima
+            {query.data.period.from} — {query.data.period.to}
           </p>
           <div className="admin-table-bar admin-incidents__table-bar admin-result-count-row">
-            <p className="admin-result-count">{families.length === query.data.families.length ? `${families.length} resultados` : `${families.length} de ${query.data.families.length} resultados`}</p>
+            <p className="admin-result-count">
+              {families.length === query.data.families.length
+                ? `${families.length} resultados`
+                : `${families.length} de ${query.data.families.length} resultados`}
+            </p>
           </div>
           <div className="admin-table-section admin-incidents__table">
-            <div className="admin-v2-table" role="region" aria-label="Familias de incidencias" tabIndex={0}>
+            <div
+              className="admin-v2-table"
+              role="region"
+              aria-label="Familias de incidencias"
+              tabIndex={0}
+            >
               <table>
-              <thead>
-                <tr>
-                  <th>Incidencia</th>
-                  <th>Estado</th>
-                  <th>Casos</th>
-                  <th>Supresión</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {families.map((item) => (
-                  <tr key={item.family_key}>
-                    <th scope="row">
-                      <span>{typeLabels[item.tipo]}</span>
-                      <small>
-                        {item.c_interno ??
-                          item.c_interno_original ??
-                          "Sin código"}
-                      </small>
-                    </th>
-                    <td>
-                      <StateBadge state={item.family_state} />
-                    </td>
-                    <td>
-                      {item.active_cases} activos · {item.resolved_cases}{" "}
-                      resueltos
-                    </td>
-                    <td>
-                      {item.active_suppression_until ? (
-                        <>
-                          Vigente hasta{" "}
-                          {adminTimestamp(item.active_suppression_until)}
-                        </>
-                      ) : (
-                        "Sin supresión"
-                      )}
-                    </td>
-                    <td>
-                      <div className="admin-v2-actions">
-                        <button
-                          type="button"
-                          className="button button--secondary"
-                          aria-label={`Ver repeticiones ${item.family_key}`}
-                          onClick={() => setFamily(item)}
-                        >
-                          <Eye size={16} aria-hidden="true" />
-                          Ver detalle
-                        </button>
-                        {item.active && !item.reactivate_available && (
-                          <button
-                            type="button"
-                            className="button button--secondary"
-                            disabled={pending}
-                            onClick={() => act(item, "ignore_30d")}
-                          >
-                            <Clock size={16} aria-hidden="true" />
-                            Ignorar 30 días
-                          </button>
-                        )}
-                        {item.reactivate_available && (
-                          <button
-                            type="button"
-                            className="button button--secondary"
-                            disabled={pending}
-                            onClick={() => act(item, "reactivate")}
-                          >
-                            <RotateCcw size={16} aria-hidden="true" />
-                            Reactivar incidencia
-                          </button>
-                        )}
-                        {canProposeDelete(item) && (
-                          <button
-                            type="button"
-                            className="button button--secondary"
-                            disabled={pending}
-                            onClick={() => act(item, "propose_delete")}
-                          >
-                            <CircleOff size={16} aria-hidden="true" />
-                            Proponer eliminación
-                          </button>
-                        )}
-                        {item.deletion_proposed && (
-                          <span className="admin-incidents__catalog-status">
-                            Eliminación propuesta en Catálogo
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {!families.length && (
+                <thead>
                   <tr>
-                    <td colSpan={5}>
-                      No hay incidencias que coincidan con los filtros locales.
-                    </td>
+                    <th>Incidencia</th>
+                    <th>Estado</th>
+                    <th>Casos</th>
+                    <th>Supresión</th>
+                    <th>Acciones</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {families.map((item) => (
+                    <tr key={item.family_key}>
+                      <th scope="row">
+                        <span>{typeLabels[item.tipo]}</span>
+                        <small>
+                          {item.c_interno ??
+                            item.c_interno_original ??
+                            "Sin código"}
+                        </small>
+                      </th>
+                      <td>
+                        <StateBadge state={item.family_state} />
+                      </td>
+                      <td>
+                        {item.active_cases} activos · {item.resolved_cases}{" "}
+                        resueltos
+                      </td>
+                      <td>
+                        {item.active_suppression_until ? (
+                          <>
+                            Vigente hasta{" "}
+                            {adminTimestamp(item.active_suppression_until)}
+                          </>
+                        ) : (
+                          "Sin supresión"
+                        )}
+                      </td>
+                      <td>
+                        <div className="admin-v2-actions">
+                          <button
+                            type="button"
+                            className="button button--secondary"
+                            aria-label={`Ver repeticiones ${item.family_key}`}
+                            onClick={() => setFamily(item)}
+                          >
+                            <Eye size={16} aria-hidden="true" />
+                            Ver detalle
+                          </button>
+                          {item.active && !item.reactivate_available && (
+                            <button
+                              type="button"
+                              className="button button--secondary"
+                              disabled={pending}
+                              onClick={() => act(item, "ignore_30d")}
+                            >
+                              <Clock size={16} aria-hidden="true" />
+                              Ignorar 30 días
+                            </button>
+                          )}
+                          {item.reactivate_available && (
+                            <button
+                              type="button"
+                              className="button button--secondary"
+                              disabled={pending}
+                              onClick={() => act(item, "reactivate")}
+                            >
+                              <RotateCcw size={16} aria-hidden="true" />
+                              Reactivar incidencia
+                            </button>
+                          )}
+                          {canProposeDelete(item) && (
+                            <button
+                              type="button"
+                              className="button button--secondary"
+                              disabled={pending}
+                              onClick={() => act(item, "propose_delete")}
+                            >
+                              <CircleOff size={16} aria-hidden="true" />
+                              Proponer eliminación
+                            </button>
+                          )}
+                          {item.deletion_proposed && (
+                            <span className="admin-incidents__catalog-status">
+                              Eliminación propuesta en Catálogo
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {!families.length && (
+                    <tr>
+                      <td colSpan={5}>
+                        No hay incidencias que coincidan con los filtros
+                        locales.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </>

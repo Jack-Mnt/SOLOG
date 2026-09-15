@@ -1,5 +1,13 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { Pencil, Plus, RotateCcw, Save, Search, Tags, Users } from "lucide-react";
+import {
+  Pencil,
+  Plus,
+  RotateCcw,
+  Save,
+  Search,
+  Tags,
+  Users,
+} from "lucide-react";
 import { AdminDialog } from "../admin.dialog";
 import {
   ValuationDialog,
@@ -109,7 +117,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       ) : (
         <form className="admin-v2-form" onSubmit={(event) => void save(event)}>
           <label>
-            Nombre o máscara
+            Nombre
             <input
               required
               value={name}
@@ -197,8 +205,8 @@ function EditGroupDialog({
   };
   return (
     <AdminDialog
-      title="Editar máscara y categoría"
-      description="La máscara operativa no modifica el nombre comercial de los SKU."
+      title="Editar nombre y categoría"
+      description="La nombre operativa no modifica el nombre comercial de los SKU."
       onClose={onClose}
       closeDisabled={!!store.intent()?.pending}
     >
@@ -207,7 +215,7 @@ function EditGroupDialog({
       ) : (
         <form className="admin-v2-form" onSubmit={(event) => void save(event)}>
           <label>
-            Nombre o máscara
+            Nombre
             <input
               required
               value={name}
@@ -341,14 +349,6 @@ export function AdminGroupsV2() {
     : undefined;
   return (
     <section className="admin-groups">
-      <header className="admin-groups__heading">
-        <div>
-          <p className="admin-section-intro">
-            Máscara y composición derivadas del Master Data compartido. El
-            precio unitario es informativo.
-          </p>
-        </div>
-      </header>
       <form
         className="admin-v2-filters admin-toolbar admin-toolbar-surface admin-groups__filters"
         onSubmit={(event) => event.preventDefault()}
@@ -358,7 +358,7 @@ export function AdminGroupsV2() {
           <span className="admin-filter-search-control">
             <Search size={16} aria-hidden="true" />
             <input
-              placeholder="Máscara, integrante, SKU o marca"
+              placeholder="Nombre, integrante, SKU o marca"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -422,7 +422,11 @@ export function AdminGroupsV2() {
         </div>
       </form>
       <div className="admin-table-bar admin-groups__table-bar admin-result-count-row">
-        <p className="admin-result-count">{visible.length === rows.length ? `${rows.length} resultados` : `${visible.length} de ${rows.length} resultados`}</p>
+        <p className="admin-result-count">
+          {visible.length === rows.length
+            ? `${rows.length} resultados`
+            : `${visible.length} de ${rows.length} resultados`}
+        </p>
         <AdminSort<GroupSort>
           value={sort}
           defaultValue="name"
@@ -439,72 +443,77 @@ export function AdminGroupsV2() {
         />
       </div>
       <div className="admin-table-section admin-groups__table">
-        <div className="admin-v2-table" role="region" aria-label="Lista de grupos" tabIndex={0}>
+        <div
+          className="admin-v2-table"
+          role="region"
+          aria-label="Lista de grupos"
+          tabIndex={0}
+        >
           <table>
-          <thead>
-            <tr>
-              <th scope="col">Grupo</th>
-              <th scope="col">Categoría</th>
-              <th scope="col">Integrantes</th>
-              <th scope="col">Valorizado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((group) => (
-              <tr key={group.id}>
-                <th scope="row">
-                  <span>{group.nombre}</span>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`Editar máscara y categoría de ${group.nombre}`}
-                    onClick={() => setEdit(group.id)}
-                  >
-                    <Pencil size={16} />
-                  </button>
-                </th>
-                <td>{group.categoryName}</td>
-                <td>
-                  <button
-                    type="button"
-                    className="button button--secondary admin-groups__members"
-                    onClick={() => setMembers(group.id)}
-                  >
-                    <Users size={16} aria-hidden="true" />
-                    <span className="admin-attribute-badge">
-                      {group.derivedType === "Único"
-                        ? "Único"
-                        : `${group.memberCount} SKU`}
-                    </span>
-                  </button>
-                </td>
-                <td className="admin-groups__valuation">
-                  <span>
-                    <Value value={group.precio} money /> / unidad
-                  </span>
-                  <small>
-                    <Valuation group={group} />
-                  </small>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`Editar valorizado de ${group.nombre}`}
-                    onClick={() => setValuationGroup(group.id)}
-                  >
-                    <Pencil size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {!visible.length && (
+            <thead>
               <tr>
-                <td colSpan={4}>
-                  No hay grupos para los filtros seleccionados.
-                </td>
+                <th scope="col">Grupo</th>
+                <th scope="col">Categoría</th>
+                <th scope="col">Integrantes</th>
+                <th scope="col">Valorizado</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {visible.map((group) => (
+                <tr key={group.id}>
+                  <th scope="row">
+                    <span>{group.nombre}</span>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={`Editar nombre y categoría de ${group.nombre}`}
+                      onClick={() => setEdit(group.id)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </th>
+                  <td>{group.categoryName}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="button button--secondary admin-groups__members"
+                      onClick={() => setMembers(group.id)}
+                    >
+                      <Users size={16} aria-hidden="true" />
+                      <span className="admin-attribute-badge">
+                        {group.derivedType === "Único"
+                          ? "Único"
+                          : `${group.memberCount} SKU`}
+                      </span>
+                    </button>
+                  </td>
+                  <td className="admin-groups__valuation">
+                    <span>
+                      <Value value={group.precio} money /> / unidad
+                    </span>
+                    <small>
+                      <Valuation group={group} />
+                    </small>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={`Editar valorizado de ${group.nombre}`}
+                      onClick={() => setValuationGroup(group.id)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {!visible.length && (
+                <tr>
+                  <td colSpan={4}>
+                    No hay grupos para los filtros seleccionados.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
       {create && <CreateGroupDialog onClose={() => setCreate(false)} />}
