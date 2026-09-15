@@ -66,4 +66,24 @@ describe('Admin Productos con Master Data', () => {
     expect(setup).not.toContain("'reference'")
     expect(setup).toContain('La configuración queda en staging')
   })
+
+  test('QuickFilterChip muestra contadores derivados sin lectura adicional y conserva filtros restantes', async () => {
+    const ui = await source('src/features/solog/admin/productos/admin.productos.v1.tsx')
+    expect(ui).toContain('const modeCounts = useMemo')
+    expect(ui).toContain("mode: 'all'")
+    expect(ui).toContain('categoryId: categoryFilter')
+    expect(ui).toContain('<strong>{modeCounts[value]}</strong>')
+    expect(ui).not.toContain("useCatalogQuery('products'")
+
+    const derived = deriveMasterData(snapshot)
+    const available = filterAndSortProducts(snapshot.products, derived, { search: 'cola', mode: 'all', categoryId: 'cat-a', sort: 'name' })
+    const counts = {
+      all: available.length,
+      Único: available.filter(product => product.estado === 'Único').length,
+      Agrupado: available.filter(product => product.estado === 'Agrupado').length,
+      Excluido: available.filter(product => product.estado === 'Excluido').length,
+    }
+    expect(counts).toEqual({ all: 2, Único: 0, Agrupado: 1, Excluido: 1 })
+  })
+
 })
