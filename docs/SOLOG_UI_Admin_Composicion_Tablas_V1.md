@@ -19,7 +19,9 @@ Este documento congela únicamente la **composición funcional y visual de las t
 - densidad de filas;
 - tipografía de celdas.
 
-No autoriza implementación todavía.
+La implementación de F1–F4 fue autorizada y ejecutada posteriormente mediante `docs/SOLOG_UI_Admin_Composicion_Tablas_Plan_Implementacion_V1.md`.
+
+Este documento continúa siendo la fuente primaria funcional del bloque. El estado actual es de **corrección post-revisión y smoke humano final**, no de planificación inicial.
 
 Las decisiones de este documento ya fueron contrastadas posteriormente contra:
 
@@ -130,6 +132,8 @@ Todos | Únicos | Agrupados | Excluidos
 
 La semántica sigue siendo filtro rápido sobre el mismo dataset.
 
+**Referencia visual:** QuickFilterChip de Control. La primitive común debe reutilizar su geometría, estado activo, hover/focus y contador visible cuando el subconjunto sea cuantificable con los datos ya cargados. No se agrega una consulta backend solo para mostrar cantidades.
+
 ## 5.2 Eliminar filtro Incluido / Excluido
 
 Se elimina el filtro independiente Incluido/Excluido.
@@ -237,6 +241,8 @@ pasan a usar QuickFilterChip.
 
 No deben tratarse como badges informativos.
 
+**Referencia visual:** QuickFilterChip de Control. Ambos conjuntos deben usar la primitive común y mostrar cantidades cuando puedan derivarse del Master Data ya cargado, sin consultas adicionales.
+
 ## 6.4 Integrantes
 
 El control de integrantes usa:
@@ -274,6 +280,8 @@ Correspondencia:
 - `Resueltas` → `family_state = resuelta`.
 
 El mismo dataset de familias descargado por `summary` contiene la información necesaria para separar estas vistas. No se requiere una llamada distinta por StateView.
+
+**Referencia visual:** StateView de Catálogo. Incidencias debe reutilizar la primitive común, incluyendo geometría, estado activo, navegación tipo tabs y contador visible derivado del mismo `summary`, sin consultas adicionales.
 
 ## 7.2 Composición provisional aprobada
 
@@ -348,6 +356,8 @@ Se agrega una columna:
 > **Cambio**
 
 Su función es permitir entender directamente qué se modificará sin abrir el detalle.
+
+La relación `anterior → nuevo` es semántica, no meramente decorativa. La implementación debe conservar una lectura accesible equivalente a “cambia a” para tecnologías asistivas aunque la flecha visual se oculte del árbol de accesibilidad.
 
 Ejemplos:
 
@@ -567,6 +577,24 @@ La única mejora necesaria es frontend: tipar o normalizar `CatalogProposal.dato
 
 Esto no requiere modificar el contrato de Supabase.
 
+## 9.7 Revisión post-implementación
+
+Después de completar F1–F4 y la revisión global, se confirmó que no existen desviaciones de backend ni de lógica funcional del bloque.
+
+Se detectaron únicamente correcciones frontend/documentales acotadas:
+
+1. la primitive genérica QuickFilterChip debe absorber el contrato visual ya consolidado en Control;
+2. la primitive genérica StateView debe absorber el contrato visual ya consolidado en Catálogo;
+3. Productos, Grupos e Incidencias deben mostrar los contadores de estas primitives cuando puedan derivarse de los datasets ya cargados, sin consultas nuevas;
+4. la columna `Cambio` de Catálogo debe mantener una lectura accesible explícita de la relación anterior → nuevo;
+5. la documentación anterior de `IconButton` se reconcilia con la variante `Primary` ya aprobada e implementada.
+
+Estas correcciones se congelan en:
+
+`docs/SOLOG_Correccion_Admin_Primitives_Tablas_V1.md`
+
+No reabren F1–F4 ni autorizan rediseños adicionales.
+
 ---
 
 # 10. Estado de cada módulo
@@ -642,20 +670,22 @@ Pendiente:
 
 # 11. Próximo paso
 
-Las dependencias técnicas de backend de este bloque ya están cerradas.
+F1–F4 y la revisión global técnica ya fueron ejecutadas.
 
-Antes de preparar implementación quedan únicamente decisiones de presentación general de tablas:
+El siguiente paso es aplicar únicamente el delta post-revisión definido en:
 
-1. revisar prioridad de columnas;
-2. revisar alineación;
-3. definir anchos/wrapping;
-4. definir responsive;
-5. congelar el contrato visual final;
-6. recién entonces preparar instrucciones para Codex.
+`docs/SOLOG_Correccion_Admin_Primitives_Tablas_V1.md`
 
-La definición especializada de las tres tablas de Incidencias **no bloquea este flujo** y se tratará en un bloque posterior independiente.
+Después:
 
-No deben introducirse cambios backend durante la implementación de este documento.
+1. ejecutar las validaciones técnicas del delta;
+2. realizar smoke humano integrado;
+3. corregir únicamente bugs demostrables dentro del alcance;
+4. cerrar explícitamente este bloque.
+
+La definición especializada de las tres tablas de Incidencias sigue fuera de alcance y se tratará en un bloque posterior independiente.
+
+No deben introducirse cambios backend.
 
 ---
 
@@ -671,6 +701,7 @@ Este bloque:
 - no requiere cambios de Supabase;
 - no requiere ampliar contratos RPC;
 - no anticipa las columnas ni acciones definitivas de las StateView de Incidencias;
-- no autoriza implementación todavía.
+- fue implementado mediante F1–F4;
+- tiene pendiente únicamente el delta post-revisión y el smoke humano final antes del cierre.
 
 La futura especialización de `Pendientes`, `Suprimidas` y `Resueltas` deberá abrirse como una decisión independiente sin reinterpretar provisionalmente este documento.
