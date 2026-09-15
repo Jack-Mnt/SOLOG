@@ -76,3 +76,14 @@ test('la tabla de propuestas compone identidad y Cambio sin lecturas adicionales
   expect(ui).toContain('catalogProposalChange(proposal)')
   expect(ui).toContain("? 'Automático'")
 })
+
+
+test('Cambio conserva la flecha visual y expone una relación accesible anterior a nuevo', async () => {
+  const ui = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+  expect(ui).toContain('function accessibleChangeValue')
+  expect(ui).toContain('aria-hidden="true"')
+  expect(ui).toContain('admin-catalog__change-sr')
+  expect(ui).toContain('cambia a nuevo')
+  expect(ui).toContain('change.kind === \'price\'')
+  expect(ui).toContain('change.kind === \'text\'')
+})
