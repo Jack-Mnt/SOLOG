@@ -1415,10 +1415,7 @@ detalle y exportación sin cambios. */
   margin: 0 0 12px;
   font-size: 1rem;
 }
-.admin-control .admin-control__filters {
-  padding: 10px 12px;
-  gap: 10px;
-}
+
 .admin-control__filters .admin-filter-field {
   flex-basis: 170px;
   min-width: 140px;
@@ -2596,11 +2593,13 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-toolbar__search,
 .admin-filter-search-field {
+  min-width: 0;
   flex: 1 1 240px;
 }
 .admin-toolbar__actions {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   flex-wrap: wrap;
   gap: 8px;
   margin-left: auto;
@@ -2669,6 +2668,9 @@ workspace y cards permanecen como superficies estructurales neutras;
   }
 }
 /* Admin toolbars — Fase C. El orden visual no altera el estado de cada módulo. */
+.admin-toolbar__filter {
+  flex: 0 0 auto;
+}
 .admin-toolbar__filters {
   display: flex;
   flex-wrap: wrap;
@@ -2776,7 +2778,7 @@ badges y conteos — Fase D. */
 /* Admin sections — Bloque A. Jerarquía previa a tablas sin alterar su carcasa. */
 .admin-v2-workspace .admin-toolbar-surface {
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border: 1px solid var(--color-border);
   border-radius: 16px;
   background: var(--color-surface);
