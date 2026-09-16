@@ -46,7 +46,7 @@ export function AdminDevicesV2() {
         device.site_id,
       )
       .then(() => setConfirmation(null))
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(store.intent("devices") ? "" : e.message));
   };
   const sites = orderedAdminSites(admin.bootstrap?.allowed_sites ?? []);
   const devices = query.data?.devices ?? [];
@@ -62,7 +62,7 @@ export function AdminDevicesV2() {
   return (
     <>
       <div className="admin-devices">
-        <MutationNotice domain="devices" />
+        <MutationNotice domain="devices" showResult={!confirmation} />
         {query.data ? (
           <>
             <section
@@ -234,6 +234,7 @@ export function AdminDevicesV2() {
           {error && <p role="alert">{error}</p>}
           <MutationNotice
             domain="devices"
+            showResult={false}
             onSuccess={() => setConfirmation(null)}
           />
         </AdminDialog>
