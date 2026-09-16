@@ -1,86 +1,86 @@
 Admin Block 2 Validation
 branch=admin-work
-commit=258a860c4b5f742c58c9ab300955ff0511d36d51
+commit=07eac09129339a17155b2d9bbaf0dff1157b3e8c
 targeted_status=0
 full_status=1
 lint_status=0
 build_status=0
-diff_status=128
+diff_status=0
 
 === TARGETED ===
 bun test v1.3.14 (0d9b296a)
 
 ::group::tests/admin-incidents-multisite.test.ts:
-(pass) Incidencias multisede > reutiliza las sedes cacheadas y carga las faltantes en orden canónico [0.51ms]
-(pass) Incidencias multisede > si todas las sedes están cacheadas no realiza nuevas lecturas [0.13ms]
-(pass) Incidencias multisede > el toggle activa, desactiva y se invalida al cambiar la sede del Shell [0.06ms]
-(pass) Incidencias multisede > usa la expiración más temprana para refrescar el agregado multisede [0.09ms]
-(pass) Incidencias multisede > un fallo conserva las sedes ya cargadas y el reintento pide solo la faltante [0.21ms]
-(pass) Incidencias multisede > agrega por family_key, conserva fuentes y aplica la precedencia de estado [0.48ms]
-(pass) Incidencias multisede > la mutación confirmada conserva el summary, actualiza revisión y evita relecturas [1.37ms]
-(pass) Incidencias multisede > una mutación global invalida summaries de todas las sedes [0.33ms]
-(pass) Incidencias multisede > un fallo de mutación no altera la familia cacheada [0.57ms]
-(pass) Incidencias multisede > propose_delete actualiza deletion_proposed en todos los summaries cacheados [0.48ms]
-(pass) Incidencias multisede > CircleOff difiere propose_delete hasta la confirmación con la fuente seleccionada [0.39ms]
-(pass) Incidencias multisede > la fecha de supresión multisede solo se conserva cuando las fuentes coinciden [0.19ms]
-(pass) Incidencias multisede > Ignorar y Reactivar usan revisión global y el detalle multisede omite site_id [0.24ms]
+(pass) Incidencias multisede > reutiliza las sedes cacheadas y carga las faltantes en orden canónico [0.71ms]
+(pass) Incidencias multisede > si todas las sedes están cacheadas no realiza nuevas lecturas [0.23ms]
+(pass) Incidencias multisede > el toggle activa, desactiva y se invalida al cambiar la sede del Shell [0.09ms]
+(pass) Incidencias multisede > usa la expiración más temprana para refrescar el agregado multisede [0.14ms]
+(pass) Incidencias multisede > un fallo conserva las sedes ya cargadas y el reintento pide solo la faltante [0.31ms]
+(pass) Incidencias multisede > agrega por family_key, conserva fuentes y aplica la precedencia de estado [0.68ms]
+(pass) Incidencias multisede > la mutación confirmada conserva el summary, actualiza revisión y evita relecturas [1.88ms]
+(pass) Incidencias multisede > una mutación global invalida summaries de todas las sedes [0.39ms]
+(pass) Incidencias multisede > un fallo de mutación no altera la familia cacheada [0.78ms]
+(pass) Incidencias multisede > propose_delete actualiza deletion_proposed en todos los summaries cacheados [0.60ms]
+(pass) Incidencias multisede > CircleOff difiere propose_delete hasta la confirmación con la fuente seleccionada [0.48ms]
+(pass) Incidencias multisede > la fecha de supresión multisede solo se conserva cuando las fuentes coinciden [0.26ms]
+(pass) Incidencias multisede > Ignorar y Reactivar usan revisión global y el detalle multisede omite site_id [0.35ms]
 
 ::endgroup::
 
 ::group::tests/admin-management.test.ts:
-(pass) A4–A6 reads and cache > status preserves its exact response [0.24ms]
-(pass) A4–A6 reads and cache > reference preserves its exact response [0.02ms]
+(pass) A4–A6 reads and cache > status preserves its exact response [0.33ms]
+(pass) A4–A6 reads and cache > reference preserves its exact response [0.03ms]
 (pass) A4–A6 reads and cache > groups preserves its exact response [0.02ms]
-(pass) A4–A6 reads and cache > group_products preserves its exact response [0.03ms]
-(pass) A4–A6 reads and cache > catalog_changes preserves its exact response [0.01ms]
-(pass) A4–A6 reads and cache > publication_preview preserves its exact response [0.01ms]
-(pass) A4–A6 reads and cache > price_mismatch_options preserves its exact response
-(pass) A4–A6 reads and cache > summary preserves its exact response [0.16ms]
+(pass) A4–A6 reads and cache > group_products preserves its exact response [0.05ms]
+(pass) A4–A6 reads and cache > catalog_changes preserves its exact response [0.02ms]
+(pass) A4–A6 reads and cache > publication_preview preserves its exact response [0.02ms]
+(pass) A4–A6 reads and cache > price_mismatch_options preserves its exact response [0.01ms]
+(pass) A4–A6 reads and cache > summary preserves its exact response [0.21ms]
 (pass) A4–A6 reads and cache > detail preserves its exact response [0.13ms]
-(pass) A4–A6 reads and cache > list preserves its exact response [0.23ms]
-(pass) A4–A6 reads and cache > summary y detail exigen el contrato operativo V2 y la reactivación por scope [0.38ms]
-(pass) A4–A6 reads and cache > master limit/offset; no generic data; device list has row revisions only [0.20ms]
-(pass) A4–A6 reads and cache > deduplicates, caches and separates sites; blocks unauthorized site [0.44ms]
-(pass) A4–A6 reads and cache > discards in-flight reads after refresh and disposal [0.41ms]
-(pass) A4–A6 reads and cache > rejects mismatched family, page, site and stale revisions [0.75ms]
-(pass) A4–A6 mutation intentions > group_change_save success and lost-response replay retain UUID/payload [0.40ms]
-(pass) A4–A6 mutation intentions > catalog_change_action success and lost-response replay retain UUID/payload [0.09ms]
-(pass) A4–A6 mutation intentions > resolve_group_price success and lost-response replay retain UUID/payload [0.10ms]
-(pass) A4–A6 mutation intentions > update_package_price success and lost-response replay retain UUID/payload [0.08ms]
+(pass) A4–A6 reads and cache > list preserves its exact response [0.26ms]
+(pass) A4–A6 reads and cache > summary y detail exigen el contrato operativo V2 y la reactivación por scope [0.55ms]
+(pass) A4–A6 reads and cache > master limit/offset; no generic data; device list has row revisions only [0.23ms]
+(pass) A4–A6 reads and cache > deduplicates, caches and separates sites; blocks unauthorized site [0.53ms]
+(pass) A4–A6 reads and cache > discards in-flight reads after refresh and disposal [0.42ms]
+(pass) A4–A6 reads and cache > rejects mismatched family, page, site and stale revisions [0.90ms]
+(pass) A4–A6 mutation intentions > group_change_save success and lost-response replay retain UUID/payload [0.47ms]
+(pass) A4–A6 mutation intentions > catalog_change_action success and lost-response replay retain UUID/payload [0.11ms]
+(pass) A4–A6 mutation intentions > resolve_group_price success and lost-response replay retain UUID/payload [0.14ms]
+(pass) A4–A6 mutation intentions > update_package_price success and lost-response replay retain UUID/payload [0.10ms]
 (pass) A4–A6 mutation intentions > ignore_30d success and lost-response replay retain UUID/payload [0.07ms]
-(pass) A4–A6 mutation intentions > reactivate success and lost-response replay retain UUID/payload [0.10ms]
-(pass) A4–A6 mutation intentions > propose_delete success and lost-response replay retain UUID/payload [0.06ms]
-(pass) A4–A6 mutation intentions > authorize success and lost-response replay retain UUID/payload [0.08ms]
-(pass) A4–A6 mutation intentions > replace success and lost-response replay retain UUID/payload [0.08ms]
-(pass) A4–A6 mutation intentions > revoke success and lost-response replay retain UUID/payload [0.08ms]
-(pass) A4–A6 mutation intentions > reject success and lost-response replay retain UUID/payload [0.05ms]
-(pass) A4–A6 mutation intentions > revision conflict releases rejected intent, invalidates and uses a new UUID [0.55ms]
-(pass) A4–A6 mutation intentions > device mutation invalidates target/global list, preserves other site and master [0.31ms]
-(pass) A4–A6 mutation intentions > propose deletion invalidates catalog V3 and affected family, not devices [0.33ms]
+(pass) A4–A6 mutation intentions > reactivate success and lost-response replay retain UUID/payload [0.14ms]
+(pass) A4–A6 mutation intentions > propose_delete success and lost-response replay retain UUID/payload [0.09ms]
+(pass) A4–A6 mutation intentions > authorize success and lost-response replay retain UUID/payload [0.11ms]
+(pass) A4–A6 mutation intentions > replace success and lost-response replay retain UUID/payload [0.11ms]
+(pass) A4–A6 mutation intentions > revoke success and lost-response replay retain UUID/payload [0.12ms]
+(pass) A4–A6 mutation intentions > reject success and lost-response replay retain UUID/payload [0.10ms]
+(pass) A4–A6 mutation intentions > revision conflict releases rejected intent, invalidates and uses a new UUID [0.68ms]
+(pass) A4–A6 mutation intentions > device mutation invalidates target/global list, preserves other site and master [0.36ms]
+(pass) A4–A6 mutation intentions > propose deletion invalidates catalog V3 and affected family, not devices [0.36ms]
 (pass) A4–A6 mutation intentions > old replay never rolls revisions back [0.25ms]
-(pass) A4–A6 mutation intentions > prepared publication retry preserves operation; no client artifact fields [0.32ms]
-(pass) A4–A6 mutation intentions > moderator cannot publish; disposed scope cannot mutate [0.09ms]
+(pass) A4–A6 mutation intentions > prepared publication retry preserves operation; no client artifact fields [0.48ms]
+(pass) A4–A6 mutation intentions > moderator cannot publish; disposed scope cannot mutate [0.13ms]
 
 ::endgroup::
 
 ::group::tests/admin-management-isolation.test.ts:
-(pass) normalized transport errors preserve the original operation, not just raw network errors [0.34ms]
-(pass) master revision conflict clears the rejected intent and refreshes its source [0.32ms]
-(pass) incidents revision conflict clears the rejected intent and refreshes its source [0.11ms]
-(pass) authorization rejection clears data and notifies the Admin shell [0.31ms]
-(pass) late response cannot cross a role change [0.20ms]
-(pass) incident period expiration is anchored to backend time and leaves devices cached [0.31ms]
-(pass) mutation invalidates an older in-flight family detail without resurrecting it [0.26ms]
-(pass) Edge failure releases receipt only with a rejected preview or failed-ledger replay [0.19ms]
-(pass) different Auth users never share a management dataset [0.26ms]
-(pass) rejections de evidencia o supresión obsoleta descartan la intención y fuerzan una recarga autoritativa [0.36ms]
+(pass) normalized transport errors preserve the original operation, not just raw network errors [0.42ms]
+(pass) master revision conflict clears the rejected intent and refreshes its source [0.41ms]
+(pass) incidents revision conflict clears the rejected intent and refreshes its source [0.12ms]
+(pass) authorization rejection clears data and notifies the Admin shell [0.35ms]
+(pass) late response cannot cross a role change [0.21ms]
+(pass) incident period expiration is anchored to backend time and leaves devices cached [0.39ms]
+(pass) mutation invalidates an older in-flight family detail without resurrecting it [0.35ms]
+(pass) Edge failure releases receipt only with a rejected preview or failed-ledger replay [0.20ms]
+(pass) different Auth users never share a management dataset [0.25ms]
+(pass) rejections de evidencia o supresión obsoleta descartan la intención y fuerzan una recarga autoritativa [0.48ms]
 
 ::endgroup::
 
  55 pass
  0 fail
  229 expect() calls
-Ran 55 tests across 3 files. [61.00ms]
+Ran 55 tests across 3 files. [84.00ms]
 
 === FULL ===
 bun test v1.3.14 (0d9b296a)
@@ -130,7 +130,7 @@ Received: "31/12/25, 11:59 p. m."
       at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
 
 ::error file=tests/global-g2.test.ts,line=46,col=35,title=error: expect(received).toContain(expected)::Expected to contain: "23:59"%0Am."%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
-(fail) G2 presentación Lima 2026-01-01T04:59:59Z [0.17ms]
+(fail) G2 presentación Lima 2026-01-01T04:59:59Z [0.25ms]
 41 |   ['2026-09-16T20:29:59Z','2026-09-16','15:29'],
 42 |   ['2026-09-16T20:30:00Z','2026-09-16','15:30'],
 43 | ]) test('G2 presentación Lima '+instant, () => {
@@ -146,7 +146,7 @@ Received: "1/01/26, 12:00 a. m."
       at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
 
 ::error file=tests/global-g2.test.ts,line=46,col=35,title=error: expect(received).toContain(expected)::Expected to contain: "00:00"%0Am."%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
-(fail) G2 presentación Lima 2026-01-01T05:00:00Z [0.10ms]
+(fail) G2 presentación Lima 2026-01-01T05:00:00Z [0.16ms]
 41 |   ['2026-09-16T20:29:59Z','2026-09-16','15:29'],
 42 |   ['2026-09-16T20:30:00Z','2026-09-16','15:30'],
 43 | ]) test('G2 presentación Lima '+instant, () => {
@@ -162,7 +162,7 @@ Received: "15/02/26, 11:59 p. m."
       at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
 
 ::error file=tests/global-g2.test.ts,line=46,col=35,title=error: expect(received).toContain(expected)::Expected to contain: "23:59"%0Am."%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
-(fail) G2 presentación Lima 2026-02-16T04:59:59Z [0.09ms]
+(fail) G2 presentación Lima 2026-02-16T04:59:59Z [0.15ms]
 41 |   ['2026-09-16T20:29:59Z','2026-09-16','15:29'],
 42 |   ['2026-09-16T20:30:00Z','2026-09-16','15:30'],
 43 | ]) test('G2 presentación Lima '+instant, () => {
@@ -178,7 +178,7 @@ Received: "16/02/26, 12:00 a. m."
       at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
 
 ::error file=tests/global-g2.test.ts,line=46,col=35,title=error: expect(received).toContain(expected)::Expected to contain: "00:00"%0Am."%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
-(fail) G2 presentación Lima 2026-02-16T05:00:00Z [0.10ms]
+(fail) G2 presentación Lima 2026-02-16T05:00:00Z [0.15ms]
 41 |   ['2026-09-16T20:29:59Z','2026-09-16','15:29'],
 42 |   ['2026-09-16T20:30:00Z','2026-09-16','15:30'],
 43 | ]) test('G2 presentación Lima '+instant, () => {
@@ -194,7 +194,7 @@ Received: "29/02/28, 11:59 p. m."
       at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
 
 ::error file=tests/global-g2.test.ts,line=46,col=35,title=error: expect(received).toContain(expected)::Expected to contain: "23:59"%0Am."%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
-(fail) G2 presentación Lima 2028-03-01T04:59:59Z [0.10ms]
+(fail) G2 presentación Lima 2028-03-01T04:59:59Z [0.19ms]
 41 |   ['2026-09-16T20:29:59Z','2026-09-16','15:29'],
 42 |   ['2026-09-16T20:30:00Z','2026-09-16','15:30'],
 43 | ]) test('G2 presentación Lima '+instant, () => {
@@ -210,7 +210,7 @@ Received: "16/09/26, 7:29 a. m."
       at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
 
 ::error file=tests/global-g2.test.ts,line=46,col=35,title=error: expect(received).toContain(expected)::Expected to contain: "07:29"%0Am."%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
-(fail) G2 presentación Lima 2026-09-16T12:29:59Z [0.14ms]
+(fail) G2 presentación Lima 2026-09-16T12:29:59Z [0.15ms]
 41 |   ['2026-09-16T20:29:59Z','2026-09-16','15:29'],
 42 |   ['2026-09-16T20:30:00Z','2026-09-16','15:30'],
 43 | ]) test('G2 presentación Lima '+instant, () => {
@@ -226,7 +226,7 @@ Received: "16/09/26, 7:30 a. m."
       at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
 
 ::error file=tests/global-g2.test.ts,line=46,col=35,title=error: expect(received).toContain(expected)::Expected to contain: "07:30"%0Am."%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
-(fail) G2 presentación Lima 2026-09-16T12:30:00Z [0.13ms]
+(fail) G2 presentación Lima 2026-09-16T12:30:00Z [0.14ms]
 41 |   ['2026-09-16T20:29:59Z','2026-09-16','15:29'],
 42 |   ['2026-09-16T20:30:00Z','2026-09-16','15:30'],
 43 | ]) test('G2 presentación Lima '+instant, () => {
@@ -242,7 +242,7 @@ Received: "16/09/26, 3:29 p. m."
       at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
 
 ::error file=tests/global-g2.test.ts,line=46,col=35,title=error: expect(received).toContain(expected)::Expected to contain: "15:29"%0Am."%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
-(fail) G2 presentación Lima 2026-09-16T20:29:59Z [0.11ms]
+(fail) G2 presentación Lima 2026-09-16T20:29:59Z [0.14ms]
 41 |   ['2026-09-16T20:29:59Z','2026-09-16','15:29'],
 42 |   ['2026-09-16T20:30:00Z','2026-09-16','15:30'],
 43 | ]) test('G2 presentación Lima '+instant, () => {
@@ -258,7 +258,7 @@ Received: "16/09/26, 3:30 p. m."
       at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
 
 ::error file=tests/global-g2.test.ts,line=46,col=35,title=error: expect(received).toContain(expected)::Expected to contain: "15:30"%0Am."%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/global-g2.test.ts:46:35)
-(fail) G2 presentación Lima 2026-09-16T20:30:00Z [0.12ms]
+(fail) G2 presentación Lima 2026-09-16T20:30:00Z [0.15ms]
 .......
 ::endgroup::
 .........
@@ -338,7 +338,7 @@ Received: "16/09/26, 3:30 p. m."
 361 pass
 9 fail
 1651 expect() calls
-Ran 370 tests across 51 files. [1289.00ms]
+Ran 370 tests across 51 files. [1.77s]
 
 === LINT ===
 $ eslint .
@@ -398,7 +398,6 @@ dist/assets/cajero-CIOSTuEF.js                                        56.65 kB �
 dist/assets/browser-CB9WaMml.js                                       70.71 kB │ gzip: 19.69 kB
 dist/assets/index-iHtWDnT9.js                                        202.02 kB │ gzip: 63.81 kB
 
-[32m✓ built in 265ms[39m
+[32m✓ built in 374ms[39m
 
 === DIFF CHECK ===
-fatal: bad revision 'master...HEAD'
