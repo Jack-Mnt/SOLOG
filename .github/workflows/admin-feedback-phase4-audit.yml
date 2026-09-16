@@ -1,0 +1,55 @@
+name: Admin Feedback Phase 4 Static Audit
+
+on:
+  push:
+    branches:
+      - admin-work
+    paths-ignore:
+      - ".validation/admin-feedback-phase4-audit.txt"
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout admin-work
+        uses: actions/checkout@v4
+        with:
+          ref: admin-work
+
+      - name: Audit feedback references
+        shell: bash
+        run: |
+          mkdir -p .validation
+          {
+            echo "Admin Feedback Phase 4 Static Audit"
+            echo "commit=$(git rev-parse HEAD)"
+            echo
+            echo "=== TSX operation/replay references ==="
+            grep -RInE 'operation_id|replay confirmado|\(replay\)|result\.replay|receipt\.operationId' \
+              src/features/solog/admin \
+              --include='*.tsx' || true
+            echo
+            echo "=== Catalog/Products feedback surfaces ==="
+            grep -RInE 'CatalogMutationNotice|AdminNotice|role="alert"|role="status"' \
+              src/features/solog/admin/catalogo \
+              src/features/solog/admin/productos \
+              --include='*.tsx' || true
+            echo
+            echo "=== Incidents/Devices feedback surfaces ==="
+            grep -RInE 'MutationNotice|AdminNotice|role="alert"|role="status"|dismissedNotice|feedbackOccurrence' \
+              src/features/solog/admin/incidencias \
+              src/features/solog/admin/dispositivos \
+              --include='*.tsx' || true
+          } > .validation/admin-feedback-phase4-audit.txt
+
+      - name: Commit audit report
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .validation/admin-feedback-phase4-audit.txt
+          git commit -m "chore: record admin feedback phase 4 static audit" || exit 0
+          git push origin HEAD:admin-work
