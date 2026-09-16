@@ -14,7 +14,8 @@ import type { MasterDataProduct } from "../masterdata/admin.masterdata.v1";
 import { QueryState, Value } from "../admin.v2.presentation";
 import { AdminSort, IconButton } from "../admin.primitives";
 import { useCatalogStore } from "../catalogo/admin.catalogo.context";
-import { CatalogMutationNotice, catalogMutationError } from "../catalogo/admin.catalogo.feedback";
+import { CatalogMutationNotice } from "../catalogo/admin.catalogo.feedback";
+import { catalogMutationError } from "../catalogo/admin.catalogo.feedback.utils";
 import {
   ProductSetupDialog,
   type ProductSetupTarget,
