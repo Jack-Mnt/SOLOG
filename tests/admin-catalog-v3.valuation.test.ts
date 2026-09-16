@@ -25,7 +25,7 @@ describe('Catálogo V3: valorizado staged', () => {
     expect(source).toContain('ValuationDialog')
     expect(source).toMatch(/store\s*\.\s*mutation\(\s*["']prepare_price["']/)
     expect(source).not.toContain('valuation_save')
-    expect(source).toContain('se aplicarán solo al publicar Catálogo')
+    expect(source).toMatch(/se aplicarán solo al\s+publicar Catálogo/)
     for (const code of ['INVALID_PACKAGE_CONFIGURATION', 'INVALID_PACKAGE_PRICE', 'PACKAGE_PRICE_DECISION_REQUIRED']) expect(source).toContain(code)
   })
 })
