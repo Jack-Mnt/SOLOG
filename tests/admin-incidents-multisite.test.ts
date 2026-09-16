@@ -197,7 +197,7 @@ describe("Incidencias multisede", () => {
       /setDeleteProposal\(\{\s*family:\s*item,?\s*source:\s*deletable,?\s*\}\)/,
     );
     expect(source).toContain('title="Proponer eliminación"');
-    expect(source).toContain('onConfirm={() => actSource(deleteProposal.source, "propose_delete")}');
+    expect(source).toContain('onConfirm={() => proposeDeleteSource(deleteProposal.source)}');
     expect(source).toContain('family.family_state === "pendiente"');
     expect(source).toContain('scope: "site"');
     expect(source).toContain('summary.revisions.incidents');
@@ -206,12 +206,66 @@ describe("Incidencias multisede", () => {
     expect(source).toContain('proposing ? "Proponiendo…" : "Proponer eliminación"');
   });
 
+  test("la fecha de supresión multisede solo se conserva cuando las fuentes coinciden", () => {
+    const base = managementFixture("summary", { site_id: "site-a" }).families[0];
+    const until = "2026-10-16T12:00:00Z";
+    const [consistent] = mergeIncidentSummaries([
+      summary("site-a", "Cutervo", {
+        ...base,
+        pending_cases: 0,
+        suppressed_cases: 2,
+        resolved_cases: 0,
+        active_cases: 2,
+        family_state: "suprimida",
+        active_suppression_until: until,
+      }),
+      summary("site-b", "Huaca", {
+        ...base,
+        pending_cases: 0,
+        suppressed_cases: 2,
+        resolved_cases: 0,
+        active_cases: 2,
+        family_state: "suprimida",
+        active_suppression_until: until,
+      }),
+    ]);
+    expect(consistent.active_suppression_until).toBe(until);
+
+    const [conflicting] = mergeIncidentSummaries([
+      summary("site-a", "Cutervo", {
+        ...base,
+        pending_cases: 0,
+        suppressed_cases: 2,
+        resolved_cases: 0,
+        active_cases: 2,
+        family_state: "suprimida",
+        active_suppression_until: "2026-10-16T12:00:00Z",
+      }),
+      summary("site-b", "Huaca", {
+        ...base,
+        pending_cases: 0,
+        suppressed_cases: 2,
+        resolved_cases: 0,
+        active_cases: 2,
+        family_state: "suprimida",
+        active_suppression_until: "2026-10-17T12:00:00Z",
+      }),
+    ]);
+    expect(conflicting.active_suppression_until).toBeNull();
+  });
+
   test("Ignorar y Reactivar usan revisión global y el detalle multisede omite site_id", async () => {
     const source = await Bun.file(
       "src/features/solog/admin/incidencias/admin.incidencias.v2.tsx",
     ).text();
     expect(source).toContain('scope: "global"');
-    expect(source).toContain("summary.revisions.incidents_global");
+    expect(source).toContain("globalIncidentRevision(store, family)");
+    expect(source).toContain("reactivateFamily(item)");
+    expect(source).not.toContain("runningSite");
+    expect(source).not.toContain('className="admin-incidents__sources"');
+    expect(source).toContain(
+      "Esta incidencia se ignorará durante 30 días en todas las sedes.",
+    );
     expect(source).toContain('setNotice("La incidencia fue reactivada.")');
     expect(source).toContain(
       'setNotice("La incidencia fue ignorada durante 30 días.")',
