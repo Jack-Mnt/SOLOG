@@ -2712,7 +2712,16 @@ workspace y cards permanecen como superficies estructurales neutras;
     order: 0;
   }
 }
-
+.admin-v2-workspace .admin-section-secondary-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px 40px;
+  margin-top: 12px;
+}
+.admin-v2-workspace .admin-section-secondary-row + .admin-table-section {
+  margin-top: 12px;
+}
 /* QuickFilterChip,
 StateView,
 badges y conteos — Fase D. */
@@ -2748,13 +2757,12 @@ badges y conteos — Fase D. */
   min-height: 22px;
   padding: 2px 6px;
 }
+
 .admin-groups__quick-filter-sets {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
-  gap: 36px;
-  flex: 1;
+  gap: 12px 40px;
 }
 .admin-groups__members-icon--hover {
   display: none;
@@ -2790,9 +2798,7 @@ badges y conteos — Fase D. */
   font-size: 0.8rem;
   font-weight: 600;
 }
-.admin-v2-workspace .admin-section-secondary-row {
-  min-width: 0;
-}
+
 .admin-v2-workspace .admin-result-count-row {
   margin-top: 12px;
 }

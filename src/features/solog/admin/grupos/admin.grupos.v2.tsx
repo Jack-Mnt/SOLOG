@@ -501,13 +501,6 @@ export function AdminGroupsV2() {
             </button>
           ))}
         </div>
-      </div>
-      <div className="admin-table-bar admin-groups__table-bar admin-result-count-row">
-        <p className="admin-result-count">
-          {visible.length === rows.length
-            ? `${rows.length} resultados`
-            : `${visible.length} de ${rows.length} resultados`}
-        </p>
         <AdminSort<GroupSort>
           value={sort}
           defaultValue="name"

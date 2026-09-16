@@ -26,12 +26,13 @@ import { QueryState, Value } from "../admin.v2.presentation";
 import { validCustomRange } from "../admin.v2.format";
 import { AdminExportDialog } from "./admin.control.v2.export-dialog";
 import { controlView } from "./admin.control.data";
+import { AdminSort } from "../admin.primitives";
 
 const periods: [ControlPeriod, string][] = [
   ["today", "Hoy"],
   ["last_week", "Última semana"],
-  ["current_biweekly", "Período actual quincenal"],
-  ["previous_biweekly", "Período anterior quincenal"],
+  ["current_biweekly", "Quincena actual"],
+  ["previous_biweekly", "Quincena anterior"],
   ["custom", "Personalizado"],
 ];
 const stateTone: Record<DifferenceState, string> = {
@@ -423,74 +424,63 @@ function ControlResults({
         </p>
       </div>
       {view.total > 0 ? (
-        <>
-          <div className="admin-table-bar admin-control__table-bar admin-result-count-row">
-            <p className="admin-result-count">
-              {view.total === data.items.length
-                ? `${view.total} resultados`
-                : `${view.total} de ${data.items.length} resultados`}
-            </p>
-          </div>
-          <div className="admin-table-section admin-control__table">
-            <div className="admin-v2-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Registrado</th>
-                    <th>Grupo</th>
-                    <th>Categoría</th>
-                    <th>Estado</th>
-                    <th className="admin-control__number">Diferencia</th>
-                    <th className="admin-control__number">Valorizado</th>
-                    <th className="admin-control__detail-cell">Detalle</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {view.rows.map((row) => (
-                    <tr key={row.case_id}>
-                      <td>
-                        <time dateTime={row.origin_at}>
-                          {controlDate(row.origin_at, true)}
-                        </time>
-                      </td>
-                      <td>{row.group_name}</td>
-                      <td>{row.category}</td>
-                      <td>
-                        <span
-                          className={`admin-control__badge admin-status-badge admin-status-badge--${stateTone[row.state]} admin-control__tone--${stateTone[row.state]}`}
-                        >
-                          {row.state === "Recontar"
-                            ? "Por recontar"
-                            : row.state}
-                        </span>
-                      </td>
-                      <td
-                        className={`admin-control__number admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}
+        <div className="admin-table-section admin-control__table">
+          <div className="admin-v2-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Registrado</th>
+                  <th>Grupo</th>
+                  <th>Categoría</th>
+                  <th>Estado</th>
+                  <th className="admin-control__number">Diferencia</th>
+                  <th className="admin-control__number">Valorizado</th>
+                  <th className="admin-control__detail-cell">Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {view.rows.map((row) => (
+                  <tr key={row.case_id}>
+                    <td>
+                      <time dateTime={row.origin_at}>
+                        {controlDate(row.origin_at, true)}
+                      </time>
+                    </td>
+                    <td>{row.group_name}</td>
+                    <td>{row.category}</td>
+                    <td>
+                      <span
+                        className={`admin-control__badge admin-status-badge admin-status-badge--${stateTone[row.state]} admin-control__tone--${stateTone[row.state]}`}
                       >
-                        {row.difference > 0 ? "+" : ""}
-                        <Value value={row.difference} />
-                      </td>
-                      <td className="admin-control__number">
-                        <Value value={row.valued_difference} money />
-                      </td>
-                      <td className="admin-control__detail-cell">
-                        <button
-                          className="icon-button"
-                          aria-label={`Ver cronología de ${row.group_name}`}
-                          onClick={() =>
-                            setGroup({ id: row.group_id, name: row.group_name })
-                          }
-                        >
-                          <Eye size={16} aria-hidden="true" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        {row.state === "Recontar" ? "Por recontar" : row.state}
+                      </span>
+                    </td>
+                    <td
+                      className={`admin-control__number admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}
+                    >
+                      {row.difference > 0 ? "+" : ""}
+                      <Value value={row.difference} />
+                    </td>
+                    <td className="admin-control__number">
+                      <Value value={row.valued_difference} money />
+                    </td>
+                    <td className="admin-control__detail-cell">
+                      <button
+                        className="icon-button"
+                        aria-label={`Ver cronología de ${row.group_name}`}
+                        onClick={() =>
+                          setGroup({ id: row.group_id, name: row.group_name })
+                        }
+                      >
+                        <Eye size={16} aria-hidden="true" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </>
+        </div>
       ) : (
         <p className="admin-control__empty" role="status">
           <SearchX size={18} aria-hidden="true" />

@@ -262,52 +262,47 @@ export function AdminProductsV1() {
             </select>
           </label>
         </form>
-        <div
-          className="admin-quick-filter-chips"
-          role="group"
-          aria-label="Modalidad"
-        >
-          <button
-            key={"all"}
-            type="button"
-            className="admin-quick-filter-chip"
-            aria-pressed={modeFilter === "all"}
-            onClick={() => {
-              setModeFilter("all");
-              setPage(0);
-            }}
+        <div className="admin-groups__quick-filter-sets admin-section-secondary-row">
+          <div
+            className="admin-quick-filter-chips"
+            role="group"
+            aria-label="Modalidad"
           >
-            <span>Todos</span>
-            <strong>{modeCounts["all"]}</strong>
-          </button>
-          {(
-            [
-              ["Único", "Únicos"],
-              ["Agrupado", "Agrupados"],
-              ["Excluido", "Excluidos"],
-            ] as const
-          ).map(([value, label]) => (
             <button
-              key={value}
+              key={"all"}
               type="button"
-              className="admin-quick-filter-chip tone--color"
-              aria-pressed={modeFilter === value}
+              className="admin-quick-filter-chip"
+              aria-pressed={modeFilter === "all"}
               onClick={() => {
-                setModeFilter(value);
+                setModeFilter("all");
                 setPage(0);
               }}
             >
-              <span>{label}</span>
-              <strong>{modeCounts[value]}</strong>
+              <span>Todos</span>
+              <strong>{modeCounts["all"]}</strong>
             </button>
-          ))}
-        </div>
-        <div className="admin-table-bar admin-products__table-bar admin-result-count-row">
-          <p className="admin-result-count">
-            {products.length === masterData.snapshot.totals.products
-              ? `${products.length} resultados`
-              : `${products.length} de ${masterData.snapshot.totals.products} resultados`}
-          </p>
+            {(
+              [
+                ["Único", "Únicos"],
+                ["Agrupado", "Agrupados"],
+                ["Excluido", "Excluidos"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className="admin-quick-filter-chip tone--color"
+                aria-pressed={modeFilter === value}
+                onClick={() => {
+                  setModeFilter(value);
+                  setPage(0);
+                }}
+              >
+                <span>{label}</span>
+                <strong>{modeCounts[value]}</strong>
+              </button>
+            ))}
+          </div>
           <AdminSort<ProductSort>
             value={sort}
             defaultValue="name"
