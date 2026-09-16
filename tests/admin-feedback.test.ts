@@ -76,3 +76,78 @@ describe('Admin feedback de mutaciones', () => {
     expect(source).not.toContain('dismissedNotice !== noticeMessage')
   })
 })
+
+
+describe('Admin feedback fases 2 y 3', () => {
+  test('Catálogo y Productos comparten presenter sin UUID ni replay visible', async () => {
+    const [feedback, catalog, products, setup] = await Promise.all([
+      Bun.file('src/features/solog/admin/catalogo/admin.catalogo.feedback.tsx').text(),
+      Bun.file('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx').text(),
+      Bun.file('src/features/solog/admin/productos/admin.productos.v1.tsx').text(),
+      Bun.file('src/features/solog/admin/productos/admin.product-setup.dialog.tsx').text(),
+    ])
+
+    expect(feedback).toContain('CatalogMutationNotice')
+    expect(feedback).toContain('catalogMutationError')
+    expect(feedback).not.toContain('payload.operation_id')
+    expect(catalog).not.toContain('CatalogIntentNotice')
+    expect(products).not.toContain('CatalogIntentNotice')
+    expect(setup).not.toContain('CatalogIntentNotice')
+    expect(catalog).not.toContain('replay confirmado')
+    expect(catalog).not.toMatch(/Publicación pendiente de confirmar:\s*\{receipt\.operationId\}/)
+    expect([catalog, products, setup].every((source) => source.includes('CatalogMutationNotice'))).toBe(true)
+  })
+
+  test('errores retryable de Catálogo permanecen en una única superficie', async () => {
+    const feedback = await Bun.file(
+      'src/features/solog/admin/catalogo/admin.catalogo.feedback.tsx',
+    ).text()
+    const catalog = await Bun.file(
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+    ).text()
+
+    expect(feedback).toContain("if (store.intent()) return ''")
+    expect(catalog).toContain('catalogMutationError(store, reason')
+    expect(catalog).toContain('store.intent() ? "" : priceErrorMessage(reason)')
+  })
+
+  test('Dispositivos separa feedback modal y feedback de página', async () => {
+    const devices = await Bun.file(
+      'src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx',
+    ).text()
+
+    expect(devices).toContain('<MutationNotice domain="devices" showResult={!confirmation} />')
+    expect(devices).toContain('showResult={false}')
+    expect(devices).toContain('setError(store.intent("devices") ? "" : e.message)')
+  })
+
+  test('Incidencias usa ocurrencia independiente del texto y retry de la intención original', async () => {
+    const incidents = await Bun.file(
+      'src/features/solog/admin/incidencias/admin.incidencias.v2.tsx',
+    ).text()
+
+    expect(incidents).toContain('feedbackOccurrence')
+    expect(incidents).toContain('local:${feedbackOccurrence}')
+    expect(incidents).toContain('pendingIntent.attempt')
+    expect(incidents).toContain('retryIncidentIntent')
+    expect(incidents).toContain('store.retryMutation("incidents")')
+    expect(incidents).toContain('onDismiss={pendingIntent ? undefined')
+    expect(incidents).toContain('retryable ? store.retryMutation("incidents")')
+    expect(incidents).toContain('"La incidencia fue reactivada."')
+    expect(incidents).toContain('"La incidencia fue ignorada durante 30 días."')
+    expect(incidents).toContain('"La propuesta de eliminación quedó pendiente para revisión en Catálogo."')
+  })
+
+  test('notices retryable no pueden ocultar la única acción de retry', async () => {
+    const [primitive, management, catalogFeedback] = await Promise.all([
+      Bun.file('src/features/solog/admin/admin.primitives.tsx').text(),
+      Bun.file('src/features/solog/admin/admin.management.presentation.tsx').text(),
+      Bun.file('src/features/solog/admin/catalogo/admin.catalogo.feedback.tsx').text(),
+    ])
+
+    expect(primitive).toContain('onDismiss?: () => void')
+    expect(primitive).toContain('{onDismiss && <IconButton')
+    expect(management).not.toContain("onDismiss={() => setDismissedOccurrence(occurrence)}\n      action={!intent.pending")
+    expect(catalogFeedback).not.toContain('onDismiss=')
+  })
+})
