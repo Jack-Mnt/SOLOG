@@ -25,7 +25,8 @@ import {
   type ProductSetupTarget,
 } from "../productos/admin.product-setup.dialog";
 import { useCatalogQuery, useCatalogStore } from "./admin.catalogo.context";
-import { CatalogMutationNotice, catalogMutationError } from "./admin.catalogo.feedback";
+import { CatalogMutationNotice } from "./admin.catalogo.feedback";
+import { catalogMutationError } from "./admin.catalogo.feedback.utils";
 import {
   catalogProposalChange,
   type CatalogProposal,
