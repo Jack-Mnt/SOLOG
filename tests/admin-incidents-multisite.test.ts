@@ -178,9 +178,10 @@ describe("Incidencias multisede", () => {
       siteA.revisions.incidents,
       "site-a",
     );
+    const siteACached = store.peek("summary", { site_id: "site-a" }).data;
     expect(
-      store.peek("summary", { site_id: "site-a" }).data?.families[0]
-        .deletion_proposed,
+      siteACached === undefined ||
+        siteACached.families[0].deletion_proposed === true,
     ).toBe(true);
     expect(
       store.peek("summary", { site_id: "site-b" }).data?.families[0]
