@@ -130,6 +130,26 @@ describe("Incidencias multisede", () => {
     expect(store.peek("summary", { site_id: "site-a" }).data?.revisions.incidents).toBe(6);
   });
 
+  test("una mutación global invalida summaries de todas las sedes", async () => {
+    const auth = bootstrapFixture();
+    const store = new ManagementStore(
+      "admin-test",
+      () => auth,
+      () => {},
+      async (action, payload) => managementFixture(action, payload),
+      async (action, payload) => mutationFixture(action, payload),
+    );
+    const siteA = await store.load("summary", { site_id: "site-a" });
+    await store.load("summary", { site_id: "site-b" });
+    await store.mutation(
+      "ignore_30d",
+      { family_key: siteA.families[0].family_key, scope: "global" },
+      siteA.revisions.incidents_global,
+    );
+    expect(store.peek("summary", { site_id: "site-a" }).data).toBeUndefined();
+    expect(store.peek("summary", { site_id: "site-b" }).data).toBeUndefined();
+  });
+
   test("un fallo de mutación no altera la familia cacheada", async () => {
     const auth = bootstrapFixture();
     const store = new ManagementStore("admin-test", () => auth, () => {}, async (action, payload) => managementFixture(action, payload), async () => { throw new Error("red caída"); });
