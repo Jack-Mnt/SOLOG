@@ -1,5 +1,5 @@
 Admin Feedback Phase 4 Static Audit
-commit=85b8d750dea10b3c3668d9056d1a8d8298d7b323
+commit=34266e912e514dbd47be4e6b621a50abe645dd82
 
 === TSX operation/replay references ===
 src/features/solog/admin/admin.management.presentation.tsx:28:    const operationId = String(intent.payload.operation_id)
