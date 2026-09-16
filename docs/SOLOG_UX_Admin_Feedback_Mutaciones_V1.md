@@ -1,7 +1,7 @@
 # SOLOG — UX Admin — Feedback de Mutaciones V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO FASES 1–3 — FASE 4 PENDIENTE
+**Estado:** IMPLEMENTADO Y VALIDADO TÉCNICAMENTE — SMOKE PREVIEW PENDIENTE
 **Clasificación:** Nivel B — normalización UX de feedback administrativo  
 **Fecha:** 2026-09-16
 
@@ -135,10 +135,41 @@ Validación dirigida Fases 2–3:
 - `bun run build`: correcto;
 - `git diff --check`: correcto.
 
-Pendiente para Fase 4:
+### Fase 4 — Auditoría global y validación
 
-- auditoría global final de feedback Admin;
-- suite global completa contra baseline;
-- revisión de alcance y regresiones;
+Auditoría final completada en `admin-work`.
+
+Hallazgos corregidos durante la propia Fase 4:
+
+- Dispositivos mantenía el feedback de página activo mientras el modal era la superficie autoritativa;
+- Incidencias podía mostrar simultáneamente el error retryable en página y dentro de los modales de Ignorar/Proponer eliminación;
+- el diálogo padre de Catálogo podía renderizar el mismo intent mientras un diálogo hijo de configuración o resolución de precio estaba abierto.
+
+Correcciones aplicadas:
+
+- Dispositivos oculta completamente el feedback de página mientras existe una confirmación modal;
+- Incidencias suspende el notice de página mientras un modal de mutación posee la operación;
+- Catálogo suspende el `CatalogMutationNotice` del detalle padre mientras `ProductSetupDialog` o `PriceResolutionDialog` están abiertos;
+- se añadieron tests estructurales para fijar estas reglas de ownership.
+
+Auditoría de exposición técnica:
+
+- no se encontró `replay confirmado` ni `(replay)` en superficies TSX Admin;
+- las referencias restantes a `operation_id` se utilizan únicamente para identidad interna del notice;
+- `receipt.operationId` se usa únicamente como estado interno para recuperación y habilitación de controles, sin interpolarse en texto visible.
+
+Validación final:
+
+- suite dirigida de feedback y módulos relacionados: **103 pass / 0 fail**;
+- suite global: **379 pass / 9 fail** en 388 tests;
+- los 9 fallos corresponden exactamente a los mismos casos heredados `global-g2.test.ts` de presentación horaria Lima;
+- no existen fallos globales adicionales fuera de G2;
+- `bun run lint`: correcto;
+- `bun run build`: correcto;
+- `git diff --check` desde el cierre del Bloque 3: correcto;
+- auditoría estática de feedback: correcta.
+
+Pendiente únicamente:
+
 - smoke humano en Preview de `admin-work`;
-- cierre definitivo del Bloque 4.
+- cierre definitivo del Bloque 4 tras ese smoke.
