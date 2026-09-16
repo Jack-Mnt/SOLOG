@@ -1,7 +1,7 @@
 # SOLOG — UX Incidencias — Supresión Multisede V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO FASES 1–2 — VALIDACIÓN FASE 3 PENDIENTE  
+**Estado:** IMPLEMENTADO FASES 1–2 — VALIDACIÓN FASE 3 PENDIENTE
 **Clasificación:** Nivel B — comportamiento UX derivado de la lógica global de Incidencias  
 **Fecha:** 2026-09-16
 
@@ -96,4 +96,3 @@ Implementado en `admin-work`:
 Pendiente:
 
 - Fase 3: tests completos, lint, build, `git diff --check`, revisión de regresiones y smoke humano en Preview de `admin-work`.
-
