@@ -55,7 +55,7 @@ describe('Catálogo V3: estructura principal', () => {
   test('Productos opera sobre Master Data completo y conserva las mutaciones Catálogo V3', async () => {
     const ui = await source('src/features/solog/admin/productos/admin.productos.v1.tsx')
     expect(ui).toContain('useMasterData()')
-    expect(ui).toContain('masterData.snapshot.totals.products')
+    expect(ui).toContain('masterData.snapshot.products')
     expect(ui).toContain('masterData.snapshot.setup_required')
     expect(ui).toContain('derived.categoryById')
     expect(ui).toContain('derived.groupById')
