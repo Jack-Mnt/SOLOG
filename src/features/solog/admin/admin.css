@@ -1118,7 +1118,7 @@ detalle y exportación sin cambios. */
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   margin-bottom: 12px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -1139,11 +1139,14 @@ detalle y exportación sin cambios. */
   font-size: 0.78rem;
   white-space: nowrap;
 }
+.admin-catalog .admin-state-views {
+  margin-bottom: 12px;
+}
 .admin-state-views {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 12px 0;
+  margin: 0 0 12px;
 }
 .admin-state-views > button {
   display: inline-flex;
@@ -1208,7 +1211,7 @@ detalle y exportación sin cambios. */
 }
 .admin-catalog__section {
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   background: var(--color-surface);
 }
@@ -1216,7 +1219,7 @@ detalle y exportación sin cambios. */
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--color-border);
 }
 .admin-catalog__section > header h3 {
@@ -1244,9 +1247,7 @@ detalle y exportación sin cambios. */
   background: var(--color-primary-soft);
   color: var(--color-primary-active);
 }
-.admin-catalog__table {
-  margin: 0;
-}
+
 .admin-catalog__table table {
   min-width: 720px;
   font-size: 0.8rem;
@@ -1256,7 +1257,7 @@ detalle y exportación sin cambios. */
 }
 .admin-catalog__table th,
 .admin-catalog__table td {
-  padding: 10px 12px;
+  padding: 8px 12px;
   vertical-align: middle;
 }
 .admin-catalog__table tbody th {
@@ -1935,7 +1936,10 @@ sin alterar las cards de otros módulos. */
 }
 .admin-v2-table {
   overflow: auto;
-  margin: 1rem 0;
+  /* margin: 1rem 0; */
+}
+.admin-catalog__table {
+  margin: 0;
 }
 .admin-v2-table table {
   border-collapse: collapse;
