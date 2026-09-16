@@ -1,5 +1,13 @@
-import { useEffect, useId, type ReactNode } from 'react'
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react'
 import { X } from 'lucide-react'
+import { adminDialogStack } from './admin.dialog.stack'
 
 export function AdminDialog({
   title,
@@ -22,20 +30,51 @@ export function AdminDialog({
 }) {
   const titleId = useId()
   const descriptionId = useId()
+  const dialogToken = useRef(Symbol('admin-dialog')).current
+
+  useSyncExternalStore(
+    adminDialogStack.subscribe,
+    adminDialogStack.snapshot,
+    adminDialogStack.snapshot,
+  )
+
+  useLayoutEffect(
+    () => adminDialogStack.register(dialogToken),
+    [dialogToken],
+  )
+
+  const isTop = adminDialogStack.isTop(dialogToken)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !closeDisabled) onClose()
+      if (
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        !isTop ||
+        closeDisabled
+      ) {
+        return
+      }
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      onClose()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [closeDisabled, onClose])
+  }, [closeDisabled, isTop, onClose])
 
   return (
     <div
       className="admin-dialog-backdrop"
+      inert={!isTop}
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !closeDisabled) onClose()
+        if (
+          isTop &&
+          event.target === event.currentTarget &&
+          !closeDisabled
+        ) {
+          onClose()
+        }
       }}
     >
       <section
