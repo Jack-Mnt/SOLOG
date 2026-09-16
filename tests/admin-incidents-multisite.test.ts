@@ -1,6 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { ManagementStore } from "../src/features/solog/admin/admin.management.store";
-import { loadIncidentSummaries, mergeIncidentSummaries } from "../src/features/solog/admin/incidencias/admin.incidents.multisite";
+import {
+  incidentAllScopeActive,
+  loadIncidentSummaries,
+  mergeIncidentSummaries,
+  nextIncidentSummaryExpiry,
+  reconcileIncidentAllScope,
+  toggleIncidentAllScope,
+} from "../src/features/solog/admin/incidencias/admin.incidents.multisite";
 import { bootstrapFixture } from "./fixtures/admin-v2.mjs";
 import { managementFixture, mutationFixture } from "./fixtures/admin-management.mjs";
 
@@ -19,6 +26,63 @@ describe("Incidencias multisede", () => {
     const loaded = await loadIncidentSummaries(store, [{ id: "site-a", nombre: "Cutervo" }, { id: "site-b", nombre: "Huaca" }, { id: "site-c", nombre: "Divino" }]);
     expect(calls).toEqual(["site-b", "site-c"]);
     expect(loaded.map((source) => source.siteName)).toEqual(["Cutervo", "Huaca", "Divino"]);
+  });
+
+  test("si todas las sedes están cacheadas no realiza nuevas lecturas", async () => {
+    const cached = new Map([
+      ["site-a", managementFixture("summary", { site_id: "site-a" })],
+      ["site-b", managementFixture("summary", { site_id: "site-b" })],
+      ["site-c", managementFixture("summary", { site_id: "site-c" })],
+    ]);
+    const calls: string[] = [];
+    const store = {
+      peek: (_action: "summary", payload: { site_id: string }) => ({ data: cached.get(payload.site_id) }),
+      load: async (_action: "summary", payload: { site_id: string }) => {
+        calls.push(payload.site_id);
+        return managementFixture("summary", payload);
+      },
+    };
+    const loaded = await loadIncidentSummaries(store, [
+      { id: "site-a", nombre: "Cutervo" },
+      { id: "site-b", nombre: "Huaca" },
+      { id: "site-c", nombre: "Divino" },
+    ]);
+    expect(calls).toEqual([]);
+    expect(loaded).toHaveLength(3);
+  });
+
+  test("el toggle activa, desactiva y se invalida al cambiar la sede del Shell", () => {
+    let origin: string | null = null;
+    expect(incidentAllScopeActive(origin, "site-a")).toBe(false);
+
+    origin = toggleIncidentAllScope(origin, "site-a");
+    expect(origin).toBe("site-a");
+    expect(incidentAllScopeActive(origin, "site-a")).toBe(true);
+
+    expect(reconcileIncidentAllScope(origin, "site-b")).toBeNull();
+    expect(incidentAllScopeActive(origin, "site-b")).toBe(false);
+
+    origin = toggleIncidentAllScope(origin, "site-a");
+    expect(origin).toBeNull();
+    expect(incidentAllScopeActive(origin, "site-a")).toBe(false);
+  });
+
+  test("usa la expiración más temprana para refrescar el agregado multisede", () => {
+    const expiries = new Map([
+      ["site-a", 3000],
+      ["site-b", 2000],
+      ["site-c", 4000],
+    ]);
+    const store = {
+      peek: (_action: "summary", payload: { site_id: string }) => ({
+        expiresAt: expiries.get(payload.site_id),
+      }),
+    };
+    expect(nextIncidentSummaryExpiry(store, [
+      { id: "site-a" },
+      { id: "site-b" },
+      { id: "site-c" },
+    ])).toBe(2000);
   });
 
   test("un fallo conserva las sedes ya cargadas y el reintento pide solo la faltante", async () => {
