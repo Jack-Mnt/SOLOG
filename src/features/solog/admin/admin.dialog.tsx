@@ -2,7 +2,7 @@ import {
   useEffect,
   useId,
   useLayoutEffect,
-  useRef,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from 'react'
@@ -30,7 +30,7 @@ export function AdminDialog({
 }) {
   const titleId = useId()
   const descriptionId = useId()
-  const dialogToken = useRef(Symbol('admin-dialog')).current
+  const [dialogToken] = useState(() => Symbol('admin-dialog'))
 
   useSyncExternalStore(
     adminDialogStack.subscribe,
