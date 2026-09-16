@@ -1,7 +1,7 @@
 # SOLOG — UX Incidencias — Supresión Multisede V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** IMPLEMENTADO FASES 1–2 — VALIDACIÓN FASE 3 PENDIENTE  
 **Clasificación:** Nivel B — comportamiento UX derivado de la lógica global de Incidencias  
 **Fecha:** 2026-09-16
 
@@ -82,3 +82,18 @@ Después de Reactivar:
 - no existen estados UX contradictorios entre tabla y modal.
 
 > **Bloque 2 congelado.**
+
+## 9. Estado de implementación
+
+Implementado en `admin-work`:
+
+- Fase 1: el agregado multisede dejó de calcular `active_suppression_until` mediante el máximo de fechas locales; solo conserva una fecha cuando las fuentes autoritativas coinciden.
+- Fase 2: Ignorar presenta una única confirmación global y ya no lista acciones por sede.
+- Fase 2: Reactivar actúa por familia y ya no selecciona una fuente/sede para ejecutar la mutación global.
+- Se conserva `propose_delete` como acción `site-scoped`.
+- No se realizaron cambios backend ni cambios sobre `master`.
+
+Pendiente:
+
+- Fase 3: tests completos, lint, build, `git diff --check`, revisión de regresiones y smoke humano en Preview de `admin-work`.
+
