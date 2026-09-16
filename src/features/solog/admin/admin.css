@@ -2618,11 +2618,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   min-height: 35px;
   border-radius: 10px;
 }
-.admin-v2-workspace :where(.icon-button--danger):hover:not(:disabled) {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-  background: var(--color-danger-soft);
-}
+
 .admin-toolbar,
 .admin-filter-bar {
   display: flex;
@@ -3046,6 +3042,17 @@ badges y conteos — Fase D. */
     var(--color-danger-soft)
   );
 }
+.admin-v2-workspace
+  .admin-workspace__main
+  .icon-button--warning:hover:not(:disabled) {
+  color: var(--color-warning-hover);
+  border-color: var(--color-warning);
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 10%,
+    var(--color-warning-soft)
+  );
+}
 .admin-v2-workspace .admin-workspace__main .icon-button:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
@@ -3335,4 +3342,32 @@ while structural exceptions keep their size. */
   flex: 1 1 auto;
   width: 100%;
   min-width: 0;
+}
+.icon-button--danger {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 55%,
+    var(--color-border)
+  );
+}
+.icon-button--warning {
+  color: var(--color-warning);
+  background: transparent;
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 55%,
+    var(--color-border)
+  );
+}
+.admin-v2-workspace :where(.icon-button--danger):hover:not(:disabled) {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+.admin-v2-workspace :where(.icon-button--warning):hover:not(:disabled) {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
 }

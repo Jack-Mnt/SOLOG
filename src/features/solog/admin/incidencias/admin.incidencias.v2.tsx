@@ -356,14 +356,7 @@ export function AdminIncidentsV2() {
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [
-    allActive,
-    allComplete,
-    allNextExpiry,
-    ensureAllSummaries,
-    sites,
-    store,
-  ]);
+  }, [allActive, allComplete, allNextExpiry, ensureAllSummaries, sites, store]);
 
   const displayedFamilies = useMemo(() => {
     if (allActive) return mergedAll ?? allSnapshotRef.current;
@@ -604,7 +597,7 @@ export function AdminIncidentsV2() {
                           ) && (
                             <button
                               type="button"
-                              className="button button--secondary"
+                              className="button button--secondary icon-button--warning"
                               disabled={pending}
                               onClick={() => setIgnoreFamily(item)}
                             >
@@ -629,7 +622,6 @@ export function AdminIncidentsV2() {
                             }
                           >
                             <RotateCcw size={16} aria-hidden="true" />
-                            Reactivar incidencia
                           </button>
                         )}
                         {item.sources.find((source) =>
@@ -637,7 +629,7 @@ export function AdminIncidentsV2() {
                         ) && (
                           <button
                             type="button"
-                            className="button button--secondary"
+                            className="button button--secondary icon-button--danger"
                             disabled={pending}
                             onClick={() =>
                               actSource(
@@ -652,9 +644,13 @@ export function AdminIncidentsV2() {
                           </button>
                         )}
                         {item.deletion_proposed && (
-                          <span className="admin-incidents__catalog-status">
-                            Eliminación propuesta en Catálogo
-                          </span>
+                          <button
+                            type="button"
+                            className="button button--secondary icon-button--danger"
+                            disabled
+                          >
+                            <CircleOff size={16} aria-hidden="true" />
+                          </button>
                         )}
                       </div>
                     </td>
