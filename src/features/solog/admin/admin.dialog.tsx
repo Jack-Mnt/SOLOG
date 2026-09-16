@@ -10,7 +10,7 @@ import {
 import { X } from 'lucide-react'
 import {
   focusDialogEntry,
-  restoreDialogFocus,
+  restoreDialogFocusAfterLifecycle,
   trapDialogTab,
 } from './admin.dialog.focus'
 import { adminDialogStack } from './admin.dialog.stack'
@@ -58,11 +58,11 @@ export function AdminDialog({
     const unregister = adminDialogStack.register(dialogToken)
     return () => {
       unregister()
-      const target = returnFocusRef.current
-      queueMicrotask(() => {
-        if (lifecycleRef.current !== lifecycle) return
-        restoreDialogFocus(target)
-      })
+      restoreDialogFocusAfterLifecycle(
+        returnFocusRef.current,
+        lifecycleRef,
+        lifecycle,
+      )
     }
   }, [dialogToken])
 
