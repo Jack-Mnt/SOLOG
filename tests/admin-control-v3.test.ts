@@ -112,9 +112,9 @@ test('V10 revisiones nuevas no recargan datasets ya cacheados; refresh y revocac
 test('V10 Control no consume acciones anteriores ni envía filtros locales', async () => {
   const source=await Bun.file('src/features/solog/admin/control/admin.control.v2.tsx').text()
   expect(source).not.toMatch(/["']control_(page|detail)["']/)
-  expect(source).toContain('"control_groups"')
-  expect(source).toContain('"control_chronology"')
-  expect(source).toContain('useState<ControlChronologyPeriod>("current_biweekly")')
+  expect(source).toMatch(/["']control_groups["']/)
+  expect(source).toMatch(/["']control_chronology["']/)
+  expect(source).toMatch(/useState<ControlChronologyPeriod>\(\s*["']current_biweekly["']\s*\)/)
   expect(source).not.toContain('Aplicar filtros')
   expect(source).not.toContain('<select')
   expect(source).not.toContain('setPayload')
