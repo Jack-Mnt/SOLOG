@@ -451,7 +451,7 @@ function ProposalDetail({
                 : "Aprobada; el estado de publicación aún no está disponible."}
           </p>
         )}
-        {intent && <CatalogMutationNotice onRetry={retry} />}
+        {intent && !setup && !price && <CatalogMutationNotice onRetry={retry} />}
         <div className="admin-v2-actions">
           {proposal.estado === "pendiente" && (
             <>
