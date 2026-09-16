@@ -1,7 +1,7 @@
 # SOLOG — UX AdminDialog — Gestión de Foco V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** IMPLEMENTADO FASE 1 — FASES 2–4 PENDIENTES  
 **Clasificación:** Nivel B — primitive transversal de UX/accesibilidad  
 **Fecha:** 2026-09-16
 
@@ -66,3 +66,34 @@ Se preservan:
 5. No hay regresiones en Control, Catálogo, Productos, Grupos, Incidencias ni Dispositivos.
 
 > **Bloque 3 congelado.**
+
+## 9. Estado de implementación
+
+### Fase 1 — Ownership y cierre
+
+Implementado en `admin-work`:
+
+- pila común de ownership para `AdminDialog`;
+- únicamente el diálogo superior procesa `Escape`;
+- un `Escape` cierra como máximo un diálogo;
+- eventos de teclado ya consumidos mediante `defaultPrevented` no cierran el diálogo;
+- el cierre por backdrop solo actúa sobre el diálogo superior;
+- `closeDisabled` continúa bloqueando Escape y backdrop;
+- los diálogos inferiores quedan `inert` mientras exista un hijo superior;
+- no se modificó el diseño visual ni los consumidores.
+
+Validación:
+
+- tests dirigidos Fase 1: **3 pass / 0 fail**;
+- `bun run lint`: correcto;
+- `bun run build`: correcto;
+- `git diff --check`: correcto.
+
+Pendiente para Fase 2:
+
+- foco inicial;
+- focus trap con Tab/Shift+Tab;
+- fallback cuando no existan elementos enfocables;
+- restauración de foco al cerrar;
+- reactivación correcta del padre tras cerrar un hijo.
+
