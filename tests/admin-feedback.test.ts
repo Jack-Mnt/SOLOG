@@ -110,6 +110,7 @@ describe('Admin feedback fases 2 y 3', () => {
     expect(feedbackUtils).toContain("if (store.intent()) return ''")
     expect(catalog).toContain('catalogMutationError(store, reason')
     expect(catalog).toContain('store.intent() ? "" : priceErrorMessage(reason)')
+    expect(catalog).toContain('intent && !setup && !price && <CatalogMutationNotice')
   })
 
   test('Dispositivos separa feedback modal y feedback de página', async () => {
@@ -117,7 +118,7 @@ describe('Admin feedback fases 2 y 3', () => {
       'src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx',
     ).text()
 
-    expect(devices).toContain('<MutationNotice domain="devices" showResult={!confirmation} />')
+    expect(devices).toContain('{!confirmation && <MutationNotice domain="devices" />}')
     expect(devices).toContain('showResult={false}')
     expect(devices).toContain('setError(store.intent("devices") ? "" : e.message)')
   })
@@ -128,6 +129,8 @@ describe('Admin feedback fases 2 y 3', () => {
     ).text()
 
     expect(incidents).toContain('feedbackOccurrence')
+    expect(incidents).toContain('mutationModalOpen')
+    expect(incidents).toContain('noticeMessage && !mutationModalOpen')
     expect(incidents).toContain('local:${feedbackOccurrence}')
     expect(incidents).toContain('pendingIntent.attempt')
     expect(incidents).toContain('retryIncidentIntent')
