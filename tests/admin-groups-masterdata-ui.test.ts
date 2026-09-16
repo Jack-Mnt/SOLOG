@@ -153,8 +153,8 @@ describe('Composición F3 de Grupos e Incidencias', () => {
     expect(ui).toContain('tabIndex={state === view.state ? 0 : -1}')
     expect(ui).toContain('"Home"')
     expect(ui).toContain('"End"')
-    expect(ui).toContain('const stateCounts = useMemo')
-    expect(ui).toContain('(item) => type === "all" || item.tipo === type')
+    expect(ui).toMatch(/const\s+stateCounts\s*=\s*useMemo\s*\(/)
+    expect(ui).toMatch(/\(item\)\s*=>\s*type\s*===\s*["']all["']\s*\|\|\s*item\.tipo\s*===\s*type/)
     expect(ui).toContain('<strong>{stateCounts[view.state]}</strong>')
     expect(ui).not.toContain('query.retry')
     expect(ui).not.toContain('Actualizar incidencias')
@@ -165,11 +165,11 @@ describe('Composición F3 de Grupos e Incidencias', () => {
 
   test('Grupos calcula contadores por eje ignorando solo el QuickFilterChip propio', async () => {
     const ui = await source('src/features/solog/admin/grupos/admin.grupos.v2.tsx')
-    expect(ui).toContain('const typeCounts = useMemo')
+    expect(ui).toMatch(/const\s+typeCounts\s*=\s*useMemo\s*\(/)
     expect(ui).toMatch(/type:\s*["']all["']/)
     expect(ui).toContain('valuation,')
     expect(ui).toContain('<strong>{typeCounts[value]}</strong>')
-    expect(ui).toContain('const valuationCounts = useMemo')
+    expect(ui).toMatch(/const\s+valuationCounts\s*=\s*useMemo\s*\(/)
     expect(ui).toMatch(/valuation:\s*["']all["']/)
     expect(ui).toContain('<strong>{valuationCounts[value]}</strong>')
 
