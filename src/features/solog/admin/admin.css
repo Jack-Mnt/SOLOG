@@ -1272,7 +1272,7 @@ detalle y exportación sin cambios. */
 .admin-catalog__product-code {
   color: var(--color-text-secondary);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 .admin-catalog__change {
   font-variant-numeric: tabular-nums;
@@ -1564,8 +1564,6 @@ detalle y exportación sin cambios. */
   width: 28px;
   height: 28px;
   padding: 0;
-  color: var(--color-text-secondary);
-  background: transparent;
   box-shadow: none;
 }
 .admin__table .icon-button:hover {
@@ -2652,9 +2650,8 @@ workspace y cards permanecen como superficies estructurales neutras;
   min-height: 24px;
   padding: 3px 8px;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: 0.8rem;
+  font-weight: 650;
 }
 .admin-status-badge {
   color: var(--color-text-secondary);
@@ -3402,8 +3399,28 @@ while structural exceptions keep their size. */
 .admin-notice--error {
   color: var(--color-danger);
 }
-.admin-incidents__product { min-width:0; }
-.admin-incidents__product > span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.admin-incidents__product small { display:block; color:var(--color-text-secondary); font-weight:400; }
-.admin-incidents__sites { display:flex; gap:4px; white-space:nowrap; }
-.admin-incidents__type-badge { white-space:nowrap; }
+.admin-incidents__product {
+  min-width: 0;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+.admin-incidents__product > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-incidents__product small {
+  display: block;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+.admin-incidents__sites {
+  display: flex;
+  gap: 4px;
+  white-space: nowrap;
+}
+.admin-incidents__type-badge {
+  white-space: nowrap;
+}

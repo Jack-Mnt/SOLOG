@@ -345,7 +345,7 @@ function SiteCard({
           )}
         </div>
         <button
-          className="admin-dashboard__actions"
+          className="admin-button__actions"
           onClick={() => setExportOpen(true)}
         >
           <Download size={15} aria-hidden="true" />

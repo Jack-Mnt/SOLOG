@@ -298,10 +298,10 @@ function ProposalRow({
     <tr>
       <td>{proposalLabels[proposal.tipo]}</td>
       <th scope="row">
+        <span className="admin-catalog__product-name">{product}</span>
         <span className="admin-catalog__product-code">
           {proposal.c_interno}
         </span>
-        <span className="admin-catalog__product-name">{product}</span>
       </th>
       <td className="admin-catalog__change">
         <ProposalChange proposal={proposal} />
