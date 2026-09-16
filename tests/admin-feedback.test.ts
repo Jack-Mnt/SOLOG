@@ -71,8 +71,8 @@ describe('Admin feedback de mutaciones', () => {
     ).text()
 
     expect(source).toContain('dismissedOccurrence')
-    expect(source).toContain('intent:\${operationId}:\${intent.attempt}:\${phase}')
-    expect(source).toContain('result:\${domain}:\${store.resultOccurrence(domain) ?? 0}')
+    expect(source).toContain('intent:${operationId}:${intent.attempt}:${phase}')
+    expect(source).toContain('result:${domain}:${store.resultOccurrence(domain) ?? 0}')
     expect(source).not.toContain('dismissedNotice !== noticeMessage')
   })
 })
