@@ -1,7 +1,7 @@
 # SOLOG — UX AdminDialog — Gestión de Foco V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO Y VALIDADO TÉCNICAMENTE — SMOKE PREVIEW PENDIENTE
+**Estado:** CERRADO — VALIDADO TÉCNICA Y HUMANAMENTE EN PREVIEW
 **Clasificación:** Nivel B — primitive transversal de UX/accesibilidad  
 **Fecha:** 2026-09-16
 
@@ -134,7 +134,10 @@ Validación técnica completada en `admin-work`:
 - revisión final de regresiones y alcance del Bloque 3: sin incompatibilidades nuevas detectadas;
 - no se modificó backend, diseño visual ni contratos de consumidores.
 
-Pendiente únicamente:
+Cierre:
 
-- smoke humano en Preview de `admin-work`;
-- cierre definitivo del Bloque 3 tras ese smoke.
+- smoke humano completado con éxito en el Preview de `admin-work`;
+- foco inicial, focus trap, restauración de foco, Escape y backdrop funcionan según lo congelado;
+- los flujos anidados de Catálogo y valorizado se validaron correctamente;
+- no se detectaron regresiones funcionales atribuibles al Bloque 3;
+- el Bloque 3 queda cerrado y congelado en su estado actual.
