@@ -62,7 +62,7 @@ export function AdminDevicesV2() {
   return (
     <>
       <div className="admin-devices">
-        <MutationNotice domain="devices" showResult={!confirmation} />
+        {!confirmation && <MutationNotice domain="devices" />}
         {query.data ? (
           <>
             <section
