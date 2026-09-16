@@ -137,6 +137,36 @@ describe("Incidencias multisede", () => {
     await expect(store.mutation("ignore_30d", { family_key: before.families[0].family_key, scope: "site", site_id: "site-a" }, before.revisions.incidents, "site-a")).rejects.toThrow("red caída");
     expect(store.peek("summary", { site_id: "site-a" }).data?.families[0].family_state).toBe("pendiente");
   });
+  test("propose_delete actualiza deletion_proposed en todos los summaries cacheados", async () => {
+    const auth = bootstrapFixture();
+    const store = new ManagementStore(
+      "admin-test",
+      () => auth,
+      () => {},
+      async (action, payload) => managementFixture(action, payload),
+      async (action, payload) => mutationFixture(action, payload),
+    );
+    const siteA = await store.load("summary", { site_id: "site-a" });
+    await store.load("summary", { site_id: "site-b" });
+    await store.mutation(
+      "propose_delete",
+      {
+        family_key: siteA.families[0].family_key,
+        scope: "site",
+        site_id: "site-a",
+      },
+      siteA.revisions.incidents,
+      "site-a",
+    );
+    expect(
+      store.peek("summary", { site_id: "site-a" }).data?.families[0]
+        .deletion_proposed,
+    ).toBe(true);
+    expect(
+      store.peek("summary", { site_id: "site-b" }).data?.families[0]
+        .deletion_proposed,
+    ).toBe(true);
+  });
   test("CircleOff difiere propose_delete hasta la confirmación con la fuente seleccionada", async () => {
     const source = await Bun.file("src/features/solog/admin/incidencias/admin.incidencias.v2.tsx").text();
     expect(source).toMatch(
@@ -147,10 +177,26 @@ describe("Incidencias multisede", () => {
     );
     expect(source).toContain('title="Proponer eliminación"');
     expect(source).toContain('onConfirm={() => actSource(deleteProposal.source, "propose_delete")}');
+    expect(source).toContain('family.family_state === "pendiente"');
     expect(source).toContain('scope: "site"');
     expect(source).toContain('summary.revisions.incidents');
     expect(source).toContain('Detectado en: <strong>{proposal.source.siteName}</strong>');
     expect(source).toMatch(/void onConfirm\(\)\s*\.then\(onClose\)\s*\.catch/);
     expect(source).toContain('proposing ? "Proponiendo…" : "Proponer eliminación"');
+  });
+
+  test("Ignorar y Reactivar usan revisión global y el detalle multisede omite site_id", async () => {
+    const source = await Bun.file(
+      "src/features/solog/admin/incidencias/admin.incidencias.v2.tsx",
+    ).text();
+    expect(source).toContain('scope: "global"');
+    expect(source).toContain("summary.revisions.incidents_global");
+    expect(source).toContain('setNotice("La incidencia fue reactivada.")');
+    expect(source).toContain(
+      'setNotice("La incidencia fue ignorada durante 30 días.")',
+    );
+    expect(source).toContain('...(site ? { site_id: site } : {})');
+    expect(source).toContain('site={allActive ? undefined : siteId}');
+    expect(source).not.toContain("detailFamily.sources[0]");
   });
 });
