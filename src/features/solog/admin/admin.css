@@ -2737,7 +2737,7 @@ badges y conteos — Fase D. */
 }
 
 .admin-quick-filter-chips .admin-control__period {
-  margin-left: auto;
+  margin-left: 40px;
 }
 
 .admin-status-badge--info {
@@ -2833,7 +2833,7 @@ badges y conteos — Fase D. */
 /* AdminSort y selector de sede responsive — Fase E. */
 .admin-sort {
   position: relative;
-  margin-left: auto;
+  margin-left: 40px;
 }
 .admin-sort__trigger--active {
   border-color: var(--color-primary);
