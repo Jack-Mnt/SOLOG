@@ -11,7 +11,8 @@ import {
 import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
-import { ReadNotice, MutationNotice } from "../admin.management.presentation";
+import { ReadNotice } from "../admin.management.presentation";
+import { AdminNotice } from "../admin.primitives";
 import { adminTimestamp } from "../admin.v2.format";
 import { orderedAdminSites } from "../admin.site-ui";
 import {
@@ -344,6 +345,7 @@ export function AdminIncidentsV2() {
   const [allLoading, setAllLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [dismissedNotice, setDismissedNotice] = useState("");
   const allLoadRef = useRef<Promise<void> | null>(null);
   const [allSnapshot, setAllSnapshot] = useState<MergedIncidentFamily[]>([]);
   const siteId = admin.siteId;
@@ -529,7 +531,12 @@ export function AdminIncidentsV2() {
         throw reason;
       });
   };
-  const pending = !!store.intent("incidents");
+  const pendingIntent = store.intent("incidents");
+  const pending = !!pendingIntent;
+  const noticeMessage = error || pendingIntent?.error || notice;
+  const noticeKey = String(
+    pendingIntent?.payload.operation_id ?? noticeMessage,
+  );
   const hasData = allActive || !!normalQuery.data;
   return (
     <section className="admin-incidents">
@@ -614,13 +621,27 @@ export function AdminIncidentsV2() {
           {allLoading ? "Cargando sedes…" : "Todas las sedes"}
         </button>
       </div>
-      <MutationNotice domain="incidents" />
-      {notice && (
-        <p className="notice" role="status">
-          {notice}
-        </p>
-      )}
-      {error && <p role="alert">{error}</p>}
+      {noticeMessage && dismissedNotice !== noticeKey && (
+        <AdminNotice
+          tone={error || pendingIntent?.error ? "error" : "success"}
+          onDismiss={() => setDismissedNotice(noticeKey)}
+          action={
+            pendingIntent && !pendingIntent.pending ? (
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() =>
+                  void store.retryMutation("incidents").catch(() => {})
+                }
+              >
+                Reintentar
+              </button>
+            ) : undefined
+          }
+        >
+          {error || pendingIntent?.error || notice}
+        </AdminNotice>
+      )}{" "}
       {hasData ? (
         <div className="admin-table-section admin-incidents__table">
           <div
@@ -773,7 +794,6 @@ export function AdminIncidentsV2() {
           onError={setError}
         />
       )}
-      `r`n{" "}
       {deleteProposal && (
         <DeleteProposalDialog
           proposal={deleteProposal}

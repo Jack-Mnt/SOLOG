@@ -1,4 +1,4 @@
-import { ArrowDownWideNarrow } from 'lucide-react'
+import { ArrowDownWideNarrow, CheckCircle2, Info, TriangleAlert, XCircle } from 'lucide-react'
 import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
 type IconButtonVariant = 'default' | 'primary' | 'danger'
@@ -127,5 +127,14 @@ export function AdminSort<T extends string>({ value, defaultValue, options, onCh
         {option.label}
       </button>)}
     </div>}
+  </div>
+}
+export function AdminNotice({ tone, children, onDismiss, action }: { tone: 'success' | 'info' | 'warning' | 'error'; children: ReactNode; onDismiss: () => void; action?: ReactNode }) {
+  const Icon = tone === 'success' ? CheckCircle2 : tone === 'info' ? Info : tone === 'warning' ? TriangleAlert : XCircle
+  return <div className={`admin-notice admin-notice--${tone}`} role={tone === 'warning' || tone === 'error' ? 'alert' : 'status'}>
+    <Icon size={18} aria-hidden="true" />
+    <span className="admin-notice__message">{children}</span>
+    {action && <span className="admin-notice__action">{action}</span>}
+    <IconButton aria-label="Cerrar mensaje" title="Cerrar mensaje" className="admin-notice__close" onClick={onDismiss}><XCircle size={16} aria-hidden="true" /></IconButton>
   </div>
 }
