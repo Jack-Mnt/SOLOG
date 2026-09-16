@@ -1,7 +1,7 @@
 # SOLOG — UX Admin — Feedback de Mutaciones V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO FASE 1 — FASES 2–4 PENDIENTES
+**Estado:** IMPLEMENTADO FASES 1–3 — FASE 4 PENDIENTE
 **Clasificación:** Nivel B — normalización UX de feedback administrativo  
 **Fecha:** 2026-09-16
 
@@ -100,9 +100,45 @@ Validación dirigida:
 - `bun run build`: correcto;
 - `git diff --check`: correcto.
 
-Pendiente para Fase 2:
+### Fase 2 — Catálogo y Productos
 
-- aplicar la normalización a Catálogo y Productos;
-- retirar exposición de `operation_id` en presenters locales de Catálogo/Productos;
-- eliminar feedback duplicado entre intent local y error local;
-- retirar ruido técnico de replay en publicación de Catálogo.
+Implementado en `admin-work`:
+
+- presenter compartido `CatalogMutationNotice` para Catálogo, Productos y configuración de producto;
+- `operation_id` deja de mostrarse en presenters locales;
+- los errores retryable quedan en la superficie autoritativa del intent y no se duplican como error local;
+- `catalogMutationError` solo publica error local cuando la intención fue descartada por un fallo definitivo;
+- publicación de Catálogo deja de mostrar el identificador de operación;
+- publicación de Catálogo deja de mostrar `replay` como detalle técnico;
+- estados de publicación pendiente/error/result se presentan mediante `AdminNotice`;
+- retry conserva la intención original y el mismo `operation_id` interno.
+
+### Fase 3 — Incidencias y Dispositivos
+
+Implementado en `admin-work`:
+
+- Incidencias separa la identidad del notice de su texto mediante un contador de ocurrencias locales;
+- successes consecutivos con el mismo copy vuelven a mostrarse aunque una ocurrencia previa haya sido descartada;
+- errores retryable de Incidencias no pueden ocultar la única acción de retry;
+- retry de Incidencias usa `retryMutation("incidents")` y recupera el copy aprobado según la acción original;
+- Ignorar 30 días reintenta la intención retenida en lugar de crear una mutación nueva;
+- Proponer eliminación conserva la confirmación inicial y reutiliza la intención original en retry;
+- los tres textos congelados de Incidencias permanecen sin cambios;
+- Dispositivos muestra el feedback dentro del modal mientras este está abierto y el success en la página después del cierre;
+- el modal de Dispositivos no presenta un resultado anterior y no duplica el error retryable;
+- `AdminNotice` permite omitir dismiss en feedback retryable para evitar estados bloqueados sin acción visible.
+
+Validación dirigida Fases 2–3:
+
+- **103 pass / 0 fail** en 10 archivos de tests relacionados;
+- `bun run lint`: correcto;
+- `bun run build`: correcto;
+- `git diff --check`: correcto.
+
+Pendiente para Fase 4:
+
+- auditoría global final de feedback Admin;
+- suite global completa contra baseline;
+- revisión de alcance y regresiones;
+- smoke humano en Preview de `admin-work`;
+- cierre definitivo del Bloque 4.
