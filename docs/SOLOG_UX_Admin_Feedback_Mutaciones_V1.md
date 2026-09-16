@@ -1,7 +1,7 @@
 # SOLOG — UX Admin — Feedback de Mutaciones V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** IMPLEMENTADO FASE 1 — FASES 2–4 PENDIENTES
 **Clasificación:** Nivel B — normalización UX de feedback administrativo  
 **Fecha:** 2026-09-16
 
@@ -76,3 +76,33 @@ No se requiere uniformar todos los textos en este bloque si ya existe copy funci
 - sin feedback duplicado en Dispositivos.
 
 > **Bloque 4 congelado.**
+
+## 10. Estado de implementación
+
+### Fase 1 — Base compartida de feedback
+
+Implementado en `admin-work`:
+
+- `MutationNotice` usa la primitive compartida `AdminNotice`;
+- pending, error y success se representan mediante una única superficie compartida;
+- `operation_id` permanece interno y ya no se muestra en `MutationNotice`;
+- el indicador técnico `replay` dejó de presentarse en el feedback compartido;
+- cada intento conserva el mismo `operation_id` interno y recibe una ocurrencia visual distinta;
+- cada success confirmado incrementa una ocurrencia por dominio, independiente del texto visible;
+- descartar una ocurrencia no silencia un retry posterior ni una operación futura con el mismo mensaje;
+- retry continúa ejecutando la intención original y conserva payload e idempotencia;
+- los metadatos de intento/ocurrencia son exclusivamente frontend y no modifican RPC ni contratos backend.
+
+Validación dirigida:
+
+- **53 pass / 0 fail** en 5 archivos de tests relacionados;
+- `bun run lint`: correcto;
+- `bun run build`: correcto;
+- `git diff --check`: correcto.
+
+Pendiente para Fase 2:
+
+- aplicar la normalización a Catálogo y Productos;
+- retirar exposición de `operation_id` en presenters locales de Catálogo/Productos;
+- eliminar feedback duplicado entre intent local y error local;
+- retirar ruido técnico de replay en publicación de Catálogo.
