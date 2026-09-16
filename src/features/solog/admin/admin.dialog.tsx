@@ -2,11 +2,17 @@ import {
   useEffect,
   useId,
   useLayoutEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from 'react'
 import { X } from 'lucide-react'
+import {
+  focusDialogEntry,
+  restoreDialogFocus,
+  trapDialogTab,
+} from './admin.dialog.focus'
 import { adminDialogStack } from './admin.dialog.stack'
 
 export function AdminDialog({
@@ -31,6 +37,8 @@ export function AdminDialog({
   const titleId = useId()
   const descriptionId = useId()
   const [dialogToken] = useState(() => Symbol('admin-dialog'))
+  const dialogRef = useRef<HTMLElement>(null)
+  const returnFocusRef = useRef<HTMLElement | null>(null)
 
   useSyncExternalStore(
     adminDialogStack.subscribe,
@@ -38,26 +46,40 @@ export function AdminDialog({
     adminDialogStack.snapshot,
   )
 
-  useLayoutEffect(
-    () => adminDialogStack.register(dialogToken),
-    [dialogToken],
-  )
+  useLayoutEffect(() => {
+    const active = document.activeElement
+    returnFocusRef.current =
+      active instanceof HTMLElement ? active : null
+
+    const unregister = adminDialogStack.register(dialogToken)
+    return () => {
+      unregister()
+      restoreDialogFocus(returnFocusRef.current)
+    }
+  }, [dialogToken])
 
   const isTop = adminDialogStack.isTop(dialogToken)
 
+  useLayoutEffect(() => {
+    if (!isTop || !dialogRef.current) return
+    focusDialogEntry(dialogRef.current)
+  }, [isTop])
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.key !== 'Escape' ||
-        event.defaultPrevented ||
-        !isTop ||
-        closeDisabled
-      ) {
+      if (event.defaultPrevented || !isTop) return
+
+      if (event.key === 'Escape') {
+        if (closeDisabled) return
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        onClose()
         return
       }
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      onClose()
+
+      if (event.key === 'Tab' && dialogRef.current) {
+        trapDialogTab(event, dialogRef.current)
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -82,7 +104,9 @@ export function AdminDialog({
         aria-labelledby={titleId}
         aria-modal="true"
         className={`admin-dialog${wide ? ' admin-dialog--wide' : ''}${className ? ` ${className}` : ''}`}
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <header className="admin-dialog__header">
           <div>
