@@ -46,7 +46,7 @@ jobs:
           bun run build > /tmp/build.log 2>&1
           build_status=$?
 
-          git diff --check master...HEAD -- . ':(exclude).validation/**' ':(exclude).github/workflows/admin-block2-validation.yml' > /tmp/diff.log 2>&1
+          git diff --check 45a8bd70b2354a81f8ab8a41d05357644263ed53...HEAD -- . ':(exclude).validation/**' ':(exclude).github/workflows/admin-block2-validation.yml' > /tmp/diff.log 2>&1
           diff_status=$?
 
           {
