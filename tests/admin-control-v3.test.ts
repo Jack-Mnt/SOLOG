@@ -119,7 +119,7 @@ test('V10 Control no consume acciones anteriores ni envía filtros locales', asy
   expect(source).not.toContain('<select')
   expect(source).not.toContain('setPayload')
   expect(source).not.toContain('confirmedRange')
-  expect(source).toContain('!site || invalid ? null')
+  expect(source).toMatch(/!site\s*\|\|\s*invalid\s*\?\s*null/s)
   expect(source).toContain('No hay registros en esta quincena.')
   expect(source).toContain('aria-label="Quincena de cronología"')
 })
