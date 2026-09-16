@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 import { useManagement } from './admin.management.context'
 import { AdminNotice } from './admin.primitives'
-import type { Domain, Payload } from './admin.management.v2'
+import type { Domain, MutationResult, Payload } from './admin.management.v2'
 
 export function PageControls({ offset, length, onChange }: { offset: number; length: number; onChange: (offset: number) => void }) {
   return <div className="admin-v2-toolbar"><button type="button" className="button button--secondary" disabled={offset === 0} onClick={() => onChange(Math.max(0, offset - 50))}><ChevronLeft size={16} aria-hidden="true" />Anterior</button><span>Desde {offset + 1} · {length} filas</span><button type="button" className="button button--secondary" disabled={length < 50} onClick={() => onChange(offset + 50)}>Siguiente<ChevronRight size={16} aria-hidden="true" /></button></div>
@@ -12,7 +12,7 @@ export function ReadNotice({ error, retry }: { error?: string; retry: () => void
   return <p role={error ? 'alert' : 'status'}>{error ?? 'Cargando…'}{error && <button type="button" className="button" onClick={retry}><RotateCcw size={16} aria-hidden="true" />Reintentar lectura</button>}</p>
 }
 
-function confirmedMutationMessage(result: ReturnType<ReturnType<typeof useManagement>['results']['get']>) {
+function confirmedMutationMessage(result: MutationResult | undefined) {
   if (!result) return 'Operación confirmada.'
   const detail = result.status ?? String(result.result?.codigo ?? result.result?.status ?? '')
   return detail ? `Operación confirmada. ${detail}` : 'Operación confirmada.'
