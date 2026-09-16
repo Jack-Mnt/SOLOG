@@ -25,7 +25,7 @@ import type {
 import { QueryState, Value } from "../admin.v2.presentation";
 import { validCustomRange } from "../admin.v2.format";
 import { AdminExportDialog } from "./admin.control.v2.export-dialog";
-import { controlView } from "./admin.control.data";
+import { controlView, type ControlSort } from "./admin.control.data";
 import { AdminSort } from "../admin.primitives";
 
 const periods: [ControlPeriod, string][] = [
@@ -363,8 +363,9 @@ function ControlResults({
 }) {
   const query = useAdminQuery("control_groups", payload);
   const [group, setGroup] = useState<{ id: string; name: string } | null>(null);
+  const [sort, setSort] = useState<ControlSort>("default");
   const [page, setPage] = useState(0);
-  const filterKey = JSON.stringify([selectedState, search]);
+  const filterKey = JSON.stringify([selectedState, search, sort]);
   const [previousFilter, setPreviousFilter] = useState(filterKey);
   if (filterKey !== previousFilter) {
     setPreviousFilter(filterKey);
@@ -372,11 +373,11 @@ function ControlResults({
   }
   const data = query.data;
   if (!data) return <QueryState {...query} />;
-  const view = controlView(data.items, selectedState, search, page);
+  const view = controlView(data.items, selectedState, search, sort, page);
   return (
     <>
       <div
-        className=" admin-quick-filter-chips  admin-section-secondary-row"
+        className="admin-quick-filter-chips admin-section-secondary-row admin-control__secondary-row"
         aria-label="Resumen de resultados"
       >
         <button
@@ -419,9 +420,19 @@ function ControlResults({
         >
           <b>{view.summary.inconsistent} Inconsistentes</b>
         </button>
-        <p className="admin-control__period">
-          {controlDate(data.period.from)} — {controlDate(data.period.to)}
-        </p>
+        <AdminSort<ControlSort>
+          value={sort}
+          defaultValue="default"
+          onChange={setSort}
+          options={[
+            { value: "default", label: "Predeterminado" },
+            { value: "recent", label: "Más reciente" },
+            { value: "oldest", label: "Más antiguo" },
+            { value: "difference_desc", label: "Diferencia: mayor a menor" },
+            { value: "difference_asc", label: "Diferencia: menor a mayor" },
+            { value: "valued_desc", label: "Valorizado: mayor a menor" },
+          ]}
+        />
       </div>
       {view.total > 0 ? (
         <div className="admin-table-section admin-control__table">
