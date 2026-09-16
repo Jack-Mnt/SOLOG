@@ -13,7 +13,7 @@ import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
 import { ReadNotice } from "../admin.management.presentation";
 import { AdminNotice } from "../admin.primitives";
-import { incidentSiteAbbreviation, incidentTimestamp } from "./admin.incidencias.format";
+import { incidentSiteAbbreviation, incidentTimestamp } from "./admin.incidents.presentation";
 import { orderedAdminSites } from "../admin.site-ui";
 import {
   incidentAllScopeActive,
