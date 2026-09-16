@@ -1,7 +1,7 @@
 Admin Feedback Phases 2 3 Validation
 branch=admin-work
-commit=1b37484935ab735748cb0fda533bc364494d6228
-targeted_status=1
+commit=9af3e2da5a91d1c10e241dfbe9cc926e534b5493
+targeted_status=0
 lint_status=0
 build_status=0
 diff_status=0
@@ -10,170 +10,152 @@ diff_status=0
 bun test v1.3.14 (0d9b296a)
 
 ::group::tests/admin-incidents-multisite.test.ts:
-(pass) Incidencias multisede > reutiliza las sedes cacheadas y carga las faltantes en orden canónico [0.49ms]
-(pass) Incidencias multisede > si todas las sedes están cacheadas no realiza nuevas lecturas [0.13ms]
-(pass) Incidencias multisede > el toggle activa, desactiva y se invalida al cambiar la sede del Shell [0.06ms]
-(pass) Incidencias multisede > usa la expiración más temprana para refrescar el agregado multisede [0.09ms]
-(pass) Incidencias multisede > un fallo conserva las sedes ya cargadas y el reintento pide solo la faltante [0.22ms]
-(pass) Incidencias multisede > agrega por family_key, conserva fuentes y aplica la precedencia de estado [0.46ms]
-(pass) Incidencias multisede > la mutación confirmada conserva el summary, actualiza revisión y evita relecturas [1.34ms]
-(pass) Incidencias multisede > una mutación global invalida summaries de todas las sedes [0.30ms]
-(pass) Incidencias multisede > un fallo de mutación no altera la familia cacheada [0.49ms]
-(pass) Incidencias multisede > propose_delete actualiza deletion_proposed en todos los summaries cacheados [0.41ms]
-(pass) Incidencias multisede > CircleOff difiere propose_delete hasta la confirmación con la fuente seleccionada [0.38ms]
-(pass) Incidencias multisede > la fecha de supresión multisede solo se conserva cuando las fuentes coinciden [0.18ms]
-(pass) Incidencias multisede > Ignorar y Reactivar usan revisión global y el detalle multisede omite site_id [0.24ms]
+(pass) Incidencias multisede > reutiliza las sedes cacheadas y carga las faltantes en orden canónico [0.68ms]
+(pass) Incidencias multisede > si todas las sedes están cacheadas no realiza nuevas lecturas [0.18ms]
+(pass) Incidencias multisede > el toggle activa, desactiva y se invalida al cambiar la sede del Shell [0.09ms]
+(pass) Incidencias multisede > usa la expiración más temprana para refrescar el agregado multisede [0.13ms]
+(pass) Incidencias multisede > un fallo conserva las sedes ya cargadas y el reintento pide solo la faltante [0.32ms]
+(pass) Incidencias multisede > agrega por family_key, conserva fuentes y aplica la precedencia de estado [0.64ms]
+(pass) Incidencias multisede > la mutación confirmada conserva el summary, actualiza revisión y evita relecturas [1.84ms]
+(pass) Incidencias multisede > una mutación global invalida summaries de todas las sedes [0.43ms]
+(pass) Incidencias multisede > un fallo de mutación no altera la familia cacheada [0.75ms]
+(pass) Incidencias multisede > propose_delete actualiza deletion_proposed en todos los summaries cacheados [0.65ms]
+(pass) Incidencias multisede > CircleOff difiere propose_delete hasta la confirmación con la fuente seleccionada [0.52ms]
+(pass) Incidencias multisede > la fecha de supresión multisede solo se conserva cuando las fuentes coinciden [0.27ms]
+(pass) Incidencias multisede > Ignorar y Reactivar usan revisión global y el detalle multisede omite site_id [0.35ms]
 
 ::endgroup::
 
 ::group::tests/admin-catalog-v3.store.test.ts:
-(pass) store Catálogo V3 > deduplica y conserva conjuntos completos por acción y payload [0.63ms]
-(pass) store Catálogo V3 > una respuesta con revisión nueva invalida conjuntos anteriores, sin usar bootstrap como revisión [0.16ms]
-(pass) store Catálogo V3 > rechaza una lectura con revisión anterior a la fuente V3 [0.17ms]
-(pass) store Catálogo V3 > conserva operation_id y ambas revisiones en reintentos inciertos [0.55ms]
-(pass) store Catálogo V3 > retirar aprobación invalida y obliga a releer el estado autoritativo [0.24ms]
-(pass) store Catálogo V3 > toda mutación exitosa invalida caché aunque las revisiones no cambien [0.13ms]
-(pass) store Catálogo V3 > proponer estado de Producto solo crea una propuesta e invalida el conjunto completo [0.15ms]
-(pass) store Catálogo V3 > prepara onboarding en staging para grupo existente y grupo unitario nuevo [0.18ms]
-(pass) store Catálogo V3 > prepara resolución de precio con decisión explícita xN y sin cálculo proporcional [0.17ms]
-(pass) store Catálogo V3 > publica solo como admin y conserva el mismo operation_id después de una respuesta incierta [0.37ms]
-(pass) store Catálogo V3 > mantiene el recibo cuando el commit se confirmó pero falta registrar el cierre [0.17ms]
-(pass) store Catálogo V3 > un conflicto definitivo descarta intención e invalida caché [0.14ms]
-(pass) store Catálogo V3 > una respuesta pendiente no sobrevive un cambio de rol [0.17ms]
+(pass) store Catálogo V3 > deduplica y conserva conjuntos completos por acción y payload [0.95ms]
+(pass) store Catálogo V3 > una respuesta con revisión nueva invalida conjuntos anteriores, sin usar bootstrap como revisión [0.23ms]
+(pass) store Catálogo V3 > rechaza una lectura con revisión anterior a la fuente V3 [0.24ms]
+(pass) store Catálogo V3 > conserva operation_id y ambas revisiones en reintentos inciertos [0.79ms]
+(pass) store Catálogo V3 > retirar aprobación invalida y obliga a releer el estado autoritativo [0.36ms]
+(pass) store Catálogo V3 > toda mutación exitosa invalida caché aunque las revisiones no cambien [0.18ms]
+(pass) store Catálogo V3 > proponer estado de Producto solo crea una propuesta e invalida el conjunto completo [0.20ms]
+(pass) store Catálogo V3 > prepara onboarding en staging para grupo existente y grupo unitario nuevo [0.24ms]
+(pass) store Catálogo V3 > prepara resolución de precio con decisión explícita xN y sin cálculo proporcional [0.27ms]
+(pass) store Catálogo V3 > publica solo como admin y conserva el mismo operation_id después de una respuesta incierta [0.53ms]
+(pass) store Catálogo V3 > mantiene el recibo cuando el commit se confirmó pero falta registrar el cierre [0.18ms]
+(pass) store Catálogo V3 > un conflicto definitivo descarta intención e invalida caché [0.21ms]
+(pass) store Catálogo V3 > una respuesta pendiente no sobrevive un cambio de rol [0.24ms]
 
 ::endgroup::
 
 ::group::tests/admin-shell-devices.test.ts:
-(pass) Shell orders sites and aliases Casuarinas without changing IDs or input [0.16ms]
-(pass) Shell site selection is UI-only, retained across module loads, and scoped to this store [1.69ms]
-(pass) Shell does not accept unauthorized sites and falls back if access changes [0.32ms]
-(pass) Device last access uses Lima today, 12-hour time and explicit missing access [3.22ms]
-(pass) Shell selection emits only on a valid change and never invalidates cached datasets [0.27ms]
+(pass) Shell orders sites and aliases Casuarinas without changing IDs or input [0.22ms]
+(pass) Shell site selection is UI-only, retained across module loads, and scoped to this store [2.22ms]
+(pass) Shell does not accept unauthorized sites and falls back if access changes [0.34ms]
+(pass) Device last access uses Lima today, 12-hour time and explicit missing access [4.02ms]
+(pass) Shell selection emits only on a valid change and never invalidates cached datasets [0.40ms]
 
 ::endgroup::
 
 ::group::tests/admin-products-masterdata.test.ts:
-(pass) Admin Productos con Master Data > registra la ruta Productos y la ubica en Inventario entre Catálogo y Grupos [0.17ms]
-(pass) Admin Productos con Master Data > filtra y ordena el conjunto completo local usando relaciones derivadas [0.35ms]
-(pass) Admin Productos con Master Data > pagina localmente sin alterar ni truncar el dataset compartido [0.14ms]
-(pass) Admin Productos con Master Data > carga Master Data solo desde Productos o el diálogo de configuración [0.32ms]
-(pass) Admin Productos con Master Data > onboarding conserva prepare_product y no vuelve a Catalog reference [0.14ms]
-(pass) Admin Productos con Master Data > QuickFilterChip muestra contadores derivados sin lectura adicional y conserva filtros restantes [0.30ms]
+(pass) Admin Productos con Master Data > registra la ruta Productos y la ubica en Inventario entre Catálogo y Grupos [0.26ms]
+(pass) Admin Productos con Master Data > filtra y ordena el conjunto completo local usando relaciones derivadas [0.46ms]
+(pass) Admin Productos con Master Data > pagina localmente sin alterar ni truncar el dataset compartido [0.16ms]
+(pass) Admin Productos con Master Data > carga Master Data solo desde Productos o el diálogo de configuración [0.46ms]
+(pass) Admin Productos con Master Data > onboarding conserva prepare_product y no vuelve a Catalog reference [0.66ms]
+(pass) Admin Productos con Master Data > QuickFilterChip muestra contadores derivados sin lectura adicional y conserva filtros restantes [0.46ms]
 
 ::endgroup::
 
 ::group::tests/admin-management.test.ts:
-(pass) A4–A6 reads and cache > status preserves its exact response [0.27ms]
-(pass) A4–A6 reads and cache > reference preserves its exact response [0.02ms]
-(pass) A4–A6 reads and cache > groups preserves its exact response [0.02ms]
-(pass) A4–A6 reads and cache > group_products preserves its exact response [0.04ms]
+(pass) A4–A6 reads and cache > status preserves its exact response [0.34ms]
+(pass) A4–A6 reads and cache > reference preserves its exact response [0.03ms]
+(pass) A4–A6 reads and cache > groups preserves its exact response [0.03ms]
+(pass) A4–A6 reads and cache > group_products preserves its exact response [0.06ms]
 (pass) A4–A6 reads and cache > catalog_changes preserves its exact response [0.01ms]
-(pass) A4–A6 reads and cache > publication_preview preserves its exact response
-(pass) A4–A6 reads and cache > price_mismatch_options preserves its exact response
-(pass) A4–A6 reads and cache > summary preserves its exact response [0.13ms]
-(pass) A4–A6 reads and cache > detail preserves its exact response [0.11ms]
-(pass) A4–A6 reads and cache > list preserves its exact response [0.19ms]
-(pass) A4–A6 reads and cache > summary y detail exigen el contrato operativo V2 y la reactivación por scope [0.40ms]
-(pass) A4–A6 reads and cache > master limit/offset; no generic data; device list has row revisions only [0.16ms]
-(pass) A4–A6 reads and cache > deduplicates, caches and separates sites; blocks unauthorized site [0.36ms]
-(pass) A4–A6 reads and cache > discards in-flight reads after refresh and disposal [0.30ms]
-(pass) A4–A6 reads and cache > rejects mismatched family, page, site and stale revisions [0.42ms]
-(pass) A4–A6 mutation intentions > group_change_save success and lost-response replay retain UUID/payload [0.35ms]
-(pass) A4–A6 mutation intentions > catalog_change_action success and lost-response replay retain UUID/payload [0.10ms]
-(pass) A4–A6 mutation intentions > resolve_group_price success and lost-response replay retain UUID/payload [0.08ms]
-(pass) A4–A6 mutation intentions > update_package_price success and lost-response replay retain UUID/payload [0.04ms]
-(pass) A4–A6 mutation intentions > ignore_30d success and lost-response replay retain UUID/payload [0.09ms]
-(pass) A4–A6 mutation intentions > reactivate success and lost-response replay retain UUID/payload [0.11ms]
-(pass) A4–A6 mutation intentions > propose_delete success and lost-response replay retain UUID/payload [0.06ms]
+(pass) A4–A6 reads and cache > publication_preview preserves its exact response [0.01ms]
+(pass) A4–A6 reads and cache > price_mismatch_options preserves its exact response [0.01ms]
+(pass) A4–A6 reads and cache > summary preserves its exact response [0.18ms]
+(pass) A4–A6 reads and cache > detail preserves its exact response [0.13ms]
+(pass) A4–A6 reads and cache > list preserves its exact response [0.27ms]
+(pass) A4–A6 reads and cache > summary y detail exigen el contrato operativo V2 y la reactivación por scope [0.48ms]
+(pass) A4–A6 reads and cache > master limit/offset; no generic data; device list has row revisions only [0.23ms]
+(pass) A4–A6 reads and cache > deduplicates, caches and separates sites; blocks unauthorized site [0.51ms]
+(pass) A4–A6 reads and cache > discards in-flight reads after refresh and disposal [0.34ms]
+(pass) A4–A6 reads and cache > rejects mismatched family, page, site and stale revisions [0.57ms]
+(pass) A4–A6 mutation intentions > group_change_save success and lost-response replay retain UUID/payload [0.47ms]
+(pass) A4–A6 mutation intentions > catalog_change_action success and lost-response replay retain UUID/payload [0.14ms]
+(pass) A4–A6 mutation intentions > resolve_group_price success and lost-response replay retain UUID/payload [0.10ms]
+(pass) A4–A6 mutation intentions > update_package_price success and lost-response replay retain UUID/payload [0.06ms]
+(pass) A4–A6 mutation intentions > ignore_30d success and lost-response replay retain UUID/payload [0.11ms]
+(pass) A4–A6 mutation intentions > reactivate success and lost-response replay retain UUID/payload [0.14ms]
+(pass) A4–A6 mutation intentions > propose_delete success and lost-response replay retain UUID/payload [0.10ms]
 (pass) A4–A6 mutation intentions > authorize success and lost-response replay retain UUID/payload [0.10ms]
-(pass) A4–A6 mutation intentions > replace success and lost-response replay retain UUID/payload [0.10ms]
-(pass) A4–A6 mutation intentions > revoke success and lost-response replay retain UUID/payload [0.10ms]
-(pass) A4–A6 mutation intentions > reject success and lost-response replay retain UUID/payload [0.09ms]
-(pass) A4–A6 mutation intentions > revision conflict releases rejected intent, invalidates and uses a new UUID [0.54ms]
-(pass) A4–A6 mutation intentions > device mutation invalidates target/global list, preserves other site and master [0.30ms]
-(pass) A4–A6 mutation intentions > propose deletion invalidates catalog V3 and affected family, not devices [0.30ms]
+(pass) A4–A6 mutation intentions > replace success and lost-response replay retain UUID/payload [0.11ms]
+(pass) A4–A6 mutation intentions > revoke success and lost-response replay retain UUID/payload [0.16ms]
+(pass) A4–A6 mutation intentions > reject success and lost-response replay retain UUID/payload [0.18ms]
+(pass) A4–A6 mutation intentions > revision conflict releases rejected intent, invalidates and uses a new UUID [0.68ms]
+(pass) A4–A6 mutation intentions > device mutation invalidates target/global list, preserves other site and master [0.38ms]
+(pass) A4–A6 mutation intentions > propose deletion invalidates catalog V3 and affected family, not devices [0.37ms]
 (pass) A4–A6 mutation intentions > old replay never rolls revisions back [0.28ms]
-(pass) A4–A6 mutation intentions > prepared publication retry preserves operation; no client artifact fields [0.33ms]
-(pass) A4–A6 mutation intentions > moderator cannot publish; disposed scope cannot mutate [0.09ms]
+(pass) A4–A6 mutation intentions > prepared publication retry preserves operation; no client artifact fields [0.48ms]
+(pass) A4–A6 mutation intentions > moderator cannot publish; disposed scope cannot mutate [0.13ms]
 
 ::endgroup::
 
 ::group::tests/admin-catalog-v3.structure.test.ts:
-(pass) Catálogo V3: estructura principal > las rutas cargan Catálogo y Productos como módulos lazy separados [0.19ms]
-(pass) Catálogo V3: estructura principal > Catálogo conserva Propuestas y retira la pestaña y lectura Productos [0.26ms]
-(pass) Catálogo V3: estructura principal > consume los cuatro estados y conserva la clasificación y acciones de Propuestas V3 [0.58ms]
-(pass) Catálogo V3: estructura principal > expone estados UI, reintentos y controles accesibles de staging y publicación [0.30ms]
-(pass) Catálogo V3: estructura principal > Productos opera sobre Master Data completo y conserva las mutaciones Catálogo V3 [0.24ms]
-(pass) la tabla de propuestas compone identidad y Cambio sin lecturas adicionales [0.28ms]
-(pass) Cambio conserva la flecha visual y expone una relación accesible anterior a nuevo [0.19ms]
+(pass) Catálogo V3: estructura principal > las rutas cargan Catálogo y Productos como módulos lazy separados [0.87ms]
+(pass) Catálogo V3: estructura principal > Catálogo conserva Propuestas y retira la pestaña y lectura Productos [0.37ms]
+(pass) Catálogo V3: estructura principal > consume los cuatro estados y conserva la clasificación y acciones de Propuestas V3 [0.80ms]
+(pass) Catálogo V3: estructura principal > expone estados UI, reintentos y controles accesibles de staging y publicación [0.40ms]
+(pass) Catálogo V3: estructura principal > Productos opera sobre Master Data completo y conserva las mutaciones Catálogo V3 [0.30ms]
+(pass) la tabla de propuestas compone identidad y Cambio sin lecturas adicionales [0.39ms]
+(pass) Cambio conserva la flecha visual y expone una relación accesible anterior a nuevo [0.26ms]
 
 ::endgroup::
 
 ::group::tests/admin-primitives-post-review.test.ts:
-(pass) Delta post-revisión: primitives compartidas Admin > QuickFilterChip usa una primitive común y preserva Control como consumidor de referencia [0.57ms]
-(pass) Delta post-revisión: primitives compartidas Admin > StateView usa la primitive común de Catálogo también en Incidencias [0.45ms]
-(pass) Delta post-revisión: primitives compartidas Admin > el delta permanece frontend-only y no agrega lecturas para los contadores [0.25ms]
+(pass) Delta post-revisión: primitives compartidas Admin > QuickFilterChip usa una primitive común y preserva Control como consumidor de referencia [0.77ms]
+(pass) Delta post-revisión: primitives compartidas Admin > StateView usa la primitive común de Catálogo también en Incidencias [0.57ms]
+(pass) Delta post-revisión: primitives compartidas Admin > el delta permanece frontend-only y no agrega lecturas para los contadores [0.59ms]
 
 ::endgroup::
 
 ::group::tests/admin-catalog-v3.integration.test.ts:
-(pass) Catálogo V3 integración > carga conjuntos completos por estado sin conservar la lectura Productos en el store activo [0.39ms]
-(pass) Catálogo V3 integración > carga pendientes inicialmente y completa el alta con grupo existente hasta publicación [0.41ms]
-(pass) Catálogo V3 integración > integra reincorporación, exclusión y grupo unitario en el flujo de propuestas [0.25ms]
-(pass) Catálogo V3 integración > integra las tres resoluciones de precio y la decisión xN contractual [0.26ms]
-(pass) Catálogo V3 integración > moderador consulta, revisa y prepara, pero no publica [0.20ms]
-(pass) Catálogo V3 integración > expone loading/error/retry de lectura sin llamadas reales a Supabase [0.18ms]
+(pass) Catálogo V3 integración > carga conjuntos completos por estado sin conservar la lectura Productos en el store activo [0.56ms]
+(pass) Catálogo V3 integración > carga pendientes inicialmente y completa el alta con grupo existente hasta publicación [0.57ms]
+(pass) Catálogo V3 integración > integra reincorporación, exclusión y grupo unitario en el flujo de propuestas [0.33ms]
+(pass) Catálogo V3 integración > integra las tres resoluciones de precio y la decisión xN contractual [0.34ms]
+(pass) Catálogo V3 integración > moderador consulta, revisa y prepara, pero no publica [0.25ms]
+(pass) Catálogo V3 integración > expone loading/error/retry de lectura sin llamadas reales a Supabase [0.26ms]
 
 ::endgroup::
 
 ::group::tests/admin-feedback.test.ts:
-(pass) Admin feedback de mutaciones > cada retry conserva operation_id pero incrementa la ocurrencia visual [0.81ms]
-(pass) Admin feedback de mutaciones > MutationNotice usa AdminNotice y no presenta operation_id ni replay [0.49ms]
-(pass) Admin feedback de mutaciones > dismiss se asocia a ocurrencia y no al texto visible [0.15ms]
-(pass) Admin feedback fases 2 y 3 > Catálogo y Productos comparten presenter sin UUID ni replay visible [0.34ms]
-105 |     ).text()
-106 |     const catalog = await Bun.file(
-107 |       'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
-108 |     ).text()
-109 | 
-110 |     expect(feedback).toContain("if (store.intent()) return ''")
-                           ^
-error: expect(received).toContain(expected)
-
-Expected to contain: "if (store.intent()) return ''"
-Received: "import { RotateCcw } from 'lucide-react'\nimport { AdminNotice } from '../admin.primitives'\nimport { useCatalogStore } from './admin.catalogo.context'\nexport function CatalogMutationNotice({ onRetry }: { onRetry: () => void }) {\n  const intent = useCatalogStore().intent()\n  if (!intent) return null\n\n  return <AdminNotice\n    tone={intent.error ? 'error' : 'info'}\n    action={!intent.pending ? <button\n      type=\"button\"\n      className=\"button button--secondary\"\n      onClick={onRetry}\n    ><RotateCcw size={16} aria-hidden=\"true\" />Reintentar misma operación</button> : undefined}\n  >\n    {intent.error ?? 'Operación en curso…'}\n  </AdminNotice>\n}\n"
-
-      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/admin-feedback.test.ts:110:22)
-
-::error file=tests/admin-feedback.test.ts,line=110,col=22,title=error: expect(received).toContain(expected)::Expected to contain: "if (store.intent()) return ''"%0A'}\n  </AdminNotice>\n}\n"%0A%0A      at <anonymous> (/home/runner/work/SOLOG/SOLOG/tests/admin-feedback.test.ts:110:22)
-(fail) Admin feedback fases 2 y 3 > errores retryable de Catálogo permanecen en una única superficie [0.20ms]
-(pass) Admin feedback fases 2 y 3 > Dispositivos separa feedback modal y feedback de página [0.12ms]
-(pass) Admin feedback fases 2 y 3 > Incidencias usa ocurrencia independiente del texto y retry de la intención original [0.21ms]
-(pass) Admin feedback fases 2 y 3 > notices retryable no pueden ocultar la única acción de retry [0.18ms]
+(pass) Admin feedback de mutaciones > cada retry conserva operation_id pero incrementa la ocurrencia visual [1.05ms]
+(pass) Admin feedback de mutaciones > MutationNotice usa AdminNotice y no presenta operation_id ni replay [0.21ms]
+(pass) Admin feedback de mutaciones > dismiss se asocia a ocurrencia y no al texto visible [0.18ms]
+(pass) Admin feedback fases 2 y 3 > Catálogo y Productos comparten presenter sin UUID ni replay visible [0.52ms]
+(pass) Admin feedback fases 2 y 3 > errores retryable de Catálogo permanecen en una única superficie [0.22ms]
+(pass) Admin feedback fases 2 y 3 > Dispositivos separa feedback modal y feedback de página [0.15ms]
+(pass) Admin feedback fases 2 y 3 > Incidencias usa ocurrencia independiente del texto y retry de la intención original [0.35ms]
+(pass) Admin feedback fases 2 y 3 > notices retryable no pueden ocultar la única acción de retry [0.19ms]
 
 ::endgroup::
 
 ::group::tests/admin-management-isolation.test.ts:
-(pass) normalized transport errors preserve the original operation, not just raw network errors [0.40ms]
-(pass) master revision conflict clears the rejected intent and refreshes its source [0.22ms]
+(pass) normalized transport errors preserve the original operation, not just raw network errors [0.44ms]
+(pass) master revision conflict clears the rejected intent and refreshes its source [0.33ms]
 (pass) incidents revision conflict clears the rejected intent and refreshes its source [0.09ms]
-(pass) authorization rejection clears data and notifies the Admin shell [0.24ms]
-(pass) late response cannot cross a role change [0.16ms]
-(pass) incident period expiration is anchored to backend time and leaves devices cached [0.31ms]
-(pass) mutation invalidates an older in-flight family detail without resurrecting it [0.29ms]
+(pass) authorization rejection clears data and notifies the Admin shell [0.31ms]
+(pass) late response cannot cross a role change [0.22ms]
+(pass) incident period expiration is anchored to backend time and leaves devices cached [0.38ms]
+(pass) mutation invalidates an older in-flight family detail without resurrecting it [0.34ms]
 (pass) Edge failure releases receipt only with a rejected preview or failed-ledger replay [0.21ms]
-(pass) different Auth users never share a management dataset [0.21ms]
-(pass) rejections de evidencia o supresión obsoleta descartan la intención y fuerzan una recarga autoritativa [0.37ms]
+(pass) different Auth users never share a management dataset [0.26ms]
+(pass) rejections de evidencia o supresión obsoleta descartan la intención y fuerzan una recarga autoritativa [0.46ms]
 
 ::endgroup::
 
-1 tests failed:
-(fail) Admin feedback fases 2 y 3 > errores retryable de Catálogo permanecen en una única superficie [0.20ms]
-
- 102 pass
- 1 fail
- 465 expect() calls
-Ran 103 tests across 10 files. [89.00ms]
+ 103 pass
+ 0 fail
+ 467 expect() calls
+Ran 103 tests across 10 files. [125.00ms]
 
 === LINT ===
 $ eslint .
@@ -233,6 +215,6 @@ dist/assets/cajero-DcbYZm_A.js                                        56.65 kB �
 dist/assets/browser-CB9WaMml.js                                       70.71 kB │ gzip: 19.69 kB
 dist/assets/index-DD8xDwd4.js                                        202.02 kB │ gzip: 63.81 kB
 
-[32m✓ built in 323ms[39m
+[32m✓ built in 376ms[39m
 
 === DIFF CHECK ===
