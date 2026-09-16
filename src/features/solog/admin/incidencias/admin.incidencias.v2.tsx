@@ -67,20 +67,24 @@ function FamilyDetail({
   onClose,
 }: {
   family: Family;
-  site: string;
+  site?: string;
   onClose: () => void;
 }) {
   const [page, setPage] = useState(0);
   const query = useManagementQuery("detail", {
     family_key: family.family_key,
-    site_id: site,
+    ...(site ? { site_id: site } : {}),
     page,
     page_size: 100,
   });
   return (
     <AdminDialog
       title={`Repeticiones · ${typeLabels[family.tipo]}`}
-      description="Detalle solicitado bajo demanda para una sede fuente."
+      description={
+        site
+          ? "Detalle solicitado bajo demanda para una sede fuente."
+          : "Detalle solicitado bajo demanda para todas las sedes."
+      }
       onClose={onClose}
       wide
     >
@@ -167,6 +171,7 @@ function canProposeDelete(family: Family) {
   return (
     family.tipo === "producto_ausente" &&
     family.active &&
+    family.family_state === "pendiente" &&
     family.c_interno !== null &&
     Number.isSafeInteger(family.c_interno) &&
     family.c_interno > 0 &&
@@ -178,10 +183,12 @@ function IgnoreDialog({
   family,
   onClose,
   onError,
+  onSuccess,
 }: {
   family: MergedIncidentFamily;
   onClose: () => void;
   onError: (message: string) => void;
+  onSuccess: () => void;
 }) {
   const store = useManagement();
   const [runningSite, setRunningSite] = useState<string | null>(null);
@@ -197,12 +204,14 @@ function IgnoreDialog({
         "ignore_30d",
         {
           family_key: family.family_key,
-          scope: "site",
-          site_id: source.siteId,
+          scope: "global",
         },
-        summary.revisions.incidents,
-        source.siteId,
+        summary.revisions.incidents_global,
       )
+      .then(() => {
+        onSuccess();
+        onClose();
+      })
       .catch((reason) =>
         onError(
           reason instanceof Error
@@ -508,22 +517,34 @@ export function AdminIncidentsV2() {
     }
     setError("");
     setNotice("");
+    const globalAction = action === "reactivate";
     return store
       .mutation(
         action,
-        {
-          family_key: source.family.family_key,
-          scope: "site",
-          site_id: source.siteId,
-        },
-        summary.revisions.incidents,
-        source.siteId,
+        globalAction
+          ? {
+              family_key: source.family.family_key,
+              scope: "global",
+            }
+          : {
+              family_key: source.family.family_key,
+              scope: "site",
+              site_id: source.siteId,
+            },
+        globalAction
+          ? summary.revisions.incidents_global
+          : summary.revisions.incidents,
+        globalAction ? undefined : source.siteId,
       )
       .then(() => {
-        if (action === "propose_delete")
+        if (action === "reactivate") {
+          setAllSnapshot([]);
+          setNotice("La incidencia fue reactivada.");
+        } else {
           setNotice(
             "La propuesta de eliminación quedó pendiente para revisión en Catálogo.",
           );
+        }
       })
       .catch((reason) => {
         setError(
@@ -684,7 +705,7 @@ export function AdminIncidentsV2() {
                         ? item.active_suppression_until
                         : item.resolved_at;
                   const reactivable = item.sources.find(
-                    (source) => source.family.reactivate_available,
+                    (source) => source.family.active_suppression_until !== null,
                   );
                   const deletable = item.sources.find((source) =>
                     canProposeDelete(source.family),
@@ -798,9 +819,9 @@ export function AdminIncidentsV2() {
       )}
       {detailFamily && (
         <FamilyDetail
-          key={`${detailFamily.sources[0].siteId}:${detailFamily.family_key}`}
-          family={detailFamily.sources[0].family}
-          site={detailFamily.sources[0].siteId}
+          key={`${allActive ? "all" : siteId}:${detailFamily.family_key}`}
+          family={detailFamily}
+          site={allActive ? undefined : siteId}
           onClose={() => setDetailFamily(null)}
         />
       )}
@@ -809,6 +830,10 @@ export function AdminIncidentsV2() {
           family={ignoreFamily}
           onClose={() => setIgnoreFamily(null)}
           onError={setError}
+          onSuccess={() => {
+            setAllSnapshot([]);
+            setNotice("La incidencia fue ignorada durante 30 días.");
+          }}
         />
       )}
       {deleteProposal && (
