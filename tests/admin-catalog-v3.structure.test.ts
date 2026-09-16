@@ -5,10 +5,10 @@ const source = (path: string) => Bun.file(path).text()
 describe('Catálogo V3: estructura principal', () => {
   test('las rutas cargan Catálogo y Productos como módulos lazy separados', async () => {
     const app = await source('src/features/solog/admin/admin.v2.app.tsx')
-    expect(app).toContain(`import("./catalogo/admin.catalogo.page.v3")`)
-    expect(app).toContain('default: m.AdminCatalogV3')
-    expect(app).toContain(`import("./productos/admin.productos.v1")`)
-    expect(app).toContain('default: m.AdminProductsV1')
+    expect(app).toMatch(/import\(\s*["']\.\/catalogo\/admin\.catalogo\.page\.v3["']\s*\)/)
+    expect(app).toMatch(/default:\s*m\.AdminCatalogV3/)
+    expect(app).toMatch(/import\(\s*["']\.\/productos\/admin\.productos\.v1["']\s*\)/)
+    expect(app).toMatch(/default:\s*m\.AdminProductsV1/)
   })
 
   test('Catálogo conserva Propuestas y retira la pestaña y lectura Productos', async () => {
@@ -75,6 +75,7 @@ test('la tabla de propuestas compone identidad y Cambio sin lecturas adicionales
   expect(ui).toContain('admin-catalog__product-name')
   expect(ui).toContain('catalogProposalChange(proposal)')
   expect(ui).toMatch(/\?\s*["']Automático["']/)
+  expect(ui).toMatch(/:\s*proposal\.sedes[\s\S]*?\|\|\s*["']Propuesto["']/)
 })
 
 
