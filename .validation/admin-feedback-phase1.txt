@@ -1,8 +1,8 @@
 Admin Feedback Phase 1 Validation
 branch=admin-work
-commit=79e20d9ce0b2d3b8d74fbfa2df6a35268b13151c
+commit=7518b8357b9552623076172c4d40f41975ece3c0
 targeted_status=0
-lint_status=1
+lint_status=0
 build_status=0
 diff_status=0
 
@@ -10,96 +10,85 @@ diff_status=0
 bun test v1.3.14 (0d9b296a)
 
 ::group::tests/admin-shell-devices.test.ts:
-(pass) Shell orders sites and aliases Casuarinas without changing IDs or input [0.29ms]
-(pass) Shell site selection is UI-only, retained across module loads, and scoped to this store [2.55ms]
+(pass) Shell orders sites and aliases Casuarinas without changing IDs or input [0.36ms]
+(pass) Shell site selection is UI-only, retained across module loads, and scoped to this store [2.84ms]
 (pass) Shell does not accept unauthorized sites and falls back if access changes [0.38ms]
-(pass) Device last access uses Lima today, 12-hour time and explicit missing access [3.91ms]
-(pass) Shell selection emits only on a valid change and never invalidates cached datasets [0.31ms]
+(pass) Device last access uses Lima today, 12-hour time and explicit missing access [3.85ms]
+(pass) Shell selection emits only on a valid change and never invalidates cached datasets [0.35ms]
 
 ::endgroup::
 
 ::group::tests/admin-management.test.ts:
-(pass) A4–A6 reads and cache > status preserves its exact response [0.58ms]
+(pass) A4–A6 reads and cache > status preserves its exact response [0.65ms]
 (pass) A4–A6 reads and cache > reference preserves its exact response [0.03ms]
-(pass) A4–A6 reads and cache > groups preserves its exact response [0.06ms]
-(pass) A4–A6 reads and cache > group_products preserves its exact response [0.04ms]
+(pass) A4–A6 reads and cache > groups preserves its exact response [0.08ms]
+(pass) A4–A6 reads and cache > group_products preserves its exact response [0.05ms]
 (pass) A4–A6 reads and cache > catalog_changes preserves its exact response [0.02ms]
 (pass) A4–A6 reads and cache > publication_preview preserves its exact response [0.01ms]
-(pass) A4–A6 reads and cache > price_mismatch_options preserves its exact response [0.01ms]
-(pass) A4–A6 reads and cache > summary preserves its exact response [0.17ms]
-(pass) A4–A6 reads and cache > detail preserves its exact response [0.11ms]
-(pass) A4–A6 reads and cache > list preserves its exact response [0.23ms]
-(pass) A4–A6 reads and cache > summary y detail exigen el contrato operativo V2 y la reactivación por scope [0.37ms]
-(pass) A4–A6 reads and cache > master limit/offset; no generic data; device list has row revisions only [0.11ms]
-(pass) A4–A6 reads and cache > deduplicates, caches and separates sites; blocks unauthorized site [0.90ms]
-(pass) A4–A6 reads and cache > discards in-flight reads after refresh and disposal [0.40ms]
-(pass) A4–A6 reads and cache > rejects mismatched family, page, site and stale revisions [0.61ms]
-(pass) A4–A6 mutation intentions > group_change_save success and lost-response replay retain UUID/payload [0.92ms]
-(pass) A4–A6 mutation intentions > catalog_change_action success and lost-response replay retain UUID/payload [0.19ms]
+(pass) A4–A6 reads and cache > price_mismatch_options preserves its exact response [0.02ms]
+(pass) A4–A6 reads and cache > summary preserves its exact response [0.21ms]
+(pass) A4–A6 reads and cache > detail preserves its exact response [0.17ms]
+(pass) A4–A6 reads and cache > list preserves its exact response [0.26ms]
+(pass) A4–A6 reads and cache > summary y detail exigen el contrato operativo V2 y la reactivación por scope [0.66ms]
+(pass) A4–A6 reads and cache > master limit/offset; no generic data; device list has row revisions only [0.23ms]
+(pass) A4–A6 reads and cache > deduplicates, caches and separates sites; blocks unauthorized site [1.24ms]
+(pass) A4–A6 reads and cache > discards in-flight reads after refresh and disposal [0.41ms]
+(pass) A4–A6 reads and cache > rejects mismatched family, page, site and stale revisions [0.82ms]
+(pass) A4–A6 mutation intentions > group_change_save success and lost-response replay retain UUID/payload [1.08ms]
+(pass) A4–A6 mutation intentions > catalog_change_action success and lost-response replay retain UUID/payload [0.21ms]
 (pass) A4–A6 mutation intentions > resolve_group_price success and lost-response replay retain UUID/payload [0.10ms]
-(pass) A4–A6 mutation intentions > update_package_price success and lost-response replay retain UUID/payload [0.09ms]
-(pass) A4–A6 mutation intentions > ignore_30d success and lost-response replay retain UUID/payload [0.23ms]
-(pass) A4–A6 mutation intentions > reactivate success and lost-response replay retain UUID/payload [0.19ms]
-(pass) A4–A6 mutation intentions > propose_delete success and lost-response replay retain UUID/payload [0.23ms]
-(pass) A4–A6 mutation intentions > authorize success and lost-response replay retain UUID/payload [0.14ms]
-(pass) A4–A6 mutation intentions > replace success and lost-response replay retain UUID/payload [0.12ms]
-(pass) A4–A6 mutation intentions > revoke success and lost-response replay retain UUID/payload [0.11ms]
-(pass) A4–A6 mutation intentions > reject success and lost-response replay retain UUID/payload [0.09ms]
-(pass) A4–A6 mutation intentions > revision conflict releases rejected intent, invalidates and uses a new UUID [0.54ms]
-(pass) A4–A6 mutation intentions > device mutation invalidates target/global list, preserves other site and master [0.37ms]
-(pass) A4–A6 mutation intentions > propose deletion invalidates catalog V3 and affected family, not devices [0.47ms]
-(pass) A4–A6 mutation intentions > old replay never rolls revisions back [0.25ms]
-(pass) A4–A6 mutation intentions > prepared publication retry preserves operation; no client artifact fields [0.41ms]
-(pass) A4–A6 mutation intentions > moderator cannot publish; disposed scope cannot mutate [0.11ms]
+(pass) A4–A6 mutation intentions > update_package_price success and lost-response replay retain UUID/payload [0.13ms]
+(pass) A4–A6 mutation intentions > ignore_30d success and lost-response replay retain UUID/payload [0.25ms]
+(pass) A4–A6 mutation intentions > reactivate success and lost-response replay retain UUID/payload [0.23ms]
+(pass) A4–A6 mutation intentions > propose_delete success and lost-response replay retain UUID/payload [0.24ms]
+(pass) A4–A6 mutation intentions > authorize success and lost-response replay retain UUID/payload [0.15ms]
+(pass) A4–A6 mutation intentions > replace success and lost-response replay retain UUID/payload [0.15ms]
+(pass) A4–A6 mutation intentions > revoke success and lost-response replay retain UUID/payload [0.17ms]
+(pass) A4–A6 mutation intentions > reject success and lost-response replay retain UUID/payload [0.10ms]
+(pass) A4–A6 mutation intentions > revision conflict releases rejected intent, invalidates and uses a new UUID [0.74ms]
+(pass) A4–A6 mutation intentions > device mutation invalidates target/global list, preserves other site and master [0.43ms]
+(pass) A4–A6 mutation intentions > propose deletion invalidates catalog V3 and affected family, not devices [0.38ms]
+(pass) A4–A6 mutation intentions > old replay never rolls revisions back [0.31ms]
+(pass) A4–A6 mutation intentions > prepared publication retry preserves operation; no client artifact fields [0.45ms]
+(pass) A4–A6 mutation intentions > moderator cannot publish; disposed scope cannot mutate [0.12ms]
 
 ::endgroup::
 
 ::group::tests/admin-primitives-post-review.test.ts:
 (pass) Delta post-revisión: primitives compartidas Admin > QuickFilterChip usa una primitive común y preserva Control como consumidor de referencia [1.75ms]
-(pass) Delta post-revisión: primitives compartidas Admin > StateView usa la primitive común de Catálogo también en Incidencias [0.67ms]
-(pass) Delta post-revisión: primitives compartidas Admin > el delta permanece frontend-only y no agrega lecturas para los contadores [0.37ms]
+(pass) Delta post-revisión: primitives compartidas Admin > StateView usa la primitive común de Catálogo también en Incidencias [0.76ms]
+(pass) Delta post-revisión: primitives compartidas Admin > el delta permanece frontend-only y no agrega lecturas para los contadores [0.44ms]
 
 ::endgroup::
 
 ::group::tests/admin-feedback.test.ts:
-(pass) Admin feedback de mutaciones > cada retry conserva operation_id pero incrementa la ocurrencia visual [0.42ms]
-(pass) Admin feedback de mutaciones > MutationNotice usa AdminNotice y no presenta operation_id ni replay [0.21ms]
-(pass) Admin feedback de mutaciones > dismiss se asocia a ocurrencia y no al texto visible [0.17ms]
+(pass) Admin feedback de mutaciones > cada retry conserva operation_id pero incrementa la ocurrencia visual [0.51ms]
+(pass) Admin feedback de mutaciones > MutationNotice usa AdminNotice y no presenta operation_id ni replay [0.18ms]
+(pass) Admin feedback de mutaciones > dismiss se asocia a ocurrencia y no al texto visible [0.15ms]
 
 ::endgroup::
 
 ::group::tests/admin-management-isolation.test.ts:
-(pass) normalized transport errors preserve the original operation, not just raw network errors [0.36ms]
-(pass) master revision conflict clears the rejected intent and refreshes its source [0.37ms]
-(pass) incidents revision conflict clears the rejected intent and refreshes its source [0.12ms]
-(pass) authorization rejection clears data and notifies the Admin shell [0.29ms]
-(pass) late response cannot cross a role change [0.17ms]
-(pass) incident period expiration is anchored to backend time and leaves devices cached [0.56ms]
-(pass) mutation invalidates an older in-flight family detail without resurrecting it [0.43ms]
+(pass) normalized transport errors preserve the original operation, not just raw network errors [0.41ms]
+(pass) master revision conflict clears the rejected intent and refreshes its source [0.36ms]
+(pass) incidents revision conflict clears the rejected intent and refreshes its source [0.14ms]
+(pass) authorization rejection clears data and notifies the Admin shell [0.32ms]
+(pass) late response cannot cross a role change [0.21ms]
+(pass) incident period expiration is anchored to backend time and leaves devices cached [0.38ms]
+(pass) mutation invalidates an older in-flight family detail without resurrecting it [0.65ms]
 (pass) Edge failure releases receipt only with a rejected preview or failed-ledger replay [0.24ms]
-(pass) different Auth users never share a management dataset [0.28ms]
-(pass) rejections de evidencia o supresión obsoleta descartan la intención y fuerzan una recarga autoritativa [0.47ms]
+(pass) different Auth users never share a management dataset [0.27ms]
+(pass) rejections de evidencia o supresión obsoleta descartan la intención y fuerzan una recarga autoritativa [0.58ms]
 
 ::endgroup::
 
  53 pass
  0 fail
  241 expect() calls
-Ran 53 tests across 5 files. [87.00ms]
+Ran 53 tests across 5 files. [89.00ms]
 
 === LINT ===
 $ eslint .
-
-/home/runner/work/SOLOG/SOLOG/tests/admin-feedback.test.ts
-  74:38  error  Unnecessary escape character: \$  no-useless-escape
-  74:54  error  Unnecessary escape character: \$  no-useless-escape
-  74:73  error  Unnecessary escape character: \$  no-useless-escape
-  75:38  error  Unnecessary escape character: \$  no-useless-escape
-  75:49  error  Unnecessary escape character: \$  no-useless-escape
-
-✖ 5 problems (5 errors, 0 warnings)
-
-error: script "lint" exited with code 1
 
 === BUILD ===
 $ tsc -b && vite build
@@ -156,6 +145,6 @@ dist/assets/cajero-DRqUeUm6.js                                        56.65 kB �
 dist/assets/browser-CB9WaMml.js                                       70.71 kB │ gzip: 19.69 kB
 dist/assets/index-EhlQ4noi.js                                        202.02 kB │ gzip: 63.81 kB
 
-[32m✓ built in 360ms[39m
+[32m✓ built in 375ms[39m
 
 === DIFF CHECK ===
