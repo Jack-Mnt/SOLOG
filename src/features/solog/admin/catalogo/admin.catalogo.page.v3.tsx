@@ -41,7 +41,7 @@ const proposalStatuses: Array<{ id: CatalogProposalStatus; label: string }> = [
   { id: "pendiente", label: "Pendientes" },
   { id: "aprobado", label: "Aprobados" },
   { id: "ignorado", label: "Ignorados" },
-  { id: "incorporado", label: "Incorporados" },
+  { id: "incorporado", label: "Publicados" },
 ];
 const urgentTypes = new Set<CatalogProposal["tipo"]>([
   "agregar_producto",
@@ -145,7 +145,9 @@ function ProposalsSurface() {
                   proposalStatuses.length;
           setStatus(proposalStatuses[next].id);
           const tabs =
-            event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+            event.currentTarget.querySelectorAll<HTMLButtonElement>(
+              '[role="tab"]',
+            );
           tabs.item(next)?.focus();
         }}
       >
