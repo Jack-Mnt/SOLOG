@@ -25,6 +25,7 @@ import {
   type ProductSetupTarget,
 } from "../productos/admin.product-setup.dialog";
 import { useCatalogQuery, useCatalogStore } from "./admin.catalogo.context";
+import { CatalogMutationNotice, catalogMutationError } from "./admin.catalogo.feedback";
 import {
   catalogProposalChange,
   type CatalogProposal,
@@ -32,6 +33,7 @@ import {
 } from "./admin.catalogo.v3";
 import { adminTimestamp } from "../admin.v2.format";
 import { QueryState, Value } from "../admin.v2.presentation";
+import { AdminNotice } from "../admin.primitives";
 
 type ProposalAction = "approve" | "ignore" | "withdraw";
 type ProposalSection = "urgent" | "emerging";
@@ -344,11 +346,7 @@ function ProposalDetail({
       )
       .then(onClose)
       .catch((reason: unknown) =>
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "No se pudo actualizar la propuesta.",
-        ),
+        setError(catalogMutationError(store, reason, "No se pudo actualizar la propuesta.")),
       );
   };
   const retry = () => {
@@ -357,11 +355,7 @@ function ProposalDetail({
       .retryMutation()
       .then(onClose)
       .catch((reason: unknown) =>
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "No se pudo confirmar la propuesta.",
-        ),
+        setError(catalogMutationError(store, reason, "No se pudo confirmar la propuesta.")),
       );
   };
   const blocked =
@@ -456,7 +450,7 @@ function ProposalDetail({
                 : "Aprobada; el estado de publicación aún no está disponible."}
           </p>
         )}
-        {intent && <CatalogIntentNotice onRetry={retry} />}
+        {intent && <CatalogMutationNotice onRetry={retry} />}
         <div className="admin-v2-actions">
           {proposal.estado === "pendiente" && (
             <>
@@ -539,24 +533,6 @@ function ProposalDetail({
     </>
   );
 }
-function CatalogIntentNotice({ onRetry }: { onRetry: () => void }) {
-  const intent = useCatalogStore().intent();
-  if (!intent) return null;
-  return (
-    <div className="notice" role="status">
-      <p>
-        {intent.error ?? "Operación en curso…"} · {intent.payload.operation_id}
-      </p>
-      {!intent.pending && (
-        <button type="button" className="button" onClick={onRetry}>
-          <RotateCcw size={16} aria-hidden="true" />
-          Reintentar misma operación
-        </button>
-      )}
-    </div>
-  );
-}
-
 function PriceResolutionDialog({
   fingerprint,
   onClose,
@@ -632,7 +608,7 @@ function PriceResolutionDialog({
     }
     setError("");
     const done = () => onComplete();
-    const failed = (reason: unknown) => setError(priceErrorMessage(reason));
+    const failed = (reason: unknown) => setError(store.intent() ? "" : priceErrorMessage(reason));
     if (resolution === "separate_sku") {
       const payload =
         packageAction === "set"
@@ -676,7 +652,7 @@ function PriceResolutionDialog({
     void store
       .retryMutation()
       .then(onComplete)
-      .catch((reason: unknown) => setError(priceErrorMessage(reason)));
+      .catch((reason: unknown) => setError(store.intent() ? "" : priceErrorMessage(reason)));
   };
   const canKeep = resolution !== "separate_sku";
   return (
@@ -806,7 +782,7 @@ function PriceResolutionDialog({
             )}
           </fieldset>
         )}
-        {intent && <CatalogIntentNotice onRetry={retry} />}
+        {intent && <CatalogMutationNotice onRetry={retry} />}
         <button
           type="button"
           className="button"
@@ -878,21 +854,21 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
           ))}
         </>
       )}
-      {receipt.operationId && (
-        <p>
-          Publicación pendiente de confirmar: {receipt.operationId}. El
-          reintento conserva la misma operación.
-        </p>
+      {receipt.operationId && !receipt.error && !receipt.result && (
+        <AdminNotice tone="info">
+          Publicación pendiente de confirmar. El reintento conserva la misma operación.
+        </AdminNotice>
       )}
-      {receipt.error && <p role="alert">{receipt.error}</p>}
+      {receipt.error && (
+        <AdminNotice tone="error">{receipt.error}</AdminNotice>
+      )}
       {receipt.result && (
-        <p role="status">
+        <AdminNotice tone={receipt.result.completion_recorded ? "success" : "info"}>
           {receipt.result.codigo} · versión {receipt.result.version}
-          {receipt.result.replay ? " · replay confirmado" : ""}
           {receipt.result.completion_recorded
             ? ""
             : " · commit confirmado; falta registrar el cierre, vuelve a recuperar esta operación."}
-        </p>
+        </AdminNotice>
       )}
       <button
         type="button"
