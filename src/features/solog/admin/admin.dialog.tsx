@@ -39,6 +39,7 @@ export function AdminDialog({
   const [dialogToken] = useState(() => Symbol('admin-dialog'))
   const dialogRef = useRef<HTMLElement>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
+  const lifecycleRef = useRef(0)
 
   useSyncExternalStore(
     adminDialogStack.subscribe,
@@ -47,14 +48,21 @@ export function AdminDialog({
   )
 
   useLayoutEffect(() => {
-    const active = document.activeElement
-    returnFocusRef.current =
-      active instanceof HTMLElement ? active : null
+    if (returnFocusRef.current === null) {
+      const active = document.activeElement
+      returnFocusRef.current =
+        active instanceof HTMLElement ? active : null
+    }
 
+    const lifecycle = ++lifecycleRef.current
     const unregister = adminDialogStack.register(dialogToken)
     return () => {
       unregister()
-      restoreDialogFocus(returnFocusRef.current)
+      const target = returnFocusRef.current
+      queueMicrotask(() => {
+        if (lifecycleRef.current !== lifecycle) return
+        restoreDialogFocus(target)
+      })
     }
   }, [dialogToken])
 
