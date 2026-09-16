@@ -139,7 +139,12 @@ describe("Incidencias multisede", () => {
   });
   test("CircleOff difiere propose_delete hasta la confirmación con la fuente seleccionada", async () => {
     const source = await Bun.file("src/features/solog/admin/incidencias/admin.incidencias.v2.tsx").text();
-    expect(source).toContain("setDeleteProposal({ family: item, source })");
+    expect(source).toMatch(
+      /const\s+deletable\s*=\s*item\.sources\.find\(\(source\)\s*=>\s*canProposeDelete\(source\.family\)\)/,
+    );
+    expect(source).toMatch(
+      /setDeleteProposal\(\{\s*family:\s*item,\s*source:\s*deletable\s*\}\)/,
+    );
     expect(source).toContain('title="Proponer eliminación"');
     expect(source).toContain('onConfirm={() => actSource(deleteProposal.source, "propose_delete")}');
     expect(source).toContain('scope: "site"');
