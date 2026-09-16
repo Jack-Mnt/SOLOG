@@ -144,9 +144,9 @@ function ProposalsSurface() {
                     proposalStatuses.length) %
                   proposalStatuses.length;
           setStatus(proposalStatuses[next].id);
-          event.currentTarget
-            .querySelectorAll<HTMLButtonElement>('[role="tab"]')
-            [next]?.focus();
+          const tabs =
+            event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+          tabs[next]?.focus();
         }}
       >
         {proposalStatuses.map((item) => (
