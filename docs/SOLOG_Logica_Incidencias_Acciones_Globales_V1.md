@@ -1,7 +1,7 @@
 # SOLOG — Lógica Incidencias — Acciones Globales V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO TÉCNICAMENTE — SMOKE HUMANO PENDIENTE
+**Estado:** CERRADO — VALIDADO TÉCNICA Y HUMANAMENTE
 **Clasificación:** Nivel C — lógica de negocio, contrato Admin e integración backend/frontend  
 **Fecha:** 2026-09-16
 
@@ -217,8 +217,8 @@ Validación en Bun `1.3.14`:
 - `git diff --check`: correcto;
 - `git diff --check d4130809cd44add92367756cc0617dca8cbc1ec0...HEAD`: correcto.
 
-### 9.4 Pendiente de cierre
+### 9.4 Cierre
 
-Permanece pendiente únicamente el smoke humano de Incidencias definido en los criterios de aceptación.
+El smoke humano de Incidencias fue completado con éxito y el Bloque 1 queda cerrado.
 
-> **Bloque 1 congelado e implementado técnicamente. No avanzar al Bloque 2 hasta completar el smoke humano correspondiente.**
+> **Bloque 1 congelado, implementado y validado. Puede avanzarse al Bloque 2 conforme a su fuente primaria.**
