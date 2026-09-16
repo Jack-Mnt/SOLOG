@@ -1915,7 +1915,7 @@ sin alterar las cards de otros módulos. */
 }
 .admin-v2-card {
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 1rem;
   min-width: 0;
   background: var(--color-surface);
@@ -1981,7 +1981,7 @@ sin alterar las cards de otros módulos. */
 .admin-v2-filters select {
   border: 1px solid var(--color-border-strong);
   border-radius: 8px;
-  min-height: 38px;
+  height: 36px;
   padding: 0.4rem 0.65rem;
   background: var(--color-surface);
   color: inherit;
@@ -2428,23 +2428,56 @@ workspace y cards permanecen como superficies estructurales neutras;
   display: grid;
   gap: 0.75rem;
 }
-.admin-incidents__toolbar {
-  margin-bottom: 0;
-}
-.admin-incidents__filters {
+.admin-incidents__controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: end;
+  align-items: flex-start;
+  gap: 12px;
 }
-.admin-incidents__filters label {
+.admin-incidents__controls .admin-state-views {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+}
+.admin-incidents__type {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.admin-incidents__all-sites {
+  min-height: 36px;
+  white-space: nowrap;
+}
+.admin-incidents__sources {
   display: grid;
-  gap: 0.25rem;
+  gap: 8px;
 }
-.admin-incidents__period {
-  margin: 0;
-  font-size: 0.9rem;
+.admin-incidents__source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-incidents__source:last-child {
+  border-bottom: 0;
+}
+.admin-incidents__source > div,
+.admin-incidents__source > div > span {
+  display: grid;
+  gap: 4px;
+}
+.admin-incidents__source > div > span {
+  grid-auto-flow: column;
+  justify-content: start;
+  align-items: center;
   color: var(--color-text-secondary);
+  font-size: 0.82rem;
+}
+.admin-incidents__source-status {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
 }
 .admin-incidents__table,
 .admin-incidents__detail-table {
@@ -2483,12 +2516,19 @@ workspace y cards permanecen como superficies estructurales neutras;
   font-size: 0.82rem;
 }
 @media (max-width: 720px) {
-  .admin-incidents__toolbar,
-  .admin-incidents__filters {
+  .admin-incidents__controls {
     align-items: stretch;
   }
-  .admin-incidents__filters label {
+  .admin-incidents__controls .admin-state-views {
+    margin-right: 0;
+  }
+  .admin-incidents__type,
+  .admin-incidents__all-sites {
     flex: 1 1 10rem;
+  }
+  .admin-incidents__source {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }
 /* Admin primitives — Fase B. Base visual; la adopción por módulos comienza en Fase C. */
@@ -2790,7 +2830,7 @@ badges y conteos — Fase D. */
   gap: 12px;
   padding: 12px 16px;
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--color-surface);
   box-shadow: none;
 }

@@ -175,7 +175,7 @@ function Shell({
       <section className="admin-workspace__main">
         <header className="admin-header">
           <h1>{navigation.find(([path]) => path === route)?.[1]}</h1>
-          {route === "/admin/control" ? (
+          {["/admin/control", "/admin/incidencias"].includes(route) ? (
             <div className="admin-site-context" aria-label="Sede administrativa">
               <div className="admin-site-context__desktop" role="group" aria-label="Sede administrativa">
                 {sites.map((site) => (

@@ -53,13 +53,13 @@ export class ManagementStore {
   }
   dispose() { this.live = false; this.entries.clear(); this.floors.clear(); this.intents.clear(); this.results.clear(); this.listeners.clear() }
   private revKey(name: string, site?: string) { return `${name}:${name === 'groups' || name === 'catalog' ? 'global' : site ?? 'global'}` }
-  private observe(revisions: Revisions, site?: string) {
+  private observe(revisions: Revisions, site?: string, preserveIncidentSummary = false) {
     for (const [name, rev] of Object.entries(revisions)) if (rev !== undefined && rev < (this.floors.get(this.revKey(name, site)) ?? -1)) throw new Error('Respuesta obsoleta: actualiza la fuente autoritativa.')
     for (const [name, rev] of Object.entries(revisions)) {
       const key = this.revKey(name, site)
       if (rev !== undefined && rev > (this.floors.get(key) ?? -1)) {
         this.floors.set(key, rev)
-        this.invalidate(e => name === 'groups' || name === 'catalog' ? domain(e.action) === 'master' : domain(e.action) === name && (!site || !e.payload.site_id || e.payload.site_id === site))
+        this.invalidate(e => name === 'groups' || name === 'catalog' ? domain(e.action) === 'master' : domain(e.action) === name && (!site || !e.payload.site_id || e.payload.site_id === site) && !(preserveIncidentSummary && name === 'incidents' && e.action === 'summary' && e.payload.site_id === site))
       }
     }
     this.changed(revisions)
@@ -117,7 +117,35 @@ export class ManagementStore {
     return this.execute(d, intent)
   }
   retryMutation(d: Domain) { const intent = this.intents.get(d); if (!intent) return Promise.reject(new Error('No hay operación pendiente.')); return this.execute(d, intent) }
-  private execute(d: Domain, intent: Intent): Promise<MutationResult> {
+  private patchIgnoredIncident(site: string, result: MutationResult) {
+    if (!result.family_key || !result.until) return
+    const key = this.key('summary', { site_id: site }), entry = this.entries.get(key)
+    const summary = entry?.data as Reads['summary'] | undefined
+    if (!entry || !summary) return
+    const families = summary.families.map(family => {
+      if (family.family_key !== result.family_key) return family
+      const pending_cases = 0, suppressed_cases = family.suppressed_cases + family.pending_cases
+      const active_cases = family.active_cases
+      return { ...family, pending_cases, suppressed_cases, active_cases, active: active_cases > 0, family_state: suppressed_cases > 0 ? 'suprimida' as const : 'resuelta' as const, active_suppression_until: result.until!, scope_suppression_until: result.until!, reactivate_available: true }
+    })
+    entry.data = { ...summary, families, revisions: { ...summary.revisions, incidents: result.revisions.incidents ?? summary.revisions.incidents } }
+    this.entries.set(key, entry)
+  }
+  private patchReactivatedIncident(site: string, result: MutationResult) {
+    if (!result.family_key) return
+    const key = this.key('summary', { site_id: site }), entry = this.entries.get(key)
+    const summary = entry?.data as Reads['summary'] | undefined
+    if (!entry || !summary) return
+    const families = summary.families.map(family => {
+      if (family.family_key !== result.family_key) return family
+      const pending_cases = family.pending_cases + family.suppressed_cases
+      const suppressed_cases = 0
+      const active_cases = family.active_cases
+      return { ...family, pending_cases, suppressed_cases, active_cases, active: active_cases > 0, family_state: active_cases > 0 ? 'pendiente' as const : 'resuelta' as const, active_suppression_until: null, scope_suppression_until: null, reactivate_available: false }
+    })
+    entry.data = { ...summary, families, revisions: { ...summary.revisions, incidents: result.revisions.incidents ?? summary.revisions.incidents } }
+    this.entries.set(key, entry)
+  }  private execute(d: Domain, intent: Intent): Promise<MutationResult> {
     this.access(intent.site)
     if (intent.pending) return intent.pending
     intent.error = undefined
@@ -129,8 +157,11 @@ export class ManagementStore {
       if (d === 'incidents' && (result.family_key !== intent.payload.family_key || result.scope !== intent.payload.scope || result.site_id !== (intent.site ?? null))) throw new ManagementError('Mutación de otra familia/scope', true)
       // Replay is prior success, not a second local update. Never roll a cache back to its old revision.
       const fresh = Object.fromEntries(Object.entries(result.revisions).filter(([name, rev]) => rev !== undefined && rev >= (this.floors.get(this.revKey(name, intent.site)) ?? -1)))
-      this.observe(fresh, intent.site)
-      this.invalidate(e => d === 'master' ? domain(e.action) === 'master' : d === 'devices' ? domain(e.action) === 'devices' && (!e.payload.site_id || e.payload.site_id === intent.site) : domain(e.action) === 'incidents' && (!intent.site || !e.payload.site_id || e.payload.site_id === intent.site) && (e.action === 'summary' || e.payload.family_key === intent.payload.family_key))
+      const patchIncident = d === 'incidents' && (intent.action === 'ignore_30d' || intent.action === 'reactivate') && !!intent.site
+      this.observe(fresh, intent.site, patchIncident)
+      if (intent.action === 'ignore_30d' && patchIncident) this.patchIgnoredIncident(intent.site!, result)
+      else if (intent.action === 'reactivate' && patchIncident) this.patchReactivatedIncident(intent.site!, result)
+      else if (!patchIncident) this.invalidate(e => d === 'master' ? domain(e.action) === 'master' : d === 'devices' ? domain(e.action) === 'devices' && (!e.payload.site_id || e.payload.site_id === intent.site) : domain(e.action) === 'incidents' && (!intent.site || !e.payload.site_id || e.payload.site_id === intent.site) && (e.action === 'summary' || e.payload.family_key === intent.payload.family_key))
       if (intent.action === 'propose_delete') {
         this.invalidate(e => domain(e.action) === 'master')
         // Catálogo V3 is the next authority. Clear only its public cache after a confirmed or replayed proposal.
