@@ -49,6 +49,17 @@ describe('AdminDialog integración anidada', () => {
     }
   })
 
+  test('StrictMode no reemplaza el disparador original durante la doble ejecución de efectos', async () => {
+    const main = await source('src/main.tsx')
+    const dialog = await source(
+      'src/features/solog/admin/admin.dialog.tsx',
+    )
+
+    expect(main).toContain('<StrictMode>')
+    expect(dialog).toContain('returnFocusRef.current === null')
+    expect(dialog).toContain('lifecycleRef.current !== lifecycle')
+  })
+
   test('AdminSort conserva su Escape local y AdminDialog respeta defaultPrevented', async () => {
     const primitives = await source(
       'src/features/solog/admin/admin.primitives.tsx',
