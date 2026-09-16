@@ -1,6 +1,6 @@
 Admin Dialog Phases 2 3 Validation
 branch=admin-work
-commit=bd695b0215567d8867b69946a3f6e709273828da
+commit=6fa232e33f37d1fef2d46aee9f0205692d4697c7
 targeted_status=0
 lint_status=0
 build_status=0
@@ -10,130 +10,124 @@ diff_status=0
 bun test v1.3.14 (0d9b296a)
 
 ::group::tests/admin-dialog-integration.test.ts:
-(pass) AdminDialog integración anidada > Catálogo conserva detalle → configuración de producto y detalle → resolución de precio [0.74ms]
-(pass) AdminDialog integración anidada > resolución de precio conserva el tercer nivel hacia ValuationDialog [0.31ms]
-(pass) AdminDialog integración anidada > los consumidores anidados no implementan un trap o Escape paralelo [0.48ms]
-(pass) AdminDialog integración anidada > StrictMode no reemplaza el disparador original durante la doble ejecución de efectos [0.22ms]
-(pass) AdminDialog integración anidada > AdminSort conserva su Escape local y AdminDialog respeta defaultPrevented [0.20ms]
+(pass) AdminDialog integración anidada > Catálogo conserva detalle → configuración de producto y detalle → resolución de precio [0.95ms]
+(pass) AdminDialog integración anidada > resolución de precio conserva el tercer nivel hacia ValuationDialog [0.34ms]
+(pass) AdminDialog integración anidada > los consumidores anidados no implementan un trap o Escape paralelo [0.47ms]
+(pass) AdminDialog integración anidada > StrictMode no reemplaza el disparador original durante la doble ejecución de efectos [0.27ms]
+(pass) AdminDialog integración anidada > AdminSort conserva su Escape local y AdminDialog respeta defaultPrevented [0.21ms]
 
 ::endgroup::
 
 ::group::tests/admin-groups-v1.test.ts:
-(pass) Grupos V1 contrato y store > valida contrato V1, tipo derivado y candidatos sin Excluido [0.63ms]
-(pass) Grupos V1 contrato y store > exige ambos expected revisions y payloads V1 exactos [0.36ms]
-(pass) Grupos V1 contrato y store > conserva operation_id y payload exacto solamente para retry retryable [1.20ms]
-(pass) Grupos V1 contrato y store > conflicto de revisión recarga autoridad y una nueva intención usa otro operation_id [0.33ms]
+(pass) Grupos V1 contrato y store > valida contrato V1, tipo derivado y candidatos sin Excluido [0.64ms]
+(pass) Grupos V1 contrato y store > exige ambos expected revisions y payloads V1 exactos [0.38ms]
+(pass) Grupos V1 contrato y store > conserva operation_id y payload exacto solamente para retry retryable [1.22ms]
+(pass) Grupos V1 contrato y store > conflicto de revisión recarga autoridad y una nueva intención usa otro operation_id [0.30ms]
 (pass) Grupos V1 contrato y store > staging conflict no se reintenta y libera la intención para una nueva operación [0.19ms]
 
 ::endgroup::
 
 ::group::tests/admin-incidents-multisite.test.ts:
-(pass) Incidencias multisede > reutiliza las sedes cacheadas y carga las faltantes en orden canónico [0.60ms]
-(pass) Incidencias multisede > si todas las sedes están cacheadas no realiza nuevas lecturas [0.16ms]
+(pass) Incidencias multisede > reutiliza las sedes cacheadas y carga las faltantes en orden canónico [0.56ms]
+(pass) Incidencias multisede > si todas las sedes están cacheadas no realiza nuevas lecturas [0.17ms]
 (pass) Incidencias multisede > el toggle activa, desactiva y se invalida al cambiar la sede del Shell [0.08ms]
-(pass) Incidencias multisede > usa la expiración más temprana para refrescar el agregado multisede [0.13ms]
-(pass) Incidencias multisede > un fallo conserva las sedes ya cargadas y el reintento pide solo la faltante [0.28ms]
-(pass) Incidencias multisede > agrega por family_key, conserva fuentes y aplica la precedencia de estado [0.60ms]
-(pass) Incidencias multisede > la mutación confirmada conserva el summary, actualiza revisión y evita relecturas [1.69ms]
-(pass) Incidencias multisede > una mutación global invalida summaries de todas las sedes [0.41ms]
-(pass) Incidencias multisede > un fallo de mutación no altera la familia cacheada [0.80ms]
-(pass) Incidencias multisede > propose_delete actualiza deletion_proposed en todos los summaries cacheados [0.62ms]
-(pass) Incidencias multisede > CircleOff difiere propose_delete hasta la confirmación con la fuente seleccionada [0.41ms]
-(pass) Incidencias multisede > la fecha de supresión multisede solo se conserva cuando las fuentes coinciden [0.21ms]
-(pass) Incidencias multisede > Ignorar y Reactivar usan revisión global y el detalle multisede omite site_id [0.33ms]
+(pass) Incidencias multisede > usa la expiración más temprana para refrescar el agregado multisede [0.12ms]
+(pass) Incidencias multisede > un fallo conserva las sedes ya cargadas y el reintento pide solo la faltante [0.25ms]
+(pass) Incidencias multisede > agrega por family_key, conserva fuentes y aplica la precedencia de estado [0.64ms]
+(pass) Incidencias multisede > la mutación confirmada conserva el summary, actualiza revisión y evita relecturas [1.74ms]
+(pass) Incidencias multisede > una mutación global invalida summaries de todas las sedes [0.40ms]
+(pass) Incidencias multisede > un fallo de mutación no altera la familia cacheada [0.74ms]
+(pass) Incidencias multisede > propose_delete actualiza deletion_proposed en todos los summaries cacheados [0.66ms]
+(pass) Incidencias multisede > CircleOff difiere propose_delete hasta la confirmación con la fuente seleccionada [0.55ms]
+(pass) Incidencias multisede > la fecha de supresión multisede solo se conserva cuando las fuentes coinciden [0.27ms]
+(pass) Incidencias multisede > Ignorar y Reactivar usan revisión global y el detalle multisede omite site_id [0.37ms]
 
 ::endgroup::
 
 ::group::tests/admin-shell-devices.test.ts:
-(pass) Shell orders sites and aliases Casuarinas without changing IDs or input [0.25ms]
-(pass) Shell site selection is UI-only, retained across module loads, and scoped to this store [2.35ms]
-(pass) Shell does not accept unauthorized sites and falls back if access changes [0.50ms]
-(pass) Device last access uses Lima today, 12-hour time and explicit missing access [4.11ms]
-(pass) Shell selection emits only on a valid change and never invalidates cached datasets [0.33ms]
+(pass) Shell orders sites and aliases Casuarinas without changing IDs or input [0.29ms]
+(pass) Shell site selection is UI-only, retained across module loads, and scoped to this store [2.34ms]
+(pass) Shell does not accept unauthorized sites and falls back if access changes [0.33ms]
+(pass) Device last access uses Lima today, 12-hour time and explicit missing access [4.17ms]
+(pass) Shell selection emits only on a valid change and never invalidates cached datasets [0.32ms]
 
 ::endgroup::
 
 ::group::tests/admin-control-v3.test.ts:
-(pass) V10 dataset completo, payload mínimo y caché por sede/período/custom sin revalidación [2.97ms]
-(pass) V10 rechaza filtros/paginación remotos, fechas incorrectas y período no quincenal del Eye [0.75ms]
-(pass) V10 resumen base estable, búsqueda + estado locales, 100 por página sin mutar dataset [1.62ms]
-(pass) V10 cronología se cachea por sede/grupo/quincena, conserva filas y valores autoritativos [0.85ms]
-(pass) V10 rechaza versión, revisiones, campos ausentes, no finitos, duplicados y estados inválidos [1.54ms]
-(pass) V10 valida sede, grupo, período y custom antes de publicar en caché [2.01ms]
-(pass) V10 revisiones nuevas no recargan datasets ya cacheados; refresh y revocación sí los limpian [1.23ms]
-(pass) V10 Control no consume acciones anteriores ni envía filtros locales [1.00ms]
-(pass) Control retiró llamadas legacy y comparte modal de exportación [0.43ms]
+(pass) V10 dataset completo, payload mínimo y caché por sede/período/custom sin revalidación [3.10ms]
+(pass) V10 rechaza filtros/paginación remotos, fechas incorrectas y período no quincenal del Eye [0.69ms]
+(pass) V10 resumen base estable, búsqueda + estado locales, 100 por página sin mutar dataset [1.35ms]
+(pass) V10 cronología se cachea por sede/grupo/quincena, conserva filas y valores autoritativos [0.83ms]
+(pass) V10 rechaza versión, revisiones, campos ausentes, no finitos, duplicados y estados inválidos [1.28ms]
+(pass) V10 valida sede, grupo, período y custom antes de publicar en caché [2.04ms]
+(pass) V10 revisiones nuevas no recargan datasets ya cacheados; refresh y revocación sí los limpian [1.19ms]
+(pass) V10 Control no consume acciones anteriores ni envía filtros locales [0.94ms]
+(pass) Control retiró llamadas legacy y comparte modal de exportación [0.49ms]
 
 ::endgroup::
 
 ::group::tests/admin-products-masterdata.test.ts:
-(pass) Admin Productos con Master Data > registra la ruta Productos y la ubica en Inventario entre Catálogo y Grupos [0.42ms]
-(pass) Admin Productos con Master Data > filtra y ordena el conjunto completo local usando relaciones derivadas [0.53ms]
-(pass) Admin Productos con Master Data > pagina localmente sin alterar ni truncar el dataset compartido [0.19ms]
-(pass) Admin Productos con Master Data > carga Master Data solo desde Productos o el diálogo de configuración [0.40ms]
-(pass) Admin Productos con Master Data > onboarding conserva prepare_product y no vuelve a Catalog reference [0.17ms]
-(pass) Admin Productos con Master Data > QuickFilterChip muestra contadores derivados sin lectura adicional y conserva filtros restantes [0.40ms]
+(pass) Admin Productos con Master Data > registra la ruta Productos y la ubica en Inventario entre Catálogo y Grupos [0.22ms]
+(pass) Admin Productos con Master Data > filtra y ordena el conjunto completo local usando relaciones derivadas [0.46ms]
+(pass) Admin Productos con Master Data > pagina localmente sin alterar ni truncar el dataset compartido [0.14ms]
+(pass) Admin Productos con Master Data > carga Master Data solo desde Productos o el diálogo de configuración [0.53ms]
+(pass) Admin Productos con Master Data > onboarding conserva prepare_product y no vuelve a Catalog reference [0.22ms]
+(pass) Admin Productos con Master Data > QuickFilterChip muestra contadores derivados sin lectura adicional y conserva filtros restantes [0.46ms]
 
 ::endgroup::
 
 ::group::tests/admin-catalog-v3.structure.test.ts:
-(pass) Catálogo V3: estructura principal > las rutas cargan Catálogo y Productos como módulos lazy separados [0.70ms]
-(pass) Catálogo V3: estructura principal > Catálogo conserva Propuestas y retira la pestaña y lectura Productos [0.32ms]
-(pass) Catálogo V3: estructura principal > consume los cuatro estados y conserva la clasificación y acciones de Propuestas V3 [0.71ms]
-(pass) Catálogo V3: estructura principal > expone estados UI, reintentos y controles accesibles de staging y publicación [0.33ms]
-(pass) Catálogo V3: estructura principal > Productos opera sobre Master Data completo y conserva las mutaciones Catálogo V3 [0.26ms]
-(pass) la tabla de propuestas compone identidad y Cambio sin lecturas adicionales [0.35ms]
-(pass) Cambio conserva la flecha visual y expone una relación accesible anterior a nuevo [0.24ms]
+(pass) Catálogo V3: estructura principal > las rutas cargan Catálogo y Productos como módulos lazy separados [0.73ms]
+(pass) Catálogo V3: estructura principal > Catálogo conserva Propuestas y retira la pestaña y lectura Productos [0.31ms]
+(pass) Catálogo V3: estructura principal > consume los cuatro estados y conserva la clasificación y acciones de Propuestas V3 [0.70ms]
+(pass) Catálogo V3: estructura principal > expone estados UI, reintentos y controles accesibles de staging y publicación [0.35ms]
+(pass) Catálogo V3: estructura principal > Productos opera sobre Master Data completo y conserva las mutaciones Catálogo V3 [0.32ms]
+(pass) la tabla de propuestas compone identidad y Cambio sin lecturas adicionales [0.33ms]
+(pass) Cambio conserva la flecha visual y expone una relación accesible anterior a nuevo [0.25ms]
 
 ::endgroup::
 
 ::group::tests/admin-dialog.test.ts:
-(pass) AdminDialog stack > el último diálogo registrado es el único superior [0.14ms]
+(pass) AdminDialog stack > el último diálogo registrado es el único superior [0.15ms]
 (pass) AdminDialog stack > soporta tres niveles y reactiva el padre inmediato al cerrar el superior [0.06ms]
-(pass) AdminDialog stack > desregistrar dos veces no altera la pila ni emite una revisión extra [0.09ms]
-(pass) AdminDialog stack > AdminDialog limita Escape y backdrop al diálogo superior [0.17ms]
-(pass) AdminDialog stack > AdminDialog centraliza entrada, trap y restauración de foco [0.26ms]
+(pass) AdminDialog stack > desregistrar dos veces no altera la pila ni emite una revisión extra [0.15ms]
+(pass) AdminDialog stack > AdminDialog limita Escape y backdrop al diálogo superior [0.18ms]
+(pass) AdminDialog stack > AdminDialog centraliza entrada, trap y restauración de foco [0.24ms]
 
 ::endgroup::
 
 ::group::tests/admin-primitives-post-review.test.ts:
-(pass) Delta post-revisión: primitives compartidas Admin > QuickFilterChip usa una primitive común y preserva Control como consumidor de referencia [0.76ms]
-(pass) Delta post-revisión: primitives compartidas Admin > StateView usa la primitive común de Catálogo también en Incidencias [0.59ms]
-(pass) Delta post-revisión: primitives compartidas Admin > el delta permanece frontend-only y no agrega lecturas para los contadores [0.30ms]
+(pass) Delta post-revisión: primitives compartidas Admin > QuickFilterChip usa una primitive común y preserva Control como consumidor de referencia [0.75ms]
+(pass) Delta post-revisión: primitives compartidas Admin > StateView usa la primitive común de Catálogo también en Incidencias [0.60ms]
+(pass) Delta post-revisión: primitives compartidas Admin > el delta permanece frontend-only y no agrega lecturas para los contadores [0.33ms]
 
 ::endgroup::
 
 ::group::tests/admin-catalog-v3.integration.test.ts:
-(pass) Catálogo V3 integración > carga conjuntos completos por estado sin conservar la lectura Productos en el store activo [0.77ms]
-(pass) Catálogo V3 integración > carga pendientes inicialmente y completa el alta con grupo existente hasta publicación [1.29ms]
-(pass) Catálogo V3 integración > integra reincorporación, exclusión y grupo unitario en el flujo de propuestas [0.44ms]
-(pass) Catálogo V3 integración > integra las tres resoluciones de precio y la decisión xN contractual [0.36ms]
-(pass) Catálogo V3 integración > moderador consulta, revisa y prepara, pero no publica [0.21ms]
-(pass) Catálogo V3 integración > expone loading/error/retry de lectura sin llamadas reales a Supabase [0.35ms]
+(pass) Catálogo V3 integración > carga conjuntos completos por estado sin conservar la lectura Productos en el store activo [0.74ms]
+(pass) Catálogo V3 integración > carga pendientes inicialmente y completa el alta con grupo existente hasta publicación [1.19ms]
+(pass) Catálogo V3 integración > integra reincorporación, exclusión y grupo unitario en el flujo de propuestas [0.41ms]
+(pass) Catálogo V3 integración > integra las tres resoluciones de precio y la decisión xN contractual [0.34ms]
+(pass) Catálogo V3 integración > moderador consulta, revisa y prepara, pero no publica [0.25ms]
+(pass) Catálogo V3 integración > expone loading/error/retry de lectura sin llamadas reales a Supabase [0.33ms]
 
 ::endgroup::
 
 ::group::tests/admin-valuation-dialog.test.ts:
 (pass) Configuración de valorizado compartida > representa OFF como null/null y ON exige un par completo válido [0.06ms]
-(pass) Configuración de valorizado compartida > ofrece x6, x10, x12, x20 y admite Otro entero mayor que uno [0.09ms]
+(pass) Configuración de valorizado compartida > ofrece x6, x10, x12, x20 y admite Otro entero mayor que uno [0.04ms]
 (pass) Configuración de valorizado compartida > calcula una sugerencia auxiliar sin sustituir el precio manual [0.17ms]
-(pass) Configuración de valorizado compartida > permanece desacoplado de RPC y stores [0.19ms]
+(pass) Configuración de valorizado compartida > permanece desacoplado de RPC y stores [0.21ms]
 
 ::endgroup::
 
  68 pass
  0 fail
  375 expect() calls
-Ran 68 tests across 11 files. [116.00ms]
+Ran 68 tests across 11 files. [118.00ms]
 
 === LINT ===
 $ eslint .
-
-/home/runner/work/SOLOG/SOLOG/src/features/solog/admin/admin.dialog.tsx
-  63:26  warning  The ref value 'lifecycleRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'lifecycleRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
-
-✖ 1 problem (0 errors, 1 warning)
-
 
 === BUILD ===
 $ tsc -b && vite build
@@ -150,46 +144,46 @@ dist/assets/cajero-axNPaxYa.css                                       13.19 kB �
 dist/assets/cajero-CXRqGFMh.css                                       30.78 kB │ gzip:  5.15 kB
 dist/assets/index-C9IfEHEo.css                                        34.19 kB │ gzip:  9.23 kB
 dist/assets/admin.v2-BHD9Fx-1.css                                     64.61 kB │ gzip:  9.86 kB
-dist/assets/check-tftLhDPa.js                                          0.11 kB │ gzip:  0.13 kB
-dist/assets/chevron-down-DuOXpcY7.js                                   0.11 kB │ gzip:  0.13 kB
-dist/assets/chevron-up-DhQMZGqR.js                                     0.11 kB │ gzip:  0.13 kB
-dist/assets/chevron-left-C5Fw_uXL.js                                   0.11 kB │ gzip:  0.13 kB
-dist/assets/chevron-right-BYGevk0u.js                                  0.11 kB │ gzip:  0.13 kB
-dist/assets/x-CAvDZ5zm.js                                              0.14 kB │ gzip:  0.14 kB
-dist/assets/search-DxXtBGgc.js                                         0.16 kB │ gzip:  0.16 kB
-dist/assets/tablet-DKlFKsKs.js                                         0.20 kB │ gzip:  0.18 kB
-dist/assets/circle-off-BwFt5QIM.js                                     0.23 kB │ gzip:  0.19 kB
-dist/assets/refresh-cw-B3oXKk_f.js                                     0.31 kB │ gzip:  0.21 kB
-dist/assets/package-DYOTpvTf.js                                        0.36 kB │ gzip:  0.24 kB
+dist/assets/check-CTwNojQT.js                                          0.11 kB │ gzip:  0.13 kB
+dist/assets/chevron-down-DKC9jmyl.js                                   0.11 kB │ gzip:  0.13 kB
+dist/assets/chevron-up-B_5_Bft7.js                                     0.11 kB │ gzip:  0.13 kB
+dist/assets/chevron-left-BlAQrvCC.js                                   0.11 kB │ gzip:  0.13 kB
+dist/assets/chevron-right-iaNrlJ2-.js                                  0.11 kB │ gzip:  0.13 kB
+dist/assets/x-BkIENpGw.js                                              0.14 kB │ gzip:  0.14 kB
+dist/assets/search-DKeUQei5.js                                         0.16 kB │ gzip:  0.16 kB
+dist/assets/tablet-BZzk2tMr.js                                         0.20 kB │ gzip:  0.18 kB
+dist/assets/circle-off-PmRblCgW.js                                     0.23 kB │ gzip:  0.19 kB
+dist/assets/refresh-cw-K7MkC5gT.js                                     0.31 kB │ gzip:  0.22 kB
+dist/assets/package-C8t2xZWj.js                                        0.36 kB │ gzip:  0.25 kB
 dist/assets/admin.v2.format-c6HNLBD9.js                                0.37 kB │ gzip:  0.27 kB
-dist/assets/admin.masterdata.context-lbV0Zet0.js                       0.48 kB │ gzip:  0.33 kB
-dist/assets/admin.v2.presentation-DuAy84e5.js                          0.56 kB │ gzip:  0.39 kB
-dist/assets/package-open-DEIRSPwg.js                                   0.56 kB │ gzip:  0.32 kB
-dist/assets/triangle-alert-BFcKW_Kx.js                                 0.73 kB │ gzip:  0.37 kB
-dist/assets/send-mCrDEKPs.js                                           0.90 kB │ gzip:  0.48 kB
-dist/assets/admin.management.presentation-Px_tv0Y1.js                  1.86 kB │ gzip:  0.91 kB
-dist/assets/admin.control.v2.export-Bx-HwdjO.js                        2.22 kB │ gzip:  1.02 kB
-dist/assets/admin.control.v2.export-dialog-Bj3P-R8V.js                 2.58 kB │ gzip:  1.22 kB
-dist/assets/admin.valuation-dialog-wL8YPYwM.js                         3.05 kB │ gzip:  1.29 kB
-dist/assets/admin.dialog-Bfm8BIRF.js                                   3.14 kB │ gzip:  1.42 kB
-dist/assets/admin.product-setup.dialog-B7TWPApl.js                     3.90 kB │ gzip:  1.60 kB
-dist/assets/detalles.export-DlXgN0Xo.js                                4.61 kB │ gzip:  1.96 kB
-dist/assets/admin.dispositivos.v2-ZATB-Pfh.js                          6.10 kB │ gzip:  2.24 kB
-dist/assets/cajero.utils-OJ4O61Z_.js                                   7.00 kB │ gzip:  3.07 kB
-dist/assets/admin.dashboard.v2-DJDhAsV7.js                             8.34 kB │ gzip:  2.77 kB
-dist/assets/admin.productos.v1-B1nT_f8m.js                             9.74 kB │ gzip:  3.13 kB
-dist/assets/admin.control.v2-BU-36c_I.js                              13.64 kB │ gzip:  4.24 kB
-dist/assets/admin.incidencias.v2-BdS2DmPv.js                          16.45 kB │ gzip:  5.39 kB
-dist/assets/admin.catalogo.page.v3-CNZOjo-E.js                        18.68 kB │ gzip:  5.52 kB
-dist/assets/admin.grupos.v2-Qd9vNTtD.js                               23.97 kB │ gzip:  6.64 kB
-dist/assets/protected-app-B3VrU4_R.js                                 26.13 kB │ gzip:  8.51 kB
-dist/assets/detalles-BA-3bj9U.js                                      27.28 kB │ gzip:  7.88 kB
-dist/assets/cajero.app-B7vnfxYI.js                                    28.22 kB │ gzip:  8.20 kB
-dist/assets/admin.v2.app-BfkUS9ZA.js                                  55.73 kB │ gzip: 14.32 kB
-dist/assets/cajero-D01fSUCP.js                                        56.65 kB │ gzip: 14.68 kB
+dist/assets/admin.masterdata.context-C9TFdTRT.js                       0.48 kB │ gzip:  0.33 kB
+dist/assets/admin.v2.presentation-BrcMc8TG.js                          0.56 kB │ gzip:  0.39 kB
+dist/assets/package-open-BCp1Zw7V.js                                   0.56 kB │ gzip:  0.32 kB
+dist/assets/triangle-alert-DGgnKHOr.js                                 0.73 kB │ gzip:  0.38 kB
+dist/assets/send-0maIUems.js                                           0.90 kB │ gzip:  0.48 kB
+dist/assets/admin.management.presentation-Bzncwbft.js                  1.86 kB │ gzip:  0.91 kB
+dist/assets/admin.control.v2.export-Dc-tY3Wm.js                        2.22 kB │ gzip:  1.02 kB
+dist/assets/admin.control.v2.export-dialog-DGAzt-Vm.js                 2.58 kB │ gzip:  1.22 kB
+dist/assets/admin.valuation-dialog-CvyJ16qr.js                         3.05 kB │ gzip:  1.29 kB
+dist/assets/admin.dialog-CUn6wo6F.js                                   3.16 kB │ gzip:  1.42 kB
+dist/assets/admin.product-setup.dialog-DiWsAln6.js                     3.90 kB │ gzip:  1.60 kB
+dist/assets/detalles.export-ERrrcY9m.js                                4.61 kB │ gzip:  1.97 kB
+dist/assets/admin.dispositivos.v2-CRxg9y8o.js                          6.10 kB │ gzip:  2.24 kB
+dist/assets/cajero.utils-DUdkpA8p.js                                   7.00 kB │ gzip:  3.07 kB
+dist/assets/admin.dashboard.v2-Afpk64Qq.js                             8.34 kB │ gzip:  2.77 kB
+dist/assets/admin.productos.v1-BXypxjuY.js                             9.74 kB │ gzip:  3.13 kB
+dist/assets/admin.control.v2-D27xWsqu.js                              13.64 kB │ gzip:  4.24 kB
+dist/assets/admin.incidencias.v2-DGQW4VC3.js                          16.45 kB │ gzip:  5.38 kB
+dist/assets/admin.catalogo.page.v3-CYxUc-7a.js                        18.68 kB │ gzip:  5.51 kB
+dist/assets/admin.grupos.v2-DX6xTpZa.js                               23.97 kB │ gzip:  6.63 kB
+dist/assets/protected-app-bpFzo8vx.js                                 26.13 kB │ gzip:  8.51 kB
+dist/assets/detalles-Dsd4vzSz.js                                      27.28 kB │ gzip:  7.87 kB
+dist/assets/cajero.app-UlF5kW5R.js                                    28.22 kB │ gzip:  8.20 kB
+dist/assets/admin.v2.app-Bt9upFHd.js                                  55.73 kB │ gzip: 14.31 kB
+dist/assets/cajero-DkSe4gpl.js                                        56.65 kB │ gzip: 14.68 kB
 dist/assets/browser-CB9WaMml.js                                       70.71 kB │ gzip: 19.69 kB
-dist/assets/index-BTbe6F-a.js                                        202.02 kB │ gzip: 63.81 kB
+dist/assets/index-BXBvBREb.js                                        202.02 kB │ gzip: 63.81 kB
 
-[32m✓ built in 363ms[39m
+[32m✓ built in 372ms[39m
 
 === DIFF CHECK ===
