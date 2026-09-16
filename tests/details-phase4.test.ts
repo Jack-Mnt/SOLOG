@@ -38,8 +38,8 @@ describe('D3 export V4', () => {
   })
   test('Excel bajo demanda y sin contrato Control', async () => {
     const source = await Bun.file('src/features/solog/detalles/detalles.export.ts').text()
-    expect(source).toContain("sheet: 'Resumen'")
-    expect(source).toContain("sheet: 'Diferencias'")
+    expect(source).toMatch(/sheet:\s*["']Resumen["']/)
+    expect(source).toMatch(/sheet:\s*["']Diferencias["']/)
     expect(source).toMatch(/await\s+import\(\s*["']write-excel-file\/browser["']\s*\)/)
     expect(source).not.toContain('rpc_solog_control_export')
     expect(source).not.toContain('balance_valorizado')
