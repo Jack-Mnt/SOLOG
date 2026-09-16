@@ -3402,3 +3402,8 @@ while structural exceptions keep their size. */
 .admin-notice--error {
   color: var(--color-danger);
 }
+.admin-incidents__product { min-width:0; }
+.admin-incidents__product > span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.admin-incidents__product small { display:block; color:var(--color-text-secondary); font-weight:400; }
+.admin-incidents__sites { display:flex; gap:4px; white-space:nowrap; }
+.admin-incidents__type-badge { white-space:nowrap; }

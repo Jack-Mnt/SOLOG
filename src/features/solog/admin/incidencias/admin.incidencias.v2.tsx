@@ -13,7 +13,7 @@ import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
 import { ReadNotice } from "../admin.management.presentation";
 import { AdminNotice } from "../admin.primitives";
-import { adminTimestamp } from "../admin.v2.format";
+import { incidentSiteAbbreviation, incidentTimestamp } from "./admin.incidencias.format";
 import { orderedAdminSites } from "../admin.site-ui";
 import {
   incidentAllScopeActive,
@@ -110,11 +110,11 @@ function FamilyDetail({
                       <StateBadge state={item.estado} />
                     </td>
                     <td>{item.active ? "Vigente" : "Histórica"}</td>
-                    <td>{adminTimestamp(item.first_seen_at)}</td>
-                    <td>{adminTimestamp(item.last_seen_at)}</td>
+                    <td>{incidentTimestamp(item.first_seen_at)}</td>
+                    <td>{incidentTimestamp(item.last_seen_at)}</td>
                     <td>
                       {item.resuelta_at
-                        ? adminTimestamp(item.resuelta_at)
+                        ? incidentTimestamp(item.resuelta_at)
                         : "—"}
                     </td>
                     <td>{item.occurrence_count}</td>
@@ -223,7 +223,7 @@ function IgnoreDialog({
               <span>
                 <StateBadge state={source.family.family_state} />
                 {source.family.scope_suppression_until
-                  ? ` hasta ${adminTimestamp(source.family.scope_suppression_until)}`
+                  ? ` hasta ${incidentTimestamp(source.family.scope_suppression_until)}`
                   : ""}
               </span>
             </div>
@@ -652,120 +652,15 @@ export function AdminIncidentsV2() {
             tabIndex={0}
           >
             <table>
-              <thead>
-                <tr>
-                  <th>Incidencia</th>
-                  <th>Estado</th>
-                  <th>Casos</th>
-                  <th>Supresión</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Tipo</th><th>Producto</th><th>Sedes</th><th>{state === "pendiente" ? "Última detección" : state === "suprimida" ? "Ignorada hasta" : "Resuelta"}</th><th>Acciones</th></tr></thead>
               <tbody>
-                {families.map((item) => (
-                  <tr key={item.family_key}>
-                    <th scope="row">
-                      <span>{typeLabels[item.tipo]}</span>
-                      <small>
-                        {item.c_interno ??
-                          item.c_interno_original ??
-                          "Sin código"}
-                      </small>
-                    </th>
-                    <td>
-                      <StateBadge state={item.family_state} />
-                    </td>
-                    <td>
-                      {item.active_cases} activos · {item.resolved_cases}{" "}
-                      resueltos
-                    </td>
-                    <td>
-                      {item.active_suppression_until ? (
-                        <>
-                          Vigente hasta{" "}
-                          {adminTimestamp(item.active_suppression_until)}
-                        </>
-                      ) : (
-                        "Sin supresión"
-                      )}
-                    </td>
-                    <td>
-                      <div className="admin-v2-actions">
-                        <button
-                          type="button"
-                          className="button button--secondary"
-                          aria-label={`Ver repeticiones ${item.family_key}`}
-                          onClick={() => setDetailFamily(item)}
-                        >
-                          <Eye size={16} aria-hidden="true" />
-                        </button>
-                        {item.active &&
-                          !item.sources.every(
-                            (source) => source.family.reactivate_available,
-                          ) && (
-                            <button
-                              type="button"
-                              className="button button--secondary icon-button--warning"
-                              disabled={pending}
-                              onClick={() => setIgnoreFamily(item)}
-                            >
-                              <AlarmClockOff size={16} aria-hidden="true" />
-                            </button>
-                          )}
-                        {item.sources.find(
-                          (source) => source.family.reactivate_available,
-                        ) && (
-                          <button
-                            type="button"
-                            className="button button--secondary"
-                            disabled={pending}
-                            onClick={() =>
-                              void actSource(
-                                item.sources.find(
-                                  (source) =>
-                                    source.family.reactivate_available,
-                                )!,
-                                "reactivate",
-                              ).catch(() => {})
-                            }
-                          >
-                            <RotateCcw size={16} aria-hidden="true" />
-                          </button>
-                        )}
-                        {item.sources.find((source) =>
-                          canProposeDelete(source.family),
-                        ) && (
-                          <button
-                            type="button"
-                            className="button button--secondary icon-button--danger"
-                            disabled={pending}
-                            aria-label="Proponer eliminación"
-                            title="Proponer eliminación"
-                            onClick={() => {
-                              const source = item.sources.find((candidate) =>
-                                canProposeDelete(candidate.family),
-                              );
-                              if (source)
-                                setDeleteProposal({ family: item, source });
-                            }}
-                          >
-                            <CircleOff size={16} aria-hidden="true" />
-                          </button>
-                        )}
-                        {item.deletion_proposed && (
-                          <button
-                            type="button"
-                            className="button button--secondary"
-                            disabled
-                          >
-                            <CircleOff size={16} aria-hidden="true" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {!families.length && (
+                {families.map((item) => {
+                  const product = typeof item.datos.producto === "string" && item.datos.producto.trim() ? item.datos.producto : "Producto sin nombre";
+                  const date = state === "pendiente" ? item.last_seen_at : state === "suprimida" ? item.active_suppression_until : item.resolved_at;
+                  const reactivable = item.sources.find((source) => source.family.reactivate_available);
+                  const deletable = item.sources.find((source) => canProposeDelete(source.family));
+                  return <tr key={item.family_key}><td><span className="admin-attribute-badge admin-incidents__type-badge">{typeLabels[item.tipo]}</span></td><th scope="row" className="admin-incidents__product"><span>{product}</span><small>C. interno: {item.c_interno ?? item.c_interno_original ?? "Sin código"}</small></th><td><div className="admin-incidents__sites">{item.sources.map((source) => <span key={source.siteId} className="admin-attribute-badge">{incidentSiteAbbreviation(source.siteName)}</span>)}</div></td><td>{incidentTimestamp(date)}</td><td><div className="admin-v2-actions"><button type="button" className="icon-button" aria-label={`Ver repeticiones ${item.family_key}`} title="Ver detalle" onClick={() => setDetailFamily(item)}><Eye size={16} aria-hidden="true" /></button>{state === "pendiente" && item.active && !item.sources.every((source) => source.family.reactivate_available) && <button type="button" className="icon-button icon-button--warning" aria-label="Ignorar 30 días" title="Ignorar 30 días" disabled={pending} onClick={() => setIgnoreFamily(item)}><AlarmClockOff size={16} aria-hidden="true" /></button>}{state === "pendiente" && deletable && <button type="button" className="icon-button icon-button--danger" aria-label="Proponer eliminación" title="Proponer eliminación" disabled={pending} onClick={() => setDeleteProposal({ family:item, source:deletable })}><CircleOff size={16} aria-hidden="true" /></button>}{state === "suprimida" && reactivable && <button type="button" className="icon-button" aria-label="Reactivar incidencia" title="Reactivar incidencia" disabled={pending} onClick={() => void actSource(reactivable,"reactivate").catch(() => {})}><RotateCcw size={16} aria-hidden="true" /></button>}</div></td></tr>;
+                })}                {!families.length && (
                   <tr>
                     <td colSpan={5}>
                       No hay incidencias que coincidan con los filtros locales.
