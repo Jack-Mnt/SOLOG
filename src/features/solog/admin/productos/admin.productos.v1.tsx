@@ -14,6 +14,7 @@ import type { MasterDataProduct } from "../masterdata/admin.masterdata.v1";
 import { QueryState, Value } from "../admin.v2.presentation";
 import { AdminSort, IconButton } from "../admin.primitives";
 import { useCatalogStore } from "../catalogo/admin.catalogo.context";
+import { CatalogMutationNotice, catalogMutationError } from "../catalogo/admin.catalogo.feedback";
 import {
   ProductSetupDialog,
   type ProductSetupTarget,
@@ -24,24 +25,6 @@ import {
   type ProductModeFilter,
   type ProductSort,
 } from "./admin.productos.model";
-
-function CatalogIntentNotice({ onRetry }: { onRetry: () => void }) {
-  const intent = useCatalogStore().intent();
-  if (!intent) return null;
-  return (
-    <div className="notice" role="status">
-      <p>
-        {intent.error ?? "Operación en curso…"} · {intent.payload.operation_id}
-      </p>
-      {!intent.pending && (
-        <button type="button" className="button" onClick={onRetry}>
-          <RotateCcw size={16} aria-hidden="true" />
-          Reintentar misma operación
-        </button>
-      )}
-    </div>
-  );
-}
 
 function ProductStateProposal({
   product,
@@ -67,11 +50,7 @@ function ProductStateProposal({
       })
       .then(onClose)
       .catch((reason: unknown) =>
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "No se pudo crear la propuesta.",
-        ),
+        setError(catalogMutationError(store, reason, "No se pudo crear la propuesta.")),
       );
   };
   const retry = () => {
@@ -80,11 +59,7 @@ function ProductStateProposal({
       .retryMutation()
       .then(onClose)
       .catch((reason: unknown) =>
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "No se pudo confirmar la propuesta.",
-        ),
+        setError(catalogMutationError(store, reason, "No se pudo confirmar la propuesta.")),
       );
   };
   return (
@@ -116,7 +91,7 @@ function ProductStateProposal({
           <dd>{groupName ?? "—"}</dd>
         </div>
       </dl>
-      {intent && <CatalogIntentNotice onRetry={retry} />}
+      {intent && <CatalogMutationNotice onRetry={retry} />}
       <button
         type="button"
         className="button"
