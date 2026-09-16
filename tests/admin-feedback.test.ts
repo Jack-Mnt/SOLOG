@@ -100,14 +100,14 @@ describe('Admin feedback fases 2 y 3', () => {
   })
 
   test('errores retryable de Catálogo permanecen en una única superficie', async () => {
-    const feedback = await Bun.file(
-      'src/features/solog/admin/catalogo/admin.catalogo.feedback.tsx',
+    const feedbackUtils = await Bun.file(
+      'src/features/solog/admin/catalogo/admin.catalogo.feedback.utils.ts',
     ).text()
     const catalog = await Bun.file(
       'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
     ).text()
 
-    expect(feedback).toContain("if (store.intent()) return ''")
+    expect(feedbackUtils).toContain("if (store.intent()) return ''")
     expect(catalog).toContain('catalogMutationError(store, reason')
     expect(catalog).toContain('store.intent() ? "" : priceErrorMessage(reason)')
   })
