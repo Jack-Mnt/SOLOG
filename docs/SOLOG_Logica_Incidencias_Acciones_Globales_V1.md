@@ -1,7 +1,7 @@
 # SOLOG — Lógica Incidencias — Acciones Globales V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO TÉCNICAMENTE — SMOKE HUMANO PENDIENTE  
+**Estado:** IMPLEMENTADO TÉCNICAMENTE — SMOKE HUMANO PENDIENTE
 **Clasificación:** Nivel C — lógica de negocio, contrato Admin e integración backend/frontend  
 **Fecha:** 2026-09-16
 
