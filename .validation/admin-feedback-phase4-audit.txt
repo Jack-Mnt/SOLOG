@@ -1,9 +1,9 @@
 Admin Feedback Phase 4 Static Audit
-commit=48e5bce50976e19f6b02d5e5c5515cc9c7efce0a
+commit=85b8d750dea10b3c3668d9056d1a8d8298d7b323
 
 === TSX operation/replay references ===
 src/features/solog/admin/admin.management.presentation.tsx:28:    const operationId = String(intent.payload.operation_id)
-src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:630:    ? `intent:${String(pendingIntent.payload.operation_id)}:${pendingIntent.attempt}:${pendingIntent.error ? "error" : "pending"}`
+src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:631:    ? `intent:${String(pendingIntent.payload.operation_id)}:${pendingIntent.attempt}:${pendingIntent.error ? "error" : "pending"}`
 src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:858:      {receipt.operationId && !receipt.error && !receipt.result && (
 src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:878:          !admin || !!receipt.pending || (!receipt.operationId && !preview?.ok)
 src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:884:        ) : receipt.operationId ? (
@@ -13,7 +13,7 @@ src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:891:          : rec
 src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:28:import { CatalogMutationNotice } from "./admin.catalogo.feedback";
 src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:37:import { AdminNotice } from "../admin.primitives";
 src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:440:          <p role="status">
-src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:454:        {intent && <CatalogMutationNotice onRetry={retry} />}
+src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:454:        {intent && !setup && !price && <CatalogMutationNotice onRetry={retry} />}
 src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:518:        {error && <p role="alert">{error}</p>}
 src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:786:        {intent && <CatalogMutationNotice onRetry={retry} />}
 src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx:796:        {error && <p role="alert">{error}</p>}
@@ -41,11 +41,11 @@ src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:275:      {error &
 src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:358:      {error && <AdminNotice tone="error">{error}</AdminNotice>}
 src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:380:  const [feedbackOccurrence, setFeedbackOccurrence] = useState(0);
 src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:381:  const [dismissedNotice, setDismissedNotice] = useState("");
-src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:631:    : `local:${feedbackOccurrence}`;
-src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:716:      {noticeMessage && dismissedNotice !== noticeKey && (
-src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:717:        <AdminNotice
-src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:733:        </AdminNotice>
+src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:632:    : `local:${feedbackOccurrence}`;
+src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:717:      {noticeMessage && !mutationModalOpen && dismissedNotice !== noticeKey && (
+src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:718:        <AdminNotice
+src/features/solog/admin/incidencias/admin.incidencias.v2.tsx:734:        </AdminNotice>
 src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx:6:import { ReadNotice, MutationNotice } from "../admin.management.presentation";
-src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx:65:        <MutationNotice domain="devices" showResult={!confirmation} />
+src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx:65:        {!confirmation && <MutationNotice domain="devices" />}
 src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx:234:          {error && <p role="alert">{error}</p>}
 src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx:235:          <MutationNotice
