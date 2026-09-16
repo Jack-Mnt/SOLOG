@@ -80,3 +80,15 @@ export function restoreDialogFocus(target: HTMLElement | null) {
     window.setTimeout(restore, 0)
   })
 }
+
+
+export function restoreDialogFocusAfterLifecycle(
+  target: HTMLElement | null,
+  lifecycleRef: { current: number },
+  lifecycle: number,
+) {
+  queueMicrotask(() => {
+    if (lifecycleRef.current !== lifecycle) return
+    restoreDialogFocus(target)
+  })
+}
