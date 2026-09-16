@@ -248,6 +248,84 @@ function IgnoreDialog({
   );
 }
 
+type DeleteProposal = {
+  family: MergedIncidentFamily;
+  source: IncidentFamilySource;
+};
+
+function DeleteProposalDialog({
+  proposal,
+  onClose,
+  onConfirm,
+}: {
+  proposal: DeleteProposal;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+}) {
+  const [proposing, setProposing] = useState(false);
+  const [error, setError] = useState("");
+  const product =
+    typeof proposal.source.family.datos.producto === "string"
+      ? proposal.source.family.datos.producto
+      : null;
+  const confirm = () => {
+    if (proposing) return;
+    setError("");
+    setProposing(true);
+    void onConfirm()
+      .then(onClose)
+      .catch((reason) =>
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "No se pudo proponer la eliminación.",
+        ),
+      )
+      .finally(() => setProposing(false));
+  };
+  return (
+    <AdminDialog
+      title="Proponer eliminación"
+      description="Se creará una propuesta de eliminación para revisión en Catálogo."
+      onClose={onClose}
+      closeDisabled={proposing}
+      footer={
+        <>
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={proposing}
+            onClick={onClose}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="button button--danger"
+            disabled={proposing}
+            onClick={confirm}
+          >
+            {proposing ? "Proponiendo…" : "Proponer eliminación"}
+          </button>
+        </>
+      }
+    >
+      <p>
+        <strong>
+          Producto ausente ·{" "}
+          {proposal.source.family.c_interno ??
+            proposal.source.family.c_interno_original ??
+            "Sin código"}
+        </strong>
+      </p>
+      {product && <p>{product}</p>}
+      <p>
+        Detectado en: <strong>{proposal.source.siteName}</strong>
+      </p>
+      {error && <p role="alert">{error}</p>}
+    </AdminDialog>
+  );
+}
 export function AdminIncidentsV2() {
   const admin = useAdminStore();
   const store = useManagement();
@@ -259,12 +337,15 @@ export function AdminIncidentsV2() {
   const [ignoreFamily, setIgnoreFamily] = useState<MergedIncidentFamily | null>(
     null,
   );
+  const [deleteProposal, setDeleteProposal] = useState<DeleteProposal | null>(
+    null,
+  );
   const [allOriginSite, setAllOriginSite] = useState<string | null>(null);
   const [allLoading, setAllLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const allLoadRef = useRef<Promise<void> | null>(null);
-  const allSnapshotRef = useRef<MergedIncidentFamily[]>([]);
+  const [allSnapshot, setAllSnapshot] = useState<MergedIncidentFamily[]>([]);
   const siteId = admin.siteId;
   const allActive = incidentAllScopeActive(allOriginSite, siteId);
   const normalQuery = useManagementQuery(
@@ -310,7 +391,9 @@ export function AdminIncidentsV2() {
     [allComplete, allSources],
   );
   useEffect(() => {
-    if (allActive && mergedAll) allSnapshotRef.current = mergedAll;
+    if (!allActive || !mergedAll) return;
+    const update = window.setTimeout(() => setAllSnapshot(mergedAll), 0);
+    return () => window.clearTimeout(update);
   }, [allActive, mergedAll]);
 
   const allNextExpiry = nextIncidentSummaryExpiry(store, sites);
@@ -359,13 +442,13 @@ export function AdminIncidentsV2() {
   }, [allActive, allComplete, allNextExpiry, ensureAllSummaries, sites, store]);
 
   const displayedFamilies = useMemo(() => {
-    if (allActive) return mergedAll ?? allSnapshotRef.current;
+    if (allActive) return mergedAll ?? allSnapshot;
     if (!normalQuery.data || !siteId) return [];
     const siteName = sites.find((site) => site.id === siteId)?.nombre ?? siteId;
     return mergeIncidentSummaries([
       { siteId, siteName, summary: normalQuery.data },
     ]);
-  }, [allActive, mergedAll, normalQuery.data, siteId, sites]);
+  }, [allActive, allSnapshot, mergedAll, normalQuery.data, siteId, sites]);
   const families = useMemo(
     () =>
       displayedFamilies.filter(
@@ -409,15 +492,18 @@ export function AdminIncidentsV2() {
   const actSource = (
     source: IncidentFamilySource,
     action: "reactivate" | "propose_delete",
-  ) => {
+  ): Promise<void> => {
     const summary = store.peek("summary", { site_id: source.siteId }).data;
     if (!summary) {
-      setError("La sede ya no tiene un summary vigente. Reintenta la acción.");
-      return;
+      const reason = new Error(
+        "La sede ya no tiene un summary vigente. Reintenta la acción.",
+      );
+      setError(reason.message);
+      return Promise.reject(reason);
     }
     setError("");
     setNotice("");
-    void store
+    return store
       .mutation(
         action,
         {
@@ -434,13 +520,14 @@ export function AdminIncidentsV2() {
             "La propuesta de eliminación quedó pendiente para revisión en Catálogo.",
           );
       })
-      .catch((reason) =>
+      .catch((reason) => {
         setError(
           reason instanceof Error
             ? reason.message
             : "No se pudo actualizar la incidencia.",
-        ),
-      );
+        );
+        throw reason;
+      });
   };
   const pending = !!store.intent("incidents");
   const hasData = allActive || !!normalQuery.data;
@@ -612,13 +699,13 @@ export function AdminIncidentsV2() {
                             className="button button--secondary"
                             disabled={pending}
                             onClick={() =>
-                              actSource(
+                              void actSource(
                                 item.sources.find(
                                   (source) =>
                                     source.family.reactivate_available,
                                 )!,
                                 "reactivate",
-                              )
+                              ).catch(() => {})
                             }
                           >
                             <RotateCcw size={16} aria-hidden="true" />
@@ -631,14 +718,15 @@ export function AdminIncidentsV2() {
                             type="button"
                             className="button button--secondary icon-button--danger"
                             disabled={pending}
-                            onClick={() =>
-                              actSource(
-                                item.sources.find((source) =>
-                                  canProposeDelete(source.family),
-                                )!,
-                                "propose_delete",
-                              )
-                            }
+                            aria-label="Proponer eliminación"
+                            title="Proponer eliminación"
+                            onClick={() => {
+                              const source = item.sources.find((candidate) =>
+                                canProposeDelete(candidate.family),
+                              );
+                              if (source)
+                                setDeleteProposal({ family: item, source });
+                            }}
                           >
                             <CircleOff size={16} aria-hidden="true" />
                           </button>
@@ -646,7 +734,7 @@ export function AdminIncidentsV2() {
                         {item.deletion_proposed && (
                           <button
                             type="button"
-                            className="button button--secondary icon-button--danger"
+                            className="button button--secondary"
                             disabled
                           >
                             <CircleOff size={16} aria-hidden="true" />
@@ -683,6 +771,14 @@ export function AdminIncidentsV2() {
           family={ignoreFamily}
           onClose={() => setIgnoreFamily(null)}
           onError={setError}
+        />
+      )}
+      `r`n{" "}
+      {deleteProposal && (
+        <DeleteProposalDialog
+          proposal={deleteProposal}
+          onClose={() => setDeleteProposal(null)}
+          onConfirm={() => actSource(deleteProposal.source, "propose_delete")}
         />
       )}
     </section>

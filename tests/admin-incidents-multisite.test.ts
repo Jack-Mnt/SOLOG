@@ -137,4 +137,15 @@ describe("Incidencias multisede", () => {
     await expect(store.mutation("ignore_30d", { family_key: before.families[0].family_key, scope: "site", site_id: "site-a" }, before.revisions.incidents, "site-a")).rejects.toThrow("red caída");
     expect(store.peek("summary", { site_id: "site-a" }).data?.families[0].family_state).toBe("pendiente");
   });
+  test("CircleOff difiere propose_delete hasta la confirmación con la fuente seleccionada", async () => {
+    const source = await Bun.file("src/features/solog/admin/incidencias/admin.incidencias.v2.tsx").text();
+    expect(source).toContain("setDeleteProposal({ family: item, source })");
+    expect(source).toContain('title="Proponer eliminación"');
+    expect(source).toContain('onConfirm={() => actSource(deleteProposal.source, "propose_delete")}');
+    expect(source).toContain('scope: "site"');
+    expect(source).toContain('summary.revisions.incidents');
+    expect(source).toContain('Detectado en: <strong>{proposal.source.siteName}</strong>');
+    expect(source).toMatch(/void onConfirm\(\)\s*\.then\(onClose\)\s*\.catch/);
+    expect(source).toContain('proposing ? "Proponiendo…" : "Proponer eliminación"');
+  });
 });
