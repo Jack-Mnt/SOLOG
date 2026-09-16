@@ -2448,6 +2448,11 @@ workspace y cards permanecen como superficies estructurales neutras;
   min-height: 36px;
   white-space: nowrap;
 }
+.admin-incidents__all-sites[aria-pressed="true"] {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
 .admin-incidents__sources {
   display: grid;
   gap: 8px;

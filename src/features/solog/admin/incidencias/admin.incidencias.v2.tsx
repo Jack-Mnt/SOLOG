@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  AlarmClockOff,
   ChevronLeft,
   ChevronRight,
   CircleOff,
@@ -518,7 +519,6 @@ export function AdminIncidentsV2() {
                           onClick={() => setDetailFamily(item)}
                         >
                           <Eye size={16} aria-hidden="true" />
-                          Ver detalle
                         </button>
                         {item.active &&
                           !item.sources.every(
@@ -530,8 +530,7 @@ export function AdminIncidentsV2() {
                               disabled={pending}
                               onClick={() => setIgnoreFamily(item)}
                             >
-                              <Clock size={16} aria-hidden="true" />
-                              Ignorar 30 días
+                              <AlarmClockOff size={16} aria-hidden="true" />
                             </button>
                           )}
                         {item.sources.find(
@@ -572,7 +571,6 @@ export function AdminIncidentsV2() {
                             }
                           >
                             <CircleOff size={16} aria-hidden="true" />
-                            Proponer eliminación
                           </button>
                         )}
                         {item.deletion_proposed && (
