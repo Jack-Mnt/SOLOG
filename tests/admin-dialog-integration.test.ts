@@ -56,8 +56,11 @@ describe('AdminDialog integración anidada', () => {
     )
 
     expect(main).toContain('<StrictMode>')
+    const focus = await source(
+      'src/features/solog/admin/admin.dialog.focus.ts',
+    )
     expect(dialog).toContain('returnFocusRef.current === null')
-    expect(dialog).toContain('lifecycleRef.current !== lifecycle')
+    expect(focus).toContain('lifecycleRef.current !== lifecycle')
   })
 
   test('AdminSort conserva su Escape local y AdminDialog respeta defaultPrevented', async () => {
