@@ -20,6 +20,12 @@ const latestNullable = (values: Array<string | null>) => {
   const present = values.filter((value): value is string => value !== null);
   return present.length ? latest(present) : null;
 };
+const consistentNullable = (values: Array<string | null>) => {
+  const present = values.filter((value): value is string => value !== null);
+  if (!present.length) return null;
+  const [first] = present;
+  return present.every((value) => value === first) ? first : null;
+};
 
 export interface IncidentSummaryCache {
   peek(action: "summary", payload: { site_id: string }): { data?: Reads["summary"]; expiresAt?: number };
@@ -94,7 +100,7 @@ export function mergeIncidentSummaries(summaries: readonly IncidentSummarySource
       first_seen_at: earliest(sources.map((source) => source.family.first_seen_at)),
       last_seen_at: latest(sources.map((source) => source.family.last_seen_at)),
       resolved_at: latestNullable(sources.map((source) => source.family.resolved_at)),
-      active_suppression_until: latestNullable(sources.map((source) => source.family.active_suppression_until)),
+      active_suppression_until: consistentNullable(sources.map((source) => source.family.active_suppression_until)),
       scope_suppression_until: null,
       reactivate_available: false,
       deletion_proposed: sources.some((source) => source.family.deletion_proposed),
