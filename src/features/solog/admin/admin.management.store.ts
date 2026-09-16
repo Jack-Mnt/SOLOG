@@ -52,14 +52,14 @@ export class ManagementStore {
     this.publication = { operationId: this.publication.operationId }; this.emit()
   }
   dispose() { this.live = false; this.entries.clear(); this.floors.clear(); this.intents.clear(); this.results.clear(); this.listeners.clear() }
-  private revKey(name: string, site?: string) { return `${name}:${name === 'groups' || name === 'catalog' ? 'global' : site ?? 'global'}` }
+  private revKey(name: string, site?: string) { const revisionName = name === 'incidents_global' ? 'incidents' : name; return `${revisionName}:${name === 'groups' || name === 'catalog' || name === 'incidents_global' ? 'global' : site ?? 'global'}` }
   private observe(revisions: Revisions, site?: string, preserveIncidentSummary = false) {
     for (const [name, rev] of Object.entries(revisions)) if (rev !== undefined && rev < (this.floors.get(this.revKey(name, site)) ?? -1)) throw new Error('Respuesta obsoleta: actualiza la fuente autoritativa.')
     for (const [name, rev] of Object.entries(revisions)) {
       const key = this.revKey(name, site)
       if (rev !== undefined && rev > (this.floors.get(key) ?? -1)) {
         this.floors.set(key, rev)
-        this.invalidate(e => name === 'groups' || name === 'catalog' ? domain(e.action) === 'master' : domain(e.action) === name && (!site || !e.payload.site_id || e.payload.site_id === site) && !(preserveIncidentSummary && name === 'incidents' && e.action === 'summary' && e.payload.site_id === site))
+        this.invalidate(e => name === 'groups' || name === 'catalog' ? domain(e.action) === 'master' : name === 'incidents_global' ? domain(e.action) === 'incidents' : domain(e.action) === name && (!site || !e.payload.site_id || e.payload.site_id === site) && !(preserveIncidentSummary && name === 'incidents' && e.action === 'summary' && e.payload.site_id === site))
       }
     }
     this.changed(revisions)
@@ -145,7 +145,24 @@ export class ManagementStore {
     })
     entry.data = { ...summary, families, revisions: { ...summary.revisions, incidents: result.revisions.incidents ?? summary.revisions.incidents } }
     this.entries.set(key, entry)
-  }  private execute(d: Domain, intent: Intent): Promise<MutationResult> {
+  }
+  private patchDeletionProposed(result: MutationResult) {
+    if (!result.family_key) return
+    for (const [key, entry] of this.entries) {
+      if (entry.action !== 'summary' || !entry.data) continue
+      const summary = entry.data as Reads['summary']
+      let changed = false
+      const families = summary.families.map(family => {
+        if (family.family_key !== result.family_key || family.deletion_proposed) return family
+        changed = true
+        return { ...family, deletion_proposed: true }
+      })
+      if (!changed) continue
+      entry.data = { ...summary, families }
+      this.entries.set(key, entry)
+    }
+  }
+  private execute(d: Domain, intent: Intent): Promise<MutationResult> {
     this.access(intent.site)
     if (intent.pending) return intent.pending
     intent.error = undefined
@@ -161,7 +178,10 @@ export class ManagementStore {
       this.observe(fresh, intent.site, patchIncident)
       if (intent.action === 'ignore_30d' && patchIncident) this.patchIgnoredIncident(intent.site!, result)
       else if (intent.action === 'reactivate' && patchIncident) this.patchReactivatedIncident(intent.site!, result)
-      else if (!patchIncident) this.invalidate(e => d === 'master' ? domain(e.action) === 'master' : d === 'devices' ? domain(e.action) === 'devices' && (!e.payload.site_id || e.payload.site_id === intent.site) : domain(e.action) === 'incidents' && (!intent.site || !e.payload.site_id || e.payload.site_id === intent.site) && (e.action === 'summary' || e.payload.family_key === intent.payload.family_key))
+      else if (intent.action === 'propose_delete') {
+        this.patchDeletionProposed(result)
+        this.invalidate(e => domain(e.action) === 'incidents' && e.action === 'detail' && e.payload.family_key === intent.payload.family_key)
+      } else if (!patchIncident) this.invalidate(e => d === 'master' ? domain(e.action) === 'master' : d === 'devices' ? domain(e.action) === 'devices' && (!e.payload.site_id || e.payload.site_id === intent.site) : domain(e.action) === 'incidents' && (!intent.site || !e.payload.site_id || e.payload.site_id === intent.site) && (e.action === 'summary' || e.payload.family_key === intent.payload.family_key))
       if (intent.action === 'propose_delete') {
         this.invalidate(e => domain(e.action) === 'master')
         // Catálogo V3 is the next authority. Clear only its public cache after a confirmed or replayed proposal.
