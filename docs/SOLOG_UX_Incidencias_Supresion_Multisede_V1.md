@@ -1,7 +1,7 @@
 # SOLOG — UX Incidencias — Supresión Multisede V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO FASES 1–2 — VALIDACIÓN FASE 3 PENDIENTE
+**Estado:** IMPLEMENTADO Y VALIDADO TÉCNICAMENTE — SMOKE PREVIEW PENDIENTE
 **Clasificación:** Nivel B — comportamiento UX derivado de la lógica global de Incidencias  
 **Fecha:** 2026-09-16
 
@@ -93,6 +93,15 @@ Implementado en `admin-work`:
 - Se conserva `propose_delete` como acción `site-scoped`.
 - No se realizaron cambios backend ni cambios sobre `master`.
 
-Pendiente:
+Validación técnica de Fase 3:
 
-- Fase 3: tests completos, lint, build, `git diff --check`, revisión de regresiones y smoke humano en Preview de `admin-work`.
+- tests dirigidos del bloque;
+- suite completa contrastada contra el baseline conocido;
+- lint;
+- build;
+- `git diff --check`;
+- revisión de regresiones y alcance.
+
+Pendiente únicamente:
+
+- smoke humano en Preview de `admin-work` antes del cierre definitivo del Bloque 2.
