@@ -46,8 +46,12 @@ describe('Catálogo V3: estructura principal', () => {
   })
 
   test('expone estados UI, reintentos y controles accesibles de staging y publicación', async () => {
-    const ui = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
-    for (const state of ['QueryState', 'role="alert"', 'role="status"', 'Reintentar misma operación', 'No hay propuestas', 'Existe staging preparado', 'No publicable:', 'Confirmar publicación', 'Recuperar publicación']) expect(ui).toContain(state)
+    const [ui, feedback] = await Promise.all([
+      source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx'),
+      source('src/features/solog/admin/catalogo/admin.catalogo.feedback.tsx'),
+    ])
+    for (const state of ['QueryState', 'role="alert"', 'role="status"', 'No hay propuestas', 'Existe staging preparado', 'No publicable:', 'Confirmar publicación', 'Recuperar publicación']) expect(ui).toContain(state)
+    expect(feedback).toContain('Reintentar misma operación')
     expect(ui).toContain('aria-label="Estado de propuestas"')
     expect(ui).toMatch(/disabled=\{\s*!admin\s*\|\|\s*!!receipt\.pending\s*\|\|\s*\(\s*!receipt\.operationId\s*&&\s*!preview\?\.ok\s*\)\s*\}/s)
   })
