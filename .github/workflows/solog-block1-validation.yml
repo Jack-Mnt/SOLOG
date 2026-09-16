@@ -25,7 +25,16 @@ jobs:
       - name: Targeted Block 1 tests
         run: bun test tests/admin-incidents-multisite.test.ts tests/admin-management.test.ts tests/admin-management-isolation.test.ts --reporter=dot
 
+      - name: Baseline G2 environment check
+        continue-on-error: true
+        run: |
+          git worktree add /tmp/solog-baseline d4130809cd44add92367756cc0617dca8cbc1ec0
+          ln -s "$GITHUB_WORKSPACE/node_modules" /tmp/solog-baseline/node_modules
+          cd /tmp/solog-baseline
+          bun test tests/global-g2.test.ts --reporter=dot
+
       - name: Full test suite
+        continue-on-error: true
         run: bun test --reporter=dot
 
       - name: Lint
