@@ -326,16 +326,6 @@ export function AdminIncidentsV2() {
       {error && <p role="alert">{error}</p>}
       {query.data ? (
         <>
-          <p className="admin-incidents__period admin-section-secondary-row">
-            {query.data.period.from} — {query.data.period.to}
-          </p>
-          <div className="admin-table-bar admin-incidents__table-bar admin-result-count-row">
-            <p className="admin-result-count">
-              {families.length === query.data.families.length
-                ? `${families.length} resultados`
-                : `${families.length} de ${query.data.families.length} resultados`}
-            </p>
-          </div>
           <div className="admin-table-section admin-incidents__table">
             <div
               className="admin-v2-table"

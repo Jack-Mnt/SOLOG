@@ -381,46 +381,41 @@ function ControlResults({
         aria-label="Resumen de resultados"
       >
         <div className="admin-quick-filter-chips">
-          <button
-            type="button"
-            className="admin-quick-filter-chip"
-            aria-pressed={selectedState === ""}
-            onClick={() => onStateChange("")}
-          >
-            <b>{view.summary.total} Total</b>
-          </button>
-          <button
-            type="button"
-            className="admin-quick-filter-chip tone--success"
-            aria-pressed={selectedState === "Coincide"}
-            onClick={() => onStateChange("Coincide")}
-          >
-            <b>{view.summary.coincide} Coinciden</b>
-          </button>
-          <button
-            type="button"
-            className="admin-quick-filter-chip tone--warning"
-            aria-pressed={selectedState === "Recontar"}
-            onClick={() => onStateChange("Recontar")}
-          >
-            <b>{view.summary.pending_recount} Recontar</b>
-          </button>
-          <button
-            type="button"
-            className="admin-quick-filter-chip tone--info"
-            aria-pressed={selectedState === "Confirmada"}
-            onClick={() => onStateChange("Confirmada")}
-          >
-            <b>{view.summary.confirmed} Confirmadas</b>
-          </button>
-          <button
-            type="button"
-            className="admin-quick-filter-chip tone--danger"
-            aria-pressed={selectedState === "Inconsistente"}
-            onClick={() => onStateChange("Inconsistente")}
-          >
-            <b>{view.summary.inconsistent} Inconsistentes</b>
-          </button>
+          {(
+            [
+              ["", "Total", view.summary.total, ""],
+              ["Coincide", "Coinciden", view.summary.coincide, "tone--success"],
+              [
+                "Recontar",
+                "Recontar",
+                view.summary.pending_recount,
+                "tone--warning",
+              ],
+              [
+                "Confirmada",
+                "Confirmadas",
+                view.summary.confirmed,
+                "tone--info",
+              ],
+              [
+                "Inconsistente",
+                "Inconsistentes",
+                view.summary.inconsistent,
+                "tone--danger",
+              ],
+            ] as const
+          ).map(([value, label, count, tone]) => (
+            <button
+              key={value || "total"}
+              type="button"
+              className={`admin-quick-filter-chip ${tone}`.trim()}
+              aria-pressed={selectedState === value}
+              onClick={() => onStateChange(value)}
+            >
+              <span>{label}</span>
+              <strong>{count}</strong>
+            </button>
+          ))}
         </div>
         <AdminSort<ControlSort>
           value={sort}

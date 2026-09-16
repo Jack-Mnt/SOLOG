@@ -1139,9 +1139,7 @@ detalle y exportación sin cambios. */
   font-size: 0.78rem;
   white-space: nowrap;
 }
-.admin-catalog .admin-state-views {
-  margin-bottom: 12px;
-}
+
 .admin-state-views {
   display: flex;
   flex-wrap: wrap;
@@ -1936,11 +1934,8 @@ sin alterar las cards de otros módulos. */
 }
 .admin-v2-table {
   overflow: auto;
-  /* margin: 1rem 0; */
 }
-.admin-catalog__table {
-  margin: 0;
-}
+
 .admin-v2-table table {
   border-collapse: collapse;
   width: 100%;
