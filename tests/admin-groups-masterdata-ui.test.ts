@@ -135,6 +135,9 @@ describe('Composición F3 de Grupos e Incidencias', () => {
     expect(ui).toContain('<CircleDollarSign')
     expect(ui).toContain('setEdit(group.id)')
     expect(ui).toContain('setValuationGroup(group.id)')
+    expect(ui).toMatch(/["']Agrupado["']\s*,\s*["']Agrupado["']/)
+    expect(ui).toMatch(/["']configured["']\s*,\s*["']S\/\. paquete["']/)
+    expect(ui).toMatch(/["']none["']\s*,\s*["']S\/\. unitario["']/)
   })
 
   test('Incidencias parte de Pendientes y deriva las StateView desde summary', async () => {
@@ -153,6 +156,9 @@ describe('Composición F3 de Grupos e Incidencias', () => {
     expect(ui).toContain('const stateCounts = useMemo')
     expect(ui).toContain('(item) => type === "all" || item.tipo === type')
     expect(ui).toContain('<strong>{stateCounts[view.state]}</strong>')
+    expect(ui).not.toContain('query.retry')
+    expect(ui).not.toContain('Actualizar incidencias')
+    expect(ui).not.toContain('RefreshCw')
     expect(ui).toMatch(/useManagementQuery\(\s*["']summary["']\s*,\s*site\s*\?\s*\{\s*site_id:\s*site\s*\}\s*:\s*\{\s*\}\s*\)/s)
     expect(ui.match(/useManagementQuery\(\s*["']summary["']/g) ?? []).toHaveLength(1)
   })
