@@ -1,18 +1,13 @@
 import { useState } from 'react'
-import { Plus, RotateCcw } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
+import { CatalogMutationNotice, catalogMutationError } from '../catalogo/admin.catalogo.feedback'
 import { useCatalogStore } from '../catalogo/admin.catalogo.context'
 import { useMasterData } from '../masterdata/admin.masterdata.context'
 import type { MasterDataSetupRequired } from '../masterdata/admin.masterdata.v1'
 import { QueryState } from '../admin.v2.presentation'
 
 export type ProductSetupTarget = Pick<MasterDataSetupRequired, 'propuesta_fingerprint' | 'c_interno' | 'producto' | 'precio' | 'tipo'>
-
-function CatalogIntentNotice({ onRetry }: { onRetry: () => void }) {
-  const intent = useCatalogStore().intent()
-  if (!intent) return null
-  return <div className="notice" role="status"><p>{intent.error ?? 'Operación en curso…'} · {intent.payload.operation_id}</p>{!intent.pending && <button type="button" className="button" onClick={onRetry}><RotateCcw size={16} aria-hidden="true" />Reintentar misma operación</button>}</div>
-}
 
 export function ProductSetupDialog({ target, onClose, onComplete }: { target: ProductSetupTarget; onClose: () => void; onComplete: () => void }) {
   const store = useCatalogStore()
@@ -29,9 +24,16 @@ export function ProductSetupDialog({ target, onClose, onComplete }: { target: Pr
     const payload = mode === 'existing_group'
       ? { propuesta_fingerprint: target.propuesta_fingerprint, mode: 'existing_group' as const, grupo_id: groupId, marca: brand.trim() || null }
       : { propuesta_fingerprint: target.propuesta_fingerprint, mode: 'new_unit' as const, categoria_id: categoryId, marca: brand.trim() || null }
-    void store.mutation('prepare_product', payload).then(onComplete).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo preparar el producto.'))
+    void store.mutation('prepare_product', payload)
+      .then(onComplete)
+      .catch((reason: unknown) => setError(catalogMutationError(store, reason, 'No se pudo preparar el producto.')))
   }
-  const retry = () => { setError(''); void store.retryMutation().then(onComplete).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo confirmar la configuración.')) }
+  const retry = () => {
+    setError('')
+    void store.retryMutation()
+      .then(onComplete)
+      .catch((reason: unknown) => setError(catalogMutationError(store, reason, 'No se pudo confirmar la configuración.')))
+  }
   const valid = !!masterData.snapshot && (mode === 'existing_group' ? !!groupId : !!categoryId)
   return <AdminDialog title="Configurar producto" description={`${target.producto} · C. interno ${target.c_interno}`} onClose={onClose} closeDisabled={!!intent?.pending} wide>
     <p>La configuración queda en staging y no modifica el catálogo ni los grupos hasta la publicación.</p>
@@ -43,6 +45,7 @@ export function ProductSetupDialog({ target, onClose, onComplete }: { target: Pr
         : <label>Categoría<select required value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Seleccionar</option>{masterData.snapshot.categories.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>}
       <button className="button" disabled={!!intent || !valid}><Plus size={16} aria-hidden="true" />{target.tipo === 'reincorporar_producto' ? 'Preparar reincorporación' : 'Preparar producto'}</button>
     </form>}
-    {intent && <CatalogIntentNotice onRetry={retry} />}{error && <p role="alert">{error}</p>}
+    {intent && <CatalogMutationNotice onRetry={retry} />}
+    {error && <p role="alert">{error}</p>}
   </AdminDialog>
 }
