@@ -17,9 +17,9 @@ describe('D1 adaptador V4 y entrada aislada', () => {
   })
   test('API dedicada sin tablas, v1 ni payloads legacy', async () => {
     const api = await Bun.file('src/features/solog/detalles/detalles.v2.ts').text()
-    expect(api).toContain("supabase.rpc('rpc_solog_details_v2', { p_action: action, p_payload: payload })")
+    expect(api).toMatch(/supabase\s*\.\s*rpc\(\s*["']rpc_solog_details_v2["']\s*,\s*\{\s*p_action:\s*action\s*,\s*p_payload:\s*payload\s*\}\s*\)/s)
     expect(api).not.toContain('.from(')
-    expect(await Bun.file('src/features/solog/api.ts').text()).not.toContain("'rpc_solog_details'")
+    expect(await Bun.file('src/features/solog/api.ts').text()).not.toMatch(/["']rpc_solog_details["']/)
   })
   test('entrada directa sin bootstrap general', async () => {
     const source = await Bun.file('src/protected-app.tsx').text()
