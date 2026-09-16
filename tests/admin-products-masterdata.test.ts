@@ -54,13 +54,13 @@ describe('Admin Productos con Master Data', () => {
     expect(products).toContain('const masterData = useMasterData()')
     expect(setup).toContain('const masterData = useMasterData()')
     expect(catalog).not.toContain('useMasterData')
-    expect(catalog).not.toContain("useCatalogQuery('reference'")
-    expect(products).not.toContain("useCatalogQuery('products'")
+    expect(catalog).not.toMatch(/useCatalogQuery\(\s*["']reference["']/)
+    expect(products).not.toMatch(/useCatalogQuery\(\s*["']products["']/)
   })
 
   test('onboarding conserva prepare_product y no vuelve a Catalog reference', async () => {
     const setup = await source('src/features/solog/admin/productos/admin.product-setup.dialog.tsx')
-    expect(setup).toContain("store.mutation('prepare_product'")
+    expect(setup).toMatch(/store\s*\.\s*mutation\(\s*["']prepare_product["']/)
     expect(setup).toContain('masterData.snapshot.groups.map')
     expect(setup).toContain('masterData.snapshot.categories.map')
     expect(setup).not.toContain("'reference'")
@@ -70,10 +70,10 @@ describe('Admin Productos con Master Data', () => {
   test('QuickFilterChip muestra contadores derivados sin lectura adicional y conserva filtros restantes', async () => {
     const ui = await source('src/features/solog/admin/productos/admin.productos.v1.tsx')
     expect(ui).toContain('const modeCounts = useMemo')
-    expect(ui).toContain("mode: 'all'")
+    expect(ui).toMatch(/mode:\s*["']all["']/)
     expect(ui).toContain('categoryId: categoryFilter')
     expect(ui).toContain('<strong>{modeCounts[value]}</strong>')
-    expect(ui).not.toContain("useCatalogQuery('products'")
+    expect(ui).not.toMatch(/useCatalogQuery\(\s*["']products["']/)
 
     const derived = deriveMasterData(snapshot)
     const available = filterAndSortProducts(snapshot.products, derived, { search: 'cola', mode: 'all', categoryId: 'cat-a', sort: 'name' })
