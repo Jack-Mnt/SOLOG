@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClockOff,
   ChevronLeft,
@@ -15,8 +15,12 @@ import { ReadNotice, MutationNotice } from "../admin.management.presentation";
 import { adminTimestamp } from "../admin.v2.format";
 import { orderedAdminSites } from "../admin.site-ui";
 import {
+  incidentAllScopeActive,
   loadIncidentSummaries,
   mergeIncidentSummaries,
+  nextIncidentSummaryExpiry,
+  reconcileIncidentAllScope,
+  toggleIncidentAllScope,
   type IncidentFamilySource,
   type MergedIncidentFamily,
 } from "./admin.incidents.multisite";
@@ -259,8 +263,10 @@ export function AdminIncidentsV2() {
   const [allLoading, setAllLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const allLoadRef = useRef<Promise<void> | null>(null);
+  const allSnapshotRef = useRef<MergedIncidentFamily[]>([]);
   const siteId = admin.siteId;
-  const allActive = allOriginSite === siteId;
+  const allActive = incidentAllScopeActive(allOriginSite, siteId);
   const normalQuery = useManagementQuery(
     "summary",
     { site_id: siteId },
@@ -270,10 +276,23 @@ export function AdminIncidentsV2() {
     () => orderedAdminSites(admin.bootstrap?.allowed_sites ?? []),
     [admin.bootstrap],
   );
+  const ensureAllSummaries = useCallback(() => {
+    if (allLoadRef.current) return allLoadRef.current;
+    setAllLoading(true);
+    const request = loadIncidentSummaries(store, sites).then(() => undefined);
+    allLoadRef.current = request;
+    const cleanup = () => {
+      if (allLoadRef.current === request) allLoadRef.current = null;
+      setAllLoading(false);
+    };
+    void request.then(cleanup, cleanup);
+    return request;
+  }, [sites, store]);
 
   useEffect(() => {
-    if (!allOriginSite || allOriginSite === siteId) return;
-    const cancel = window.setTimeout(() => setAllOriginSite(null), 0);
+    const reconciled = reconcileIncidentAllScope(allOriginSite, siteId);
+    if (reconciled === allOriginSite) return;
+    const cancel = window.setTimeout(() => setAllOriginSite(reconciled), 0);
     return () => window.clearTimeout(cancel);
   }, [allOriginSite, siteId]);
 
@@ -285,14 +304,75 @@ export function AdminIncidentsV2() {
         : null;
     })
     .filter((value): value is NonNullable<typeof value> => value !== null);
+  const allComplete = sites.length > 0 && allSources.length === sites.length;
+  const mergedAll = useMemo(
+    () => (allComplete ? mergeIncidentSummaries(allSources) : null),
+    [allComplete, allSources],
+  );
+  useEffect(() => {
+    if (allActive && mergedAll) allSnapshotRef.current = mergedAll;
+  }, [allActive, mergedAll]);
+
+  const allNextExpiry = nextIncidentSummaryExpiry(store, sites);
+  useEffect(() => {
+    if (!allActive || !sites.length) return;
+
+    const refreshIfNeeded = () => {
+      const missing = sites.some(
+        (site) => !store.peek("summary", { site_id: site.id }).data,
+      );
+      if (!missing) return;
+      setError("");
+      setNotice("");
+      void ensureAllSummaries().catch((reason) => {
+        setAllOriginSite(null);
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "No se pudo actualizar todas las sedes.",
+        );
+      });
+    };
+
+    if (!allComplete) {
+      refreshIfNeeded();
+      return;
+    }
+
+    const delay =
+      allNextExpiry === undefined
+        ? null
+        : Math.max(0, allNextExpiry - Date.now()) + 25;
+    const timer =
+      delay === null ? null : window.setTimeout(refreshIfNeeded, delay);
+    const onPageShow = () => refreshIfNeeded();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refreshIfNeeded();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [
+    allActive,
+    allComplete,
+    allNextExpiry,
+    ensureAllSummaries,
+    sites,
+    store,
+  ]);
+
   const displayedFamilies = useMemo(() => {
-    if (allActive) return mergeIncidentSummaries(allSources);
+    if (allActive) return mergedAll ?? allSnapshotRef.current;
     if (!normalQuery.data || !siteId) return [];
     const siteName = sites.find((site) => site.id === siteId)?.nombre ?? siteId;
     return mergeIncidentSummaries([
       { siteId, siteName, summary: normalQuery.data },
     ]);
-  }, [allActive, allSources, normalQuery.data, siteId, sites]);
+  }, [allActive, mergedAll, normalQuery.data, siteId, sites]);
   const families = useMemo(
     () =>
       displayedFamilies.filter(
@@ -315,24 +395,22 @@ export function AdminIncidentsV2() {
     };
   }, [displayedFamilies, type]);
   const toggleAll = async () => {
-    if (allActive) {
+    const nextOrigin = toggleIncidentAllScope(allOriginSite, siteId);
+    if (nextOrigin === null) {
       setAllOriginSite(null);
       return;
     }
     setError("");
     setNotice("");
-    setAllLoading(true);
     try {
-      await loadIncidentSummaries(store, sites);
-      setAllOriginSite(siteId);
+      await ensureAllSummaries();
+      setAllOriginSite(nextOrigin);
     } catch (reason) {
       setError(
         reason instanceof Error
           ? reason.message
           : "No se pudo cargar todas las sedes.",
       );
-    } finally {
-      setAllLoading(false);
     }
   };
   const actSource = (

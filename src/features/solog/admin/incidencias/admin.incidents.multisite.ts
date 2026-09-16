@@ -22,8 +22,30 @@ const latestNullable = (values: Array<string | null>) => {
 };
 
 export interface IncidentSummaryCache {
-  peek(action: "summary", payload: { site_id: string }): { data?: Reads["summary"] };
+  peek(action: "summary", payload: { site_id: string }): { data?: Reads["summary"]; expiresAt?: number };
   load(action: "summary", payload: { site_id: string }): Promise<Reads["summary"]>;
+}
+
+export function incidentAllScopeActive(originSite: string | null, currentSite: string) {
+  return originSite !== null && originSite === currentSite;
+}
+
+export function toggleIncidentAllScope(originSite: string | null, currentSite: string) {
+  return incidentAllScopeActive(originSite, currentSite) ? null : currentSite;
+}
+
+export function reconcileIncidentAllScope(originSite: string | null, currentSite: string) {
+  return incidentAllScopeActive(originSite, currentSite) ? originSite : null;
+}
+
+export function nextIncidentSummaryExpiry(
+  store: Pick<IncidentSummaryCache, "peek">,
+  sites: readonly { id: string }[],
+) {
+  if (!sites.length) return undefined;
+  const expiries = sites.map((site) => store.peek("summary", { site_id: site.id }).expiresAt);
+  if (expiries.some((expiry) => expiry === undefined)) return undefined;
+  return Math.min(...(expiries as number[]));
 }
 
 /** Loads only absent site summaries, in the caller-provided canonical site order. */
