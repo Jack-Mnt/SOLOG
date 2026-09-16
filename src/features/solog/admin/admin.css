@@ -2722,6 +2722,9 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-v2-workspace .admin-section-secondary-row + .admin-table-section {
   margin-top: 12px;
 }
+.admin-v2-workspace .admin-control__secondary-row {
+  gap: 12px;
+}
 /* QuickFilterChip,
 StateView,
 badges y conteos — Fase D. */
