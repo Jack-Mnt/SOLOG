@@ -2,7 +2,7 @@ import { domain, managementRead, managementMutate, publishManagement, Management
 import type { AdminBootstrap } from './admin.v2'
 
 interface Entry { action: ReadAction; payload: Payload; data?: Reads[ReadAction]; error?: string; pending?: Promise<Reads[ReadAction]>; expiresAt?: number }
-interface Intent { action: MutationAction; payload: Payload; site?: string; pending?: Promise<MutationResult>; error?: string }
+interface Intent { action: MutationAction; payload: Payload; site?: string; attempt: number; pending?: Promise<MutationResult>; error?: string }
 export class ManagementStore {
   private entries = new Map<string, Entry>()
   private listeners = new Set<() => void>()
@@ -11,6 +11,7 @@ export class ManagementStore {
   private accessEpoch = 0
   private floors = new Map<string, number>()
   private intents = new Map<Domain, Intent>()
+  private resultOccurrences = new Map<Domain, number>()
   results = new Map<Domain, MutationResult>()
   publication: { operationId?: string; pending?: Promise<PublicationResult>; result?: PublicationResult; error?: string } = {}
   constructor(readonly userId: string, private auth: () => AdminBootstrap | null, private changed: (revisions: Revisions, forbidden?: boolean) => void, private read = managementRead, private mutateRpc = managementMutate, private publishRpc = publishManagement, private now = Date.now, private catalogProposalConfirmed: () => void = () => {}) {
@@ -24,7 +25,7 @@ export class ManagementStore {
   private authorizationError(error: unknown) {
     const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
     if (['SOLOG_AUTH_REQUIRED', 'SOLOG_USER_DISABLED', 'SOLOG_ADMIN_ROLE_REQUIRED', 'SOLOG_SITE_FORBIDDEN', 'AUTH_REQUIRED', 'AUTH_INVALID', 'USER_DISABLED', 'ADMIN_REQUIRED'].includes(code)) {
-      this.entries.clear(); this.results.clear(); this.changed({}, true); this.emit(); return true
+      this.entries.clear(); this.results.clear(); this.resultOccurrences.clear(); this.changed({}, true); this.emit(); return true
     }
     return false
   }
@@ -48,10 +49,10 @@ export class ManagementStore {
   private invalidate(predicate: (e: Entry) => boolean) { for (const [key, e] of this.entries) if (predicate(e)) this.entries.delete(key) }
   refresh() { this.entries.clear(); this.emit() }
   resetAccess() {
-    this.accessEpoch++; this.entries.clear(); this.intents.clear(); this.results.clear()
+    this.accessEpoch++; this.entries.clear(); this.intents.clear(); this.results.clear(); this.resultOccurrences.clear()
     this.publication = { operationId: this.publication.operationId }; this.emit()
   }
-  dispose() { this.live = false; this.entries.clear(); this.floors.clear(); this.intents.clear(); this.results.clear(); this.listeners.clear() }
+  dispose() { this.live = false; this.entries.clear(); this.floors.clear(); this.intents.clear(); this.results.clear(); this.resultOccurrences.clear(); this.listeners.clear() }
   private revKey(name: string, site?: string) { const revisionName = name === 'incidents_global' ? 'incidents' : name; return `${revisionName}:${name === 'groups' || name === 'catalog' || name === 'incidents_global' ? 'global' : site ?? 'global'}` }
   private observe(revisions: Revisions, site?: string, preserveIncidentSummary = false) {
     for (const [name, rev] of Object.entries(revisions)) if (rev !== undefined && rev < (this.floors.get(this.revKey(name, site)) ?? -1)) throw new Error('Respuesta obsoleta: actualiza la fuente autoritativa.')
@@ -107,12 +108,13 @@ export class ManagementStore {
     return request
   }
   intent(d: Domain) { return this.intents.get(d) }
+  resultOccurrence(d: Domain) { return this.resultOccurrences.get(d) }
   async mutation<A extends MutationAction>(action: A, payload: Mutations[A], expectedRevision: number, site?: string): Promise<MutationResult> {
     this.access(site)
     const d = domain(action)
     if (this.intents.has(d)) throw new Error('Hay una operación sin confirmar. Reinténtala antes de crear otra intención.')
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) throw new Error('Falta revisión autoritativa.')
-    const intent: Intent = { action, site, payload: { ...payload, operation_id: crypto.randomUUID(), [d === 'master' ? 'expected_groups_revision' : 'expected_revision']: expectedRevision } }
+    const intent: Intent = { action, site, attempt: 0, payload: { ...payload, operation_id: crypto.randomUUID(), [d === 'master' ? 'expected_groups_revision' : 'expected_revision']: expectedRevision } }
     this.intents.set(d, intent)
     return this.execute(d, intent)
   }
@@ -166,6 +168,7 @@ export class ManagementStore {
     this.access(intent.site)
     if (intent.pending) return intent.pending
     intent.error = undefined
+    intent.attempt += 1
     const accessEpoch = this.accessEpoch
     const request = this.mutateRpc(intent.action, intent.payload).then(result => {
       this.access(intent.site)
@@ -187,7 +190,7 @@ export class ManagementStore {
         // Catálogo V3 is the next authority. Clear only its public cache after a confirmed or replayed proposal.
         this.catalogProposalConfirmed()
       }
-      this.results.set(d, result); this.intents.delete(d); this.emit(); return result
+      this.results.set(d, result); this.resultOccurrences.set(d, (this.resultOccurrences.get(d) ?? 0) + 1); this.intents.delete(d); this.emit(); return result
     }).catch((error: unknown) => {
       if (this.live && accessEpoch === this.accessEpoch) {
         intent.pending = undefined; intent.error = error instanceof Error ? error.message : 'Operación sin confirmar.'
