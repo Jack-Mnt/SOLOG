@@ -278,13 +278,13 @@ export function AdminIncidentsV2() {
   const ensureAllSummaries = useCallback(() => {
     if (allLoadRef.current) return allLoadRef.current;
     setAllLoading(true);
-    const request = loadIncidentSummaries(store, sites)
-      .then(() => undefined)
-      .finally(() => {
-        if (allLoadRef.current === request) allLoadRef.current = null;
-        setAllLoading(false);
-      });
+    const request = loadIncidentSummaries(store, sites).then(() => undefined);
     allLoadRef.current = request;
+    const cleanup = () => {
+      if (allLoadRef.current === request) allLoadRef.current = null;
+      setAllLoading(false);
+    };
+    void request.then(cleanup, cleanup);
     return request;
   }, [sites, store]);
 
