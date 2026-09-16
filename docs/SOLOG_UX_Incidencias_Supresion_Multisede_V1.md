@@ -1,7 +1,7 @@
 # SOLOG — UX Incidencias — Supresión Multisede V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO Y VALIDADO TÉCNICAMENTE — SMOKE PREVIEW PENDIENTE
+**Estado:** CERRADO — VALIDADO TÉCNICA Y HUMANAMENTE EN PREVIEW
 **Clasificación:** Nivel B — comportamiento UX derivado de la lógica global de Incidencias  
 **Fecha:** 2026-09-16
 
@@ -102,6 +102,8 @@ Validación técnica de Fase 3:
 - `git diff --check`;
 - revisión de regresiones y alcance.
 
-Pendiente únicamente:
+Cierre:
 
-- smoke humano en Preview de `admin-work` antes del cierre definitivo del Bloque 2.
+- smoke humano completado con éxito en el Preview de `admin-work`;
+- no se detectaron regresiones funcionales en el flujo Ignorar/Reactivar;
+- el Bloque 2 queda cerrado y congelado en su estado actual.
