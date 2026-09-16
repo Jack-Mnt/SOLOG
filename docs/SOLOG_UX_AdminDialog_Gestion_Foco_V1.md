@@ -1,7 +1,7 @@
 # SOLOG — UX AdminDialog — Gestión de Foco V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO FASE 1 — FASES 2–4 PENDIENTES  
+**Estado:** IMPLEMENTADO FASES 1–3 — FASE 4 PENDIENTE  
 **Clasificación:** Nivel B — primitive transversal de UX/accesibilidad  
 **Fecha:** 2026-09-16
 
@@ -89,11 +89,43 @@ Validación:
 - `bun run build`: correcto;
 - `git diff --check`: correcto.
 
-Pendiente para Fase 2:
+### Fase 2 — Gestión de foco
 
-- foco inicial;
-- focus trap con Tab/Shift+Tab;
-- fallback cuando no existan elementos enfocables;
-- restauración de foco al cerrar;
-- reactivación correcta del padre tras cerrar un hijo.
+Implementado en `admin-work`:
 
+- captura del elemento que abrió el diálogo;
+- foco inicial común al abrir;
+- respeto de elementos que ya recibieron foco mediante `autoFocus`;
+- focus trap del diálogo superior con `Tab` y `Shift+Tab`;
+- wrap entre primer y último elemento enfocables;
+- fallback al propio `role="dialog"` mediante `tabIndex={-1}` cuando no existen controles enfocables;
+- restauración del foco al disparador válido al cerrar;
+- reactivación del diálogo padre al cerrarse un hijo;
+- protección específica para la doble ejecución de efectos de `React.StrictMode`, sin reemplazar el disparador original.
+
+### Fase 3 — Integración anidada
+
+Validado en `admin-work`:
+
+- Catálogo → detalle → configuración de producto;
+- Catálogo → detalle → resolución de precio;
+- resolución de precio → configuración de valorizado;
+- pila de tres niveles con reactivación del padre inmediato;
+- `AdminSort` conserva su manejo local de `Escape`;
+- `AdminDialog` respeta `event.defaultPrevented` y no interfiere con controles internos;
+- no se encontraron traps locales de diálogo redundantes que debieran retirarse;
+- no fue necesario modificar consumidores ni introducir una librería externa.
+
+Validación dirigida Fases 2–3:
+
+- **68 pass / 0 fail** en 11 archivos de tests relacionados;
+- `bun run lint`: correcto, sin advertencias;
+- `bun run build`: correcto;
+- `git diff --check`: correcto.
+
+Pendiente para Fase 4:
+
+- suite global completa contrastada con baseline;
+- revisión final de regresiones en Admin;
+- smoke humano en Preview de `admin-work`;
+- cierre definitivo del Bloque 3.
