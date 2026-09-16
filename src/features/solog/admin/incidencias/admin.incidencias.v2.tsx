@@ -199,40 +199,43 @@ function globalIncidentRevision(
 function IgnoreDialog({
   family,
   onClose,
-  onError,
   onSuccess,
 }: {
   family: MergedIncidentFamily;
   onClose: () => void;
-  onError: (message: string) => void;
   onSuccess: () => void;
 }) {
   const store = useManagement();
   const [running, setRunning] = useState(false);
+  const [error, setError] = useState("");
+  const retryable = store.intent("incidents")?.action === "ignore_30d";
   const ignore = () => {
     const revision = globalIncidentRevision(store, family);
-    if (revision === null) {
-      onError(
+    if (!retryable && revision === null) {
+      setError(
         "La revisión global de incidencias no está disponible. Actualiza la vista y reintenta.",
       );
       return;
     }
+    setError("");
     setRunning(true);
-    void store
-      .mutation(
-        "ignore_30d",
-        {
-          family_key: family.family_key,
-          scope: "global",
-        },
-        revision,
-      )
+    const request = retryable
+      ? store.retryMutation("incidents")
+      : store.mutation(
+          "ignore_30d",
+          {
+            family_key: family.family_key,
+            scope: "global",
+          },
+          revision!,
+        );
+    void request
       .then(() => {
         onSuccess();
         onClose();
       })
       .catch((reason) =>
-        onError(
+        setError(
           reason instanceof Error
             ? reason.message
             : "No se pudo ignorar la incidencia.",
@@ -263,12 +266,13 @@ function IgnoreDialog({
             onClick={ignore}
           >
             <AlarmClockOff size={16} aria-hidden="true" />
-            {running ? "Ignorando…" : "Ignorar 30 días"}
+            {running ? "Procesando…" : retryable ? "Reintentar" : "Ignorar 30 días"}
           </button>
         </>
       }
     >
       <p>Esta incidencia se ignorará durante 30 días en todas las sedes.</p>
+      {error && <AdminNotice tone="error">{error}</AdminNotice>}
     </AdminDialog>
   );
 }
@@ -367,9 +371,18 @@ export function AdminIncidentsV2() {
   );
   const [allOriginSite, setAllOriginSite] = useState<string | null>(null);
   const [allLoading, setAllLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [error, setErrorState] = useState("");
+  const [notice, setNoticeState] = useState("");
+  const [feedbackOccurrence, setFeedbackOccurrence] = useState(0);
   const [dismissedNotice, setDismissedNotice] = useState("");
+  const setError = (message: string) => {
+    setErrorState(message);
+    if (message) setFeedbackOccurrence((current) => current + 1);
+  };
+  const setNotice = (message: string) => {
+    setNoticeState(message);
+    if (message) setFeedbackOccurrence((current) => current + 1);
+  };
   const allLoadRef = useRef<Promise<void> | null>(null);
   const [allSnapshot, setAllSnapshot] = useState<MergedIncidentFamily[]>([]);
   const siteId = admin.siteId;
@@ -540,11 +553,13 @@ export function AdminIncidentsV2() {
         setNotice("La incidencia fue reactivada.");
       })
       .catch((reason) => {
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "No se pudo actualizar la incidencia.",
-        );
+        if (!store.intent("incidents")) {
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : "No se pudo actualizar la incidencia.",
+          );
+        }
         throw reason;
       });
   };
@@ -553,11 +568,9 @@ export function AdminIncidentsV2() {
   ): Promise<void> => {
     const summary = store.peek("summary", { site_id: source.siteId }).data;
     if (!summary) {
-      const reason = new Error(
-        "La sede ya no tiene un summary vigente. Reintenta la acción.",
+      return Promise.reject(
+        new Error("La sede ya no tiene un summary vigente. Reintenta la acción."),
       );
-      setError(reason.message);
-      return Promise.reject(reason);
     }
     setError("");
     setNotice("");
@@ -578,20 +591,40 @@ export function AdminIncidentsV2() {
         );
       })
       .catch((reason) => {
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "No se pudo actualizar la incidencia.",
-        );
         throw reason;
       });
   };
   const pendingIntent = store.intent("incidents");
   const pending = !!pendingIntent;
+  const retryIncidentIntent = (): Promise<void> => {
+    const intent = store.intent("incidents");
+    if (!intent) return Promise.reject(new Error("No hay una operación pendiente."));
+    setError("");
+    setNotice("");
+    return store.retryMutation("incidents").then(() => {
+      setAllSnapshot([]);
+      const success =
+        intent.action === "ignore_30d"
+          ? "La incidencia fue ignorada durante 30 días."
+          : intent.action === "reactivate"
+            ? "La incidencia fue reactivada."
+            : "La propuesta de eliminación quedó pendiente para revisión en Catálogo.";
+      setNotice(success);
+    }).catch((reason) => {
+      if (!store.intent("incidents")) {
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "No se pudo actualizar la incidencia.",
+        );
+      }
+      throw reason;
+    });
+  };
   const noticeMessage = error || pendingIntent?.error || notice;
-  const noticeKey = String(
-    pendingIntent?.payload.operation_id ?? noticeMessage,
-  );
+  const noticeKey = pendingIntent
+    ? `intent:${String(pendingIntent.payload.operation_id)}:${pendingIntent.attempt}:${pendingIntent.error ? "error" : "pending"}`
+    : `local:${feedbackOccurrence}`;
   const hasData = allActive || !!normalQuery.data;
   return (
     <section className="admin-incidents">
@@ -679,15 +712,13 @@ export function AdminIncidentsV2() {
       {noticeMessage && dismissedNotice !== noticeKey && (
         <AdminNotice
           tone={error || pendingIntent?.error ? "error" : "success"}
-          onDismiss={() => setDismissedNotice(noticeKey)}
+          onDismiss={pendingIntent ? undefined : () => setDismissedNotice(noticeKey)}
           action={
             pendingIntent && !pendingIntent.pending ? (
               <button
                 type="button"
                 className="button button--secondary"
-                onClick={() =>
-                  void store.retryMutation("incidents").catch(() => {})
-                }
+                onClick={() => void retryIncidentIntent().catch(() => {})}
               >
                 Reintentar
               </button>
@@ -856,7 +887,6 @@ export function AdminIncidentsV2() {
         <IgnoreDialog
           family={ignoreFamily}
           onClose={() => setIgnoreFamily(null)}
-          onError={setError}
           onSuccess={() => {
             setAllSnapshot([]);
             setNotice("La incidencia fue ignorada durante 30 días.");
@@ -868,6 +898,8 @@ export function AdminIncidentsV2() {
           proposal={deleteProposal}
           onClose={() => setDeleteProposal(null)}
           onConfirm={() => proposeDeleteSource(deleteProposal.source)}
+          onRetry={retryIncidentIntent}
+          retryable={pendingIntent?.action === "propose_delete"}
         />
       )}
     </section>
