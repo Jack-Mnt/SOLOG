@@ -1,0 +1,126 @@
+Admin Dialog Phase 1 Validation
+branch=admin-work
+commit=4c4e3d926104cc71e0aa12747c406ae4b27b7074
+targeted_status=0
+lint_status=1
+build_status=0
+diff_status=0
+
+=== TARGETED ===
+bun test v1.3.14 (0d9b296a)
+
+::group::tests/admin-dialog.test.ts:
+(pass) AdminDialog stack > el último diálogo registrado es el único superior [0.33ms]
+(pass) AdminDialog stack > desregistrar dos veces no altera la pila ni emite una revisión extra [0.10ms]
+(pass) AdminDialog stack > AdminDialog limita Escape y backdrop al diálogo superior [0.33ms]
+
+::endgroup::
+
+ 3 pass
+ 0 fail
+ 11 expect() calls
+Ran 3 tests across 1 file. [10.00ms]
+
+=== LINT ===
+$ eslint .
+
+/home/runner/work/SOLOG/SOLOG/src/features/solog/admin/admin.dialog.tsx
+  33:23  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+/home/runner/work/SOLOG/SOLOG/src/features/solog/admin/admin.dialog.tsx:33:23
+  31 |   const titleId = useId()
+  32 |   const descriptionId = useId()
+> 33 |   const dialogToken = useRef(Symbol('admin-dialog')).current
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  34 |
+  35 |   useSyncExternalStore(
+  36 |     adminDialogStack.subscribe,                         react-hooks/refs
+  33:23  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+/home/runner/work/SOLOG/SOLOG/src/features/solog/admin/admin.dialog.tsx:33:23
+  31 |   const titleId = useId()
+  32 |   const descriptionId = useId()
+> 33 |   const dialogToken = useRef(Symbol('admin-dialog')).current
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  34 |
+  35 |   useSyncExternalStore(
+  36 |     adminDialogStack.subscribe,                         react-hooks/refs
+  33:23  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+/home/runner/work/SOLOG/SOLOG/src/features/solog/admin/admin.dialog.tsx:33:23
+  31 |   const titleId = useId()
+  32 |   const descriptionId = useId()
+> 33 |   const dialogToken = useRef(Symbol('admin-dialog')).current
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Passing a ref to a function may read its value during render
+  34 |
+  35 |   useSyncExternalStore(
+  36 |     adminDialogStack.subscribe,  react-hooks/refs
+
+✖ 3 problems (3 errors, 0 warnings)
+
+error: script "lint" exited with code 1
+
+=== BUILD ===
+$ tsc -b && vite build
+[36mvite v8.2.1 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 2027 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                        0.78 kB │ gzip:  0.39 kB
+dist/assets/plus-jakarta-sans-vietnamese-wght-normal-qRpaaN48.woff2    8.35 kB
+dist/assets/plus-jakarta-sans-latin-ext-wght-normal-DmpS2jIq.woff2    21.72 kB
+dist/assets/plus-jakarta-sans-latin-wght-normal-eXO_dkmS.woff2        27.34 kB
+dist/assets/detalles-qdWCahzf.css                                      7.27 kB │ gzip:  1.77 kB
+dist/assets/cajero-axNPaxYa.css                                       13.19 kB │ gzip:  2.82 kB
+dist/assets/cajero-CXRqGFMh.css                                       30.78 kB │ gzip:  5.15 kB
+dist/assets/index-C9IfEHEo.css                                        34.19 kB │ gzip:  9.23 kB
+dist/assets/admin.v2-BHD9Fx-1.css                                     64.61 kB │ gzip:  9.86 kB
+dist/assets/check-MqiwEP8-.js                                          0.11 kB │ gzip:  0.13 kB
+dist/assets/chevron-down-C_leRnvk.js                                   0.11 kB │ gzip:  0.13 kB
+dist/assets/chevron-up-fWyQYjGG.js                                     0.11 kB │ gzip:  0.13 kB
+dist/assets/chevron-left-C7QUa15i.js                                   0.11 kB │ gzip:  0.13 kB
+dist/assets/chevron-right-c6P3qKgc.js                                  0.11 kB │ gzip:  0.13 kB
+dist/assets/x-DPsUU87x.js                                              0.14 kB │ gzip:  0.14 kB
+dist/assets/search-DRz0uUdz.js                                         0.16 kB │ gzip:  0.16 kB
+dist/assets/tablet-BwksZqdv.js                                         0.20 kB │ gzip:  0.17 kB
+dist/assets/circle-off-CR54kIN4.js                                     0.23 kB │ gzip:  0.19 kB
+dist/assets/refresh-cw-BynuwtdE.js                                     0.31 kB │ gzip:  0.21 kB
+dist/assets/package-wWzRFrPr.js                                        0.36 kB │ gzip:  0.24 kB
+dist/assets/admin.v2.format-c6HNLBD9.js                                0.37 kB │ gzip:  0.27 kB
+dist/assets/admin.masterdata.context-DjINLaYt.js                       0.48 kB │ gzip:  0.33 kB
+dist/assets/admin.v2.presentation-BjPVecCI.js                          0.56 kB │ gzip:  0.39 kB
+dist/assets/package-open-DDuvSPJY.js                                   0.56 kB │ gzip:  0.32 kB
+dist/assets/triangle-alert-B03QlbRQ.js                                 0.73 kB │ gzip:  0.37 kB
+dist/assets/send-CUE4iLRq.js                                           0.90 kB │ gzip:  0.48 kB
+dist/assets/admin.dialog-DojoZYP4.js                                   1.71 kB │ gzip:  0.86 kB
+dist/assets/admin.management.presentation-s1FXfXSL.js                  1.86 kB │ gzip:  0.91 kB
+dist/assets/admin.control.v2.export-DREVvFzQ.js                        2.22 kB │ gzip:  1.02 kB
+dist/assets/admin.control.v2.export-dialog-eIvkYcY5.js                 2.58 kB │ gzip:  1.22 kB
+dist/assets/admin.valuation-dialog-_hVDaqK5.js                         3.05 kB │ gzip:  1.29 kB
+dist/assets/admin.product-setup.dialog-w66873wn.js                     3.90 kB │ gzip:  1.60 kB
+dist/assets/detalles.export-BG7mUxyQ.js                                4.61 kB │ gzip:  1.96 kB
+dist/assets/admin.dispositivos.v2-Ds40ZqwX.js                          6.10 kB │ gzip:  2.24 kB
+dist/assets/cajero.utils-BD5J5NHl.js                                   7.00 kB │ gzip:  3.07 kB
+dist/assets/admin.dashboard.v2-KDu8skVz.js                             8.34 kB │ gzip:  2.77 kB
+dist/assets/admin.productos.v1-BXKhrqSY.js                             9.74 kB │ gzip:  3.14 kB
+dist/assets/admin.control.v2--FWscGGc.js                              13.64 kB │ gzip:  4.24 kB
+dist/assets/admin.incidencias.v2-CCKzu0KL.js                          16.45 kB │ gzip:  5.39 kB
+dist/assets/admin.catalogo.page.v3-2m80kJQq.js                        18.68 kB │ gzip:  5.51 kB
+dist/assets/admin.grupos.v2-BjqJVrxw.js                               23.97 kB │ gzip:  6.63 kB
+dist/assets/protected-app-xNunm-OS.js                                 26.13 kB │ gzip:  8.51 kB
+dist/assets/detalles-CCd3DWxN.js                                      27.28 kB │ gzip:  7.87 kB
+dist/assets/cajero.app-3t5Y46uE.js                                    28.22 kB │ gzip:  8.19 kB
+dist/assets/admin.v2.app-D1QI7Tt1.js                                  55.73 kB │ gzip: 14.32 kB
+dist/assets/cajero-CROJlHY7.js                                        56.65 kB │ gzip: 14.68 kB
+dist/assets/browser-CB9WaMml.js                                       70.71 kB │ gzip: 19.69 kB
+dist/assets/index-CtL5o79h.js                                        202.02 kB │ gzip: 63.81 kB
+
+[32m✓ built in 233ms[39m
+
+=== DIFF CHECK ===
