@@ -286,10 +286,14 @@ function DeleteProposalDialog({
   proposal,
   onClose,
   onConfirm,
+  onRetry,
+  retryable,
 }: {
   proposal: DeleteProposal;
   onClose: () => void;
   onConfirm: () => Promise<void>;
+  onRetry: () => Promise<void>;
+  retryable: boolean;
 }) {
   const [proposing, setProposing] = useState(false);
   const [error, setError] = useState("");
@@ -301,7 +305,7 @@ function DeleteProposalDialog({
     if (proposing) return;
     setError("");
     setProposing(true);
-    void onConfirm()
+    void (retryable ? onRetry() : onConfirm())
       .then(onClose)
       .catch((reason) =>
         setError(
@@ -334,7 +338,7 @@ function DeleteProposalDialog({
             disabled={proposing}
             onClick={confirm}
           >
-            {proposing ? "Proponiendo…" : "Proponer eliminación"}
+            {proposing ? "Procesando…" : retryable ? "Reintentar" : "Proponer eliminación"}
           </button>
         </>
       }
@@ -351,7 +355,7 @@ function DeleteProposalDialog({
       <p>
         Detectado en: <strong>{proposal.source.siteName}</strong>
       </p>
-      {error && <p role="alert">{error}</p>}
+      {error && <AdminNotice tone="error">{error}</AdminNotice>}
     </AdminDialog>
   );
 }
