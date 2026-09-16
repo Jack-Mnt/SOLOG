@@ -4551,14 +4551,14 @@
 .admin-state-views > button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 11px;
+  gap: 8px;
+  padding: 8px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   cursor: pointer;
 }
 .admin-state-views > button strong {
@@ -4896,12 +4896,12 @@
   margin-left: auto;
 }
 .admin-control__period {
-  margin: 15px 0 8px;
   font-size: 0.9rem;
   color: var(--color-text-secondary);
   display: inline-flex;
-  align-items: center;
   justify-content: end;
+  min-width: 100px;
+  flex: 2;
 }
 .admin-control__summary {
   display: grid;
@@ -4933,7 +4933,15 @@
   font-size: 0.6875rem;
   font-weight: 600;
 }
-.admin-control__tone--success {
+.tone--color {
+  background: var(--color-primary-soft);
+  color: color-mix(
+    in srgb,
+    var(--color-primary) 60%,
+    var(--color-text-primary)
+  );
+}
+.tone--success {
   background: var(--color-success-soft);
   color: color-mix(
     in srgb,
@@ -4941,11 +4949,11 @@
     var(--color-text-primary)
   );
 }
-.admin-control__tone--info {
+.tone--info {
   background: var(--color-info-soft);
   color: color-mix(in srgb, var(--color-info) 60%, var(--color-text-primary));
 }
-.admin-control__tone--warning {
+.tone--warning {
   background: var(--color-warning-soft);
   color: color-mix(
     in srgb,
@@ -4953,7 +4961,7 @@
     var(--color-text-primary)
   );
 }
-.admin-control__tone--danger {
+.tone--danger {
   background: var(--color-danger-soft);
   color: color-mix(in srgb, var(--color-danger) 75%, var(--color-text-primary));
 }
@@ -5998,7 +6006,11 @@
   background: var(--color-primary-soft);
 }
 .admin-v2-workspace :where(.icon-button--primary) {
-  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 55%,
+    var(--color-border)
+  );
   color: var(--color-primary);
   background: var(--color-primary-soft);
 }
@@ -6153,6 +6165,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  flex: 1;
 }
 
 .admin-quick-filter-chips .admin-control__period {
@@ -6182,12 +6195,16 @@
 .admin-groups__quick-filter-sets {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 36px;
+  flex: 1;
 }
 .admin-groups__members-icon--hover {
   display: none;
 }
-.admin-groups__members:hover:not(:disabled) .admin-groups__members-icon:not(.admin-groups__members-icon--hover) {
+.admin-groups__members:hover:not(:disabled)
+  .admin-groups__members-icon:not(.admin-groups__members-icon--hover) {
   display: none;
 }
 .admin-groups__members:hover:not(:disabled) .admin-groups__members-icon--hover {
@@ -6492,8 +6509,9 @@
 .admin-v2-workspace .admin-quick-filter-chips .admin-quick-filter-chip {
   height: 32px;
   min-height: 32px;
-  padding: 5px 9px;
+  padding: 4px 12px;
   border-radius: 8px;
+  flex: 1;
 }
 .admin-v2-workspace .admin-state-views > button {
   height: 36px;
@@ -6670,19 +6688,19 @@
   gap: 5px;
   min-height: 32px;
   padding: 5px 9px;
-  border: 1px solid currentColor;
+  border: 1px solid transparent;
   border-radius: 8px;
-  color: var(--color-text-secondary);
   font: inherit;
   font-size: 0.75rem;
-  line-height: 1.4;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
-.admin-quick-filter-chip:not(.admin-control__tone--success):not(.admin-control__tone--info):not(.admin-control__tone--warning):not(.admin-control__tone--danger) {
+/* .admin-quick-filter-chip:not(.admin-control__tone--success):not(
+    .admin-control__tone--info
+  ):not(.admin-control__tone--warning):not(.admin-control__tone--danger) {
   background: var(--color-surface-secondary);
-}
+} */
 .admin-quick-filter-chip:hover:not(:disabled) {
   border-color: currentColor;
 }
@@ -6699,7 +6717,7 @@
   outline-offset: 2px;
 }
 .admin-quick-filter-chip strong {
-  font-weight: 700;
+  font-weight: 650;
 }
 .admin-catalog__change-sr {
   position: absolute;

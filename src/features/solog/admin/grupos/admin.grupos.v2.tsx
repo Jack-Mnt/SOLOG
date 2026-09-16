@@ -348,7 +348,8 @@ export function AdminGroupsV2() {
     return {
       all: available.length,
       Único: available.filter((group) => group.derivedType === "Único").length,
-      Agrupado: available.filter((group) => group.derivedType === "Agrupado").length,
+      Agrupado: available.filter((group) => group.derivedType === "Agrupado")
+        .length,
     };
   }, [categoryId, rows, search, sort, valuation]);
   const valuationCounts = useMemo(() => {
@@ -361,8 +362,14 @@ export function AdminGroupsV2() {
     });
     return {
       all: available.length,
-      configured: available.filter((group) => group.unidades_por_paquete !== null && group.precio_paquete !== null).length,
-      none: available.filter((group) => group.unidades_por_paquete === null || group.precio_paquete === null).length,
+      configured: available.filter(
+        (group) =>
+          group.unidades_por_paquete !== null && group.precio_paquete !== null,
+      ).length,
+      none: available.filter(
+        (group) =>
+          group.unidades_por_paquete === null || group.precio_paquete === null,
+      ).length,
     };
   }, [categoryId, rows, search, sort, type]);
   if (!masterData.snapshot || !masterData.derived)
@@ -428,18 +435,31 @@ export function AdminGroupsV2() {
         </div>
       </form>
       <div className="admin-groups__quick-filter-sets admin-section-secondary-row">
-        <div className="admin-quick-filter-chips" role="group" aria-label="Integrantes">
+        <div
+          className="admin-quick-filter-chips"
+          role="group"
+          aria-label="Integrantes"
+        >
+          <button
+            key={"all"}
+            type="button"
+            className="admin-quick-filter-chip"
+            aria-pressed={type === "all"}
+            onClick={() => setType("all")}
+          >
+            <span>Todos</span>
+            <strong>{typeCounts["all"]}</strong>
+          </button>
           {(
             [
-              ["all", "Todos"],
               ["Único", "Único"],
-              ["Agrupado", "2+ SKU"],
+              ["Agrupado", "Agrupado"],
             ] as const
           ).map(([value, label]) => (
             <button
               key={value}
               type="button"
-              className="admin-quick-filter-chip"
+              className="admin-quick-filter-chip tone--color"
               aria-pressed={type === value}
               onClick={() => setType(value)}
             >
@@ -448,18 +468,31 @@ export function AdminGroupsV2() {
             </button>
           ))}
         </div>
-        <div className="admin-quick-filter-chips" role="group" aria-label="Valorizado">
+        <div
+          className="admin-quick-filter-chips"
+          role="group"
+          aria-label="Valorizado"
+        >
+          <button
+            key={"all"}
+            type="button"
+            className="admin-quick-filter-chip"
+            aria-pressed={valuation === "all"}
+            onClick={() => setValuation("all")}
+          >
+            <span>Todos</span>
+            <strong>{valuationCounts["all"]}</strong>
+          </button>
           {(
             [
-              ["all", "Todos"],
-              ["configured", "Configurado"],
-              ["none", "Sin valorizado"],
+              ["configured", "S/. paquete"],
+              ["none", "S/. unitario"],
             ] as const
           ).map(([value, label]) => (
             <button
               key={value}
               type="button"
-              className="admin-quick-filter-chip"
+              className="admin-quick-filter-chip tone--color"
               aria-pressed={valuation === value}
               onClick={() => setValuation(value)}
             >

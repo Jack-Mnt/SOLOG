@@ -5,7 +5,6 @@ import {
   CircleOff,
   Clock,
   Eye,
-  RefreshCw,
   RotateCcw,
 } from "lucide-react";
 import { useAdminStore } from "../admin.v2.context";
@@ -173,8 +172,7 @@ export function AdminIncidentsV2() {
     () =>
       (query.data?.families ?? []).filter(
         (item) =>
-          (type === "all" || item.tipo === type) &&
-          item.family_state === state,
+          (type === "all" || item.tipo === type) && item.family_state === state,
       ),
     [query.data, state, type],
   );
@@ -183,9 +181,12 @@ export function AdminIncidentsV2() {
       (item) => type === "all" || item.tipo === type,
     );
     return {
-      pendiente: available.filter((item) => item.family_state === "pendiente").length,
-      suprimida: available.filter((item) => item.family_state === "suprimida").length,
-      resuelta: available.filter((item) => item.family_state === "resuelta").length,
+      pendiente: available.filter((item) => item.family_state === "pendiente")
+        .length,
+      suprimida: available.filter((item) => item.family_state === "suprimida")
+        .length,
+      resuelta: available.filter((item) => item.family_state === "resuelta")
+        .length,
     };
   }, [query.data, type]);
   const act = (
@@ -261,30 +262,23 @@ export function AdminIncidentsV2() {
             </select>
           </label>
         </div>
-        <div className="admin-toolbar__actions">
-          <button
-            type="button"
-            className="button button--secondary"
-            onClick={query.retry}
-          >
-            <RefreshCw size={16} aria-hidden="true" />
-            Actualizar incidencias
-          </button>
-        </div>
       </div>
       <div
-        className="admin-incidents__state-views admin-state-views admin-section-secondary-row"
+        className="admin-state-views"
         role="tablist"
         aria-label="Estado de incidencias"
         onKeyDown={(event) => {
-          if (![
-            "ArrowRight",
-            "ArrowDown",
-            "ArrowLeft",
-            "ArrowUp",
-            "Home",
-            "End",
-          ].includes(event.key)) return;
+          if (
+            ![
+              "ArrowRight",
+              "ArrowDown",
+              "ArrowLeft",
+              "ArrowUp",
+              "Home",
+              "End",
+            ].includes(event.key)
+          )
+            return;
           event.preventDefault();
           const currentIndex = stateViews.findIndex(
             (view) => view.state === state,

@@ -1,99 +1,472 @@
-import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, CircleOff, Clock, RotateCcw, Search, Settings } from 'lucide-react'
-import { AdminDialog } from '../admin.dialog'
-import { useMasterData } from '../masterdata/admin.masterdata.context'
-import type { MasterDataProduct } from '../masterdata/admin.masterdata.v1'
-import { QueryState, Value } from '../admin.v2.presentation'
-import { AdminSort, IconButton } from '../admin.primitives'
-import { useCatalogStore } from '../catalogo/admin.catalogo.context'
-import { ProductSetupDialog, type ProductSetupTarget } from './admin.product-setup.dialog'
-import { filterAndSortProducts, paginateProducts, type ProductModeFilter, type ProductSort } from './admin.productos.model'
+import { useMemo, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleOff,
+  Clock,
+  RotateCcw,
+  Search,
+  Settings,
+} from "lucide-react";
+import { AdminDialog } from "../admin.dialog";
+import { useMasterData } from "../masterdata/admin.masterdata.context";
+import type { MasterDataProduct } from "../masterdata/admin.masterdata.v1";
+import { QueryState, Value } from "../admin.v2.presentation";
+import { AdminSort, IconButton } from "../admin.primitives";
+import { useCatalogStore } from "../catalogo/admin.catalogo.context";
+import {
+  ProductSetupDialog,
+  type ProductSetupTarget,
+} from "./admin.product-setup.dialog";
+import {
+  filterAndSortProducts,
+  paginateProducts,
+  type ProductModeFilter,
+  type ProductSort,
+} from "./admin.productos.model";
 
 function CatalogIntentNotice({ onRetry }: { onRetry: () => void }) {
-  const intent = useCatalogStore().intent()
-  if (!intent) return null
-  return <div className="notice" role="status"><p>{intent.error ?? 'Operación en curso…'} · {intent.payload.operation_id}</p>{!intent.pending && <button type="button" className="button" onClick={onRetry}><RotateCcw size={16} aria-hidden="true" />Reintentar misma operación</button>}</div>
+  const intent = useCatalogStore().intent();
+  if (!intent) return null;
+  return (
+    <div className="notice" role="status">
+      <p>
+        {intent.error ?? "Operación en curso…"} · {intent.payload.operation_id}
+      </p>
+      {!intent.pending && (
+        <button type="button" className="button" onClick={onRetry}>
+          <RotateCcw size={16} aria-hidden="true" />
+          Reintentar misma operación
+        </button>
+      )}
+    </div>
+  );
 }
 
-function ProductStateProposal({ product, groupName, onClose }: { product: MasterDataProduct; groupName: string | null; onClose: () => void }) {
-  const store = useCatalogStore()
-  const [error, setError] = useState('')
-  const intent = store.intent()
-  const action = product.estado === 'Excluido' ? 'reincorporate' : 'exclude'
-  const title = action === 'exclude' ? 'Proponer exclusión' : 'Proponer reincorporación'
-  const submit = () => { setError(''); void store.mutation('propose_product_state', { c_interno: product.c_interno, action }).then(onClose).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo crear la propuesta.')) }
-  const retry = () => { setError(''); void store.retryMutation().then(onClose).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'No se pudo confirmar la propuesta.')) }
-  return <AdminDialog title={title} description={product.producto} onClose={onClose} closeDisabled={!!intent?.pending}>
-    <p>Esta acción solo crea una propuesta para revisión y publicación posterior. No modifica el estado del producto ahora.</p>
-    <dl className="admin-catalog__proposal-summary"><div><dt>C. interno</dt><dd>{product.c_interno}</dd></div><div><dt>Estado actual</dt><dd>{product.estado === 'Excluido' ? 'Excluido' : 'Incluido'}</dd></div><div><dt>Modalidad</dt><dd>{product.estado}</dd></div><div><dt>Grupo</dt><dd>{groupName ?? '—'}</dd></div></dl>
-    {intent && <CatalogIntentNotice onRetry={retry} />}
-    <button type="button" className="button" disabled={!!intent} onClick={submit}>{action === 'exclude' ? <CircleOff size={16} aria-hidden="true" /> : <RotateCcw size={16} aria-hidden="true" />}{title}</button>
-    {error && <p role="alert">{error}</p>}
-  </AdminDialog>
+function ProductStateProposal({
+  product,
+  groupName,
+  onClose,
+}: {
+  product: MasterDataProduct;
+  groupName: string | null;
+  onClose: () => void;
+}) {
+  const store = useCatalogStore();
+  const [error, setError] = useState("");
+  const intent = store.intent();
+  const action = product.estado === "Excluido" ? "reincorporate" : "exclude";
+  const title =
+    action === "exclude" ? "Proponer exclusión" : "Proponer reincorporación";
+  const submit = () => {
+    setError("");
+    void store
+      .mutation("propose_product_state", {
+        c_interno: product.c_interno,
+        action,
+      })
+      .then(onClose)
+      .catch((reason: unknown) =>
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "No se pudo crear la propuesta.",
+        ),
+      );
+  };
+  const retry = () => {
+    setError("");
+    void store
+      .retryMutation()
+      .then(onClose)
+      .catch((reason: unknown) =>
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "No se pudo confirmar la propuesta.",
+        ),
+      );
+  };
+  return (
+    <AdminDialog
+      title={title}
+      description={product.producto}
+      onClose={onClose}
+      closeDisabled={!!intent?.pending}
+    >
+      <p>
+        Esta acción solo crea una propuesta para revisión y publicación
+        posterior. No modifica el estado del producto ahora.
+      </p>
+      <dl className="admin-catalog__proposal-summary">
+        <div>
+          <dt>C. interno</dt>
+          <dd>{product.c_interno}</dd>
+        </div>
+        <div>
+          <dt>Estado actual</dt>
+          <dd>{product.estado === "Excluido" ? "Excluido" : "Incluido"}</dd>
+        </div>
+        <div>
+          <dt>Modalidad</dt>
+          <dd>{product.estado}</dd>
+        </div>
+        <div>
+          <dt>Grupo</dt>
+          <dd>{groupName ?? "—"}</dd>
+        </div>
+      </dl>
+      {intent && <CatalogIntentNotice onRetry={retry} />}
+      <button
+        type="button"
+        className="button"
+        disabled={!!intent}
+        onClick={submit}
+      >
+        {action === "exclude" ? (
+          <CircleOff size={16} aria-hidden="true" />
+        ) : (
+          <RotateCcw size={16} aria-hidden="true" />
+        )}
+        {title}
+      </button>
+      {error && <p role="alert">{error}</p>}
+    </AdminDialog>
+  );
 }
 
 export function AdminProductsV1() {
-  const masterData = useMasterData()
-  const catalog = useCatalogStore()
-  const [search, setSearch] = useState('')
-  const [modeFilter, setModeFilter] = useState<ProductModeFilter>('all')
-  const [categoryFilter, setCategoryFilter] = useState('all')
-  const [sort, setSort] = useState<ProductSort>('name')
-  const [page, setPage] = useState(0)
-  const [selected, setSelected] = useState<MasterDataProduct | null>(null)
-  const [setup, setSetup] = useState<ProductSetupTarget | null>(null)
-  const products = useMemo(() => masterData.snapshot && masterData.derived ? filterAndSortProducts(masterData.snapshot.products, masterData.derived, { search, mode: modeFilter, categoryId: categoryFilter, sort }) : [], [categoryFilter, masterData.derived, masterData.snapshot, modeFilter, search, sort])
+  const masterData = useMasterData();
+  const catalog = useCatalogStore();
+  const [search, setSearch] = useState("");
+  const [modeFilter, setModeFilter] = useState<ProductModeFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sort, setSort] = useState<ProductSort>("name");
+  const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState<MasterDataProduct | null>(null);
+  const [setup, setSetup] = useState<ProductSetupTarget | null>(null);
+  const products = useMemo(
+    () =>
+      masterData.snapshot && masterData.derived
+        ? filterAndSortProducts(
+            masterData.snapshot.products,
+            masterData.derived,
+            { search, mode: modeFilter, categoryId: categoryFilter, sort },
+          )
+        : [],
+    [
+      categoryFilter,
+      masterData.derived,
+      masterData.snapshot,
+      modeFilter,
+      search,
+      sort,
+    ],
+  );
   const modeCounts = useMemo(() => {
-    if (!masterData.snapshot || !masterData.derived) return { all: 0, Único: 0, Agrupado: 0, Excluido: 0 }
-    const available = filterAndSortProducts(masterData.snapshot.products, masterData.derived, { search, mode: 'all', categoryId: categoryFilter, sort: 'name' })
+    if (!masterData.snapshot || !masterData.derived)
+      return { all: 0, Único: 0, Agrupado: 0, Excluido: 0 };
+    const available = filterAndSortProducts(
+      masterData.snapshot.products,
+      masterData.derived,
+      { search, mode: "all", categoryId: categoryFilter, sort: "name" },
+    );
     return {
       all: available.length,
-      Único: available.filter((product) => product.estado === 'Único').length,
-      Agrupado: available.filter((product) => product.estado === 'Agrupado').length,
-      Excluido: available.filter((product) => product.estado === 'Excluido').length,
-    }
-  }, [categoryFilter, masterData.derived, masterData.snapshot, search])
-  const visible = useMemo(() => paginateProducts(products, page), [page, products])
-  if (!masterData.snapshot || !masterData.derived) return <QueryState error={masterData.error} retry={masterData.retry} />
-  const derived = masterData.derived
-  const setupFromSnapshot = masterData.snapshot.setup_required.filter((item) => !catalog.productSetupPrepared(item.propuesta_fingerprint))
-  const setupFingerprints = new Set(setupFromSnapshot.map(item => item.propuesta_fingerprint))
-  const setupRequired = [...setupFromSnapshot, ...catalog.confirmedSetupRequired().filter(item => !setupFingerprints.has(item.propuesta_fingerprint))]
-  return <section className="admin-catalog admin-products">
-    {setupRequired.length > 0 && <section className="admin-catalog__section admin-catalog__section--urgent"><header><h3>Configuración pendiente</h3><span>{setupRequired.length}</span></header><div className="admin-catalog__proposal-context">{setupRequired.map((item) => <span key={item.propuesta_fingerprint}>{item.c_interno} · {item.producto} · configuración requerida antes de publicar <button type="button" className="button button--secondary" onClick={() => setSetup(item)}><Settings size={16} aria-hidden="true" />Configurar</button></span>)}</div></section>}
-    <section className="admin-products__section">
-      <form className="admin-v2-filters admin-toolbar admin-toolbar-surface admin-catalog__filters" onSubmit={(event) => event.preventDefault()}>
-        <label className="admin-toolbar__search">Buscar<span className="admin-filter-search-control"><Search size={16} aria-hidden="true" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(0) }} placeholder="Producto, código, marca, categoría o grupo" /></span></label>
-        <label className="admin-toolbar__filter">Categoría<select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setPage(0) }}><option value="all">Todas</option>{masterData.snapshot.categories.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
+      Único: available.filter((product) => product.estado === "Único").length,
+      Agrupado: available.filter((product) => product.estado === "Agrupado")
+        .length,
+      Excluido: available.filter((product) => product.estado === "Excluido")
+        .length,
+    };
+  }, [categoryFilter, masterData.derived, masterData.snapshot, search]);
+  const visible = useMemo(
+    () => paginateProducts(products, page),
+    [page, products],
+  );
+  if (!masterData.snapshot || !masterData.derived)
+    return <QueryState error={masterData.error} retry={masterData.retry} />;
+  const derived = masterData.derived;
+  const setupFromSnapshot = masterData.snapshot.setup_required.filter(
+    (item) => !catalog.productSetupPrepared(item.propuesta_fingerprint),
+  );
+  const setupFingerprints = new Set(
+    setupFromSnapshot.map((item) => item.propuesta_fingerprint),
+  );
+  const setupRequired = [
+    ...setupFromSnapshot,
+    ...catalog
+      .confirmedSetupRequired()
+      .filter((item) => !setupFingerprints.has(item.propuesta_fingerprint)),
+  ];
+  return (
+    <section className="admin-catalog admin-products">
+      {setupRequired.length > 0 && (
+        <section className="admin-catalog__section admin-catalog__section--urgent">
+          <header>
+            <h3>Configuración pendiente</h3>
+            <span>{setupRequired.length}</span>
+          </header>
+          <div className="admin-catalog__proposal-context">
+            {setupRequired.map((item) => (
+              <span key={item.propuesta_fingerprint}>
+                {item.c_interno} · {item.producto} · configuración requerida
+                antes de publicar{" "}
+                <button
+                  type="button"
+                  className="button button--secondary"
+                  onClick={() => setSetup(item)}
+                >
+                  <Settings size={16} aria-hidden="true" />
+                  Configurar
+                </button>
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+      <section className="admin-products__section">
+        <form
+          className="admin-v2-filters admin-toolbar admin-toolbar-surface admin-catalog__filters"
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <label className="admin-toolbar__search">
+            Buscar
+            <span className="admin-filter-search-control">
+              <Search size={16} aria-hidden="true" />
+              <input
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(0);
+                }}
+                placeholder="Producto, código, marca, categoría o grupo"
+              />
+            </span>
+          </label>
+          <label className="admin-toolbar__filter">
+            Categoría
+            <select
+              value={categoryFilter}
+              onChange={(event) => {
+                setCategoryFilter(event.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="all">Todas</option>
+              {masterData.snapshot.categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
         </form>
-      <div className="admin-quick-filter-chips admin-products__mode-filters admin-section-secondary-row" role="group" aria-label="Modalidad">
-        {([['all', 'Todos'], ['Único', 'Únicos'], ['Agrupado', 'Agrupados'], ['Excluido', 'Excluidos']] as const).map(([value, label]) => <button key={value} type="button" className="admin-quick-filter-chip" aria-pressed={modeFilter === value} onClick={() => { setModeFilter(value); setPage(0) }}><span>{label}</span><strong>{modeCounts[value]}</strong></button>)}
-      </div>
-      <div className="admin-table-bar admin-products__table-bar admin-result-count-row">
-        <p className="admin-result-count">{products.length === masterData.snapshot.totals.products ? `${products.length} resultados` : `${products.length} de ${masterData.snapshot.totals.products} resultados`}</p>
-        <AdminSort<ProductSort>
-          value={sort}
-          defaultValue="name"
-          onChange={(value) => { setSort(value); setPage(0) }}
-          options={[
-            { value: "name", label: "Predeterminado" },
-            { value: "code", label: "Código interno" },
-            { value: "price_asc", label: "Precio: menor a mayor" },
-            { value: "price_desc", label: "Precio: mayor a menor" },
-          ]}
+        <div
+          className="admin-quick-filter-chips"
+          role="group"
+          aria-label="Modalidad"
+        >
+          <button
+            key={"all"}
+            type="button"
+            className="admin-quick-filter-chip"
+            aria-pressed={modeFilter === "all"}
+            onClick={() => {
+              setModeFilter("all");
+              setPage(0);
+            }}
+          >
+            <span>Todos</span>
+            <strong>{modeCounts["all"]}</strong>
+          </button>
+          {(
+            [
+              ["Único", "Únicos"],
+              ["Agrupado", "Agrupados"],
+              ["Excluido", "Excluidos"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className="admin-quick-filter-chip tone--color"
+              aria-pressed={modeFilter === value}
+              onClick={() => {
+                setModeFilter(value);
+                setPage(0);
+              }}
+            >
+              <span>{label}</span>
+              <strong>{modeCounts[value]}</strong>
+            </button>
+          ))}
+        </div>
+        <div className="admin-table-bar admin-products__table-bar admin-result-count-row">
+          <p className="admin-result-count">
+            {products.length === masterData.snapshot.totals.products
+              ? `${products.length} resultados`
+              : `${products.length} de ${masterData.snapshot.totals.products} resultados`}
+          </p>
+          <AdminSort<ProductSort>
+            value={sort}
+            defaultValue="name"
+            onChange={(value) => {
+              setSort(value);
+              setPage(0);
+            }}
+            options={[
+              { value: "name", label: "Predeterminado" },
+              { value: "code", label: "Código interno" },
+              { value: "price_asc", label: "Precio: menor a mayor" },
+              { value: "price_desc", label: "Precio: mayor a menor" },
+            ]}
+          />
+        </div>
+        <div className="admin-table-section admin-catalog__table">
+          <div className="admin-v2-table">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Producto</th>
+                  <th scope="col">C. interno</th>
+                  <th scope="col">Categoría</th>
+                  <th scope="col">Grupo</th>
+                  <th scope="col">Precio</th>
+                  <th scope="col">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.rows.map((product) => {
+                  const category =
+                    derived.categoryById.get(product.categoria_id)?.nombre ??
+                    "—";
+                  const group = product.grupo_id
+                    ? (derived.groupById.get(product.grupo_id)?.nombre ?? "—")
+                    : null;
+                  const actionLabel =
+                    product.estado === "Excluido"
+                      ? "Proponer reincorporación"
+                      : "Proponer exclusión";
+                  const proposalOverride =
+                    catalog.confirmedProductProposalStatus(product.c_interno);
+                  const proposalState =
+                    proposalOverride === "none"
+                      ? undefined
+                      : (proposalOverride ?? product.propuesta?.estado);
+                  return (
+                    <tr key={product.c_interno}>
+                      <th scope="row">{product.producto}</th>
+                      <td>{product.c_interno}</td>
+                      <td>{category}</td>
+                      <td>
+                        <span className="admin-products__group">
+                          <span
+                            className={
+                              product.estado === "Excluido"
+                                ? "admin-status-badge admin-status-badge--danger"
+                                : "admin-attribute-badge"
+                            }
+                          >
+                            {product.estado}
+                          </span>
+                          <span>{group ?? "—"}</span>
+                        </span>
+                      </td>
+                      <td className="admin-catalog__money">
+                        <Value value={product.precio} money />
+                      </td>
+                      <td>
+                        <IconButton
+                          aria-label={
+                            proposalState
+                              ? `Propuesta en revisión para ${product.producto}`
+                              : actionLabel
+                          }
+                          title={
+                            proposalState
+                              ? "Propuesta en revisión"
+                              : actionLabel
+                          }
+                          variant={
+                            product.estado === "Excluido" ? "primary" : "danger"
+                          }
+                          disabled={!!proposalState}
+                          onClick={() => setSelected(product)}
+                        >
+                          {proposalState ? (
+                            <Clock size={16} aria-hidden="true" />
+                          ) : product.estado === "Excluido" ? (
+                            <RotateCcw size={16} aria-hidden="true" />
+                          ) : (
+                            <CircleOff size={16} aria-hidden="true" />
+                          )}
+                        </IconButton>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!products.length && (
+                  <tr>
+                    <td colSpan={6}>
+                      No hay productos que coincidan con los filtros locales.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {products.length > 0 && (
+          <div
+            className="admin-control__pagination"
+            aria-label="Paginación de productos"
+          >
+            <button
+              type="button"
+              className="button button--secondary"
+              disabled={visible.currentPage === 0}
+              onClick={() => setPage(visible.currentPage - 1)}
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+              Anterior
+            </button>
+            <span>
+              Página {visible.currentPage + 1} de {visible.pageCount} ·{" "}
+              {visible.offset + 1}–
+              {Math.min(visible.offset + visible.rows.length, products.length)}{" "}
+              de {products.length}
+            </span>
+            <button
+              type="button"
+              className="button button--secondary"
+              disabled={visible.currentPage + 1 >= visible.pageCount}
+              onClick={() => setPage(visible.currentPage + 1)}
+            >
+              Siguiente
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+          </div>
+        )}
+      </section>
+      {selected && (
+        <ProductStateProposal
+          product={selected}
+          groupName={
+            selected.grupo_id
+              ? (derived.groupById.get(selected.grupo_id)?.nombre ?? null)
+              : null
+          }
+          onClose={() => setSelected(null)}
         />
-      </div>
-      <div className="admin-table-section admin-catalog__table"><div className="admin-v2-table"><table><thead><tr><th scope="col">Producto</th><th scope="col">C. interno</th><th scope="col">Categoría</th><th scope="col">Grupo</th><th scope="col">Precio</th><th scope="col">Acción</th></tr></thead><tbody>{visible.rows.map((product) => {
-        const category = derived.categoryById.get(product.categoria_id)?.nombre ?? '—'
-        const group = product.grupo_id ? derived.groupById.get(product.grupo_id)?.nombre ?? '—' : null
-        const actionLabel = product.estado === 'Excluido' ? 'Proponer reincorporación' : 'Proponer exclusión'
-        const proposalOverride = catalog.confirmedProductProposalStatus(product.c_interno)
-        const proposalState = proposalOverride === 'none' ? undefined : proposalOverride ?? product.propuesta?.estado
-        return <tr key={product.c_interno}><th scope="row">{product.producto}</th><td>{product.c_interno}</td><td>{category}</td><td><span className="admin-products__group"><span className={product.estado === 'Excluido' ? 'admin-status-badge admin-status-badge--danger' : 'admin-attribute-badge'}>{product.estado}</span><span>{group ?? '—'}</span></span></td><td className="admin-catalog__money"><Value value={product.precio} money /></td><td><IconButton aria-label={proposalState ? `Propuesta en revisión para ${product.producto}` : actionLabel} title={proposalState ? 'Propuesta en revisión' : actionLabel} variant={product.estado === 'Excluido' ? 'primary' : 'danger'} disabled={!!proposalState} onClick={() => setSelected(product)}>{proposalState ? <Clock size={16} aria-hidden="true" /> : product.estado === 'Excluido' ? <RotateCcw size={16} aria-hidden="true" /> : <CircleOff size={16} aria-hidden="true" />}</IconButton></td></tr>
-      })}{!products.length && <tr><td colSpan={6}>No hay productos que coincidan con los filtros locales.</td></tr>}</tbody></table></div></div>
-      {products.length > 0 && <div className="admin-control__pagination" aria-label="Paginación de productos"><button type="button" className="button button--secondary" disabled={visible.currentPage === 0} onClick={() => setPage(visible.currentPage - 1)}><ChevronLeft size={16} aria-hidden="true" />Anterior</button><span>Página {visible.currentPage + 1} de {visible.pageCount} · {visible.offset + 1}–{Math.min(visible.offset + visible.rows.length, products.length)} de {products.length}</span><button type="button" className="button button--secondary" disabled={visible.currentPage + 1 >= visible.pageCount} onClick={() => setPage(visible.currentPage + 1)}>Siguiente<ChevronRight size={16} aria-hidden="true" /></button></div>}
+      )}
+      {setup && (
+        <ProductSetupDialog
+          target={setup}
+          onClose={() => setSetup(null)}
+          onComplete={() => setSetup(null)}
+        />
+      )}
     </section>
-    {selected && <ProductStateProposal product={selected} groupName={selected.grupo_id ? derived.groupById.get(selected.grupo_id)?.nombre ?? null : null} onClose={() => setSelected(null)} />}
-    {setup && <ProductSetupDialog target={setup} onClose={() => setSetup(null)} onComplete={() => setSetup(null)} />}
-  </section>
+  );
 }
