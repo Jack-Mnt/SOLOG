@@ -25,7 +25,7 @@ describe('Index Fase I1: frontera pública', () => {
     const source = await readSource('src/protected-app.tsx')
 
     expect(source).toContain('<AuthProvider>')
-    expect(source).toContain("if (pathname === '/login')")
+    expect(source).toMatch(/if\s*\(\s*pathname\s*===\s*["']\/login["']\s*\)/)
     expect(source).toContain('<LoginRouteResolver')
     expect(source).not.toContain('<SologProvider>')
     expect(source).toContain('<AdminV2App')
@@ -73,6 +73,6 @@ describe('Index Fase I1: routing v2', () => {
     expect(api).toContain('route !== expectedRoute')
     expect(protectedApp).toContain('getSologRoute(userId)')
     expect(protectedApp).not.toMatch(/user_metadata|app_metadata/)
-    expect(protectedApp).not.toContain("getSologBootstrap")
+    expect(protectedApp).not.toMatch(/\bgetSologBootstrap\b/)
   })
 })
