@@ -20,6 +20,7 @@ describe('A4–A6 reads and cache', () => {
   test('summary y detail exigen el contrato operativo V2 y la reactivación por scope', () => {
     const summary = managementFixture('summary', {})
     expect(validateRead('summary', summary)).toBe(summary)
+    expect(() => validateRead('summary', { ...summary, revisions: { incidents: summary.revisions.incidents } })).toThrow('Revisiones')
     const family = summary.families[0]
     expect(() => validateRead('summary', { ...summary, families: [{ ...family, tipo: 'precio_modificado' }] })).toThrow('Familias')
     expect(() => validateRead('summary', { ...summary, families: [{ ...family, resolved_cases: undefined }] })).toThrow('Familias')
