@@ -1,7 +1,7 @@
 # SOLOG — UX AdminDialog — Gestión de Foco V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO FASES 1–3 — FASE 4 PENDIENTE  
+**Estado:** IMPLEMENTADO Y VALIDADO TÉCNICAMENTE — SMOKE PREVIEW PENDIENTE
 **Clasificación:** Nivel B — primitive transversal de UX/accesibilidad  
 **Fecha:** 2026-09-16
 
@@ -123,9 +123,18 @@ Validación dirigida Fases 2–3:
 - `bun run build`: correcto;
 - `git diff --check`: correcto.
 
-Pendiente para Fase 4:
+### Fase 4 — Validación global
 
-- suite global completa contrastada con baseline;
-- revisión final de regresiones en Admin;
+Validación técnica completada en `admin-work`:
+
+- suite global: **371 pass / 9 fail**;
+- los 9 fallos corresponden exclusivamente a los casos G2 de formato horario ya presentes en el baseline productivo;
+- `bun run lint`: correcto;
+- `bun run build`: correcto;
+- revisión final de regresiones y alcance del Bloque 3: sin incompatibilidades nuevas detectadas;
+- no se modificó backend, diseño visual ni contratos de consumidores.
+
+Pendiente únicamente:
+
 - smoke humano en Preview de `admin-work`;
-- cierre definitivo del Bloque 3.
+- cierre definitivo del Bloque 3 tras ese smoke.
