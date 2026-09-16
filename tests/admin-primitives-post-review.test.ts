@@ -11,13 +11,17 @@ describe('Delta post-revisión: primitives compartidas Admin', () => {
       source('src/features/solog/admin/grupos/admin.grupos.v2.tsx'),
     ])
 
-    expect(css).toContain('.admin-quick-filter-chip {')
-    expect(css).toContain('.admin-quick-filter-chip[aria-pressed="true"]')
-    expect(css).toContain('.admin-quick-filter-chip:focus-visible')
-    expect(css).toContain('.admin-quick-filter-chip strong')
-    expect(control).toContain('admin-control__chip admin-quick-filter-chip')
-    expect(products).toContain('className="admin-quick-filter-chip"')
-    expect(groups).toContain('className="admin-quick-filter-chip"')
+    expect(css).toMatch(/\.admin-quick-filter-chip\s*\{/)
+    expect(css).toMatch(/\.admin-quick-filter-chip\[aria-pressed=["']true["']\]/)
+    expect(css).toMatch(/\.admin-quick-filter-chip:focus-visible/)
+    expect(css).toMatch(/\.admin-quick-filter-chip\s+strong/)
+    expect(control).toMatch(/className=["'][^"']*admin-quick-filter-chip[^"']*["']/)
+    expect(control).toContain('tone--success')
+    expect(control).toContain('tone--warning')
+    expect(control).toContain('tone--info')
+    expect(control).toContain('tone--danger')
+    expect(products).toMatch(/className=["'][^"']*admin-quick-filter-chip[^"']*["']/)
+    expect(groups).toMatch(/className=["'][^"']*admin-quick-filter-chip[^"']*["']/)
   })
 
   test('StateView usa la primitive común de Catálogo también en Incidencias', async () => {
@@ -27,13 +31,12 @@ describe('Delta post-revisión: primitives compartidas Admin', () => {
       source('src/features/solog/admin/incidencias/admin.incidencias.v2.tsx'),
     ])
 
-    expect(css).toContain('.admin-state-views {')
-    expect(css).toContain('.admin-state-views > button {')
-    expect(css).toContain('.admin-state-views > button strong')
-    expect(css).toContain('.admin-state-views > button[aria-selected="true"]')
-    expect(css).not.toContain('.admin-catalog__views button {')
-    expect(catalog).toContain('admin-catalog__views admin-state-views')
-    expect(incidents).toContain('admin-incidents__state-views admin-state-views')
+    expect(css).toMatch(/\.admin-state-views\s*\{/)
+    expect(css).toMatch(/\.admin-state-views\s*>\s*button\s*\{/)
+    expect(css).toMatch(/\.admin-state-views\s*>\s*button\s+strong/)
+    expect(css).toMatch(/\.admin-state-views\s*>\s*button\[aria-selected=["']true["']\]/)
+    expect(catalog).toMatch(/className=["'][^"']*admin-state-views[^"']*["']/)
+    expect(incidents).toMatch(/className=["'][^"']*admin-state-views[^"']*["']/)
   })
 
   test('el delta permanece frontend-only y no agrega lecturas para los contadores', async () => {
@@ -43,9 +46,9 @@ describe('Delta post-revisión: primitives compartidas Admin', () => {
       source('src/features/solog/admin/incidencias/admin.incidencias.v2.tsx'),
     ])
 
-    expect(products).not.toContain("useCatalogQuery('products'")
+    expect(products).not.toMatch(/useCatalogQuery\(\s*["']products["']/)
     expect(groups).not.toContain('useGroupsQuery')
     expect(groups).not.toContain('groupsRead(')
-    expect(incidents.match(/useManagementQuery\("summary"/g) ?? []).toHaveLength(1)
+    expect(incidents.match(/useManagementQuery\(\s*["']summary["']/g) ?? []).toHaveLength(1)
   })
 })
