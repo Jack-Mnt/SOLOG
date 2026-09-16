@@ -4,7 +4,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleOff,
-  Clock,
   Eye,
   RotateCcw,
 } from "lucide-react";
@@ -179,6 +178,24 @@ function canProposeDelete(family: Family) {
   );
 }
 
+function globalIncidentRevision(
+  store: ReturnType<typeof useManagement>,
+  family: MergedIncidentFamily,
+) {
+  const revisions = [
+    ...new Set(
+      family.sources
+        .map(
+          (source) =>
+            store.peek("summary", { site_id: source.siteId }).data?.revisions
+              .incidents_global,
+        )
+        .filter((value): value is number => typeof value === "number"),
+    ),
+  ];
+  return revisions.length === 1 ? revisions[0] : null;
+}
+
 function IgnoreDialog({
   family,
   onClose,
@@ -191,14 +208,16 @@ function IgnoreDialog({
   onSuccess: () => void;
 }) {
   const store = useManagement();
-  const [runningSite, setRunningSite] = useState<string | null>(null);
-  const ignore = (source: IncidentFamilySource) => {
-    const summary = store.peek("summary", { site_id: source.siteId }).data;
-    if (!summary) {
-      onError("La sede ya no tiene un summary vigente. Reintenta la acción.");
+  const [running, setRunning] = useState(false);
+  const ignore = () => {
+    const revision = globalIncidentRevision(store, family);
+    if (revision === null) {
+      onError(
+        "La revisión global de incidencias no está disponible. Actualiza la vista y reintenta.",
+      );
       return;
     }
-    setRunningSite(source.siteId);
+    setRunning(true);
     void store
       .mutation(
         "ignore_30d",
@@ -206,7 +225,7 @@ function IgnoreDialog({
           family_key: family.family_key,
           scope: "global",
         },
-        summary.revisions.incidents_global,
+        revision,
       )
       .then(() => {
         onSuccess();
@@ -219,44 +238,37 @@ function IgnoreDialog({
             : "No se pudo ignorar la incidencia.",
         ),
       )
-      .finally(() => setRunningSite(null));
+      .finally(() => setRunning(false));
   };
   return (
     <AdminDialog
       title="Ignorar incidencia durante 30 días"
       description={`${typeLabels[family.tipo]} · ${family.c_interno ?? family.c_interno_original ?? "Sin código"}`}
       onClose={onClose}
+      closeDisabled={running}
+      footer={
+        <>
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={running}
+            onClick={onClose}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="button button--primary"
+            disabled={running}
+            onClick={ignore}
+          >
+            <AlarmClockOff size={16} aria-hidden="true" />
+            {running ? "Ignorando…" : "Ignorar 30 días"}
+          </button>
+        </>
+      }
     >
-      <div className="admin-incidents__sources">
-        {family.sources.map((source) => (
-          <div key={source.siteId} className="admin-incidents__source">
-            <div>
-              <strong>{source.siteName}</strong>
-              <span>
-                <StateBadge state={source.family.family_state} />
-                {source.family.scope_suppression_until
-                  ? ` hasta ${incidentTimestamp(source.family.scope_suppression_until)}`
-                  : ""}
-              </span>
-            </div>
-            {source.family.active && !source.family.reactivate_available ? (
-              <button
-                type="button"
-                className="button button--secondary"
-                disabled={runningSite !== null}
-                onClick={() => ignore(source)}
-              >
-                <Clock size={16} aria-hidden="true" />
-                {runningSite === source.siteId ? "Ignorando…" : "Ignorar"}
-              </button>
-            ) : (
-              <span className="admin-incidents__source-status">
-                Sin acción pendiente
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
+      <p>Esta incidencia se ignorará durante 30 días en todas las sedes.</p>
     </AdminDialog>
   );
 }
@@ -503,9 +515,41 @@ export function AdminIncidentsV2() {
       );
     }
   };
-  const actSource = (
+  const reactivateFamily = (family: MergedIncidentFamily): Promise<void> => {
+    const revision = globalIncidentRevision(store, family);
+    if (revision === null) {
+      const reason = new Error(
+        "La revisión global de incidencias no está disponible. Actualiza la vista y reintenta.",
+      );
+      setError(reason.message);
+      return Promise.reject(reason);
+    }
+    setError("");
+    setNotice("");
+    return store
+      .mutation(
+        "reactivate",
+        {
+          family_key: family.family_key,
+          scope: "global",
+        },
+        revision,
+      )
+      .then(() => {
+        setAllSnapshot([]);
+        setNotice("La incidencia fue reactivada.");
+      })
+      .catch((reason) => {
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "No se pudo actualizar la incidencia.",
+        );
+        throw reason;
+      });
+  };
+  const proposeDeleteSource = (
     source: IncidentFamilySource,
-    action: "reactivate" | "propose_delete",
   ): Promise<void> => {
     const summary = store.peek("summary", { site_id: source.siteId }).data;
     if (!summary) {
@@ -517,34 +561,21 @@ export function AdminIncidentsV2() {
     }
     setError("");
     setNotice("");
-    const globalAction = action === "reactivate";
     return store
       .mutation(
-        action,
-        globalAction
-          ? {
-              family_key: source.family.family_key,
-              scope: "global",
-            }
-          : {
-              family_key: source.family.family_key,
-              scope: "site",
-              site_id: source.siteId,
-            },
-        globalAction
-          ? summary.revisions.incidents_global
-          : summary.revisions.incidents,
-        globalAction ? undefined : source.siteId,
+        "propose_delete",
+        {
+          family_key: source.family.family_key,
+          scope: "site",
+          site_id: source.siteId,
+        },
+        summary.revisions.incidents,
+        source.siteId,
       )
       .then(() => {
-        if (action === "reactivate") {
-          setAllSnapshot([]);
-          setNotice("La incidencia fue reactivada.");
-        } else {
-          setNotice(
-            "La propuesta de eliminación quedó pendiente para revisión en Catálogo.",
-          );
-        }
+        setNotice(
+          "La propuesta de eliminación quedó pendiente para revisión en Catálogo.",
+        );
       })
       .catch((reason) => {
         setError(
@@ -704,9 +735,7 @@ export function AdminIncidentsV2() {
                       : state === "suprimida"
                         ? item.active_suppression_until
                         : item.resolved_at;
-                  const reactivable = item.sources.find(
-                    (source) => source.family.active_suppression_until !== null,
-                  );
+                  const reactivable = item.active_suppression_until !== null;
                   const deletable = item.sources.find((source) =>
                     canProposeDelete(source.family),
                   );
@@ -790,9 +819,7 @@ export function AdminIncidentsV2() {
                               title="Reactivar incidencia"
                               disabled={pending}
                               onClick={() =>
-                                void actSource(reactivable, "reactivate").catch(
-                                  () => {},
-                                )
+                                void reactivateFamily(item).catch(() => {})
                               }
                             >
                               <RotateCcw size={16} aria-hidden="true" />
@@ -840,7 +867,7 @@ export function AdminIncidentsV2() {
         <DeleteProposalDialog
           proposal={deleteProposal}
           onClose={() => setDeleteProposal(null)}
-          onConfirm={() => actSource(deleteProposal.source, "propose_delete")}
+          onConfirm={() => proposeDeleteSource(deleteProposal.source)}
         />
       )}
     </section>
