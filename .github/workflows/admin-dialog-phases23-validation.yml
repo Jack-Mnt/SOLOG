@@ -1,0 +1,89 @@
+name: Admin Dialog Phases 2 3 Validation
+
+on:
+  push:
+    branches:
+      - admin-work
+    paths-ignore:
+      - ".validation/admin-dialog-phases23.txt"
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout admin-work
+        uses: actions/checkout@v4
+        with:
+          ref: admin-work
+          fetch-depth: 40
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run validation and write report
+        shell: bash
+        run: |
+          set +e
+          mkdir -p .validation
+
+          bun test \
+            tests/admin-dialog.test.ts \
+            tests/admin-dialog-integration.test.ts \
+            tests/admin-catalog-v3.structure.test.ts \
+            tests/admin-catalog-v3.integration.test.ts \
+            tests/admin-valuation-dialog.test.ts \
+            tests/admin-products-masterdata.test.ts \
+            tests/admin-primitives-post-review.test.ts \
+            tests/admin-groups-v1.test.ts \
+            tests/admin-incidents-multisite.test.ts \
+            tests/admin-shell-devices.test.ts \
+            tests/admin-control-v3.test.ts > /tmp/targeted.log 2>&1
+          targeted_status=$?
+
+          bun run lint > /tmp/lint.log 2>&1
+          lint_status=$?
+
+          bun run build > /tmp/build.log 2>&1
+          build_status=$?
+
+          git diff --check 5def9e0ec49d76a318eb2564946d777bebcd0450...HEAD -- . ':(exclude).validation/**' ':(exclude).github/workflows/admin-dialog-phases23-validation.yml' > /tmp/diff.log 2>&1
+          diff_status=$?
+
+          {
+            echo "Admin Dialog Phases 2 3 Validation"
+            echo "branch=admin-work"
+            echo "commit=$(git rev-parse HEAD)"
+            echo "targeted_status=$targeted_status"
+            echo "lint_status=$lint_status"
+            echo "build_status=$build_status"
+            echo "diff_status=$diff_status"
+            echo
+            echo "=== TARGETED ==="
+            cat /tmp/targeted.log
+            echo
+            echo "=== LINT ==="
+            cat /tmp/lint.log
+            echo
+            echo "=== BUILD ==="
+            cat /tmp/build.log
+            echo
+            echo "=== DIFF CHECK ==="
+            cat /tmp/diff.log
+          } > .validation/admin-dialog-phases23.txt
+
+      - name: Commit validation report
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .validation/admin-dialog-phases23.txt
+          git commit -m "chore: record admin dialog phases 2 3 validation" || exit 0
+          git push origin HEAD:admin-work
