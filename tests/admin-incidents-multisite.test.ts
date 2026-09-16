@@ -202,8 +202,8 @@ describe("Incidencias multisede", () => {
     expect(source).toContain('scope: "site"');
     expect(source).toContain('summary.revisions.incidents');
     expect(source).toContain('Detectado en: <strong>{proposal.source.siteName}</strong>');
-    expect(source).toMatch(/void onConfirm\(\)\s*\.then\(onClose\)\s*\.catch/);
-    expect(source).toContain('proposing ? "Proponiendo…" : "Proponer eliminación"');
+    expect(source).toMatch(/void \(retryable \? onRetry\(\) : onConfirm\(\)\)\s*\.then\(onClose\)\s*\.catch/);
+    expect(source).toContain('retryable ? "Reintentar" : "Proponer eliminación"');
   });
 
   test("la fecha de supresión multisede solo se conserva cuando las fuentes coinciden", () => {
