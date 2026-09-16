@@ -1,7 +1,7 @@
 # SOLOG — Lógica Incidencias — Acciones Globales V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** IMPLEMENTADO TÉCNICAMENTE — SMOKE HUMANO PENDIENTE  
 **Clasificación:** Nivel C — lógica de negocio, contrato Admin e integración backend/frontend  
 **Fecha:** 2026-09-16
 
@@ -156,4 +156,69 @@ La idempotencia y el `operation_id` continúan internamente; no forman parte del
 8. Tests, lint, build y `git diff --check` pasan.
 9. Smoke humano de Incidencias confirma los flujos.
 
-> **Bloque 1 congelado.**
+## 9. Estado desplegado y validación técnica
+
+### 9.1 Backend
+
+Desplegado en Supabase mediante:
+
+```text
+20260916111254_solog_admin_incidents_v2_summary_global_revision
+```
+
+El contrato real de `public.rpc_solog_admin_incidents_v2` mantiene:
+
+```text
+contract_version = 2
+```
+
+y `summary` expone:
+
+```ts
+revisions: {
+  incidents: number
+  incidents_global: number
+}
+```
+
+Validación directa ejecutada con contexto `authenticated` y rollback de la transacción de prueba:
+
+- `summary` por sede devuelve ambas revisiones;
+- `summary` global devuelve ambas revisiones;
+- `incidents_global` se entrega como número JSON;
+- `anon` no tiene permiso `EXECUTE` sobre la RPC;
+- `authenticated` conserva el acceso previsto.
+
+### 9.2 Frontend
+
+Implementado:
+
+- Ignorar con `scope: "global"` y `revisions.incidents_global`;
+- Reactivar con `scope: "global"` y `revisions.incidents_global`;
+- `propose_delete` permanece `site-scoped` y exige fuente Pendiente;
+- detalle multisede omite `site_id`;
+- se eliminó el uso de `sources[0]` para el detalle agregado;
+- `deletion_proposed` se reconcilia entre summaries cacheados;
+- Ignorar/Reactivar invalidan coherentemente los summaries mediante revisión global;
+- se aplicaron los mensajes de feedback congelados.
+
+No se adelantaron los cambios visuales/UX del Bloque 2.
+
+### 9.3 Evidencia técnica
+
+Validación en Bun `1.3.14`:
+
+- tests dirigidos del Bloque 1: **54 pass / 0 fail**;
+- suite completa: **360 pass / 9 fail**;
+- los 9 fallos pertenecen exclusivamente a `tests/global-g2.test.ts` por representación horaria dependiente de plataforma;
+- el mismo archivo sobre el HEAD base `d4130809cd44add92367756cc0617dca8cbc1ec0` presenta los mismos **9 fallos**, por lo que no constituyen una regresión del Bloque 1;
+- `bun run lint`: correcto;
+- `bun run build`: correcto;
+- `git diff --check`: correcto;
+- `git diff --check d4130809cd44add92367756cc0617dca8cbc1ec0...HEAD`: correcto.
+
+### 9.4 Pendiente de cierre
+
+Permanece pendiente únicamente el smoke humano de Incidencias definido en los criterios de aceptación.
+
+> **Bloque 1 congelado e implementado técnicamente. No avanzar al Bloque 2 hasta completar el smoke humano correspondiente.**
