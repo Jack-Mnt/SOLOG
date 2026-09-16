@@ -6,7 +6,7 @@ export type CatalogChange = Omit<SologCatalogChangeRow, 'tipo' | 'ambito'> & { t
 export type Domain = 'master' | 'incidents' | 'devices'
 export type Payload = Record<string, unknown>
 export interface ManagementEnvelope { contract_version: 2; generated_at: string }
-export interface Revisions { groups?: number; catalog?: number; incidents?: number; devices?: number }
+export interface Revisions { groups?: number; catalog?: number; incidents?: number; incidents_global?: number; devices?: number }
 export interface MasterEnvelope extends ManagementEnvelope { revisions: { groups: number; catalog: number } }
 export interface MasterReference extends MasterEnvelope {
   categories: { id: string; nombre: string; orden: number }[]
@@ -32,7 +32,7 @@ export interface Reads {
   catalog_changes: MasterPage<CatalogChange> & { counts: SologCatalogChangeCounts }
   publication_preview: MasterEnvelope & { preview: CatalogPublicationPreview }
   price_mismatch_options: PriceOptions
-  summary: ManagementEnvelope & { site_id: string | null; period: { from: string; to: string }; families: Family[]; revisions: { incidents: number } }
+  summary: ManagementEnvelope & { site_id: string | null; period: { from: string; to: string }; families: Family[]; revisions: { incidents: number; incidents_global: number } }
   detail: ManagementEnvelope & { site_id: string | null; family_key: string; items: Incident[]; page: number; page_size: number; revisions: { incidents: number } }
   list: ManagementEnvelope & { devices: Device[] }
 }
@@ -90,7 +90,7 @@ function envelope(v: unknown): asserts v is Payload {
 export function validateRead<A extends ReadAction>(action: A, value: unknown): Reads[A] {
   envelope(value)
   const d = domain(action)
-  if (action !== 'list' && (!object(value.revisions) || !(d === 'master' ? revision(value.revisions.groups) && revision(value.revisions.catalog) : revision(value.revisions.incidents)))) throw new ManagementError('Revisiones incompletas')
+  if (action !== 'list' && (!object(value.revisions) || !(d === 'master' ? revision(value.revisions.groups) && revision(value.revisions.catalog) : revision(value.revisions.incidents) && (action !== 'summary' || revision(value.revisions.incidents_global))))) throw new ManagementError('Revisiones incompletas')
   const rows = action === 'summary' ? value.families : action === 'detail' ? value.items : action === 'list' ? value.devices : ['groups', 'group_products', 'catalog_changes'].includes(action) ? value.rows : null
   if (rows !== null && (!Array.isArray(rows) || !rows.every(object))) throw new ManagementError('Lista incompatible con contrato v2')
   if (['groups', 'group_products', 'catalog_changes'].includes(action) && (!revision(value.offset) || !revision(value.limit) || Number(value.limit) < 1 || Number(value.limit) > 50 || (rows as unknown[]).length > Number(value.limit))) throw new ManagementError('Paginación maestra incompatible')
