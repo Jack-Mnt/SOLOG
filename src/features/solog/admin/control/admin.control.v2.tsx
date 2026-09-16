@@ -432,7 +432,7 @@ function ControlResults({
         />
       </div>
       {view.total > 0 ? (
-        <div className="admin-table-section admin-control__table">
+        <div className="admin-table-section admin__table">
           <div className="admin-v2-table">
             <table>
               <thead>
@@ -498,7 +498,7 @@ function ControlResults({
       {view.total > 0 && (
         <div className="admin-control__pagination">
           <button
-            className="button button--secondary"
+            className="admin-button__actions"
             disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
           >
@@ -507,7 +507,7 @@ function ControlResults({
           </button>
           <span>Página {page + 1}</span>
           <button
-            className="button button--secondary"
+            className="admin-button__actions"
             disabled={(page + 1) * 100 >= view.total}
             onClick={() => setPage((p) => p + 1)}
           >
@@ -592,7 +592,7 @@ export function AdminControlV2() {
           <button
             type="button"
             disabled={!site}
-            className="button button--secondary admin-control__export"
+            className="admin-button__actions"
             onClick={() => setExportOpen(true)}
           >
             <Download size={16} aria-hidden="true" />

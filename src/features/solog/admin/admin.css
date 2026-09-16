@@ -1516,21 +1516,20 @@ detalle y exportación sin cambios. */
   background: var(--color-danger-soft);
   color: color-mix(in srgb, var(--color-danger) 75%, var(--color-text-primary));
 }
-.admin-control > .admin-control__table > .admin-v2-table {
+/* .admin-control > .admin__table > .admin-v2-table {
   max-height: min(65vh, 680px);
   isolation: isolate;
-}
-.admin-control > .admin-control__table table {
+} */
+.admin-control > .admin__table table {
   border-collapse: separate;
   border-spacing: 0;
 }
-.admin-control > .admin-control__table th,
-.admin-control > .admin-control__table td {
-  padding: 8px 14px;
-  font-size: 0.8125rem;
-  line-height: 1.4;
+.admin-control > .admin__table th,
+.admin-control > .admin__table td {
+  padding: 8px 12px;
+  font-size: 0.9rem;
 }
-.admin-control__table thead th {
+.admin__table thead th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -1539,14 +1538,14 @@ detalle y exportación sin cambios. */
   font-size: 0.75rem;
   font-weight: 600;
 }
-.admin-control__table tbody tr:hover {
+.admin__table tbody tr:hover {
   background: var(--color-primary-subtle);
 }
-.admin-control__table .admin-control__number {
-  text-align: right;
+.admin__table .admin-control__number {
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
-.admin-control__table .admin-control__detail-cell {
+.admin__table .admin-control__detail-cell {
   text-align: center;
 }
 .admin-control__difference--negative {
@@ -1558,7 +1557,7 @@ detalle y exportación sin cambios. */
 .admin-control__difference--zero {
   color: var(--color-text-secondary);
 }
-.admin-control__table .icon-button {
+.admin__table .icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1569,11 +1568,11 @@ detalle y exportación sin cambios. */
   background: transparent;
   box-shadow: none;
 }
-.admin-control__table .icon-button:hover {
+.admin__table .icon-button:hover {
   color: var(--color-primary-active);
   background: var(--color-primary-soft);
 }
-.admin-control__table .icon-button:focus-visible,
+.admin__table .icon-button:focus-visible,
 .admin-control__filters > .button:focus-visible,
 .admin-control__pagination > .button:focus-visible {
   outline: 2px solid var(--color-focus);
@@ -1724,7 +1723,7 @@ sin alterar las cards de otros módulos. */
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
-.admin-dashboard__actions {
+.admin-button__actions {
   display: flex;
   justify-content: center;
   margin-top: 6px;
@@ -1740,7 +1739,7 @@ sin alterar las cards de otros módulos. */
   box-shadow: inset 4px 0 var(--color-primary);
   transform: none;
 }
-.admin-dashboard__actions:hover {
+.admin-button__actions:hover {
   color: var(--color-primary);
   border-color: var(--color-primary);
   background: var(--color-primary-subtle);
@@ -1749,7 +1748,7 @@ sin alterar las cards de otros módulos. */
 }
 .admin-dashboard__card > header > .icon-button:focus-visible,
 .admin-dashboard__detail > .admin-v2-table .icon-button:focus-visible,
-.admin-dashboard__actions:focus-visible {
+.admin-button__actions:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
@@ -2448,7 +2447,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   min-height: 36px;
   white-space: nowrap;
 }
-.admin-incidents__all-sites[aria-pressed="true"] {
+.admin-v2-workspace .admin-workspace__main .button[aria-pressed="true"] {
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-primary-soft);
@@ -3131,7 +3130,7 @@ badges y conteos — Fase D. */
 }
 
 /* Dashboard keeps its contextual left marker as an explicit exception. */
-.admin-v2-workspace .admin-dashboard__actions {
+.admin-v2-workspace .admin-button__actions {
   height: 36px;
   min-height: 36px;
   padding: 8px 12px;
@@ -3139,17 +3138,17 @@ badges y conteos — Fase D. */
   font-size: 0.8rem;
   box-shadow: inset 4px 0 var(--color-primary);
 }
-.admin-v2-workspace .admin-dashboard__actions > svg {
+.admin-v2-workspace .admin-button__actions > svg {
   width: 16px;
   height: 16px;
 }
-.admin-v2-workspace .admin-dashboard__actions:hover:not(:disabled) {
+.admin-v2-workspace .admin-button__actions:hover:not(:disabled) {
   color: var(--color-primary-active);
   border-color: var(--color-primary);
   background: var(--color-primary-subtle);
   box-shadow: inset 4px 0 var(--color-primary);
 }
-.admin-v2-workspace .admin-dashboard__actions:focus-visible {
+.admin-v2-workspace .admin-button__actions:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   box-shadow: inset 4px 0 var(--color-primary);
@@ -3372,11 +3371,34 @@ while structural exceptions keep their size. */
   background: var(--color-warning-soft);
 }
 
-.admin-notice { display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--color-border); border-radius:8px; background:var(--color-surface); }
-.admin-notice__message { min-width:0; flex:1; }
-.admin-notice__action { margin-left:auto; }
-.admin-notice__close { flex:0 0 auto; }
-.admin-notice--success { color:var(--color-success); }
-.admin-notice--info { color:var(--color-primary); }
-.admin-notice--warning { color:var(--color-warning); }
-.admin-notice--error { color:var(--color-danger); }
+.admin-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+.admin-notice__message {
+  min-width: 0;
+  flex: 1;
+}
+.admin-notice__action {
+  margin-left: auto;
+}
+.admin-notice__close {
+  flex: 0 0 auto;
+}
+.admin-notice--success {
+  color: var(--color-success);
+}
+.admin-notice--info {
+  color: var(--color-primary);
+}
+.admin-notice--warning {
+  color: var(--color-warning);
+}
+.admin-notice--error {
+  color: var(--color-danger);
+}

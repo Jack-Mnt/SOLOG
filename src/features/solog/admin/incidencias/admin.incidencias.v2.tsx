@@ -613,7 +613,7 @@ export function AdminIncidentsV2() {
         </label>
         <button
           type="button"
-          className="button button--secondary admin-incidents__all-sites"
+          className="button button--primary"
           aria-pressed={allActive}
           disabled={allLoading || !sites.length}
           onClick={() => void toggleAll()}
@@ -643,7 +643,7 @@ export function AdminIncidentsV2() {
         </AdminNotice>
       )}{" "}
       {hasData ? (
-        <div className="admin-table-section admin-incidents__table">
+        <div className="admin-table-section admin__table">
           <div
             className="admin-v2-table"
             role="tabpanel"

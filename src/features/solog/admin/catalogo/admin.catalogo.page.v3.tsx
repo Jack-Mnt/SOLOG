@@ -316,7 +316,6 @@ function ProposalRow({
           onClick={() => onSelect(proposal)}
         >
           <Eye size={16} aria-hidden="true" />
-          Revisar
         </button>
       </td>
     </tr>
