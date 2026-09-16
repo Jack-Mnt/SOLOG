@@ -10,8 +10,8 @@ describe('Index Fase I1: frontera pública', () => {
       readSource('src/pages/home.tsx'),
     ])
 
-    expect(app).toContain("const ProtectedApp = lazy(() => import('./protected-app'))")
-    expect(app).toContain("if (pathname === '/') return <PublicHomePage />")
+    expect(app).toMatch(/const\s+ProtectedApp\s*=\s*lazy\(\s*\(\)\s*=>\s*import\(\s*["']\.\/protected-app["']\s*\)\s*\)/s)
+    expect(app).toMatch(/if\s*\(\s*pathname\s*===\s*["']\/["']\s*\)\s*return\s*<PublicHomePage\s*\/>/s)
     expect(app).not.toContain('AuthProvider')
     expect(app).not.toContain('SologProvider')
     expect(app).not.toContain('supabase')
@@ -68,7 +68,7 @@ describe('Index Fase I1: routing v2', () => {
       readSource('src/protected-app.tsx'),
     ])
 
-    expect(api).toContain("callSologPayloadRpc<unknown>('rpc_solog_route_v2', {})")
+    expect(api).toMatch(/callSologPayloadRpc<unknown>\(\s*["']rpc_solog_route_v2["']\s*,\s*\{\s*\}\s*\)/s)
     expect(api).toContain('response.contract_version !== 2')
     expect(api).toContain('route !== expectedRoute')
     expect(protectedApp).toContain('getSologRoute(userId)')
