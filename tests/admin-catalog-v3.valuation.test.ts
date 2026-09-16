@@ -23,7 +23,7 @@ describe('Catálogo V3: valorizado staged', () => {
   test('la superficie usa el mismo modal y solamente prepara staging', async () => {
     const source = await Bun.file('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx').text()
     expect(source).toContain('ValuationDialog')
-    expect(source).toContain("store.mutation('prepare_price'")
+    expect(source).toMatch(/store\s*\.\s*mutation\(\s*["']prepare_price["']/)
     expect(source).not.toContain('valuation_save')
     expect(source).toContain('se aplicarán solo al publicar Catálogo')
     for (const code of ['INVALID_PACKAGE_CONFIGURATION', 'INVALID_PACKAGE_PRICE', 'PACKAGE_PRICE_DECISION_REQUIRED']) expect(source).toContain(code)
