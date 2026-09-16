@@ -33,10 +33,10 @@ describe('Index Fase I2: code splitting', () => {
       readSource('src/protected-app.tsx'),
     ])
 
-    expect(app).toContain("lazy(() => import('./protected-app'))")
-    expect(protectedApp).toContain("import('./features/solog/admin/admin.v2.app')")
-    expect(protectedApp).toContain("import('./features/solog/cajero/cajero.app')")
-    expect(protectedApp).toContain("import('./pages/detalles')")
+    expect(app).toMatch(/lazy\(\s*\(\)\s*=>\s*import\(\s*["']\.\/protected-app["']\s*\)\s*\)/s)
+    expect(protectedApp).toMatch(/import\(\s*["']\.\/features\/solog\/admin\/admin\.v2\.app["']\s*\)/)
+    expect(protectedApp).toMatch(/import\(\s*["']\.\/features\/solog\/cajero\/cajero\.app["']\s*\)/)
+    expect(protectedApp).toMatch(/import\(\s*["']\.\/pages\/detalles["']\s*\)/)
     expect(protectedApp).not.toMatch(
       /import \\{ AdminLayout \\}|import \\{ AdminDashboardPage \\}|import \\{ AdminDevicesPage \\}|import \\{ DetailsPage \\}/,
     )
@@ -57,7 +57,7 @@ describe('Index Fase I2: code splitting', () => {
     ]
 
     for (const page of pages) {
-      expect(adminApp).toContain(`import("./${page}")`)
+      expect(adminApp).toMatch(new RegExp(`import\\(\\s*["']\\./${page.replaceAll('.', '\\.') }["']\\s*\\)`))
     }
   })
 
