@@ -18,7 +18,7 @@ function confirmedMutationMessage(result: MutationResult | undefined) {
   return detail ? `Operación confirmada. ${detail}` : 'Operación confirmada.'
 }
 
-export function MutationNotice({ domain, onSuccess }: { domain: Domain; onSuccess?: (payload: Payload) => void }) {
+export function MutationNotice({ domain, onSuccess, showResult = true }: { domain: Domain; onSuccess?: (payload: Payload) => void; showResult?: boolean }) {
   const store = useManagement()
   const intent = store.intent(domain)
   const result = store.results.get(domain)
@@ -32,7 +32,6 @@ export function MutationNotice({ domain, onSuccess }: { domain: Domain; onSucces
 
     return <AdminNotice
       tone={intent.error ? 'error' : 'info'}
-      onDismiss={() => setDismissedOccurrence(occurrence)}
       action={!intent.pending ? <button
         type="button"
         className="button button--secondary"
@@ -43,7 +42,7 @@ export function MutationNotice({ domain, onSuccess }: { domain: Domain; onSucces
     </AdminNotice>
   }
 
-  if (!result) return null
+  if (!showResult || !result) return null
   const occurrence = `result:${domain}:${store.resultOccurrence(domain) ?? 0}`
   if (dismissedOccurrence === occurrence) return null
 
