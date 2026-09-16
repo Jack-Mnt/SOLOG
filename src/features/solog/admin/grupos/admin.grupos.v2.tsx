@@ -392,7 +392,7 @@ export function AdminGroupsV2() {
       >
         <label className="admin-toolbar__search">
           Buscar
-          <span className="admin-filter-search-control">
+          <span className="admin-filter-search">
             <Search size={16} aria-hidden="true" />
             <input
               placeholder="Nombre, integrante, SKU o marca"
@@ -434,7 +434,7 @@ export function AdminGroupsV2() {
           </button>
         </div>
       </form>
-      <div className="admin-groups__quick-filter-sets admin-section-secondary-row">
+      <div className="admin-section-secondary-row">
         <div
           className="admin-quick-filter-chips"
           role="group"

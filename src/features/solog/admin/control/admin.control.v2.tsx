@@ -377,49 +377,51 @@ function ControlResults({
   return (
     <>
       <div
-        className="admin-quick-filter-chips admin-section-secondary-row admin-control__secondary-row"
+        className="admin-section-secondary-row"
         aria-label="Resumen de resultados"
       >
-        <button
-          type="button"
-          className="admin-quick-filter-chip"
-          aria-pressed={selectedState === ""}
-          onClick={() => onStateChange("")}
-        >
-          <b>{view.summary.total} Total</b>
-        </button>
-        <button
-          type="button"
-          className="admin-quick-filter-chip tone--success"
-          aria-pressed={selectedState === "Coincide"}
-          onClick={() => onStateChange("Coincide")}
-        >
-          <b>{view.summary.coincide} Coinciden</b>
-        </button>
-        <button
-          type="button"
-          className="admin-quick-filter-chip tone--warning"
-          aria-pressed={selectedState === "Recontar"}
-          onClick={() => onStateChange("Recontar")}
-        >
-          <b>{view.summary.pending_recount} Recontar</b>
-        </button>
-        <button
-          type="button"
-          className="admin-quick-filter-chip tone--info"
-          aria-pressed={selectedState === "Confirmada"}
-          onClick={() => onStateChange("Confirmada")}
-        >
-          <b>{view.summary.confirmed} Confirmadas</b>
-        </button>
-        <button
-          type="button"
-          className="admin-quick-filter-chip tone--danger"
-          aria-pressed={selectedState === "Inconsistente"}
-          onClick={() => onStateChange("Inconsistente")}
-        >
-          <b>{view.summary.inconsistent} Inconsistentes</b>
-        </button>
+        <div className="admin-quick-filter-chips">
+          <button
+            type="button"
+            className="admin-quick-filter-chip"
+            aria-pressed={selectedState === ""}
+            onClick={() => onStateChange("")}
+          >
+            <b>{view.summary.total} Total</b>
+          </button>
+          <button
+            type="button"
+            className="admin-quick-filter-chip tone--success"
+            aria-pressed={selectedState === "Coincide"}
+            onClick={() => onStateChange("Coincide")}
+          >
+            <b>{view.summary.coincide} Coinciden</b>
+          </button>
+          <button
+            type="button"
+            className="admin-quick-filter-chip tone--warning"
+            aria-pressed={selectedState === "Recontar"}
+            onClick={() => onStateChange("Recontar")}
+          >
+            <b>{view.summary.pending_recount} Recontar</b>
+          </button>
+          <button
+            type="button"
+            className="admin-quick-filter-chip tone--info"
+            aria-pressed={selectedState === "Confirmada"}
+            onClick={() => onStateChange("Confirmada")}
+          >
+            <b>{view.summary.confirmed} Confirmadas</b>
+          </button>
+          <button
+            type="button"
+            className="admin-quick-filter-chip tone--danger"
+            aria-pressed={selectedState === "Inconsistente"}
+            onClick={() => onStateChange("Inconsistente")}
+          >
+            <b>{view.summary.inconsistent} Inconsistentes</b>
+          </button>
+        </div>
         <AdminSort<ControlSort>
           value={sort}
           defaultValue="default"
@@ -566,7 +568,7 @@ export function AdminControlV2() {
         </div>
         <label className="admin-filter-field admin-filter-search-field admin-toolbar__search">
           Buscar grupo
-          <span className="admin-filter-search-control">
+          <span className="admin-filter-search">
             <Search size={16} aria-hidden="true" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} />
           </span>

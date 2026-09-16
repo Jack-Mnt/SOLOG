@@ -232,7 +232,7 @@ export function AdminProductsV1() {
         >
           <label className="admin-toolbar__search">
             Buscar
-            <span className="admin-filter-search-control">
+            <span className="admin-filter-search">
               <Search size={16} aria-hidden="true" />
               <input
                 value={search}
@@ -262,7 +262,7 @@ export function AdminProductsV1() {
             </select>
           </label>
         </form>
-        <div className="admin-groups__quick-filter-sets admin-section-secondary-row">
+        <div className="admin-section-secondary-row">
           <div
             className="admin-quick-filter-chips"
             role="group"
