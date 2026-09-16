@@ -625,6 +625,7 @@ export function AdminIncidentsV2() {
       throw reason;
     });
   };
+  const mutationModalOpen = !!ignoreFamily || !!deleteProposal;
   const noticeMessage = error || pendingIntent?.error || notice;
   const noticeKey = pendingIntent
     ? `intent:${String(pendingIntent.payload.operation_id)}:${pendingIntent.attempt}:${pendingIntent.error ? "error" : "pending"}`
@@ -713,7 +714,7 @@ export function AdminIncidentsV2() {
           {allLoading ? "Cargando sedes…" : "Todas las sedes"}
         </button>
       </div>
-      {noticeMessage && dismissedNotice !== noticeKey && (
+      {noticeMessage && !mutationModalOpen && dismissedNotice !== noticeKey && (
         <AdminNotice
           tone={error || pendingIntent?.error ? "error" : "success"}
           onDismiss={pendingIntent ? undefined : () => setDismissedNotice(noticeKey)}
