@@ -88,7 +88,8 @@ describe('Admin feedback fases 2 y 3', () => {
     ])
 
     expect(feedback).toContain('CatalogMutationNotice')
-    expect(feedback).toContain('catalogMutationError')
+    const feedbackUtils = await Bun.file('src/features/solog/admin/catalogo/admin.catalogo.feedback.utils.ts').text()
+    expect(feedbackUtils).toContain('catalogMutationError')
     expect(feedback).not.toContain('payload.operation_id')
     expect(catalog).not.toContain('CatalogIntentNotice')
     expect(products).not.toContain('CatalogIntentNotice')
@@ -132,7 +133,7 @@ describe('Admin feedback fases 2 y 3', () => {
     expect(incidents).toContain('retryIncidentIntent')
     expect(incidents).toContain('store.retryMutation("incidents")')
     expect(incidents).toContain('onDismiss={pendingIntent ? undefined')
-    expect(incidents).toContain('retryable ? store.retryMutation("incidents")')
+    expect(incidents).toMatch(/retryable\s*\?\s*store\.retryMutation\("incidents"\)/)
     expect(incidents).toContain('"La incidencia fue reactivada."')
     expect(incidents).toContain('"La incidencia fue ignorada durante 30 días."')
     expect(incidents).toContain('"La propuesta de eliminación quedó pendiente para revisión en Catálogo."')
