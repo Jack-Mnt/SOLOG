@@ -498,7 +498,7 @@ function ControlResults({
       {view.total > 0 && (
         <div className="admin-control__pagination">
           <button
-            className="admin-button__actions"
+            className="button button--secondary"
             disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
           >
@@ -507,7 +507,7 @@ function ControlResults({
           </button>
           <span>Página {page + 1}</span>
           <button
-            className="admin-button__actions"
+            className="button button--secondary"
             disabled={(page + 1) * 100 >= view.total}
             onClick={() => setPage((p) => p + 1)}
           >
