@@ -1,7 +1,7 @@
 # SOLOG — UX Admin — Feedback de Mutaciones V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO Y VALIDADO TÉCNICAMENTE — SMOKE PREVIEW PENDIENTE
+**Estado:** CERRADO — VALIDADO TÉCNICA Y HUMANAMENTE EN PREVIEW
 **Clasificación:** Nivel B — normalización UX de feedback administrativo  
 **Fecha:** 2026-09-16
 
@@ -169,7 +169,11 @@ Validación final:
 - `git diff --check` desde el cierre del Bloque 3: correcto;
 - auditoría estática de feedback: correcta.
 
-Pendiente únicamente:
+Cierre:
 
-- smoke humano en Preview de `admin-work`;
-- cierre definitivo del Bloque 4 tras ese smoke.
+- smoke humano completado con éxito en el Preview de `admin-work`;
+- no se observaron notices duplicados en Catálogo, Productos, Incidencias o Dispositivos;
+- no se expusieron `operation_id` ni detalles técnicos de replay en la UI normal;
+- los retries y copies aprobados funcionaron según lo congelado;
+- no se detectaron regresiones funcionales atribuibles al Bloque 4;
+- el Bloque 4 queda cerrado y congelado en su estado actual.
