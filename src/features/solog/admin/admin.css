@@ -898,20 +898,10 @@ detalle y exportación sin cambios. */
 }
 .admin-control__pagination > .button {
   background: var(--color-primary-soft);
-  color: var(--color-primary);
-  border: 1px solid var(--color-border);
+  border-color: var(--color-border);
 }
 .admin-control__badge {
-  display: inline-flex;
-  align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 3px 7px;
-  border-radius: 8px;
-  background: var(--color-surface-secondary);
-  color: var(--color-text-secondary);
-  font-size: 0.6875rem;
-  font-weight: 600;
   line-height: 1.4;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -2057,9 +2047,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   }
   .admin-toolbar > .admin-toolbar__actions {
     order: 3;
-  }
-  .admin-control__filters > .admin-toolbar__period {
-    order: 0;
   }
 }
 .admin-v2-workspace .admin-section-secondary-row {
