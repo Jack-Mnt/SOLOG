@@ -172,7 +172,7 @@ function Grid({ site }: { site: string }) {
           {!data.data.totals.length ? (
             <p className="admin-dashboard__empty">Sin datos de turnos</p>
           ) : (
-            <div className="admin-v2-table">
+            <div className="admin-main-table">
               <table>
                 <thead>
                   <tr>
@@ -193,7 +193,7 @@ function Grid({ site }: { site: string }) {
                     ] as const
                   ).map(([shift, label]) => (
                     <tr key={shift}>
-                      <th>{label}</th>
+                      <th scope="row">{label}</th>
                       {data.data.totals.map((total) => {
                         const cell = data.data.shifts.find(
                           (s) => s.date === total.date && s.shift === shift,
@@ -214,14 +214,14 @@ function Grid({ site }: { site: string }) {
                     </tr>
                   ))}
                   <tr>
-                    <th>Total</th>
+                    <th scope="row">Total</th>
                     {data.data.totals.map((total) => (
                       <td
                         key={total.date}
                         title={`${total.numerator}/${total.denominator}`}
                       >
                         <button
-                          className="icon-button"
+                          className="admin__percentage-action"
                           aria-label={`Abrir día ${total.date}`}
                           onClick={() => setDate(total.date)}
                         >
