@@ -603,11 +603,6 @@ detalle y exportación sin cambios. */
   margin-top: 3px;
   color: var(--color-text-secondary);
 }
-.admin-groups__table tbody th > .icon-button,
-.admin-groups__table tbody td > .icon-button {
-  margin-left: 6px;
-  vertical-align: middle;
-}
 .admin-groups__actions {
   display: flex;
   align-items: center;
@@ -784,11 +779,11 @@ detalle y exportación sin cambios. */
   min-width: 720px;
   font-size: 0.8rem;
 }
-.admin-catalog__table thead {
+.admin-auxiliary-table.admin-catalog__table thead {
   background: var(--color-surface-secondary);
 }
-.admin-catalog__table th,
-.admin-catalog__table td {
+.admin-auxiliary-table.admin-catalog__table th,
+.admin-auxiliary-table.admin-catalog__table td {
   padding: 8px 12px;
   vertical-align: middle;
 }
@@ -799,30 +794,17 @@ detalle y exportación sin cambios. */
   overflow-wrap: anywhere;
   font-weight: 600;
 }
-.admin-catalog__product-code,
-.admin-catalog__product-name {
-  display: block;
-}
-.admin-catalog__product-code {
-  color: var(--color-text-secondary);
-  font-size: 0.75rem;
-  font-weight: 500;
-}
 .admin-catalog__change {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.admin-catalog__table tbody tr:hover {
+.admin-auxiliary-table.admin-catalog__table tbody tr:hover {
   background: var(--color-surface-secondary);
 }
 .admin-products__group {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-.admin-catalog__table .admin-catalog__money {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 .admin-catalog__proposal-context {
   display: flex;
@@ -1032,34 +1014,6 @@ detalle y exportación sin cambios. */
   background: var(--color-danger-soft);
   color: color-mix(in srgb, var(--color-danger) 75%, var(--color-text-primary));
 }
-.admin-control > .admin__table table {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-.admin-control > .admin__table th,
-.admin-control > .admin__table td {
-  padding: 8px 12px;
-  font-size: 0.9rem;
-}
-.admin__table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--color-surface-secondary);
-  color: var(--color-text-secondary);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-.admin__table tbody tr:hover {
-  background: var(--color-primary-subtle);
-}
-.admin__table .admin-control__number {
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.admin__table .admin-control__detail-cell {
-  text-align: center;
-}
 .admin-control__difference--negative {
   color: color-mix(in srgb, var(--color-danger) 80%, var(--color-text-primary));
 }
@@ -1069,20 +1023,6 @@ detalle y exportación sin cambios. */
 .admin-control__difference--zero {
   color: var(--color-text-secondary);
 }
-.admin__table .icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  box-shadow: none;
-}
-.admin__table .icon-button:hover {
-  color: var(--color-primary-active);
-  background: var(--color-primary-soft);
-}
-.admin__table .icon-button:focus-visible,
 .admin-control__filters > .button:focus-visible,
 .admin-control__pagination > .button:focus-visible {
   outline: 2px solid var(--color-focus);
@@ -1407,15 +1347,12 @@ sin alterar las cards de otros módulos. */
 .admin-v2-card progress {
   width: 100%;
 }
-/* Admin tables normalization V1 — transitional base.
-   admin-v2-table remains only as compatibility until Phase 5 completes the migration. */
-.admin-v2-table,
+/* Admin tables normalization V1. */
 .admin-main-table,
 .admin-auxiliary-table {
   overflow: auto;
 }
 
-.admin-v2-table table,
 .admin-main-table table,
 .admin-auxiliary-table table {
   width: 100%;
@@ -1424,8 +1361,6 @@ sin alterar las cards de otros módulos. */
   white-space: nowrap;
 }
 
-.admin-v2-table th,
-.admin-v2-table td,
 .admin-auxiliary-table th,
 .admin-auxiliary-table td {
   padding: 0.65rem;
@@ -2249,11 +2184,6 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-groups__members:hover:not(:disabled) .admin-groups__members-icon--hover {
   display: block;
 }
-.admin-groups__row-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 /* Admin sections — Bloque A. Jerarquía previa a tablas sin alterar su carcasa. */
 .admin-v2-workspace .admin-toolbar-surface {
   gap: 12px;
@@ -2280,7 +2210,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-v2-workspace
   .admin-table-section
-  > :where(.admin-v2-table, .admin-main-table, .admin-auxiliary-table) {
+  > :where(.admin-main-table, .admin-auxiliary-table) {
   max-width: 100%;
   margin: 0;
   overflow: auto;
@@ -2744,23 +2674,6 @@ while structural exceptions keep their size. */
 }
 .admin-notice--error {
   color: var(--color-danger);
-}
-.admin-incidents__product {
-  min-width: 0;
-  padding: 8px 12px;
-  font-size: 0.8rem;
-}
-.admin-incidents__product > span {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.admin-incidents__product small {
-  display: block;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  font-size: 0.75rem;
 }
 .admin-incidents__sites {
   display: flex;
