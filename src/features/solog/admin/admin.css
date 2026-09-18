@@ -564,7 +564,7 @@ detalle y exportación sin cambios. */
 .admin-groups {
   min-width: 0;
 }
-.admin-groups__table .admin-v2-table:focus-visible,
+.admin-groups__table .admin-main-table:focus-visible,
 .admin-groups__filters .button:focus-visible,
 .admin-groups__actions .button:focus-visible {
   outline: 2px solid var(--color-focus);
@@ -587,14 +587,6 @@ detalle y exportación sin cambios. */
 .admin-groups__table table {
   min-width: 760px;
 }
-.admin-groups__table thead {
-  background: #f8fafc;
-}
-.admin-groups__table th,
-.admin-groups__table td {
-  padding: 11px 12px;
-  font-size: 0.82rem;
-}
 .admin-groups__table tbody th {
   width: 28%;
   min-width: 200px;
@@ -615,12 +607,6 @@ detalle y exportación sin cambios. */
 .admin-groups__table tbody td > .icon-button {
   margin-left: 6px;
   vertical-align: middle;
-}
-.admin-groups__table tbody tr:hover {
-  background: #f8fafc;
-}
-.admin-groups__table thead th:nth-child(4) {
-  text-align: right;
 }
 .admin-groups__actions {
   display: flex;
