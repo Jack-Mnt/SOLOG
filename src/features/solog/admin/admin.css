@@ -1764,7 +1764,6 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-incidents__controls .admin-state-views {
   margin-right: auto;
-  display: flex;
   align-items: center;
 }
 .admin-incidents__type {
@@ -1779,26 +1778,6 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-incidents__detail-table {
   margin: 0;
-}
-.admin-incidents__state {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 0.18rem 0.55rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-.admin-incidents__state--pendiente {
-  background: color-mix(in srgb, var(--color-warning) 18%, transparent);
-  color: var(--color-warning);
-}
-.admin-incidents__state--suprimida {
-  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
-  color: var(--color-primary);
-}
-.admin-incidents__state--resuelta {
-  background: color-mix(in srgb, var(--color-success) 16%, transparent);
-  color: var(--color-success);
 }
 @media (max-width: 720px) {
   .admin-incidents__controls {
