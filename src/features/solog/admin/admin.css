@@ -1636,9 +1636,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   box-shadow: inset 3px 0
     color-mix(in srgb, var(--color-primary) 52%, transparent);
 }
-/* .admin-device-card--authorized .admin-device-badge {
-  min-width: 108px;
-} */
 .admin-device-card__icon {
   grid-column: 1;
   grid-row: 1 / span 2;
