@@ -9,7 +9,7 @@ describe('Admin table normalization — Phase 1 infrastructure', () => {
       source('src/features/solog/admin/control/admin.control.v2.tsx'),
     ])
 
-    expect(css).toMatch(/\.admin-main-table\s*\{/)
+    expect(css).toContain('.admin-main-table,')
     expect(css).toMatch(/\.admin-auxiliary-table/)
     expect(css).toMatch(/\.admin-v2-table/)
     expect(control).toContain('className="admin-main-table"')
@@ -40,7 +40,7 @@ describe('Admin table normalization — Phase 1 infrastructure', () => {
     expect(primitive).toContain("'default' | 'primary' | 'warning' | 'danger'")
     expect(primitive).toContain("variant === 'warning' ? 'icon-button--warning' : ''")
     expect(css).toMatch(/\.icon-button--warning\s*\{/)
-    expect(css).toMatch(/\.icon-button--warning[^\n]*:hover|\.icon-button--warning\):hover|\.icon-button--warning\):hover/)
+    expect(css).toMatch(/\.icon-button--warning:hover:not\(:disabled\)/)
   })
 
   test('percentage action existe como acción reutilizable independiente de IconButton', async () => {
