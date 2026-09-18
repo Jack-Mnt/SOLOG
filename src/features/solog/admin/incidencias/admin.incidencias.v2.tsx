@@ -90,7 +90,7 @@ function FamilyDetail({
       {query.data ? (
         <>
           <div
-            className="admin-v2-table admin-incidents__detail-table"
+            className="admin-auxiliary-table admin-incidents__detail-table"
             role="region"
             aria-label="Detalle de repeticiones"
             tabIndex={0}
