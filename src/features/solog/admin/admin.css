@@ -1639,7 +1639,6 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-device-card--authorized .admin-device-badge {
   min-width: 108px;
-  justify-content: center;
 }
 .admin-device-card__icon {
   grid-column: 1;
@@ -1699,36 +1698,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   gap: 12px;
   margin-top: 0;
 }
-.admin-devices .button {
-  min-height: 34px;
-  padding: 7px 12px;
-  border-color: var(--color-primary);
-  border-radius: 8px;
-  font-size: 0.8125rem;
-  color: var(--color-primary-contrast);
-  background: var(--gradient-brand);
-  box-shadow: none;
-  transform: none;
-}
-.admin-devices .button:hover:not(:disabled) {
-  border-color: var(--color-primary-hover);
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-hover) 0%,
-    var(--color-secondary-hover) 100%
-  );
-  box-shadow: none;
-  transform: none;
-}
-.admin-devices .button--secondary {
-  background: var(--color-surface);
-  border-color: var(--color-border);
-  color: var(--color-text-primary);
-}
-.admin-devices .button--secondary:hover:not(:disabled) {
-  background: var(--color-primary-subtle);
-  border-color: var(--color-primary);
-}
 .admin-devices .button.admin-device-revoke {
   display: inline-flex;
   align-items: center;
@@ -1739,24 +1708,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   background: var(--color-danger-soft);
   border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
   box-shadow: none;
-}
-.admin-devices .button.admin-device-revoke:hover:not(:disabled),
-.admin-devices .button.admin-device-revoke:focus-visible {
-  color: color-mix(
-    in srgb,
-    var(--color-danger-hover) 78%,
-    var(--color-text-primary)
-  );
-  background: color-mix(
-    in srgb,
-    var(--color-danger) 8%,
-    var(--color-danger-soft)
-  );
-  border-color: var(--color-danger-hover);
-}
-.admin-devices .button.admin-device-revoke:focus-visible {
-  outline: 2px solid var(--color-danger);
-  outline-offset: 2px;
 }
 .admin-devices__empty {
   display: flex;
