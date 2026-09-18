@@ -317,15 +317,6 @@
   gap: 18px;
 }
 
-/* Dispositivos administrativos */
-.devices-workspace {
-  display: grid;
-}
-
-.devices-workspace {
-  gap: 12px;
-}
-
 .admin-dialog-backdrop {
   position: fixed;
   z-index: 100;
@@ -805,25 +796,6 @@ detalle y exportación sin cambios. */
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
-.admin-catalog__filters {
-  gap: 10px;
-  margin: 12px 0;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
-}
-.admin-catalog__filters > label:first-child {
-  flex: 1 1 240px;
-}
-.admin-catalog__filters > label {
-  font-size: 0.78rem;
-}
-.admin-catalog__filters > .button {
-  min-height: 36px;
-  padding: 7px 12px;
-  font-size: 0.78rem;
-}
 .admin-catalog__pending {
   display: grid;
   gap: 16px;
@@ -1071,20 +1043,6 @@ detalle y exportación sin cambios. */
 .admin-control__pagination > .button:hover:not(:disabled) {
   color: var(--color-primary-active);
   background: var(--color-primary-subtle);
-}
-.admin-control__export {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-left: auto;
-}
-.admin-control__period {
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-  display: inline-flex;
-  justify-content: end;
-  min-width: 100px;
-  flex: 2;
 }
 .admin-control__badge {
   display: inline-flex;
@@ -2322,9 +2280,6 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-v2-workspace .admin-section-secondary-row + .admin-table-section {
   margin-top: 12px;
 }
-.admin-v2-workspace .admin-control__secondary-row {
-  gap: 12px;
-}
 /* QuickFilterChip,
 StateView,
 badges y conteos — Fase D. */
@@ -2334,10 +2289,6 @@ badges y conteos — Fase D. */
   align-items: center;
   gap: 8px;
   flex: 1;
-}
-
-.admin-quick-filter-chips .admin-control__period {
-  margin-left: 40px;
 }
 
 .admin-status-badge--info {
@@ -2361,12 +2312,6 @@ badges y conteos — Fase D. */
   padding: 2px 6px;
 }
 
-.admin-groups__quick-filter-sets {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 40px;
-}
 .admin-groups__members-icon--hover {
   display: none;
 }
@@ -2423,13 +2368,6 @@ badges y conteos — Fase D. */
   background: var(--color-surface-secondary);
   border-bottom: 1px solid var(--color-border);
 }
-@media (max-width: 760px) {
-  .admin-quick-filter-chips .admin-control__period {
-    width: 100%;
-    margin-left: 0;
-  }
-}
-
 /* AdminSort y selector de sede responsive — Fase E. */
 .admin-sort {
   position: relative;
