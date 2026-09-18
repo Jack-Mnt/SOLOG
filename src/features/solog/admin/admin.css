@@ -498,9 +498,6 @@
 }
 /* Control: composición local; contratos,
 detalle y exportación sin cambios. */
-.admin-control > h2 {
-  scroll-margin-top: 10rem;
-}
 .admin-control-chronology {
   width: min(1100px, 100%);
 }
