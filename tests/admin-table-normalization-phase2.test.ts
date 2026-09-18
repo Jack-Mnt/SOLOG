@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 const source = (path: string) => Bun.file(path).text()
 
 describe('Admin table normalization — Phase 2 Dashboard + Control', () => {
-  test('Dashboard usa main table, row headers y percentage action sin tocar DailyDrawer', async () => {
+  test('Dashboard usa main table, row headers y percentage action y mantiene DailyDrawer como tabla auxiliar', async () => {
     const [dashboard, css] = await Promise.all([
       source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx'),
       source('src/features/solog/admin/admin.css'),
@@ -13,7 +13,7 @@ describe('Admin table normalization — Phase 2 Dashboard + Control', () => {
     expect(dashboard).toContain('<th scope="row">{label}</th>')
     expect(dashboard).toContain('<th scope="row">Total</th>')
     expect(dashboard).toContain('className="admin__percentage-action"')
-    expect(dashboard).toContain('className="admin-v2-table"')
+    expect(dashboard).toContain('className="admin-auxiliary-table"')
     expect(css).toContain('.admin-dashboard__detail > .admin-main-table')
     expect(css).not.toContain('.admin-dashboard__detail > .admin-v2-table')
     expect(css).not.toContain('.admin-dashboard__detail > .admin-main-table .icon-button')
