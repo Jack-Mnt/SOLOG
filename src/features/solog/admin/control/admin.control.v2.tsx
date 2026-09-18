@@ -26,7 +26,7 @@ import { QueryState, Value } from "../admin.v2.presentation";
 import { validCustomRange } from "../admin.v2.format";
 import { AdminExportDialog } from "./admin.control.v2.export-dialog";
 import { controlView, type ControlSort } from "./admin.control.data";
-import { AdminSort } from "../admin.primitives";
+import { AdminSort, IconButton } from "../admin.primitives";
 
 const periods: [ControlPeriod, string][] = [
   ["today", "Hoy"],
@@ -432,18 +432,18 @@ function ControlResults({
         />
       </div>
       {view.total > 0 ? (
-        <div className="admin-table-section admin__table">
+        <div className="admin-table-section">
           <div className="admin-main-table">
             <table>
               <thead>
                 <tr>
-                  <th>Registrado</th>
-                  <th>Grupo</th>
-                  <th>Categoría</th>
-                  <th>Estado</th>
-                  <th className="admin-control__number">Diferencia</th>
-                  <th className="admin-control__number">Valorizado</th>
-                  <th className="admin-control__detail-cell">Detalle</th>
+                  <th scope="col">Registrado</th>
+                  <th scope="col">Grupo</th>
+                  <th scope="col">Categoría</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" className="admin-table-number">Diferencia</th>
+                  <th scope="col" className="admin-table-number">Valorizado</th>
+                  <th scope="col" className="admin-table-action-cell">Detalle</th>
                 </tr>
               </thead>
               <tbody>
@@ -454,7 +454,7 @@ function ControlResults({
                         {controlDate(row.origin_at, true)}
                       </time>
                     </td>
-                    <td>{row.group_name}</td>
+                    <th scope="row">{row.group_name}</th>
                     <td>{row.category}</td>
                     <td>
                       <span
@@ -464,24 +464,26 @@ function ControlResults({
                       </span>
                     </td>
                     <td
-                      className={`admin-control__number admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}
+                      className={`admin-table-number admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}
                     >
                       {row.difference > 0 ? "+" : ""}
                       <Value value={row.difference} />
                     </td>
-                    <td className="admin-control__number">
+                    <td className="admin-table-number">
                       <Value value={row.valued_difference} money />
                     </td>
-                    <td className="admin-control__detail-cell">
-                      <button
-                        className="icon-button"
-                        aria-label={`Ver cronología de ${row.group_name}`}
-                        onClick={() =>
-                          setGroup({ id: row.group_id, name: row.group_name })
-                        }
-                      >
-                        <Eye size={16} aria-hidden="true" />
-                      </button>
+                    <td className="admin-table-action-cell">
+                      <div className="admin-table-actions">
+                        <IconButton
+                          aria-label={`Ver cronología de ${row.group_name}`}
+                          title="Ver detalle"
+                          onClick={() =>
+                            setGroup({ id: row.group_id, name: row.group_name })
+                          }
+                        >
+                          <Eye size={16} aria-hidden="true" />
+                        </IconButton>
+                      </div>
                     </td>
                   </tr>
                 ))}
