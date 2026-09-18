@@ -518,7 +518,7 @@ export function AdminGroupsV2() {
       </div>
       <div className="admin-table-section admin-groups__table">
         <div
-          className="admin-v2-table"
+          className="admin-main-table"
           role="region"
           aria-label="Lista de grupos"
           tabIndex={0}
@@ -529,8 +529,8 @@ export function AdminGroupsV2() {
                 <th scope="col">Grupo</th>
                 <th scope="col">Categoría</th>
                 <th scope="col">Integrantes</th>
-                <th scope="col">Valorizado</th>
-                <th scope="col">Acciones</th>
+                <th scope="col" className="admin-table-number">Valorizado</th>
+                <th scope="col" className="admin-table-action-cell">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -564,7 +564,7 @@ export function AdminGroupsV2() {
                       </span>
                     </button>
                   </td>
-                  <td className="admin-groups__valuation">
+                  <td className="admin-groups__valuation admin-table-number">
                     <span>
                       <Value value={group.precio} money /> / unidad
                     </span>
@@ -572,8 +572,8 @@ export function AdminGroupsV2() {
                       <Valuation group={group} />
                     </small>
                   </td>
-                  <td>
-                    <div className="admin-groups__row-actions">
+                  <td className="admin-table-action-cell">
+                    <div className="admin-table-actions">
                       <IconButton
                         aria-label={`Editar nombre y categoría de ${group.nombre}`}
                         title="Editar grupo"
