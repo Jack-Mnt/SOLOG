@@ -702,7 +702,7 @@ function PriceResolutionDialog({
             </dd>
           </div>
         </dl>
-        <div className="admin-v2-table admin-catalog__table">
+        <div className="admin-auxiliary-table admin-catalog__table">
           <table>
             <thead>
               <tr>
