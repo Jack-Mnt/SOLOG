@@ -2,17 +2,14 @@ import { ArrowDownWideNarrow, CheckCircle2, Info, TriangleAlert, XCircle } from 
 import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
 type IconButtonVariant = 'default' | 'primary' | 'danger'
-type IconButtonSize = 'default' | 'compact'
-
 type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'children'> & {
   'aria-label': string
   children: ReactNode
   variant?: IconButtonVariant
-  size?: IconButtonSize
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, variant = 'default', size = 'default', type = 'button', ...props }, ref) => (
+  ({ className, variant = 'default', type = 'button', ...props }, ref) => (
     <button
       {...props}
       ref={ref}
@@ -21,7 +18,6 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         'icon-button',
         variant === 'primary' ? 'icon-button--primary' : '',
         variant === 'danger' ? 'icon-button--danger' : '',
-        size === 'compact' ? 'icon-button--compact' : '',
         className,
       ].filter(Boolean).join(' ')}
     />

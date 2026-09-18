@@ -2125,12 +2125,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   color: var(--color-primary-active);
   background: var(--color-primary-subtle);
 }
-.admin-v2-workspace :where(.icon-button--compact) {
-  width: 35px;
-  height: 35px;
-  min-height: 35px;
-  border-radius: 10px;
-}
 
 .admin-toolbar,
 .admin-filter-bar {
