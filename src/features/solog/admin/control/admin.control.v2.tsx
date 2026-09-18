@@ -279,7 +279,7 @@ function GroupDetail({
       ) : !query.data.chronology.length ? (
         <p role="status">No hay registros en esta quincena.</p>
       ) : (
-        <div className="admin-v2-table admin-control-chronology__table">
+        <div className="admin-auxiliary-table admin-control-chronology__table">
           <table>
             <thead>
               <tr>
@@ -433,7 +433,7 @@ function ControlResults({
       </div>
       {view.total > 0 ? (
         <div className="admin-table-section admin__table">
-          <div className="admin-v2-table">
+          <div className="admin-main-table">
             <table>
               <thead>
                 <tr>
