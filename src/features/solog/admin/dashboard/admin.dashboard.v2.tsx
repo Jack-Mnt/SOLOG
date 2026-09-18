@@ -78,7 +78,7 @@ function DailyDrawer({
             <span>Confirmadas: {data.summary.confirmed}</span>
             <span>Inconsistentes: {data.summary.inconsistent}</span>
           </div>
-          <div className="admin-v2-table">
+          <div className="admin-auxiliary-table">
             <table>
               <thead>
                 <tr>
