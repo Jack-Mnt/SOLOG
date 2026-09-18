@@ -82,9 +82,9 @@ function DailyDrawer({
             <table>
               <thead>
                 <tr>
-                  <th>Grupo / estado</th>
-                  <th>Stock teórico / posterior aplicable</th>
-                  <th>Stock físico / reconteo aplicable</th>
+                  <th>Grupo · estado</th>
+                  <th>Teórico</th>
+                  <th>Físico</th>
                   <th>Diferencia</th>
                   <th>Valorizado</th>
                 </tr>
