@@ -39,15 +39,9 @@
 
 .admin-sidebar {
   --admin-sidebar-item-height: 44px;
-  --admin-sidebar-font-size: 0.8rem;
   --admin-sidebar-icon-size: 20px;
-  --admin-sidebar-label-size: 0.8rem;
   --admin-sidebar-item-padding: 10px;
   --admin-sidebar-item-gap: 10px;
-  --admin-sidebar-text-offset: calc(
-    var(--admin-sidebar-item-padding) + var(--admin-sidebar-icon-size) +
-      var(--admin-sidebar-item-gap)
-  );
 
   position: sticky;
   top: 0;
@@ -201,10 +195,6 @@
   font-weight: 700;
 }
 
-.admin-workspace--collapsed .admin-sidebar {
-  padding-inline: 8px;
-}
-
 .admin-workspace--collapsed .admin-sidebar__brand {
   justify-items: center;
   padding-inline: 0;
@@ -216,19 +206,11 @@
   display: none;
 }
 
-.admin-workspace--collapsed .admin-main-tabs__group {
-  margin-top: 6px;
-}
-
 .admin-workspace--collapsed .admin-tab {
   max-width: 100%;
   min-width: 0;
   justify-content: center;
   padding-inline: 0;
-}
-
-.admin-workspace--collapsed .admin-tab:hover {
-  transform: none;
 }
 
 .admin-workspace--collapsed .admin-sidebar__account {
@@ -274,7 +256,6 @@
   max-width: 100%;
   min-width: 0;
   justify-content: center;
-  padding-inline: 0;
 }
 
 .admin-workspace__main {
