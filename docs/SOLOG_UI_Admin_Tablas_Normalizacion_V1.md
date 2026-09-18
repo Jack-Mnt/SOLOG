@@ -1,7 +1,7 @@
 # SOLOG — UI Admin — Normalización de Tablas V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** CERRADO — IMPLEMENTADO Y VALIDADO  
 **Clasificación:** Nivel B — normalización frontend/Admin  
 **Fecha:** 2026-09-18
 
@@ -393,4 +393,39 @@ Smoke humano mínimo:
 
 ## 19. Estado final
 
-> **SOLOG — UI Admin — Normalización de Tablas V1: APROBADO Y CONGELADO.**
+> **SOLOG — UI Admin — Normalización de Tablas V1: CERRADO — IMPLEMENTADO Y VALIDADO.**
+
+## 20. Cierre del bloque
+
+**Fecha de cierre:** 2026-09-18
+
+Resultado:
+
+- las seis tablas principales usan `admin-main-table`;
+- las tablas auxiliares cubiertas por la migración usan `admin-auxiliary-table`;
+- `admin-v2-table` fue retirado del runtime Admin y de `admin.css`;
+- sticky header, identidad, numéricos y acciones quedaron normalizados;
+- `IconButton` quedó con `Default | Primary | Warning | Danger`;
+- Dashboard conserva `admin__percentage-action`;
+- Grupos conserva Integrantes como control especializado;
+- no se modificó la composición funcional congelada.
+
+Validación final reportada por el usuario:
+
+- `bun test --reporter=dot` → aprobado;
+- `bun run lint` → aprobado;
+- `bun run build` → aprobado;
+- `git diff --check` → aprobado;
+- smoke humano global → aprobado.
+
+### Tablas auxiliares
+
+La normalización profunda de las tablas auxiliares **no formó parte de este bloque**.
+
+En esta versión únicamente se:
+
+- migró la familia a `admin-auxiliary-table`;
+- preservó su composición;
+- dejó una base CSS mínima y estable.
+
+Su normalización completa queda disponible para un bloque posterior independiente y no condiciona el cierre de este bloque.
