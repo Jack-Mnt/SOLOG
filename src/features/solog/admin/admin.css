@@ -384,15 +384,16 @@
   --admin-control-border: var(--color-border-strong);
 
   display: flex;
-  align-items: flex-end;
+  align-items: end;
   flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
   margin: 0;
-  padding: 9px;
+  padding: 10px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-panel);
   background: var(--color-surface-secondary);
+  box-shadow: none;
 }
 
 .admin-filter-bar .admin-filter-field {
@@ -759,8 +760,12 @@ detalle y exportación sin cambios. */
   margin: 0 0 12px;
 }
 .admin-state-views > button {
+  width: 120px;
+  height: 36px;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--color-border);
@@ -770,8 +775,6 @@ detalle y exportación sin cambios. */
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
-  width: 120px;
-  justify-content: space-between;
 }
 .admin-state-views > button strong {
   min-width: 18px;
@@ -2120,8 +2123,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   background: var(--color-primary-subtle);
 }
 
-.admin-toolbar,
-.admin-filter-bar {
+.admin-toolbar {
   display: flex;
   align-items: end;
   flex-wrap: wrap;
@@ -2252,6 +2254,9 @@ badges y conteos — Fase D. */
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  flex: 1;
+}
+.admin-quick-filter-chips .admin-quick-filter-chip {
   flex: 1;
 }
 
@@ -2571,20 +2576,6 @@ badges y conteos — Fase D. */
 }
 
 /* Quick filters are intentionally denser; StateView keeps normal control density. */
-.admin-v2-workspace .admin-quick-filter-chips .admin-quick-filter-chip {
-  height: 32px;
-  min-height: 32px;
-  padding: 4px 12px;
-  border-radius: 8px;
-  flex: 1;
-}
-.admin-v2-workspace .admin-state-views > button {
-  height: 36px;
-  min-height: 36px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-}
-
 /* Dashboard keeps its contextual left marker as an explicit exception. */
 .admin-v2-workspace .admin-button__actions {
   height: 36px;
@@ -2745,12 +2736,13 @@ while structural exceptions keep their size. */
 }
 /* Primitives compartidas: QuickFilterChip replica Control y StateView replica Catálogo. */
 .admin-quick-filter-chip {
+  height: 32px;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-height: 32px;
-  padding: 5px 9px;
+  padding: 4px 12px;
   border: 1px solid transparent;
   border-radius: 8px;
   font: inherit;
