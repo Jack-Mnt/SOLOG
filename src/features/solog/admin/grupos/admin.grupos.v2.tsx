@@ -557,7 +557,7 @@ export function AdminGroupsV2() {
                         size={16}
                         aria-hidden="true"
                       />
-                      <span className="admin-attribute-badge">
+                      <span>
                         {group.derivedType === "Único"
                           ? "Único"
                           : `${group.memberCount} SKU`}
