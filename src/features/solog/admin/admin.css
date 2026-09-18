@@ -1271,7 +1271,6 @@ sin alterar las cards de otros módulos. */
   transform: none;
 }
 .admin-dashboard__card > header > .icon-button:focus-visible,
-.admin-dashboard__detail > .admin-v2-table .icon-button:focus-visible,
 .admin-button__actions:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -1311,24 +1310,24 @@ sin alterar las cards de otros módulos. */
   outline-offset: 2px;
   box-shadow: none;
 }
-.admin-dashboard__detail > .admin-v2-table {
+.admin-dashboard__detail > .admin-main-table {
   margin: 14px 0 0;
   max-height: 320px;
   isolation: isolate;
 }
-.admin-dashboard__detail > .admin-v2-table th,
-.admin-dashboard__detail > .admin-v2-table td {
+.admin-dashboard__detail > .admin-main-table th,
+.admin-dashboard__detail > .admin-main-table td {
   min-width: 82px;
   padding: 8px 16px;
   text-align: center;
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
-.admin-dashboard__detail > .admin-v2-table table {
+.admin-dashboard__detail > .admin-main-table table {
   border-collapse: separate;
   border-spacing: 0;
 }
-.admin-dashboard__detail > .admin-v2-table th:first-child {
+.admin-dashboard__detail > .admin-main-table th:first-child {
   position: sticky;
   left: 0;
   z-index: 1;
@@ -1336,49 +1335,16 @@ sin alterar las cards de otros módulos. */
   text-align: left;
   min-width: 110px;
 }
-.admin-dashboard__detail > .admin-v2-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--color-primary-soft);
-}
-.admin-dashboard__detail > .admin-v2-table thead th:first-child {
+.admin-dashboard__detail > .admin-main-table thead th:first-child {
   z-index: 3;
+  background: var(--color-surface-secondary);
+}
+.admin-dashboard__detail > .admin-main-table tbody tr:last-child,
+.admin-dashboard__detail > .admin-main-table tbody tr:last-child th {
   background: var(--color-primary-soft);
 }
-.admin-dashboard__detail > .admin-v2-table tbody tr:last-child,
-.admin-dashboard__detail > .admin-v2-table tbody tr:last-child th {
-  background: var(--color-primary-soft);
-}
-.admin-dashboard__detail > .admin-v2-table tbody tr:last-child {
+.admin-dashboard__detail > .admin-main-table tbody tr:last-child {
   font-weight: 600;
-}
-.admin-dashboard__detail > .admin-v2-table .icon-button {
-  width: auto;
-  min-width: 0;
-  height: 24px;
-  min-height: 24px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-
-  padding: 0 5px;
-
-  border: 0;
-  color: var(--color-primary);
-  background: transparent;
-  box-shadow: none;
-
-  white-space: nowrap;
-}
-.admin-dashboard__detail > .admin-v2-table .icon-button svg {
-  flex: 0 0 auto;
-}
-.admin-dashboard__detail > .admin-v2-table .icon-button:hover {
-  color: var(--color-primary-active);
-  background: var(--color-primary-subtle);
 }
 @media (max-width: 1000px) {
   .admin-dashboard__summary {
@@ -1496,6 +1462,11 @@ sin alterar las cards de otros módulos. */
   color: var(--color-text-secondary);
   background: var(--color-surface-secondary);
   font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-main-table tbody th[scope="row"] {
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 
@@ -2517,14 +2488,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   outline-offset: 2px;
   box-shadow: none;
 }
-.admin-v2-workspace .admin-dashboard__detail > .admin-v2-table .icon-button {
-  width: auto;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding-inline: 8px;
-}
-
 /* Search + filters share the same control height. */
 .admin-v2-workspace
   .admin-workspace__main
@@ -2651,12 +2614,6 @@ while structural exceptions keep their size. */
   }
   .admin-v2-workspace .admin-workspace__main .icon-button {
     width: 32px;
-    min-width: 32px;
-    height: 32px;
-    min-height: 32px;
-  }
-  .admin-v2-workspace .admin-dashboard__detail > .admin-v2-table .icon-button {
-    width: auto;
     min-width: 32px;
     height: 32px;
     min-height: 32px;
