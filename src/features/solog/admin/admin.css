@@ -1455,20 +1455,125 @@ sin alterar las cards de otros módulos. */
 .admin-v2-card progress {
   width: 100%;
 }
-.admin-v2-table {
+/* Admin tables normalization V1 — transitional base.
+   admin-v2-table remains only as compatibility until Phase 5 completes the migration. */
+.admin-v2-table,
+.admin-main-table,
+.admin-auxiliary-table {
   overflow: auto;
 }
 
-.admin-v2-table table {
-  border-collapse: collapse;
+.admin-v2-table table,
+.admin-main-table table,
+.admin-auxiliary-table table {
   width: 100%;
+  border-collapse: collapse;
   text-align: left;
   white-space: nowrap;
 }
+
 .admin-v2-table th,
-.admin-v2-table td {
+.admin-v2-table td,
+.admin-auxiliary-table th,
+.admin-auxiliary-table td {
   padding: 0.65rem;
   border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.admin-main-table th,
+.admin-main-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+  font-size: 0.8rem;
+}
+
+.admin-main-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-main-table tbody tr:hover {
+  background: var(--color-surface-secondary);
+}
+
+.admin-table-cell-stack {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.admin-table-cell-primary {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.admin-table-cell-secondary {
+  min-width: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.admin-table-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-table-action-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.admin-table-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.admin__percentage-action {
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-primary);
+  background: transparent;
+  font: inherit;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin__percentage-action:hover:not(:disabled) {
+  color: var(--color-primary-active);
+  background: var(--color-primary-subtle);
+}
+
+.admin__percentage-action:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.admin__percentage-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 .admin-v2-kpis {
   display: flex;
@@ -2216,7 +2321,9 @@ workspace y cards permanecen como superficies estructurales neutras;
   border-radius: 14px;
   background: var(--color-surface);
 }
-.admin-v2-workspace .admin-table-section > .admin-v2-table {
+.admin-v2-workspace
+  .admin-table-section
+  > :where(.admin-v2-table, .admin-main-table, .admin-auxiliary-table) {
   max-width: 100%;
   margin: 0;
   overflow: auto;
@@ -2530,6 +2637,12 @@ but focus no longer reuses hover styling. */
 /* Narrow Admin: compact content controls,
 while structural exceptions keep their size. */
 @media (max-width: 560px) {
+  .admin-v2-workspace .admin-workspace__main .admin__percentage-action {
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding-inline: 6px;
+  }
   .admin-v2-workspace .admin-workspace__main .button {
     height: 32px;
     min-height: 32px;
