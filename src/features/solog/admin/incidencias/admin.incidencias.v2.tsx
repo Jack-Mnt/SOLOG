@@ -11,7 +11,7 @@ import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
 import { ReadNotice } from "../admin.management.presentation";
-import { AdminNotice } from "../admin.primitives";
+import { AdminNotice, IconButton } from "../admin.primitives";
 import {
   incidentSiteAbbreviation,
   incidentTimestamp,
@@ -734,9 +734,9 @@ export function AdminIncidentsV2() {
         </AdminNotice>
       )}{" "}
       {hasData ? (
-        <div className="admin-table-section admin__table">
+        <div className="admin-table-section">
           <div
-            className="admin-v2-table"
+            className="admin-main-table"
             role="tabpanel"
             id="admin-incidents-state-panel"
             aria-labelledby={`admin-incidents-state-${state}`}
@@ -745,17 +745,17 @@ export function AdminIncidentsV2() {
             <table>
               <thead>
                 <tr>
-                  <th>Tipo</th>
-                  <th>Producto</th>
-                  <th>Sedes</th>
-                  <th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Producto</th>
+                  <th scope="col">Sedes</th>
+                  <th scope="col">
                     {state === "pendiente"
                       ? "Última detección"
                       : state === "suprimida"
                         ? "Ignorada hasta"
                         : "Resuelta"}
                   </th>
-                  <th>Acciones</th>
+                  <th scope="col" className="admin-table-action-cell">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -782,13 +782,15 @@ export function AdminIncidentsV2() {
                           {typeLabels[item.tipo]}
                         </span>
                       </td>
-                      <th scope="row" className="admin-incidents__product">
-                        <span>{product}</span>
-                        <small>
-                          {item.c_interno ??
-                            item.c_interno_original ??
-                            "Sin código"}
-                        </small>
+                      <th scope="row">
+                        <span className="admin-table-cell-stack">
+                          <span className="admin-table-cell-primary">{product}</span>
+                          <span className="admin-table-cell-secondary">
+                            {item.c_interno ??
+                              item.c_interno_original ??
+                              "Sin código"}
+                          </span>
+                        </span>
                       </th>
                       <td>
                         <div className="admin-incidents__sites">
@@ -803,37 +805,33 @@ export function AdminIncidentsV2() {
                         </div>
                       </td>
                       <td>{incidentTimestamp(date)}</td>
-                      <td>
-                        <div className="admin-v2-actions">
-                          <button
-                            type="button"
-                            className="icon-button"
+                      <td className="admin-table-action-cell">
+                        <div className="admin-table-actions">
+                          <IconButton
                             aria-label={`Ver repeticiones ${item.family_key}`}
                             title="Ver detalle"
                             onClick={() => setDetailFamily(item)}
                           >
                             <Eye size={16} aria-hidden="true" />
-                          </button>
+                          </IconButton>
                           {state === "pendiente" &&
                             item.active &&
                             !item.sources.every(
                               (source) => source.family.reactivate_available,
                             ) && (
-                              <button
-                                type="button"
-                                className="icon-button icon-button--warning"
+                              <IconButton
+                                variant="warning"
                                 aria-label="Ignorar 30 días"
                                 title="Ignorar 30 días"
                                 disabled={pending}
                                 onClick={() => setIgnoreFamily(item)}
                               >
                                 <AlarmClockOff size={16} aria-hidden="true" />
-                              </button>
+                              </IconButton>
                             )}
                           {state === "pendiente" && deletable && (
-                            <button
-                              type="button"
-                              className="icon-button icon-button--danger"
+                            <IconButton
+                              variant="danger"
                               aria-label="Proponer eliminación"
                               title="Proponer eliminación"
                               disabled={pending}
@@ -845,12 +843,10 @@ export function AdminIncidentsV2() {
                               }
                             >
                               <CircleOff size={16} aria-hidden="true" />
-                            </button>
+                            </IconButton>
                           )}
                           {state === "suprimida" && reactivable && (
-                            <button
-                              type="button"
-                              className="icon-button"
+                            <IconButton
                               aria-label="Reactivar incidencia"
                               title="Reactivar incidencia"
                               disabled={pending}
@@ -859,7 +855,7 @@ export function AdminIncidentsV2() {
                               }
                             >
                               <RotateCcw size={16} aria-hidden="true" />
-                            </button>
+                            </IconButton>
                           )}
                         </div>
                       </td>
