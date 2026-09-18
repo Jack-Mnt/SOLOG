@@ -27,18 +27,18 @@
   min-width: 320px;
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
+  grid-template-columns: 200px minmax(0, 1fr);
   color: var(--color-text-primary);
   background: var(--color-workspace);
   transition: grid-template-columns var(--transition-fast);
 }
 
 .admin-workspace--collapsed {
-  grid-template-columns: 68px minmax(0, 1fr);
+  grid-template-columns: 64px minmax(0, 1fr);
 }
 
 .admin-sidebar {
-  --admin-sidebar-item-height: 42px;
+  --admin-sidebar-item-height: 44px;
   --admin-sidebar-font-size: 0.8rem;
   --admin-sidebar-icon-size: 20px;
   --admin-sidebar-label-size: 0.8rem;
@@ -57,7 +57,7 @@
   display: flex;
   flex-direction: column;
   overflow: visible;
-  padding: 0 10px 16px;
+  padding: 0 8px 16px;
   color: var(--color-text-inverse);
   background: var(--color-dark-surface);
 }
@@ -87,9 +87,10 @@
 .admin-main-tabs {
   min-height: 0;
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   align-content: start;
-  display: grid;
-  gap: 3px;
+  gap: 16px;
   overflow-x: hidden;
   overflow-y: auto;
   padding-top: 10px;
@@ -99,15 +100,15 @@
 .admin-main-tabs__group {
   display: grid;
   gap: 3px;
-  margin-top: 8px;
+  margin: 0;
 }
 
 .admin-main-tabs__label {
-  padding: 5px var(--admin-sidebar-item-padding) 3px
-    var(--admin-sidebar-text-offset);
-  color: color-mix(in srgb, var(--color-text-inverse) 42%, transparent);
-  font-size: var(--admin-sidebar-label-size);
-  font-weight: 700;
+  display: block;
+  padding: 6px 12px 8px;
+  color: rgb(255 255 255 / 50%);
+  font-size: 0.65rem;
+  font-weight: 600;
   letter-spacing: 0.1em;
   line-height: 1.2;
   text-transform: uppercase;
@@ -151,13 +152,6 @@
   text-transform: capitalize;
 }
 
-.admin-sidebar__collapse {
-  border: 0;
-  color: color-mix(in srgb, var(--color-text-inverse) 70%, transparent);
-  background: transparent;
-  cursor: pointer;
-}
-
 .admin-sidebar__collapse:hover {
   color: var(--color-text-inverse);
   background: var(--color-dark-surface-hover);
@@ -166,26 +160,25 @@
 .admin-tab {
   position: relative;
   width: 100%;
+  height: var(--admin-sidebar-item-height);
   min-height: var(--admin-sidebar-item-height);
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: var(--admin-sidebar-item-gap);
   padding: 8px var(--admin-sidebar-item-padding);
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 10px;
   color: color-mix(in srgb, var(--color-text-inverse) 72%, transparent);
   background: transparent;
-  font-size: var(--admin-sidebar-font-size);
-  font-weight: 650;
+  font-size: 0.875rem;
+  font-weight: 500;
   line-height: 1.2;
   text-align: left;
   cursor: pointer;
   transition:
-    color var(--transition-fast),
-    background var(--transition-fast),
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
+    background 0.15s,
+    color 0.15s;
 }
 
 .admin-tab > svg,
@@ -198,14 +191,14 @@
 .admin-tab:hover {
   color: var(--color-text-inverse);
   background: var(--color-dark-surface-hover);
-  transform: translateX(2px);
 }
 
 .admin-tab--active {
-  color: var(--color-primary-contrast);
-  background: var(--gradient-brand);
-  box-shadow: 0 7px 18px
-    color-mix(in srgb, var(--color-primary) 25%, transparent);
+  color: var(--color-text-inverse);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  box-shadow: inset 3px 0 var(--color-primary);
+  font-weight: 700;
 }
 
 .admin-workspace--collapsed .admin-sidebar {
@@ -247,24 +240,30 @@
 .admin-sidebar__footer {
   flex: 0 0 auto;
   display: grid;
-  gap: 6px;
+  gap: 12px;
   padding-top: 10px;
-  border-top: 1px solid rgb(255 255 255 / 8%);
+  border-top: 0;
 }
 
 .admin-sidebar__collapse {
   position: relative;
+  height: var(--admin-sidebar-item-height);
   min-height: var(--admin-sidebar-item-height);
   display: flex;
   align-items: center;
   gap: var(--admin-sidebar-item-gap);
   padding: 8px var(--admin-sidebar-item-padding);
-  border-radius: 9px;
+  border: 0;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 0;
+  color: color-mix(in srgb, var(--color-text-inverse) 70%, transparent);
+  background: transparent;
   font: inherit;
-  font-size: var(--admin-sidebar-font-size);
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.2;
   text-align: left;
+  cursor: pointer;
   transition:
     color var(--transition-fast),
     background var(--transition-fast);
@@ -287,22 +286,26 @@
   position: sticky;
   top: 0;
   z-index: 15;
-  min-height: 58px;
+  min-height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 7px 18px;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px 24px;
   color: var(--color-text-inverse);
-  background: var(--color-dark-surface-secondary);
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 7%),
-    0 8px 24px rgb(15 23 42 / 8%);
+  background: linear-gradient(
+    110deg,
+    var(--color-dark-surface-secondary),
+    var(--color-dark-surface)
+  );
+  border-bottom: 1px solid var(--color-dark-surface);
+  box-shadow: none;
 }
 
 .admin-workspace__content {
   min-width: 0;
-  padding: 22px 24px 30px;
+  padding: 26px 30px 32px;
 }
 
 .admin-workspace .button {
@@ -488,22 +491,7 @@
   }
 }
 
-@media (max-width: 1050px) {
-  .admin-workspace {
-    grid-template-columns: 210px minmax(0, 1fr);
-  }
-  .admin-workspace--collapsed {
-    grid-template-columns: 68px minmax(0, 1fr);
-  }
-}
-
 @media (max-width: 760px) {
-  .admin-workspace {
-    grid-template-columns: 190px minmax(0, 1fr);
-  }
-  .admin-workspace--collapsed {
-    grid-template-columns: 68px minmax(0, 1fr);
-  }
   .admin-header {
     padding-inline: 14px;
   }
@@ -516,23 +504,6 @@
 }
 
 @media (max-width: 480px) {
-  .admin-workspace--collapsed {
-    grid-template-columns: 68px minmax(0, 1fr);
-  }
-  .admin-workspace--collapsed .admin-sidebar {
-    padding-inline: 8px;
-  }
-  .admin-workspace--collapsed .admin-sidebar__brand {
-    justify-items: center;
-    padding-inline: 0;
-  }
-  .admin-workspace--collapsed .admin-tab span {
-    display: none;
-  }
-  .admin-workspace--collapsed .admin-tab {
-    justify-content: center;
-    padding-inline: 0;
-  }
   .admin-dialog-backdrop {
     padding: 0;
   }
@@ -1617,86 +1588,16 @@ sin alterar las cards de otros módulos. */
 header,
 workspace y cards permanecen como superficies estructurales neutras;
    Órbita / Prisma / Natura actúan sobre acentos y estados interactivos. */
-.admin-v2-workspace {
-  background: var(--color-workspace);
-  color: var(--color-text-primary);
-}
-
-.admin-v2-workspace .admin-header {
-  min-height: 76px;
-  padding: 18px 30px;
-  gap: 16px;
-  flex-wrap: wrap;
-  color: var(--color-text-inverse);
-  background: linear-gradient(
-    110deg,
-    var(--color-dark-surface-secondary),
-    var(--color-dark-surface)
-  );
-  border-bottom: 1px solid var(--color-dark-surface);
-  box-shadow: none;
-}
 .admin-v2-workspace .admin-header h1 {
   color: var(--color-text-inverse);
   font-size: 1.375rem;
   line-height: 1.4;
   margin: 0;
 }
-.admin-v2-workspace .admin-workspace__content {
-  padding: 26px 30px 32px;
-}
-.admin-v2-workspace .admin-main-tabs {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-content: start;
-}
-.admin-v2-workspace .admin-main-tabs__group {
-  margin: 0;
-}
-.admin-v2-workspace .admin-main-tabs__label {
-  display: block;
-  padding: 6px 12px 8px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: rgb(255 255 255 / 50%);
-}
-.admin-v2-workspace .admin-tab {
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: 1px solid transparent;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-.admin-v2-workspace .admin-tab:hover {
-  transform: none;
-}
-.admin-v2-workspace .admin-tab--active {
-  color: var(--color-text-inverse);
-  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
-  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  box-shadow: inset 3px 0 var(--color-primary);
-  font-weight: 700;
-}
 .admin-v2-workspace .admin-sidebar__account .icon-button {
   color: rgb(255 255 255 / 65%);
   background: transparent;
   box-shadow: none;
-}
-.admin-v2-workspace .admin-sidebar__footer {
-  border-top: 0;
-  gap: 12px;
-}
-.admin-v2-workspace .admin-sidebar__collapse {
-  border-top: 1px solid rgb(255 255 255 / 12%);
-  border-radius: 0;
-  padding-top: 14px;
-  font-size: 0.8rem;
-}
-.admin-v2-workspace.admin-workspace--collapsed .admin-main-tabs__label {
-  display: none;
 }
 .admin-appearance {
   display: grid;
@@ -1762,28 +1663,44 @@ workspace y cards permanecen como superficies estructurales neutras;
   flex-wrap: wrap;
 }
 .admin-site-context__desktop > button {
+  width: 84px;
+  min-width: 80px;
+  height: 40px;
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  min-width: 82px;
-  padding: 7px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text-primary);
+  padding: 8px 10px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 12px;
+  color: color-mix(in srgb, var(--color-text-inverse) 80%, transparent);
+  background: rgb(255 255 255 / 4%);
   font: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 640;
   cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
 }
 .admin-site-context__desktop > button:hover {
-  background: var(--color-primary-subtle);
+  color: var(--color-text-inverse);
+  border-color: color-mix(in srgb, var(--color-primary) 58%, transparent);
+  background: var(--color-dark-surface-hover);
 }
 .admin-site-context__desktop > button[aria-pressed="true"] {
-  color: var(--color-primary-active);
+  color: var(--color-text-inverse);
   border-color: var(--color-primary);
-  background: var(--color-primary-soft);
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 18%,
+    var(--color-dark-surface-secondary)
+  );
+}
+.admin-site-context__desktop > button:focus-visible {
+  outline: 2px solid var(--color-primary-bright);
+  outline-offset: 2px;
 }
 .admin-header__context-logo {
   display: block;
@@ -2406,10 +2323,6 @@ workspace y cards permanecen como superficies estructurales neutras;
 
 /* Admin control density + responsive delta V1 — 2026-09-14.
    Primary source: docs/SOLOG_UI_Admin_Controles_Densidad_Responsive_Delta_V1.md */
-.admin-v2-workspace .admin-sidebar {
-  --admin-sidebar-item-height: 44px;
-}
-
 /* Common action geometry. Sidebar is intentionally outside this scope. */
 .admin-v2-workspace .admin-workspace__main .button {
   height: 36px;
@@ -2619,52 +2532,7 @@ but focus no longer reuses hover styling. */
   outline-offset: 2px;
 }
 
-/* SiteContext B: contextual navigation integrated into the Navy topbar. */
-.admin-v2-workspace .admin-site-context__desktop > button {
-  width: 84px;
-  min-width: 80px;
-  height: 40px;
-  min-height: 40px;
-  padding: 8px 10px;
-  border: 1px solid rgb(255 255 255 / 14%);
-  border-radius: 12px;
-  color: color-mix(in srgb, var(--color-text-inverse) 80%, transparent);
-  background: rgb(255 255 255 / 4%);
-  font-size: 0.9rem;
-  font-weight: 640;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast),
-    background var(--transition-fast);
-}
-.admin-v2-workspace .admin-site-context__desktop > button:hover {
-  color: var(--color-text-inverse);
-  border-color: color-mix(in srgb, var(--color-primary) 58%, transparent);
-  background: var(--color-dark-surface-hover);
-}
-.admin-v2-workspace .admin-site-context__desktop > button[aria-pressed="true"] {
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary);
-  background: color-mix(
-    in srgb,
-    var(--color-primary) 18%,
-    var(--color-dark-surface-secondary)
-  );
-}
-.admin-v2-workspace .admin-site-context__desktop > button:focus-visible {
-  outline: 2px solid var(--color-primary-bright);
-  outline-offset: 2px;
-}
-
 /* Sidebar remains a larger navigation family. */
-.admin-v2-workspace .admin-sidebar .admin-tab,
-.admin-v2-workspace .admin-sidebar .admin-sidebar__collapse {
-  height: 44px;
-  min-height: 44px;
-}
-.admin-v2-workspace .admin-sidebar .admin-sidebar__collapse {
-  padding: 8px var(--admin-sidebar-item-padding);
-}
 .admin-v2-workspace .admin-sidebar .icon-button {
   width: 44px;
   min-width: 44px;
@@ -2672,9 +2540,7 @@ but focus no longer reuses hover styling. */
   min-height: 44px;
   border-radius: 12px;
 }
-.admin-v2-workspace .admin-sidebar .icon-button > svg,
-.admin-v2-workspace .admin-sidebar .admin-tab > svg,
-.admin-v2-workspace .admin-sidebar .admin-sidebar__collapse > svg {
+.admin-v2-workspace .admin-sidebar .icon-button > svg {
   width: 20px;
   height: 20px;
   flex: 0 0 20px;
