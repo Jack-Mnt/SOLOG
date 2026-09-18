@@ -1623,12 +1623,11 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-device-card {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  column-gap: 14px;
-  row-gap: 4px;
+  grid-template-columns: 48px auto;
+  column-gap: 12px;
   align-items: center;
   min-width: 0;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
@@ -1637,9 +1636,9 @@ workspace y cards permanecen como superficies estructurales neutras;
   box-shadow: inset 3px 0
     color-mix(in srgb, var(--color-primary) 52%, transparent);
 }
-.admin-device-card--authorized .admin-device-badge {
+/* .admin-device-card--authorized .admin-device-badge {
   min-width: 108px;
-}
+} */
 .admin-device-card__icon {
   grid-column: 1;
   grid-row: 1 / span 2;
@@ -1647,7 +1646,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 11px;
+  border-radius: 12px;
   background: var(--color-primary-soft);
   color: var(--color-primary-active);
 }
@@ -1662,8 +1661,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-device-card h3 {
   margin: 0;
-  font-size: 1.0625rem;
-  line-height: 1.4;
+  font-size: 1rem;
   font-weight: 700;
 }
 

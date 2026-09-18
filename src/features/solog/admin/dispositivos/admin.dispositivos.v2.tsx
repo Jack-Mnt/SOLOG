@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Check, Inbox, MapPinOff, RefreshCw, ShieldCheck, ShieldOff, Tablet, X } from "lucide-react";
+import {
+  Check,
+  Inbox,
+  MapPinOff,
+  RefreshCw,
+  ShieldCheck,
+  ShieldOff,
+  Tablet,
+  X,
+} from "lucide-react";
 import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
@@ -86,7 +95,7 @@ export function AdminDevicesV2() {
                       aria-label={"Tablet de " + adminSiteLabel(site.nombre)}
                     >
                       <span className="admin-device-card__icon">
-                        <Tablet size={23} aria-hidden="true" />
+                        <Tablet size={24} aria-hidden="true" />
                       </span>
                       <header>
                         <h3>{adminSiteLabel(site.nombre)}</h3>
@@ -153,13 +162,12 @@ export function AdminDevicesV2() {
                       aria-label={"Solicitud de " + adminSiteLabel(device.site)}
                     >
                       <span className="admin-device-card__icon">
-                        <Tablet size={23} aria-hidden="true" />
+                        <Tablet size={24} aria-hidden="true" />
                       </span>
                       <header>
                         <h3>{adminSiteLabel(device.site)}</h3>
                       </header>
                       <div className="admin-device-card__person">
-                        <strong>{device.solicitante}</strong>
                         <p>
                           Solicitado · {deviceAccessLabel(device.solicitado_at)}
                         </p>
@@ -176,11 +184,15 @@ export function AdminDevicesV2() {
                               )
                             }
                           >
-                            {hasTablet ? <RefreshCw size={16} aria-hidden="true" /> : <ShieldCheck size={16} aria-hidden="true" />}
+                            {hasTablet ? (
+                              <RefreshCw size={16} aria-hidden="true" />
+                            ) : (
+                              <ShieldCheck size={16} aria-hidden="true" />
+                            )}
                             {hasTablet ? "Reemplazar tablet" : "Autorizar"}
                           </button>
                           <button
-                            className="button button--secondary"
+                            className="button button--secondary admin-device-revoke"
                             disabled={!!store.intent("devices")}
                             onClick={() => openAction(device, "reject")}
                           >
