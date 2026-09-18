@@ -1101,31 +1101,36 @@ sin alterar las cards de otros módulos. */
 }
 .admin-button__actions {
   display: flex;
-  justify-content: center;
-  margin-top: 6px;
   align-items: center;
+  justify-content: center;
   gap: 7px;
-  min-height: 32px;
-  padding: 6px 11px;
+  height: 36px;
+  min-height: 36px;
+  margin-top: 6px;
+  padding: 8px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: var(--color-surface);
   color: var(--color-primary);
-  font-size: 0.75rem;
+  background: var(--color-surface);
+  font-size: 0.8rem;
   box-shadow: inset 4px 0 var(--color-primary);
   transform: none;
 }
-.admin-button__actions:hover {
-  color: var(--color-primary);
+.admin-button__actions > svg {
+  width: 16px;
+  height: 16px;
+}
+.admin-button__actions:hover:not(:disabled) {
+  color: var(--color-primary-active);
   border-color: var(--color-primary);
   background: var(--color-primary-subtle);
   box-shadow: inset 4px 0 var(--color-primary);
   transform: none;
 }
-.admin-dashboard__card > header > .icon-button:focus-visible,
 .admin-button__actions:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+  box-shadow: inset 4px 0 var(--color-primary);
 }
 .admin-dashboard__card .admin-dashboard__detail {
   border-top: 1px solid var(--color-border);
@@ -2377,31 +2382,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   outline-offset: 2px;
   border-color: var(--color-focus);
   box-shadow: none;
-}
-
-/* Dashboard keeps its contextual left marker as an explicit exception. */
-.admin-v2-workspace .admin-button__actions {
-  height: 36px;
-  min-height: 36px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  box-shadow: inset 4px 0 var(--color-primary);
-}
-.admin-v2-workspace .admin-button__actions > svg {
-  width: 16px;
-  height: 16px;
-}
-.admin-v2-workspace .admin-button__actions:hover:not(:disabled) {
-  color: var(--color-primary-active);
-  border-color: var(--color-primary);
-  background: var(--color-primary-subtle);
-  box-shadow: inset 4px 0 var(--color-primary);
-}
-.admin-v2-workspace .admin-button__actions:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-  box-shadow: inset 4px 0 var(--color-primary);
 }
 
 /* Devices keep danger semantics,
