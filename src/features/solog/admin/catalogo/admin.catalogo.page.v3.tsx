@@ -34,7 +34,7 @@ import {
 } from "./admin.catalogo.v3";
 import { adminTimestamp } from "../admin.v2.format";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminNotice } from "../admin.primitives";
+import { AdminNotice, IconButton } from "../admin.primitives";
 
 type ProposalAction = "approve" | "ignore" | "withdraw";
 type ProposalSection = "urgent" | "emerging";
@@ -219,7 +219,7 @@ function ProposalSection({
         <h3>{title}</h3>
         <span>{rows.length}</span>
       </header>
-      <div className="admin-v2-table admin-catalog__table">
+      <div className="admin-main-table admin-catalog__table">
         <table>
           <thead>
             <tr>
@@ -227,7 +227,7 @@ function ProposalSection({
               <th scope="col">Producto</th>
               <th scope="col">Cambio</th>
               <th scope="col">Origen</th>
-              <th scope="col">Acción</th>
+              <th scope="col" className="admin-table-action-cell">Acción</th>
             </tr>
           </thead>
           <tbody>
@@ -301,9 +301,11 @@ function ProposalRow({
     <tr>
       <td>{proposalLabels[proposal.tipo]}</td>
       <th scope="row">
-        <span className="admin-catalog__product-name">{product}</span>
-        <span className="admin-catalog__product-code">
-          {proposal.c_interno}
+        <span className="admin-table-cell-stack">
+          <span className="admin-table-cell-primary">{product}</span>
+          <span className="admin-table-cell-secondary">
+            {proposal.c_interno}
+          </span>
         </span>
       </th>
       <td className="admin-catalog__change">
@@ -312,14 +314,16 @@ function ProposalRow({
       <td>
         <span className="admin-attribute-badge">{origin}</span>
       </td>
-      <td>
-        <button
-          type="button"
-          className="button button--secondary"
-          onClick={() => onSelect(proposal)}
-        >
-          <Eye size={16} aria-hidden="true" />
-        </button>
+      <td className="admin-table-action-cell">
+        <div className="admin-table-actions">
+          <IconButton
+            aria-label={`Ver detalle de ${product}`}
+            title="Ver detalle"
+            onClick={() => onSelect(proposal)}
+          >
+            <Eye size={16} aria-hidden="true" />
+          </IconButton>
+        </div>
       </td>
     </tr>
   );
