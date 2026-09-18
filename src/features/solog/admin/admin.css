@@ -336,8 +336,6 @@
 }
 
 .admin-workspace__main {
-  --admin-header-offset: 58px;
-
   min-width: 0;
   min-height: 100vh;
 }
@@ -729,19 +727,6 @@
 
 .incident-technical-details code {
   font-size: 0.68rem;
-}
-
-@keyframes control-skeleton {
-  to {
-    background-position: -220% 0;
-  }
-}
-
-@keyframes control-drawer-in {
-  from {
-    transform: translateX(24px);
-    opacity: 0.5;
-  }
 }
 
 /* Sistema compartido de controles administrativos */
@@ -1516,10 +1501,6 @@ detalle y exportación sin cambios. */
   background: var(--color-danger-soft);
   color: color-mix(in srgb, var(--color-danger) 75%, var(--color-text-primary));
 }
-/* .admin-control > .admin__table > .admin-v2-table {
-  max-height: min(65vh, 680px);
-  isolation: isolate;
-} */
 .admin-control > .admin__table table {
   border-collapse: separate;
   border-spacing: 0;
@@ -3300,11 +3281,6 @@ while structural exceptions keep their size. */
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
-/* .admin-quick-filter-chip:not(.admin-control__tone--success):not(
-    .admin-control__tone--info
-  ):not(.admin-control__tone--warning):not(.admin-control__tone--danger) {
-  background: var(--color-surface-secondary);
-} */
 .admin-quick-filter-chip:hover:not(:disabled) {
   border-color: currentColor;
 }
