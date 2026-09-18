@@ -1049,19 +1049,15 @@ detalle y exportación sin cambios. */
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 5px 9px;
+  padding: 3px 7px;
   border-radius: 8px;
   background: var(--color-surface-secondary);
   color: var(--color-text-secondary);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
   line-height: 1.4;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-}
-.admin-control__badge {
-  padding: 3px 7px;
-  font-size: 0.6875rem;
-  font-weight: 600;
 }
 .tone--color {
   background: var(--color-primary-soft);
@@ -1776,8 +1772,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   font: inherit;
   font-size: 0.8125rem;
   font-weight: 600;
-}
-.admin-site-context__desktop > button {
   cursor: pointer;
 }
 .admin-site-context__desktop > button:hover {
