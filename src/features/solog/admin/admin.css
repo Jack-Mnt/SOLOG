@@ -560,14 +560,8 @@ detalle y exportación sin cambios. */
   outline: 2px solid var(--color-focus);
   outline-offset: 3px;
 }
-.admin-groups__filters {
-  gap: 12px;
-}
 .admin-groups__filters > label:first-child {
   flex: 1 1 230px;
-}
-.admin-groups__filters > label {
-  font-size: 0.8rem;
 }
 .admin-groups__table table {
   min-width: 760px;
@@ -2076,20 +2070,8 @@ workspace y cards permanecen como superficies estructurales neutras;
   background: var(--color-info-soft);
 }
 .admin-groups__members {
-  min-height: 34px;
-  padding: 4px 7px;
   border-color: transparent;
   background: transparent;
-  box-shadow: none;
-}
-.admin-groups__members:hover:not(:disabled) {
-  border-color: var(--color-border);
-  background: var(--color-surface-secondary);
-  box-shadow: none;
-}
-.admin-groups__members .admin-attribute-badge {
-  min-height: 22px;
-  padding: 2px 6px;
 }
 
 .admin-groups__members-icon--hover {
