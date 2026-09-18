@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 const source = (path: string) => Bun.file(path).text()
 
 describe('Admin table normalization — Phase 1 infrastructure', () => {
-  test('separa tablas principales y auxiliares manteniendo compatibilidad transitoria', async () => {
+  test('separa tablas principales y auxiliares sin clase legacy', async () => {
     const [css, control] = await Promise.all([
       source('src/features/solog/admin/admin.css'),
       source('src/features/solog/admin/control/admin.control.v2.tsx'),
@@ -11,7 +11,7 @@ describe('Admin table normalization — Phase 1 infrastructure', () => {
 
     expect(css).toContain('.admin-main-table,')
     expect(css).toMatch(/\.admin-auxiliary-table/)
-    expect(css).toMatch(/\.admin-v2-table/)
+    expect(css).not.toContain('.admin-v2-table')
     expect(control).toContain('className="admin-main-table"')
     expect(control).toContain('className="admin-auxiliary-table admin-control-chronology__table"')
   })
