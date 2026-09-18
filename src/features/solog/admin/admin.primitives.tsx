@@ -1,7 +1,7 @@
 import { ArrowDownWideNarrow, CheckCircle2, Info, TriangleAlert, XCircle } from 'lucide-react'
 import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
-type IconButtonVariant = 'default' | 'primary' | 'danger'
+type IconButtonVariant = 'default' | 'primary' | 'warning' | 'danger'
 type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'children'> & {
   'aria-label': string
   children: ReactNode
@@ -17,6 +17,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       className={[
         'icon-button',
         variant === 'primary' ? 'icon-button--primary' : '',
+        variant === 'warning' ? 'icon-button--warning' : '',
         variant === 'danger' ? 'icon-button--danger' : '',
         className,
       ].filter(Boolean).join(' ')}
