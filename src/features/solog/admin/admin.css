@@ -2246,9 +2246,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-v2-workspace .admin-section-secondary-row + .admin-table-section {
   margin-top: 12px;
 }
-/* QuickFilterChip,
-StateView,
-badges y conteos — Fase D. */
+/* QuickFilterChip, StateView y badges — Fase D. */
 .admin-quick-filter-chips {
   display: flex;
   flex-wrap: wrap;
@@ -2575,7 +2573,6 @@ badges y conteos — Fase D. */
   box-shadow: none;
 }
 
-/* Quick filters are intentionally denser; StateView keeps normal control density. */
 /* Dashboard keeps its contextual left marker as an explicit exception. */
 .admin-v2-workspace .admin-button__actions {
   height: 36px;
@@ -2734,7 +2731,7 @@ while structural exceptions keep their size. */
     border-color: var(--color-primary);
   }
 }
-/* Primitives compartidas: QuickFilterChip replica Control y StateView replica Catálogo. */
+/* Primitive compartida: QuickFilterChip replica Control. */
 .admin-quick-filter-chip {
   height: 32px;
   min-height: 32px;
