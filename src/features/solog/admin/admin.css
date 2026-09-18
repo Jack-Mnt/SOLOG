@@ -386,107 +386,6 @@
   padding: 16px;
 }
 
-.incident-dialog {
-  display: flex;
-  flex-direction: column;
-  width: min(600px, 100%);
-  overflow: hidden;
-}
-
-.incident-dialog .admin-dialog__header,
-.incident-dialog .admin-dialog__footer {
-  flex: 0 0 auto;
-}
-
-.incident-dialog .admin-dialog__body {
-  min-height: 0;
-  overflow: auto;
-}
-
-.incident-detected-data dt,
-.incident-technical-details dt {
-  color: var(--color-text-secondary);
-  font-size: 0.66rem;
-}
-
-.incident-detected-data dd,
-.incident-technical-details dd {
-  margin: 4px 0 0;
-  overflow-wrap: anywhere;
-  color: var(--color-text-primary);
-  font-size: 0.74rem;
-  font-weight: 700;
-}
-
-.incident-detected-data {
-  margin-top: 14px;
-}
-
-.incident-detected-data h3 {
-  margin: 0 0 8px;
-  font-size: 0.82rem;
-}
-
-.incident-detected-data dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-  margin: 0;
-}
-
-.incident-detected-data dl > div {
-  min-width: 0;
-  padding: 8px 9px;
-  border-radius: 8px;
-  background: var(--color-surface-secondary);
-}
-
-.incident-detected-data pre {
-  max-height: 150px;
-  overflow: auto;
-  margin: 0;
-  padding: 9px;
-  border-radius: 8px;
-  color: var(--color-text-secondary);
-  background: var(--color-surface-secondary);
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 0.68rem;
-  line-height: 1.4;
-  white-space: pre-wrap;
-}
-
-.incident-technical-details {
-  margin-top: 12px;
-  border-top: 1px solid var(--color-border);
-}
-
-.incident-technical-details summary {
-  padding: 10px 0 2px;
-  color: var(--color-text-secondary);
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.incident-technical-details summary:hover {
-  color: var(--color-primary);
-}
-
-.incident-technical-details dl {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: 8px 0 0;
-}
-
-.incident-technical-details dl > div {
-  min-width: 0;
-}
-
-.incident-technical-details code {
-  font-size: 0.68rem;
-}
-
 /* Sistema compartido de controles administrativos */
 .admin-filter-bar {
   --admin-control-height: 38px;
@@ -625,10 +524,6 @@
 }
 
 @media (max-width: 480px) {
-  .incident-detected-data dl,
-  .incident-technical-details dl {
-    grid-template-columns: 1fr;
-  }
   .admin-workspace--collapsed {
     grid-template-columns: 68px minmax(0, 1fr);
   }
@@ -2163,57 +2058,13 @@ workspace y cards permanecen como superficies estructurales neutras;
   align-items: center;
   gap: 12px;
 }
-.admin-incidents__all-sites {
-  min-height: 36px;
-  white-space: nowrap;
-}
 .admin-v2-workspace .admin-workspace__main .button[aria-pressed="true"] {
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-primary-soft);
 }
-.admin-incidents__sources {
-  display: grid;
-  gap: 8px;
-}
-.admin-incidents__source {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border);
-}
-.admin-incidents__source:last-child {
-  border-bottom: 0;
-}
-.admin-incidents__source > div,
-.admin-incidents__source > div > span {
-  display: grid;
-  gap: 4px;
-}
-.admin-incidents__source > div > span {
-  grid-auto-flow: column;
-  justify-content: start;
-  align-items: center;
-  color: var(--color-text-secondary);
-  font-size: 0.82rem;
-}
-.admin-incidents__source-status {
-  color: var(--color-text-secondary);
-  font-size: 0.82rem;
-}
-.admin-incidents__table,
 .admin-incidents__detail-table {
   margin: 0;
-}
-.admin-incidents__table th[scope="row"] {
-  font-weight: 600;
-}
-.admin-incidents__table th[scope="row"] small {
-  display: block;
-  color: var(--color-text-muted);
-  font-weight: 400;
 }
 .admin-incidents__state {
   display: inline-flex;
@@ -2235,10 +2086,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   background: color-mix(in srgb, var(--color-success) 16%, transparent);
   color: var(--color-success);
 }
-.admin-incidents__catalog-status {
-  color: var(--color-text-muted);
-  font-size: 0.82rem;
-}
 @media (max-width: 720px) {
   .admin-incidents__controls {
     align-items: stretch;
@@ -2246,13 +2093,8 @@ workspace y cards permanecen como superficies estructurales neutras;
   .admin-incidents__controls .admin-state-views {
     margin-right: 0;
   }
-  .admin-incidents__type,
-  .admin-incidents__all-sites {
+  .admin-incidents__type {
     flex: 1 1 10rem;
-  }
-  .admin-incidents__source {
-    align-items: flex-start;
-    flex-wrap: wrap;
   }
 }
 /* Admin primitives — Fase B. Base visual; la adopción por módulos comienza en Fase C. */
