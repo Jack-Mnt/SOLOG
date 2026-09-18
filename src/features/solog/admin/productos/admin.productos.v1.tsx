@@ -295,7 +295,7 @@ export function AdminProductsV1() {
           />
         </div>
         <div className="admin-table-section admin-catalog__table">
-          <div className="admin-v2-table">
+          <div className="admin-main-table">
             <table>
               <thead>
                 <tr>
@@ -303,8 +303,8 @@ export function AdminProductsV1() {
                   <th scope="col">C. interno</th>
                   <th scope="col">Categoría</th>
                   <th scope="col">Grupo</th>
-                  <th scope="col">Precio</th>
-                  <th scope="col">Acción</th>
+                  <th scope="col" className="admin-table-number">Precio</th>
+                  <th scope="col" className="admin-table-action-cell">Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -344,35 +344,37 @@ export function AdminProductsV1() {
                           <span>{group ?? "—"}</span>
                         </span>
                       </td>
-                      <td className="admin-catalog__money">
+                      <td className="admin-table-number">
                         <Value value={product.precio} money />
                       </td>
-                      <td>
-                        <IconButton
-                          aria-label={
-                            proposalState
-                              ? `Propuesta en revisión para ${product.producto}`
-                              : actionLabel
-                          }
-                          title={
-                            proposalState
-                              ? "Propuesta en revisión"
-                              : actionLabel
-                          }
-                          variant={
-                            product.estado === "Excluido" ? "primary" : "danger"
-                          }
-                          disabled={!!proposalState}
-                          onClick={() => setSelected(product)}
-                        >
-                          {proposalState ? (
-                            <Clock size={16} aria-hidden="true" />
-                          ) : product.estado === "Excluido" ? (
-                            <RotateCcw size={16} aria-hidden="true" />
-                          ) : (
-                            <CircleOff size={16} aria-hidden="true" />
-                          )}
-                        </IconButton>
+                      <td className="admin-table-action-cell">
+                        <div className="admin-table-actions">
+                          <IconButton
+                            aria-label={
+                              proposalState
+                                ? `Propuesta en revisión para ${product.producto}`
+                                : actionLabel
+                            }
+                            title={
+                              proposalState
+                                ? "Propuesta en revisión"
+                                : actionLabel
+                            }
+                            variant={
+                              product.estado === "Excluido" ? "primary" : "danger"
+                            }
+                            disabled={!!proposalState}
+                            onClick={() => setSelected(product)}
+                          >
+                            {proposalState ? (
+                              <Clock size={16} aria-hidden="true" />
+                            ) : product.estado === "Excluido" ? (
+                              <RotateCcw size={16} aria-hidden="true" />
+                            ) : (
+                              <CircleOff size={16} aria-hidden="true" />
+                            )}
+                          </IconButton>
+                        </div>
                       </td>
                     </tr>
                   );
