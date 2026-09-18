@@ -7,7 +7,7 @@ describe('Admin table normalization — Phase 3 Catálogo + Productos', () => {
     const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
 
     expect(catalog).toContain('className="admin-main-table admin-catalog__table"')
-    expect(catalog).toContain('className="admin-v2-table admin-catalog__table"')
+    expect(catalog).toContain('className="admin-auxiliary-table admin-catalog__table"')
     expect(catalog).toContain('<th scope="col">Tipo</th>')
     expect(catalog).toContain('<th scope="col">Producto</th>')
     expect(catalog).toContain('<th scope="col">Cambio</th>')
