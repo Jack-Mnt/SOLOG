@@ -13,6 +13,8 @@ import { AdminDialog } from "../admin.dialog";
 import { useAdminQuery } from "../admin.v2.context";
 import type { Biweekly, DashboardCards } from "../admin.v2";
 import { QueryState, Value } from "../admin.v2.presentation";
+import { AdminPagination } from "../admin.primitives";
+import { paginateAdminRows } from "../admin.pagination";
 import { adminSiteLabel, orderedAdminSites } from "../admin.site-ui";
 import { AdminExportDialog } from "../control/admin.control.v2.export-dialog";
 
@@ -56,11 +58,13 @@ function DailyDrawer({
   date: string;
   close: () => void;
 }) {
+  const [page, setPage] = useState(0);
   const query = useAdminQuery("daily_detail", {
     site_id: site,
     origin_date: date,
   });
   const data = query.data;
+  const paginated = paginateAdminRows(data?.items ?? [], page);
   return (
     <AdminDialog
       title={`Conteos originados el ${dashboardDate(date)}`}
@@ -89,7 +93,7 @@ function DailyDrawer({
                 </tr>
               </thead>
               <tbody>
-                {data.items.map((row) => (
+                {paginated.rows.map((row) => (
                   <tr key={row.case_id}>
                     <td>
                       {row.grupo} · {row.estado}
@@ -111,6 +115,13 @@ function DailyDrawer({
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            total={data.items.length}
+            currentPage={paginated.currentPage}
+            pageCount={paginated.pageCount}
+            onPageChange={setPage}
+            ariaLabel="Paginación del detalle diario"
+          />
           {!data.items.length && <p>No hay conteos originados este día.</p>}
         </>
       )}
