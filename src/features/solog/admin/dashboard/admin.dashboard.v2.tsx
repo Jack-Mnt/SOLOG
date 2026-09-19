@@ -66,8 +66,7 @@ function DailyDrawer({
       title={`Conteos originados el ${dashboardDate(date)}`}
       description="Estado vigente de los conteos de esta fecha. Zona horaria America/Lima."
       onClose={close}
-      wide
-      className="admin-v2-drawer"
+      variant="drawer"
     >
       {!data ? (
         <QueryState {...query} />
