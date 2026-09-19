@@ -41,6 +41,8 @@ type ProposalAction = "approve" | "ignore" | "withdraw";
 type ProposalSection = "urgent" | "emerging";
 type PriceResolution = "update_group_price" | "separate_sku" | "keep_structure";
 
+const CATALOG_PROPOSAL_PAGE_SIZE = 25;
+
 const proposalStatuses: Array<{ id: CatalogProposalStatus; label: string }> = [
   { id: "pendiente", label: "Pendientes" },
   { id: "aprobado", label: "Aprobados" },
@@ -215,7 +217,8 @@ function ProposalSection({
   onSelect: (proposal: CatalogProposal) => void;
 }) {
   const [page, setPage] = useState(0);
-  const paginated = paginateAdminRows(rows, page, 25);
+  const paginated = paginateAdminRows(rows, page, CATALOG_PROPOSAL_PAGE_SIZE);
+  if (paginated.currentPage !== page) setPage(paginated.currentPage);
   return (
     <section
       className={`admin-catalog__section admin-catalog__section--${section}`}
@@ -255,7 +258,7 @@ function ProposalSection({
         total={rows.length}
         currentPage={paginated.currentPage}
         pageCount={paginated.pageCount}
-        pageSize={25}
+        pageSize={CATALOG_PROPOSAL_PAGE_SIZE}
         onPageChange={setPage}
         ariaLabel={`Paginación de ${title.toLowerCase()}`}
       />
