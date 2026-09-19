@@ -283,8 +283,21 @@ function IgnoreDialog({
         </>
       }
     >
-      <p>Esta incidencia se ignorará durante 30 días en todas las sedes.</p>
-      {error && <AdminNotice tone="error">{error}</AdminNotice>}
+      <div className="admin-dialog-confirmation">
+        <p>Esta incidencia dejará de aparecer como pendiente durante el período indicado.</p>
+        <dl className="admin-dialog-context">
+          <div>
+            <dt>Alcance</dt>
+            <dd>Todas las sedes</dd>
+          </div>
+          <div>
+            <dt>Duración</dt>
+            <dd>30 días</dd>
+          </div>
+        </dl>
+        <p>Ignorar no resuelve ni elimina la incidencia.</p>
+        {error && <AdminNotice tone="error">{error}</AdminNotice>}
+      </div>
     </AdminDialog>
   );
 }
@@ -330,8 +343,8 @@ function DeleteProposalDialog({
   };
   return (
     <AdminDialog
-      title="Proponer eliminación"
-      description="Se creará una propuesta de eliminación para revisión en Catálogo."
+      title="Aprobar eliminación"
+      description="El cambio quedará aprobado y listo para incluirse en la próxima publicación del Catálogo."
       onClose={onClose}
       closeDisabled={proposing}
       footer={
@@ -350,24 +363,33 @@ function DeleteProposalDialog({
             disabled={proposing}
             onClick={confirm}
           >
-            {proposing ? "Procesando…" : retryable ? "Reintentar" : "Proponer eliminación"}
+            {proposing ? "Procesando…" : retryable ? "Reintentar" : "Aprobar eliminación"}
           </button>
         </>
       }
     >
-      <p>
-        <strong>
-          Producto ausente ·{" "}
-          {proposal.source.family.c_interno ??
-            proposal.source.family.c_interno_original ??
-            "Sin código"}
-        </strong>
-      </p>
-      {product && <p>{product}</p>}
-      <p>
-        Detectado en: <strong>{proposal.source.siteName}</strong>
-      </p>
-      {error && <AdminNotice tone="error">{error}</AdminNotice>}
+      <div className="admin-dialog-confirmation">
+        <dl className="admin-dialog-context">
+          <div>
+            <dt>Producto</dt>
+            <dd>{product ?? "—"}</dd>
+          </div>
+          <div>
+            <dt>C. interno</dt>
+            <dd>
+              {proposal.source.family.c_interno ??
+                proposal.source.family.c_interno_original ??
+                "Sin código"}
+            </dd>
+          </div>
+          <div>
+            <dt>Detectado en</dt>
+            <dd>{proposal.source.siteName}</dd>
+          </div>
+        </dl>
+        <p>El producto no se eliminará hasta publicar el Catálogo.</p>
+        {error && <AdminNotice tone="error">{error}</AdminNotice>}
+      </div>
     </AdminDialog>
   );
 }
@@ -614,7 +636,7 @@ export function AdminIncidentsV2() {
       )
       .then(() => {
         setNotice(
-          "La propuesta de eliminación quedó pendiente para revisión en Catálogo.",
+          "La eliminación quedó aprobada y lista para la próxima publicación del Catálogo.",
         );
       })
       .catch((reason) => {
@@ -635,7 +657,7 @@ export function AdminIncidentsV2() {
           ? "La incidencia fue ignorada durante 30 días."
           : intent.action === "reactivate"
             ? "La incidencia fue reactivada."
-            : "La propuesta de eliminación quedó pendiente para revisión en Catálogo.";
+            : "La eliminación quedó aprobada y lista para la próxima publicación del Catálogo.";
       setNotice(success);
     }).catch((reason) => {
       if (!store.intent("incidents")) {
@@ -856,8 +878,8 @@ export function AdminIncidentsV2() {
                           {state === "pendiente" && deletable && (
                             <IconButton
                               variant="danger"
-                              aria-label="Proponer eliminación"
-                              title="Proponer eliminación"
+                              aria-label="Aprobar eliminación"
+                              title="Aprobar eliminación"
                               disabled={pending}
                               onClick={() =>
                                 setDeleteProposal({
