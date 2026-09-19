@@ -6,9 +6,9 @@ describe('Index Fase I2: loader accesible', () => {
   test('presenta símbolo, puntos, texto y semántica de estado', async () => {
     const loader = await readSource('src/components/panel-loader.tsx')
 
-    expect(loader).toContain('role="status"')
-    expect(loader).toContain('aria-live="polite"')
-    expect(loader).toContain('aria-busy="true"')
+    expect(loader).toContain("role={isError ? 'alert' : 'status'}")
+    expect(loader).toContain("aria-live={isError ? 'assertive' : 'polite'}")
+    expect(loader).toContain('aria-busy={!isError}')
     expect(loader).toContain('src="/isotipo.svg"')
     expect(loader).toContain('panel-loader__dots')
     expect(loader).toContain('Cargando el panel…')
