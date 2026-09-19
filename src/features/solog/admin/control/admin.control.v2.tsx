@@ -200,36 +200,6 @@ function GroupDetail({
 }) {
   const [period, setPeriod] =
     useState<ControlChronologyPeriod>("current_biweekly");
-  const actualButton = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    const previous = document.activeElement;
-    const button = actualButton.current;
-    button?.focus();
-    const dialog = button?.closest('[role="dialog"]');
-    const trap = (event: KeyboardEvent) => {
-      if (event.key !== "Tab" || !dialog) return;
-      const controls = Array.from(
-        dialog.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), input, select, a[href], [tabindex="0"]',
-        ),
-      );
-      const first = controls[0],
-        last = controls.at(-1);
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last?.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first?.focus();
-      }
-    };
-    dialog?.addEventListener("keydown", trap as EventListener);
-    return () => {
-      dialog?.removeEventListener("keydown", trap as EventListener);
-      if (previous instanceof HTMLElement && previous.isConnected)
-        previous.focus();
-    };
-  }, []);
   const query = useAdminQuery("control_chronology", {
     site_id: site,
     group_id: group,
@@ -240,38 +210,45 @@ function GroupDetail({
       title={`Cronología de ${name}`}
       description="Evolución del grupo por quincena. Fechas y horas de Lima."
       onClose={close}
-      variant="wide"
-      className="admin-control-chronology"
+      variant="drawer"
+      footer={
+        <>
+          <div className="admin-dialog__footer-navigation admin-control-chronology__toolbar">
+            <div
+              role="group"
+              aria-label="Quincena de cronología"
+              className="admin-control-chronology__periods"
+            >
+              <button
+                type="button"
+                aria-pressed={period === "current_biweekly"}
+                onClick={() => setPeriod("current_biweekly")}
+              >
+                Actual
+              </button>
+              <button
+                type="button"
+                aria-pressed={period === "previous_biweekly"}
+                onClick={() => setPeriod("previous_biweekly")}
+              >
+                Anterior
+              </button>
+            </div>
+            {query.data && (
+              <span>
+                {controlDate(query.data.period.from)} —{" "}
+                {controlDate(query.data.period.to)}
+              </span>
+            )}
+          </div>
+          <div className="admin-dialog__footer-actions">
+            <button type="button" className="button button--secondary" onClick={close}>
+              Cerrar
+            </button>
+          </div>
+        </>
+      }
     >
-      <div className="admin-control-chronology__toolbar">
-        <div
-          role="group"
-          aria-label="Quincena de cronología"
-          className="admin-control-chronology__periods"
-        >
-          <button
-            ref={actualButton}
-            type="button"
-            aria-pressed={period === "current_biweekly"}
-            onClick={() => setPeriod("current_biweekly")}
-          >
-            Actual
-          </button>
-          <button
-            type="button"
-            aria-pressed={period === "previous_biweekly"}
-            onClick={() => setPeriod("previous_biweekly")}
-          >
-            Anterior
-          </button>
-        </div>
-        {query.data && (
-          <span>
-            {controlDate(query.data.period.from)} —{" "}
-            {controlDate(query.data.period.to)}
-          </span>
-        )}
-      </div>
       {!query.data ? (
         <QueryState {...query} variant="compact" />
       ) : !query.data.chronology.length ? (
