@@ -88,13 +88,14 @@ describe('store Catálogo V3', () => {
     expect(store.peek('status', {}).data).toBeUndefined()
     expect(store.peek('proposals', {}).data).toBeUndefined()
   })
-  test('proponer estado de Producto solo crea una propuesta e invalida el conjunto completo', async () => {
+  test('el estado manual de Producto queda aprobado e invalida el conjunto completo', async () => {
     const { store, calls } = setup()
     await store.load('status', {})
     await store.mutation('propose_product_state', { c_interno: 100, action: 'exclude' })
     const mutation = calls.find(call => call.action === 'propose_product_state')
     expect(mutation?.payload).toMatchObject({ c_interno: 100, action: 'exclude', expected_catalog_revision: 7, expected_groups_revision: 3 })
     expect(store.confirmedProductState(100)).toBe('exclude')
+    expect(store.confirmedProductProposalStatus(100)).toBe('aprobado')
   })
   test('prepara onboarding en staging para grupo existente y grupo unitario nuevo', async () => {
     const { store, calls } = setup()
