@@ -60,7 +60,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
   }
   const hasCurrentOrderDraft = orderDraft?.revision === categoryRevision
   return <AdminDialog title="Administrar categorías" description="Crea, renombra y define el orden operativo de las categorías." onClose={onClose} closeDisabled={!!intent?.pending} variant="wide">
-    {!masterData.snapshot || !masterData.derived ? <QueryState error={masterData.error} retry={masterData.retry} /> : <>
+    {!masterData.snapshot || !masterData.derived ? <QueryState error={masterData.error} retry={masterData.retry} variant="compact" /> : <>
       <form className="admin-v2-form admin-categories__create" onSubmit={event => void create(event)}><label>Nueva categoría<input value={createName} onChange={event => setCreateName(event.target.value)} /></label><button className="button" disabled={!!intent || !createName.trim()}><Plus size={16} aria-hidden="true" />Crear categoría</button></form>
       <div className="admin-categories__list" role="list" aria-label="Orden de categorías">{categories.map((category, index) => {
         const counts = masterData.derived!.categoryCounts.get(category.id) ?? { groups: 0, products: 0 }
