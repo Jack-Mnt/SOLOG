@@ -7,8 +7,6 @@ import {
 } from "react";
 import {
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Download,
   Eye,
   Search,
@@ -26,7 +24,7 @@ import { QueryState, Value } from "../admin.v2.presentation";
 import { validCustomRange } from "../admin.v2.format";
 import { AdminExportDialog } from "./admin.control.v2.export-dialog";
 import { controlView, type ControlSort } from "./admin.control.data";
-import { AdminSort, IconButton } from "../admin.primitives";
+import { AdminPagination, AdminSort, IconButton } from "../admin.primitives";
 
 const periods: [ControlPeriod, string][] = [
   ["today", "Hoy"],
@@ -497,27 +495,13 @@ function ControlResults({
           No hay resultados para los filtros seleccionados.
         </p>
       )}
-      {view.total > 0 && (
-        <div className="admin-control__pagination">
-          <button
-            className="button button--secondary"
-            disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-            Anterior
-          </button>
-          <span>Página {page + 1}</span>
-          <button
-            className="button button--secondary"
-            disabled={(page + 1) * 100 >= view.total}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Siguiente
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
-        </div>
-      )}
+      <AdminPagination
+        total={view.total}
+        currentPage={view.currentPage}
+        pageCount={view.pageCount}
+        onPageChange={setPage}
+        ariaLabel="Paginación de Control"
+      />
       {group && (
         <GroupDetail
           site={payload.site_id}

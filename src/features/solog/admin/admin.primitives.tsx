@@ -1,5 +1,6 @@
-import { ArrowDownWideNarrow, CheckCircle2, Info, TriangleAlert, XCircle } from 'lucide-react'
+import { ArrowDownWideNarrow, CheckCircle2, ChevronLeft, ChevronRight, Info, TriangleAlert, XCircle } from 'lucide-react'
 import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { ADMIN_PAGE_SIZE } from './admin.pagination'
 
 type IconButtonVariant = 'default' | 'primary' | 'warning' | 'danger'
 type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'children'> & {
@@ -26,6 +27,51 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
 )
 
 IconButton.displayName = 'IconButton'
+
+type AdminPaginationProps = {
+  total: number
+  currentPage: number
+  pageCount: number
+  pageSize?: number
+  onPageChange: (page: number) => void
+  ariaLabel?: string
+}
+
+export function AdminPagination({
+  total,
+  currentPage,
+  pageCount,
+  pageSize = ADMIN_PAGE_SIZE,
+  onPageChange,
+  ariaLabel = 'Paginación',
+}: AdminPaginationProps) {
+  if (total <= pageSize || pageCount <= 1) return null
+
+  const start = currentPage * pageSize + 1
+  const end = Math.min(start + pageSize - 1, total)
+
+  return <div className="admin-pagination" aria-label={ariaLabel}>
+    <button
+      type="button"
+      className="button button--secondary navigation-button"
+      disabled={currentPage === 0}
+      onClick={() => onPageChange(currentPage - 1)}
+    >
+      <ChevronLeft size={16} aria-hidden="true" />
+      Anterior
+    </button>
+    <span>Página {currentPage + 1} de {pageCount} · {start}–{end} de {total}</span>
+    <button
+      type="button"
+      className="button button--secondary navigation-button"
+      disabled={currentPage + 1 >= pageCount}
+      onClick={() => onPageChange(currentPage + 1)}
+    >
+      Siguiente
+      <ChevronRight size={16} aria-hidden="true" />
+    </button>
+  </div>
+}
 
 export type AdminSortOption<T extends string> = {
   value: T

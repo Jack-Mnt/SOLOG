@@ -40,13 +40,14 @@ test('V10 rechaza filtros/paginación remotos, fechas incorrectas y período no 
   await expect(store.load('control_groups', {...context, page:0} as AdminPayloads['control_groups'])).rejects.toThrow('Payload')
   expect(calls).toHaveLength(1)
 })
-test('V10 resumen base estable, búsqueda + estado locales, 100 por página sin mutar dataset', () => {
+test('V10 resumen base estable, búsqueda + estado locales, 50 por página sin mutar dataset', () => {
   const data = validateAdminResponse('control_groups',responseFixture('control_groups',context))
   const original = JSON.stringify(data)
   const all = controlView(data.items,'','','default',0)
   expect(all.summary).toEqual({total:101,coincide:26,pending_recount:25,confirmed:25,inconsistent:25})
-  expect(all.rows).toHaveLength(100)
-  expect(controlView(data.items,'','','default',1).rows.map(r=>r.group_id)).toEqual(['group-100'])
+  expect(all.rows).toHaveLength(50)
+  expect(controlView(data.items,'','','default',1).rows).toHaveLength(50)
+  expect(controlView(data.items,'','','default',2).rows.map(r=>r.group_id)).toEqual(['group-100'])
   const filtered = controlView(data.items,'Recontar','  GRUPO 1 ','default',0)
   expect(filtered.summary).toEqual(all.summary)
   expect(filtered.rows.map(r=>r.group_id)).toEqual(['group-1','group-13','group-17'])

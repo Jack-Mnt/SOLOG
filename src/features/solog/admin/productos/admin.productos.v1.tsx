@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   CircleOff,
   Clock,
   RotateCcw,
@@ -12,7 +10,8 @@ import { AdminDialog } from "../admin.dialog";
 import { useMasterData } from "../masterdata/admin.masterdata.context";
 import type { MasterDataProduct } from "../masterdata/admin.masterdata.v1";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminSort, IconButton } from "../admin.primitives";
+import { AdminPagination, AdminSort, IconButton } from "../admin.primitives";
+import { paginateAdminRows } from "../admin.pagination";
 import { useCatalogStore } from "../catalogo/admin.catalogo.context";
 import { CatalogMutationNotice } from "../catalogo/admin.catalogo.feedback";
 import { catalogMutationError } from "../catalogo/admin.catalogo.feedback.utils";
@@ -22,7 +21,6 @@ import {
 } from "./admin.product-setup.dialog";
 import {
   filterAndSortProducts,
-  paginateProducts,
   type ProductModeFilter,
   type ProductSort,
 } from "./admin.productos.model";
@@ -202,7 +200,7 @@ export function AdminProductsV1() {
     };
   }, [categoryFilter, masterData.derived, masterData.snapshot, search]);
   const visible = useMemo(
-    () => paginateProducts(products, page),
+    () => paginateAdminRows(products, page),
     [page, products],
   );
   if (!masterData.snapshot || !masterData.derived)
@@ -424,37 +422,13 @@ export function AdminProductsV1() {
             </table>
           </div>
         </div>
-        {products.length > 0 && (
-          <div
-            className="admin-control__pagination"
-            aria-label="Paginación de productos"
-          >
-            <button
-              type="button"
-              className="button button--secondary"
-              disabled={visible.currentPage === 0}
-              onClick={() => setPage(visible.currentPage - 1)}
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              Anterior
-            </button>
-            <span>
-              Página {visible.currentPage + 1} de {visible.pageCount} ·{" "}
-              {visible.offset + 1}–
-              {Math.min(visible.offset + visible.rows.length, products.length)}{" "}
-              de {products.length}
-            </span>
-            <button
-              type="button"
-              className="button button--secondary"
-              disabled={visible.currentPage + 1 >= visible.pageCount}
-              onClick={() => setPage(visible.currentPage + 1)}
-            >
-              Siguiente
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
-          </div>
-        )}
+        <AdminPagination
+          total={products.length}
+          currentPage={visible.currentPage}
+          pageCount={visible.pageCount}
+          onPageChange={setPage}
+          ariaLabel="Paginación de productos"
+        />
       </section>
       {selected && (
         <ProductStateProposal

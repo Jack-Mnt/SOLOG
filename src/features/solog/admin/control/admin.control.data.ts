@@ -1,3 +1,4 @@
+import { paginateAdminRows } from "../admin.pagination";
 import type {
   ControlGroupItem,
   DifferenceState,
@@ -57,9 +58,10 @@ export function controlView(
               return b.valued_difference - a.valued_difference;
           }
         });
+  const paginated = paginateAdminRows(ordered, page);
   return {
     summary,
     total: ordered.length,
-    rows: ordered.slice(page * 100, (page + 1) * 100),
+    ...paginated,
   };
 }

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { deriveMasterData, type MasterDataSnapshot } from '../src/features/solog/admin/masterdata/admin.masterdata.v1'
-import { filterAndSortProducts, paginateProducts } from '../src/features/solog/admin/productos/admin.productos.model'
+import { paginateAdminRows } from '../src/features/solog/admin/admin.pagination'
+import { filterAndSortProducts } from '../src/features/solog/admin/productos/admin.productos.model'
 import { ADMIN_ROUTES, isAdminRoute } from '../src/lib/router'
 
 const source = (path: string) => Bun.file(path).text()
@@ -41,9 +42,9 @@ describe('Admin Productos con Master Data', () => {
 
   test('pagina localmente sin alterar ni truncar el dataset compartido', () => {
     const rows = Array.from({ length: 121 }, (_, index) => index + 1)
-    expect(paginateProducts(rows, 0)).toEqual({ rows: rows.slice(0, 50), currentPage: 0, pageCount: 3, offset: 0 })
-    expect(paginateProducts(rows, 2)).toEqual({ rows: rows.slice(100), currentPage: 2, pageCount: 3, offset: 100 })
-    expect(paginateProducts(rows, 99).currentPage).toBe(2)
+    expect(paginateAdminRows(rows, 0)).toEqual({ rows: rows.slice(0, 50), currentPage: 0, pageCount: 3, offset: 0 })
+    expect(paginateAdminRows(rows, 2)).toEqual({ rows: rows.slice(100), currentPage: 2, pageCount: 3, offset: 100 })
+    expect(paginateAdminRows(rows, 99).currentPage).toBe(2)
     expect(rows).toHaveLength(121)
   })
 
