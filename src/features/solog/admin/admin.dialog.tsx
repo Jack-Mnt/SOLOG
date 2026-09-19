@@ -15,6 +15,8 @@ import {
 } from './admin.dialog.focus'
 import { adminDialogStack } from './admin.dialog.stack'
 
+export type AdminDialogVariant = 'default' | 'wide' | 'drawer'
+
 export function AdminDialog({
   title,
   description,
@@ -22,7 +24,7 @@ export function AdminDialog({
   footer,
   onClose,
   closeDisabled = false,
-  wide = false,
+  variant = 'default',
   className,
 }: {
   title: string
@@ -31,7 +33,7 @@ export function AdminDialog({
   footer?: ReactNode
   onClose: () => void
   closeDisabled?: boolean
-  wide?: boolean
+  variant?: AdminDialogVariant
   className?: string
 }) {
   const titleId = useId()
@@ -95,7 +97,7 @@ export function AdminDialog({
 
   return (
     <div
-      className="admin-dialog-backdrop"
+      className={`admin-dialog-backdrop admin-dialog-backdrop--${variant}`}
       inert={!isTop}
       onMouseDown={(event) => {
         if (
@@ -111,7 +113,7 @@ export function AdminDialog({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className={`admin-dialog${wide ? ' admin-dialog--wide' : ''}${className ? ` ${className}` : ''}`}
+        className={`admin-dialog admin-dialog--${variant}${className ? ` ${className}` : ''}`}
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
