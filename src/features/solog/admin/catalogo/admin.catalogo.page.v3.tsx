@@ -408,6 +408,45 @@ function ProposalDetail({
         onClose={onClose}
         closeDisabled={!!intent?.pending}
         variant="wide"
+        footer={
+          <>
+            <button type="button" className="button button--secondary" disabled={!!intent} onClick={onClose}>
+              Cerrar
+            </button>
+            {proposal.estado === "pendiente" && (
+              <>
+                <button type="button" className="button button--secondary" disabled={!!intent} onClick={() => run("ignore")}>
+                  <EyeOff size={16} aria-hidden="true" />
+                  Ignorar propuesta
+                </button>
+                <button type="button" className="button" disabled={!!intent} onClick={() => run("approve")}>
+                  <Check size={16} aria-hidden="true" />
+                  Aprobar
+                </button>
+              </>
+            )}
+            {proposal.estado === "aprobado" && (
+              <>
+                <button type="button" className="button button--secondary" disabled={!!intent} onClick={() => run("withdraw")}>
+                  <Undo2 size={16} aria-hidden="true" />
+                  Retirar aprobación
+                </button>
+                {canSetup && (
+                  <button type="button" className="button" disabled={!!intent} onClick={() => setSetup(true)}>
+                    <Settings size={16} aria-hidden="true" />
+                    {proposal.setup ? "Actualizar configuración" : "Configurar producto"}
+                  </button>
+                )}
+                {proposal.tipo === "precio" && (
+                  <button type="button" className="button" disabled={!!intent} onClick={() => setPrice(true)}>
+                    <DollarSign size={16} aria-hidden="true" />
+                    {proposal.price_resolution ? "Actualizar resolución de precio" : "Resolver precio"}
+                  </button>
+                )}
+              </>
+            )}
+          </>
+        }
       >
         <div className="admin-catalog__proposal-context">
           <span>C. interno {proposal.c_interno}</span>
@@ -475,69 +514,6 @@ function ProposalDetail({
           </p>
         )}
         {intent && !setup && !price && <CatalogMutationNotice onRetry={retry} />}
-        <div className="admin-v2-actions">
-          {proposal.estado === "pendiente" && (
-            <>
-              <button
-                type="button"
-                className="button"
-                disabled={!!intent}
-                onClick={() => run("approve")}
-              >
-                <Check size={16} aria-hidden="true" />
-                Aprobar
-              </button>
-              <button
-                type="button"
-                className="button button--secondary"
-                disabled={!!intent}
-                onClick={() => run("ignore")}
-              >
-                <EyeOff size={16} aria-hidden="true" />
-                Ignorar propuesta
-              </button>
-            </>
-          )}
-          {proposal.estado === "aprobado" && (
-            <>
-              <button
-                type="button"
-                className="button button--secondary"
-                disabled={!!intent}
-                onClick={() => run("withdraw")}
-              >
-                <Undo2 size={16} aria-hidden="true" />
-                Retirar aprobación
-              </button>
-              {canSetup && (
-                <button
-                  type="button"
-                  className="button"
-                  disabled={!!intent}
-                  onClick={() => setSetup(true)}
-                >
-                  <Settings size={16} aria-hidden="true" />
-                  {proposal.setup
-                    ? "Actualizar configuración"
-                    : "Configurar producto"}
-                </button>
-              )}
-              {proposal.tipo === "precio" && (
-                <button
-                  type="button"
-                  className="button"
-                  disabled={!!intent}
-                  onClick={() => setPrice(true)}
-                >
-                  <DollarSign size={16} aria-hidden="true" />
-                  {proposal.price_resolution
-                    ? "Actualizar resolución de precio"
-                    : "Resolver precio"}
-                </button>
-              )}
-            </>
-          )}
-        </div>
         {error && <p role="alert">{error}</p>}
       </AdminDialog>
       {setup && (
@@ -687,6 +663,22 @@ function PriceResolutionDialog({
         onClose={onClose}
         closeDisabled={!!intent?.pending}
         variant="wide"
+        footer={
+          <>
+            <button type="button" className="button button--secondary" disabled={!!intent} onClick={onClose}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="button"
+              disabled={!!intent || options.change_state !== "aprobado"}
+              onClick={submit}
+            >
+              <Wrench size={16} aria-hidden="true" />
+              Preparar resolución
+            </button>
+          </>
+        }
       >
         <p>
           Precio propuesto: <Value value={options.nuevo_precio} money />. La
@@ -807,15 +799,6 @@ function PriceResolutionDialog({
           </fieldset>
         )}
         {intent && <CatalogMutationNotice onRetry={retry} />}
-        <button
-          type="button"
-          className="button"
-          disabled={!!intent || options.change_state !== "aprobado"}
-          onClick={submit}
-        >
-          <Wrench size={16} aria-hidden="true" />
-          Preparar resolución
-        </button>
         {error && <p role="alert">{error}</p>}
       </AdminDialog>
       {valuation && (
@@ -847,6 +830,34 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       closeDisabled={!!receipt.pending}
       variant="wide"
+      footer={
+        <>
+          <button type="button" className="button button--secondary" disabled={!!receipt.pending} onClick={onClose}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="button"
+            disabled={
+              !admin || !!receipt.pending || (!receipt.operationId && !preview?.ok)
+            }
+            onClick={publish}
+          >
+            {receipt.pending ? (
+              <RefreshCw size={16} aria-hidden="true" />
+            ) : receipt.operationId ? (
+              <RotateCcw size={16} aria-hidden="true" />
+            ) : (
+              <Upload size={16} aria-hidden="true" />
+            )}
+            {receipt.pending
+              ? "Publicando…"
+              : receipt.operationId
+                ? "Recuperar publicación"
+                : "Confirmar publicación"}
+          </button>
+        </>
+      }
     >
       {!preview ? (
         <QueryState {...query} variant="compact" />
@@ -894,27 +905,6 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
             : " · commit confirmado; falta registrar el cierre, vuelve a recuperar esta operación."}
         </AdminNotice>
       )}
-      <button
-        type="button"
-        className="button"
-        disabled={
-          !admin || !!receipt.pending || (!receipt.operationId && !preview?.ok)
-        }
-        onClick={publish}
-      >
-        {receipt.pending ? (
-          <RefreshCw size={16} aria-hidden="true" />
-        ) : receipt.operationId ? (
-          <RotateCcw size={16} aria-hidden="true" />
-        ) : (
-          <Upload size={16} aria-hidden="true" />
-        )}
-        {receipt.pending
-          ? "Publicando…"
-          : receipt.operationId
-            ? "Recuperar publicación"
-            : "Confirmar publicación"}
-      </button>
       {!admin && (
         <p>Solo admin puede publicar; moderador puede revisar el preview.</p>
       )}
