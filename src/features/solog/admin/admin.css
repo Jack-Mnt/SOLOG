@@ -153,11 +153,6 @@
   text-transform: capitalize;
 }
 
-.admin-sidebar__collapse:hover {
-  color: var(--color-text-inverse);
-  background: var(--color-dark-surface-hover);
-}
-
 .admin-tab {
   position: relative;
   width: 100%;
@@ -189,7 +184,8 @@
   flex: 0 0 var(--admin-sidebar-icon-size);
 }
 
-.admin-tab:hover {
+.admin-tab:hover,
+.admin-sidebar__collapse:hover {
   color: var(--color-text-inverse);
   background: var(--color-dark-surface-hover);
 }
@@ -448,7 +444,6 @@
 /* Sistema compartido de controles administrativos */
 .admin-filter-bar {
   min-width: 0;
-  margin: 0;
 }
 
 .admin-filter-bar .admin-filter-field {
@@ -463,8 +458,6 @@
 }
 
 .admin-filter-bar .admin-filter-search-field {
-  flex: 1 1 220px;
-  min-width: 220px;
   max-width: none;
 }
 
@@ -489,16 +482,7 @@
 
 .admin-filter-bar :where(input, select) {
   width: 100%;
-  height: 36px;
-  min-height: 36px;
   min-width: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 8px;
-  color: var(--color-text-primary);
-  background: var(--color-surface);
-  font-size: 0.8rem;
-  line-height: 1.2;
   transition:
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
@@ -518,12 +502,6 @@
   );
   cursor: not-allowed;
   opacity: 0.65;
-}
-
-@media (max-width: 767px) {
-  .admin-dialog__footer {
-    flex-wrap: wrap;
-  }
 }
 
 @media (max-width: 767px) {
@@ -1968,15 +1946,14 @@ workspace y cards permanecen como superficies estructurales neutras;
   display: flex;
   align-items: end;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 
 .admin-toolbar > :where(.admin-toolbar__search, .admin-toolbar__filter) {
   display: grid;
   gap: 4px;
 }
-.admin-toolbar__search,
-.admin-filter-search-field {
+.admin-toolbar__search {
   min-width: 0;
   flex: 1 1 100px;
 }
@@ -1990,7 +1967,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 
 .admin-v2-workspace
-  :where(.admin-toolbar, .admin-filter-bar, .admin-export-dialog__fields)
+  :where(.admin-toolbar, .admin-export-dialog__fields)
   :where(input:not([type="checkbox"]):not([type="radio"]), select):hover:not(
     :disabled
   ),
@@ -1999,7 +1976,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   border-color: var(--color-primary);
 }
 .admin-v2-workspace
-  :where(.admin-toolbar, .admin-filter-bar, .admin-export-dialog__fields)
+  :where(.admin-toolbar, .admin-export-dialog__fields)
   :where(
     input:not([type="checkbox"]):not([type="radio"]),
     select
@@ -2072,8 +2049,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   order: 2;
 }
 @media (max-width: 767px) {
-  .admin-toolbar,
-  .admin-filter-bar {
+  .admin-toolbar {
     align-items: stretch;
   }
   .admin-filter-bar .admin-filter-field {
@@ -2082,7 +2058,6 @@ workspace y cards permanecen como superficies estructurales neutras;
     max-width: none;
   }
   .admin-toolbar__search,
-  .admin-filter-search-field,
   .admin-toolbar__actions {
     width: 100%;
     margin-left: 0;
@@ -2142,7 +2117,6 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 /* Admin sections — Bloque A. Jerarquía previa a tablas sin alterar su carcasa. */
 .admin-v2-workspace .admin-toolbar-surface {
-  gap: 12px;
   padding: 12px 16px;
   border: 1px solid var(--color-border);
   border-radius: 12px;
