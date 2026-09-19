@@ -41,13 +41,21 @@ test('dialogs, drawers y sublecturas usan variante compacta', async () => {
   const incidents = await source('src/features/solog/admin/incidencias/admin.incidencias.v2.tsx')
   const setup = await source('src/features/solog/admin/productos/admin.product-setup.dialog.tsx')
 
-  expect(catalog.match(/variant="compact"/g)?.length).toBeGreaterThanOrEqual(3)
+  expect(catalog.match(/variant="compact"/g)?.length).toBeGreaterThanOrEqual(2)
   expect(control).toContain('<QueryState {...query} variant="compact" />')
   expect(dashboard.match(/variant="compact"/g)?.length).toBeGreaterThanOrEqual(2)
   expect(categories).toContain('variant="compact"')
   expect(groups.match(/variant="compact"/g)?.length).toBe(2)
   expect(incidents).toContain('<ReadNotice {...query} variant="compact" />')
   expect(setup).toContain('variant="compact"')
+})
+
+test('Catálogo no duplica loader entre status y proposals', async () => {
+  const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+
+  expect(catalog).toContain('if (status.error) return <QueryState {...status} variant="compact" />')
+  expect(catalog).toContain('return null;')
+  expect(catalog).toContain('<QueryState {...query} />')
 })
 
 test('vistas principales conservan loader contenido por defecto', async () => {
