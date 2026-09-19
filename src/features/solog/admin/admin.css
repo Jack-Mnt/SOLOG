@@ -1433,6 +1433,17 @@ sin alterar las cards de otros módulos. */
   cursor: pointer;
 }
 
+/* Dashboard Total: el botón ocupa visual e interactivamente toda la celda
+   sin alterar la geometría existente de la tabla. */
+.admin-dashboard__percentage-cell .admin__percentage-action {
+  width: calc(100% + 32px);
+  min-width: calc(100% + 32px);
+  height: 52px;
+  min-height: 52px;
+  margin: -8px -16px;
+  border-radius: 0;
+}
+
 .admin__percentage-action:hover:not(:disabled) {
   color: var(--color-primary-active);
   background: var(--color-primary-subtle);
@@ -2305,6 +2316,17 @@ workspace y cards permanecen como superficies estructurales neutras;
     height: 32px;
     min-height: 32px;
     padding-inline: 4px;
+  }
+
+  .admin-v2-workspace
+    .admin-workspace__main
+    .admin-dashboard__percentage-cell
+    .admin__percentage-action {
+    width: calc(100% + 32px);
+    min-width: calc(100% + 32px);
+    height: 48px;
+    min-height: 48px;
+    margin: -8px -16px;
   }
 }
 

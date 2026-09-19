@@ -218,6 +218,7 @@ function Grid({ site }: { site: string }) {
                     {data.data.totals.map((total) => (
                       <td
                         key={total.date}
+                        className="admin-dashboard__percentage-cell"
                         title={`${total.numerator}/${total.denominator}`}
                       >
                         <button
