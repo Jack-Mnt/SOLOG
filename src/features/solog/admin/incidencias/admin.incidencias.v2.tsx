@@ -161,7 +161,7 @@ function FamilyDetail({
           </div>
         </>
       ) : (
-        <ReadNotice {...query} />
+        <ReadNotice {...query} variant="compact" />
       )}
     </AdminDialog>
   );
