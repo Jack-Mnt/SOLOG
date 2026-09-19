@@ -36,7 +36,7 @@ export function ProductSetupDialog({ target, onClose, onComplete }: { target: Pr
       .catch((reason: unknown) => setError(catalogMutationError(store, reason, 'No se pudo confirmar la configuración.')))
   }
   const valid = !!masterData.snapshot && (mode === 'existing_group' ? !!groupId : !!categoryId)
-  return <AdminDialog title="Configurar producto" description={`${target.producto} · C. interno ${target.c_interno}`} onClose={onClose} closeDisabled={!!intent?.pending} wide>
+  return <AdminDialog title="Configurar producto" description={`${target.producto} · C. interno ${target.c_interno}`} onClose={onClose} closeDisabled={!!intent?.pending} variant="wide">
     <p>La configuración queda en staging y no modifica el catálogo ni los grupos hasta la publicación.</p>
     {!masterData.snapshot ? <QueryState error={masterData.error} retry={masterData.retry} /> : <form className="admin-v2-form" onSubmit={(event) => { event.preventDefault(); submit() }}>
       <label>Marca opcional<input value={brand} onChange={(event) => setBrand(event.target.value)} /></label>
