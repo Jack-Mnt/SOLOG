@@ -2,7 +2,6 @@ import {
   AlertCircle,
   History,
   Layers3,
-  LoaderCircle,
   X,
 } from 'lucide-react'
 import {
@@ -23,6 +22,7 @@ import {
   getCajeroDifferenceClass,
 } from '../cajero/cajero.utils'
 import { getSologErrorMessageFromUnknown } from '../errors'
+import { PanelLoader } from '../../../components/panel-loader'
 
 function formatHistoryValuation(value: number | null): string {
   if (value === null) return '—'
@@ -257,10 +257,7 @@ export function SologDetailsHistoryDialog({
           {history?.pages.at(-1)?.next_cursor ? <button className="button button--secondary" disabled={loading} onClick={() => void loadMore()}>Cargar más (hasta 100)</button> : null}
           {history ? <p>{history.date} · America/Lima · Filtros sobre {items.length} observaciones cargadas</p> : null}
           {loading ? (
-            <div className="cajero-loading" role="status">
-              <LoaderCircle aria-hidden="true" className="spin" size={24} />
-              Cargando historial…
-            </div>
+            <PanelLoader variant="compact" />
           ) : history && visibleItems.length > 0 ? (
             <div className="cajero-history-list">
               <div className="cajero-history-list__head" aria-hidden="true">
