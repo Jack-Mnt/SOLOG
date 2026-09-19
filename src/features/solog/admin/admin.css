@@ -2441,7 +2441,10 @@ but focus no longer reuses hover styling. */
 
   .admin-v2-workspace
     .admin-workspace__main
-    :where(input:not([type="checkbox"]):not([type="radio"]), select),
+    :where(
+      input:not([type="checkbox"]):not([type="radio"]),
+      select:not(.admin-site-context__select)
+    ),
   .admin-v2-workspace .admin-workspace__main .admin-control__period-trigger {
     height: 32px;
     min-height: 32px;
