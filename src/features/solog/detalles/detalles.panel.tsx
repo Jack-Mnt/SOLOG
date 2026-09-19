@@ -8,13 +8,13 @@ import {
   LoaderCircle,
   LockKeyhole,
   LogOut,
-  RefreshCw,
   SearchCheck,
   Send,
   ShieldAlert,
   Tablet,
 } from "lucide-react";
 import { useState } from "react";
+import { PanelLoader } from "../../../components/panel-loader";
 import type { DetailsExportPeriod } from "./detalles.v2";
 import { useSologDetailsExport } from "./detalles.export.hook";
 import { SologDetailsHistoryDialog } from "./detalles.historial.dialog";
@@ -84,6 +84,37 @@ export function SologDetailsPanel({
     summary,
   } = useSologDetailsSummary(userId);
   const detailsExport = useSologDetailsExport(store);
+
+  if (!summary && status === "loading") return <PanelLoader />;
+
+  if (!summary && error) {
+    return (
+      <PanelLoader
+        state="error"
+        title="No se pudo cargar la información de la sede"
+        description={error}
+        actions={
+          <>
+            <button
+              className="button"
+              type="button"
+              onClick={() => void loadSummary()}
+            >
+              Reintentar
+            </button>
+            <button
+              className="button button--secondary"
+              type="button"
+              onClick={onLogout}
+            >
+              Cerrar sesión
+            </button>
+          </>
+        }
+      />
+    );
+  }
+
   const siteName = summary?.site.nombre ?? "—";
   const coverage = summary?.summary.periodo;
   const coveragePercentage = coverage
@@ -137,29 +168,10 @@ export function SologDetailsPanel({
             </span>
           </div>
 
-          {status === "loading" && !summary ? (
-            <div className="cajero-empty-state details-loading" role="status">
-              <LoaderCircle aria-hidden="true" className="spin" size={28} />
-              <div>
-                <strong>Consultando detalles de la sede…</strong>
-                <p>La vista permanecerá en modo de solo lectura.</p>
-              </div>
-            </div>
-          ) : null}
-
           {error ? (
             <div className="cajero-alert cajero-alert--error" role="alert">
               <AlertTriangle aria-hidden="true" size={22} />
               <p>{error}</p>
-              {summary ? null : (
-                <button
-                  className="button button--secondary"
-                  onClick={() => void loadSummary()}
-                  type="button"
-                >
-                  <RefreshCw aria-hidden="true" size={18} /> Reintentar
-                </button>
-              )}
             </div>
           ) : null}
 
