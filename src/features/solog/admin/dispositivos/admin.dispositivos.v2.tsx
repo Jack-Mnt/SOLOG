@@ -222,6 +222,27 @@ export function AdminDevicesV2() {
           title={`${labels[confirmation.action]} dispositivo`}
           onClose={() => setConfirmation(null)}
           closeDisabled={!!store.intent("devices")?.pending}
+          footer={
+            <>
+              <button
+                type="button"
+                className="button button--secondary"
+                disabled={!!store.intent("devices")}
+                onClick={() => setConfirmation(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="button"
+                disabled={!!store.intent("devices")}
+                onClick={confirm}
+              >
+                <Check size={16} aria-hidden="true" />
+                Confirmar {labels[confirmation.action].toLowerCase()}
+              </button>
+            </>
+          }
         >
           <p>
             {confirmation.device.site} · {confirmation.device.id}
@@ -235,14 +256,6 @@ export function AdminDevicesV2() {
                   ? "Se rechazará esta solicitud pendiente."
                   : "El backend comprobará que no exista otro dispositivo autorizado."}
           </p>
-          <button
-            className="button"
-            disabled={!!store.intent("devices")}
-            onClick={confirm}
-          >
-            <Check size={16} aria-hidden="true" />
-            Confirmar {labels[confirmation.action].toLowerCase()}
-          </button>
           {error && <p role="alert">{error}</p>}
           <MutationNotice
             domain="devices"
