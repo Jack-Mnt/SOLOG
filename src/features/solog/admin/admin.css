@@ -379,13 +379,6 @@
   padding: 26px 30px 32px;
 }
 
-.admin-workspace .button {
-  min-height: 36px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-}
-
 .admin-dialog-backdrop {
   position: fixed;
   z-index: 100;
@@ -494,18 +487,19 @@
   z-index: 1;
   top: 50%;
   left: 10px;
+  width: 16px;
+  height: 16px;
   color: var(--color-text-muted);
   pointer-events: none;
   transform: translateY(-50%);
 }
 
-.admin-filter-bar input,
-.admin-filter-bar select {
+.admin-filter-bar :where(input, select) {
   width: 100%;
   height: var(--admin-control-height);
   min-height: var(--admin-control-height);
   min-width: 0;
-  padding: 7px 10px;
+  padding: 8px 12px;
   border: 1px solid var(--admin-control-border);
   border-radius: var(--admin-control-radius);
   color: var(--color-text-primary);
@@ -518,27 +512,11 @@
     background var(--transition-fast);
 }
 
-.admin-filter-bar .admin-filter-search input {
+.admin-filter-search input {
   padding-left: 34px;
 }
 
-.admin-filter-bar input:hover:not(:disabled),
-.admin-filter-bar select:hover:not(:disabled) {
-  border-color: color-mix(
-    in srgb,
-    var(--color-primary) 62%,
-    var(--admin-control-border)
-  );
-}
-
-.admin-filter-bar input:focus,
-.admin-filter-bar select:focus {
-  border-color: var(--color-focus);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus) 12%, transparent);
-}
-
-.admin-filter-bar input:disabled,
-.admin-filter-bar select:disabled {
+.admin-filter-bar :where(input, select):disabled {
   color: var(--color-text-muted);
   background: color-mix(
     in srgb,
@@ -921,9 +899,15 @@ detalle y exportación sin cambios. */
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  height: 36px;
+  min-height: 36px;
+  padding: 8px 12px;
   border: 1px solid var(--admin-control-border);
+  border-radius: 8px;
   font: inherit;
+  font-size: 0.8rem;
   font-weight: 500;
+  line-height: 1.2;
   text-align: left;
   color: var(--color-text-primary);
   background: var(--color-surface);
@@ -1498,16 +1482,17 @@ sin alterar las cards de otros módulos. */
   width: min(100%, 1000px);
   border-radius: 0;
 }
-.admin-v2-workspace select,
-.admin-v2-workspace input,
-.admin-v2-filters select {
+.admin-v2-workspace :where(select, input) {
+  height: 36px;
+  min-height: 36px;
+  max-width: 100%;
+  padding: 8px 12px;
   border: 1px solid var(--color-border-strong);
   border-radius: 8px;
-  height: 36px;
-  padding: 0.4rem 0.65rem;
-  background: var(--color-surface);
   color: inherit;
-  max-width: 100%;
+  background: var(--color-surface);
+  font-size: 0.8rem;
+  line-height: 1.2;
 }
 .admin-v2-card section {
   margin-top: 1rem;
@@ -1867,28 +1852,47 @@ workspace y cards permanecen como superficies estructurales neutras;
     flex: 1 1 10rem;
   }
 }
-/* Admin primitives — Fase B. Base visual; la adopción por módulos comienza en Fase C. */
+/* Admin primitives — Fase 11.7. La base es autoritativa para geometría y estados. */
 .admin-v2-workspace :where(.button) {
+  height: 36px;
   min-height: 36px;
   gap: 7px;
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 0.8rem;
+  line-height: 1.2;
   box-shadow: none;
+  transform: none;
+}
+.admin-v2-workspace :where(.button) > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
 }
 .admin-v2-workspace :where(.button):hover:not(:disabled) {
-  box-shadow: var(--shadow-default);
+  box-shadow: none;
+  transform: none;
+}
+.admin-v2-workspace
+  :where(.button:not(.button--secondary):not(.button--danger)):hover:not(
+    :disabled
+  ) {
+  color: var(--color-primary-contrast);
+  border-color: var(--color-primary-hover);
+  background: var(--color-primary-hover);
 }
 .admin-v2-workspace :where(.button):focus-visible,
 .admin-v2-workspace :where(.icon-button):focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+  box-shadow: none;
 }
 .admin-v2-workspace :where(.button):disabled,
 .admin-v2-workspace :where(.icon-button):disabled {
   box-shadow: none;
   cursor: not-allowed;
   opacity: 0.58;
+  transform: none;
 }
 .admin-v2-workspace :where(.button--secondary) {
   color: var(--color-primary);
@@ -1896,8 +1900,9 @@ workspace y cards permanecen como superficies estructurales neutras;
   box-shadow: none;
 }
 .admin-v2-workspace :where(.button--secondary):hover:not(:disabled) {
+  color: var(--color-primary-active);
   border-color: var(--color-primary);
-  background: var(--color-primary-soft);
+  background: var(--color-primary-subtle);
 }
 .admin-v2-workspace :where(.button--danger) {
   border-color: color-mix(
@@ -1908,20 +1913,44 @@ workspace y cards permanecen como superficies estructurales neutras;
   color: var(--color-danger);
   background: var(--color-danger-soft);
 }
+.admin-v2-workspace :where(.button--danger):hover:not(:disabled) {
+  color: var(--color-danger-hover);
+  border-color: var(--color-danger);
+  background: color-mix(
+    in srgb,
+    var(--color-danger) 10%,
+    var(--color-danger-soft)
+  );
+}
 .admin-v2-workspace :where(.icon-button) {
   width: 36px;
+  min-width: 36px;
   height: 36px;
   min-height: 36px;
+  padding: 0;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   color: var(--color-text-secondary);
   background: var(--color-surface);
   box-shadow: none;
+  transform: none;
+}
+.admin-v2-workspace :where(.icon-button) > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
 }
 .admin-v2-workspace :where(.icon-button):hover:not(:disabled) {
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-primary-soft);
+  box-shadow: none;
+  transform: none;
+}
+.admin-v2-workspace
+  :where(.admin-workspace__main .icon-button):hover:not(:disabled) {
+  color: var(--color-primary-active);
+  background: var(--color-primary-subtle);
 }
 .admin-v2-workspace :where(.icon-button--primary) {
   border-color: color-mix(
@@ -1961,6 +1990,28 @@ workspace y cards permanecen como superficies estructurales neutras;
   flex-wrap: wrap;
   gap: 8px;
   margin-left: auto;
+}
+
+.admin-v2-workspace
+  :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
+  :where(input:not([type="checkbox"]):not([type="radio"]), select):hover:not(
+    :disabled
+  ),
+.admin-v2-workspace
+  :where(.admin-control__period-trigger):hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+.admin-v2-workspace
+  :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]),
+    select
+  ):focus-visible,
+.admin-v2-workspace :where(.admin-control__period-trigger):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-color: var(--color-focus);
+  box-shadow: none;
 }
 .admin-status-badge,
 .admin-attribute-badge {
@@ -2203,46 +2254,8 @@ workspace y cards permanecen como superficies estructurales neutras;
   }
 }
 
-/* Admin control density — Fase 11.
-   Primary source: docs/SOLOG_UI_Admin_Responsive_Shell_Controles_V1.md */
-/* Common action geometry. Sidebar is intentionally outside this scope. */
-.admin-v2-workspace .admin-workspace__main .button {
-  height: 36px;
-  min-height: 36px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  line-height: 1.2;
-  gap: 7px;
-  box-shadow: none;
-  transform: none;
-}
-.admin-v2-workspace .admin-workspace__main .button > svg {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-}
-.admin-v2-workspace .admin-workspace__main .button:hover:not(:disabled) {
-  box-shadow: none;
-  transform: none;
-}
-.admin-v2-workspace
-  .admin-workspace__main
-  .button:not(.button--secondary):not(.button--danger):hover:not(:disabled) {
-  color: var(--color-primary-contrast);
-  border-color: var(--color-primary-hover);
-  background: var(--color-primary-hover);
-}
-.admin-v2-workspace
-  .admin-workspace__main
-  .button--secondary:hover:not(:disabled) {
-  color: var(--color-primary-active);
-  border-color: var(--color-primary);
-  background: var(--color-primary-subtle);
-}
-.admin-v2-workspace
-  .admin-workspace__main
-  .button--danger:hover:not(:disabled) {
+/* Fase 11.7 — excepciones semánticas que no pertenecen a la geometría base. */
+.admin-v2-workspace :where(.admin-device-revoke):hover:not(:disabled) {
   color: var(--color-danger-hover);
   border-color: var(--color-danger);
   background: color-mix(
@@ -2251,129 +2264,7 @@ workspace y cards permanecen como superficies estructurales neutras;
     var(--color-danger-soft)
   );
 }
-.admin-v2-workspace .admin-workspace__main .button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-  box-shadow: none;
-}
-.admin-v2-workspace .admin-workspace__main .button:disabled {
-  box-shadow: none;
-  transform: none;
-}
-
-/* IconButton geometry. Dashboard percentage controls retain auto width because they also contain a value. */
-.admin-v2-workspace .admin-workspace__main .icon-button {
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  border-radius: 8px;
-  box-shadow: none;
-  transform: none;
-}
-.admin-v2-workspace .admin-workspace__main .icon-button > svg {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-}
-.admin-v2-workspace .admin-workspace__main .icon-button:hover:not(:disabled) {
-  color: var(--color-primary-active);
-  border-color: var(--color-primary);
-  background: var(--color-primary-subtle);
-  box-shadow: none;
-  transform: none;
-}
-.admin-v2-workspace
-  .admin-workspace__main
-  .icon-button--danger:hover:not(:disabled) {
-  color: var(--color-danger-hover);
-  border-color: var(--color-danger);
-  background: color-mix(
-    in srgb,
-    var(--color-danger) 10%,
-    var(--color-danger-soft)
-  );
-}
-.admin-v2-workspace
-  .admin-workspace__main
-  .icon-button--warning:hover:not(:disabled) {
-  color: var(--color-warning-hover);
-  border-color: var(--color-warning);
-  background: color-mix(
-    in srgb,
-    var(--color-warning) 10%,
-    var(--color-warning-soft)
-  );
-}
-.admin-v2-workspace .admin-workspace__main .icon-button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-  box-shadow: none;
-}
-/* Search + filters share the same control height. */
-.admin-v2-workspace
-  .admin-workspace__main
-  :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
-  :where(input:not([type="checkbox"]):not([type="radio"]), select),
-.admin-v2-workspace .admin-workspace__main .admin-control__period-trigger {
-  height: 36px;
-  min-height: 36px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  line-height: 1.2;
-}
-.admin-v2-workspace .admin-workspace__main .admin-filter-search > svg {
-  width: 16px;
-  height: 16px;
-}
-.admin-v2-workspace .admin-workspace__main .admin-filter-search input {
-  padding-left: 34px;
-}
-
-/* Filter hover and focus are intentionally distinct. */
-.admin-v2-workspace
-  .admin-workspace__main
-  :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
-  :where(input:not([type="checkbox"]):not([type="radio"]), select):hover:not(
-    :disabled
-  ),
-.admin-v2-workspace
-  .admin-workspace__main
-  .admin-control__period-trigger:hover:not(:disabled) {
-  border-color: var(--color-primary);
-}
-.admin-v2-workspace
-  .admin-workspace__main
-  :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
-  :where(
-    input:not([type="checkbox"]):not([type="radio"]),
-    select
-  ):focus-visible,
-.admin-v2-workspace
-  .admin-workspace__main
-  .admin-control__period-trigger:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-  border-color: var(--color-focus);
-  box-shadow: none;
-}
-
-/* Devices keep danger semantics,
-but focus no longer reuses hover styling. */
-.admin-v2-workspace
-  .admin-workspace__main
-  .admin-device-revoke:hover:not(:disabled) {
-  color: var(--color-danger-hover);
-  border-color: var(--color-danger);
-  background: color-mix(
-    in srgb,
-    var(--color-danger) 10%,
-    var(--color-danger-soft)
-  );
-}
-.admin-v2-workspace .admin-workspace__main .admin-device-revoke:focus-visible {
+.admin-v2-workspace :where(.admin-device-revoke):focus-visible {
   color: color-mix(in srgb, var(--color-danger) 78%, var(--color-text-primary));
   border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
   background: var(--color-danger-soft);
@@ -2420,16 +2311,16 @@ but focus no longer reuses hover styling. */
   }
 }
 
-/* Mobile Admin: densidad contractual 32 px. */
+/* Mobile Admin: densidad contractual 32 px sin normalizadores de alta especificidad. */
 @media (max-width: 767px) {
-  .admin-v2-workspace .admin-workspace__main .button {
+  .admin-v2-workspace :where(.button) {
     height: 32px;
     min-height: 32px;
     padding: 6px 10px;
     font-size: 0.78rem;
   }
 
-  .admin-v2-workspace .admin-workspace__main .icon-button {
+  .admin-v2-workspace :where(.admin-workspace__main .icon-button) {
     width: 32px;
     min-width: 32px;
     height: 32px;
@@ -2437,12 +2328,12 @@ but focus no longer reuses hover styling. */
   }
 
   .admin-v2-workspace
-    .admin-workspace__main
     :where(
-      input:not([type="checkbox"]):not([type="radio"]),
-      select:not(.admin-site-context__select)
+      .admin-workspace__main input:not([type="checkbox"]):not([type="radio"]),
+      .admin-workspace__main select:not(.admin-site-context__select)
     ),
-  .admin-v2-workspace .admin-workspace__main .admin-control__period-trigger {
+  .admin-v2-workspace
+    :where(.admin-workspace__main .admin-control__period-trigger) {
     height: 32px;
     min-height: 32px;
     padding-block: 6px;
@@ -2525,14 +2416,22 @@ but focus no longer reuses hover styling. */
   );
 }
 .admin-v2-workspace :where(.icon-button--danger):hover:not(:disabled) {
+  color: var(--color-danger-hover);
   border-color: var(--color-danger);
-  color: var(--color-danger);
-  background: var(--color-danger-soft);
+  background: color-mix(
+    in srgb,
+    var(--color-danger) 10%,
+    var(--color-danger-soft)
+  );
 }
 .admin-v2-workspace :where(.icon-button--warning):hover:not(:disabled) {
+  color: var(--color-warning-hover);
   border-color: var(--color-warning);
-  color: var(--color-warning);
-  background: var(--color-warning-soft);
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 10%,
+    var(--color-warning-soft)
+  );
 }
 
 .admin-notice {
