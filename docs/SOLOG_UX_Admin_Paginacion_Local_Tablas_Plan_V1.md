@@ -137,3 +137,29 @@ El bloque puede cerrarse cuando:
 - filtros/orden/contadores siguen operando sobre el dataset completo;
 - no se generan peticiones backend al cambiar página;
 - no existen regresiones visuales en las tablas ya normalizadas.
+
+
+## 9. Estado de ejecución
+
+### Fase 1 — Base compartida + Productos + Control
+
+**CERRADA TÉCNICAMENTE.**
+
+Validación reportada por el usuario sobre `admin-work`:
+- tests dirigidos: correctos;
+- `bun run lint`: correcto;
+- `bun run build`: correcto;
+- `git diff --check`: correcto.
+
+### Fase 2 — Grupos + Incidencias + Dashboard DailyDrawer
+
+**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+
+Implementado:
+- Grupos: paginación local 50 posterior a filtros/orden;
+- Incidencias: paginación local 50 de la tabla principal;
+- Dashboard `DailyDrawer`: paginación local 50;
+- reutilización exclusiva de `paginateAdminRows` y `AdminPagination`;
+- sin cambios CSS, backend o composición de tablas.
+
+La fase no se considera cerrada hasta completar tests, lint, build, `git diff --check` y smoke proporcional.
