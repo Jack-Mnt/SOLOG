@@ -113,7 +113,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       description="Crea una estructura de conteo con dos o más SKU incluidos y compatibles."
       onClose={onClose}
       closeDisabled={!!store.intent()?.pending}
-      wide
+      variant="wide"
     >
       {!masterData.snapshot || !masterData.derived ? (
         <QueryState error={masterData.error} retry={masterData.retry} />
