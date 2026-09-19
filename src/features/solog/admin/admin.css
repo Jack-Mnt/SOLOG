@@ -1,7 +1,7 @@
 /* Consolidación Fase 3: reglas administrativas antes alojadas en styles.css. */
 .notice {
   margin-bottom: 16px;
-  padding: 14px 16px;
+  padding: 16px;
   border: 1px solid var(--color-border);
   border-left: 4px solid var(--color-info);
   border-radius: var(--radius-control);
@@ -16,7 +16,7 @@
 }
 
 .notice p {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   color: var(--color-text-secondary);
   font-size: 0.9rem;
   line-height: 1.5;
@@ -53,8 +53,8 @@
 .admin-sidebar {
   --admin-sidebar-item-height: 44px;
   --admin-sidebar-icon-size: 20px;
-  --admin-sidebar-item-padding: 10px;
-  --admin-sidebar-item-gap: 10px;
+  --admin-sidebar-item-padding: 8px;
+  --admin-sidebar-item-gap: 8px;
 
   position: sticky;
   top: 0;
@@ -75,7 +75,7 @@
   align-content: center;
   justify-items: start;
   gap: 2px;
-  padding: 0 8px;
+  padding: 0px 0px 4px 4px;
 }
 
 .admin-sidebar__logo {
@@ -169,7 +169,7 @@
   gap: var(--admin-sidebar-item-gap);
   padding: 8px var(--admin-sidebar-item-padding);
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   color: color-mix(in srgb, var(--color-text-inverse) 72%, transparent);
   background: transparent;
   font-size: 0.875rem;
@@ -198,7 +198,7 @@
   color: var(--color-text-inverse);
   border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
   background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  box-shadow: inset 3px 0 var(--color-primary);
+  box-shadow: inset 4px 0 var(--color-primary);
   font-weight: 700;
 }
 
@@ -230,7 +230,7 @@
   flex: 0 0 auto;
   display: grid;
   gap: 12px;
-  padding-top: 10px;
+  padding-top: 8px;
   border-top: 0;
 }
 
@@ -321,7 +321,7 @@
     place-items: center;
     padding: 0;
     border: 0;
-    border-radius: 10px;
+    border-radius: 8px;
     color: var(--color-text-inverse);
     background: transparent;
     cursor: pointer;
@@ -403,8 +403,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -418,7 +418,7 @@
 }
 
 .admin-dialog__header p {
-  margin-top: 3px;
+  margin-top: 4px;
   color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
@@ -442,7 +442,7 @@
 
 .admin-export-dialog__fields > label {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 /* Sistema compartido de controles administrativos */
@@ -458,7 +458,7 @@
 .admin-filter-bar .admin-filter-field {
   display: grid;
   flex: 0 0 180px;
-  gap: 5px;
+  gap: 4px;
   min-width: 150px;
   max-width: 220px;
   color: var(--color-text-secondary);
@@ -483,7 +483,7 @@
   position: absolute;
   z-index: 1;
   top: 50%;
-  left: 10px;
+  left: 8px;
   width: 16px;
   height: 16px;
   color: var(--color-text-muted);
@@ -576,8 +576,8 @@ detalle y exportación sin cambios. */
 }
 .admin-control-chronology__periods button {
   border: 1px solid var(--color-border);
-  border-radius: 7px;
-  padding: 8px 14px;
+  border-radius: 8px;
+  padding: 8px 12px;
   font: inherit;
   color: var(--color-text-secondary);
   background: var(--color-surface);
@@ -617,7 +617,7 @@ detalle y exportación sin cambios. */
 }
 .admin-groups__table .admin-main-table:focus-visible {
   outline: 2px solid var(--color-focus);
-  outline-offset: 3px;
+  outline-offset: 4px;
 }
 .admin-groups__filters > label:first-child {
   flex: 1 1 230px;
@@ -638,13 +638,13 @@ detalle y exportación sin cambios. */
   display: block;
 }
 .admin-groups__valuation > small {
-  margin-top: 3px;
+  margin-top: 4px;
   color: var(--color-text-secondary);
 }
 .admin-groups__actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .admin-groups__actions .button {
   white-space: nowrap;
@@ -655,11 +655,11 @@ detalle y exportación sin cambios. */
 }
 .admin-categories__create,
 .admin-categories__rename {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .admin-categories__list {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   margin: 12px 0;
 }
 .admin-categories__row {
@@ -667,7 +667,7 @@ detalle y exportación sin cambios. */
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 9px 10px;
+  padding: 8px 8px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
 }
@@ -697,7 +697,7 @@ detalle y exportación sin cambios. */
   padding: 12px 16px;
   margin-bottom: 12px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--color-surface);
 }
 .admin-catalog__header p {
@@ -733,8 +733,8 @@ detalle y exportación sin cambios. */
   cursor: pointer;
 }
 .admin-state-views > button strong {
-  min-width: 18px;
-  padding: 1px 5px;
+  min-width: 16px;
+  padding: 1px 4px;
   border-radius: 99px;
   background: var(--color-surface-secondary);
   color: inherit;
@@ -778,20 +778,20 @@ detalle y exportación sin cambios. */
 }
 .admin-catalog__section > header span {
   min-width: 20px;
-  padding: 1px 6px;
+  padding: 1px 4px;
   border-radius: 99px;
   font-size: 0.72rem;
   text-align: center;
 }
 .admin-catalog__section--urgent > header {
-  border-left: 3px solid var(--color-warning, #b45309);
+  border-left: 4px solid var(--color-warning, #b45309);
 }
 .admin-catalog__section--urgent > header span {
   background: var(--color-warning-soft, #fff7ed);
   color: var(--color-warning, #b45309);
 }
 .admin-catalog__section--emerging > header {
-  border-left: 3px solid var(--color-primary);
+  border-left: 4px solid var(--color-primary);
 }
 .admin-catalog__section--emerging > header span {
   background: var(--color-primary-soft);
@@ -832,15 +832,15 @@ detalle y exportación sin cambios. */
 .admin-catalog__proposal-context {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
-  margin: 0 0 14px;
+  gap: 4px 12px;
+  margin: 0 0 12px;
   color: var(--color-text-secondary);
   font-size: 0.8rem;
 }
 .admin-catalog__proposal-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 18px;
+  gap: 8px 16px;
   margin: 0 0 16px;
 }
 .admin-catalog__proposal-summary div {
@@ -912,24 +912,24 @@ detalle y exportación sin cambios. */
 }
 .admin-control__period-options {
   position: absolute;
-  top: calc(100% + 5px);
+  top: calc(100% + 4px);
   left: 0;
   z-index: 10;
   width: max(100%, 210px);
   max-width: calc(100vw - 48px);
   display: grid;
   gap: 2px;
-  padding: 5px;
+  padding: 4px;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--color-surface);
-  box-shadow: 0 5px 15px
+  box-shadow: 0 4px 16px
     color-mix(in srgb, var(--color-text-primary) 12%, transparent);
 }
 .admin-control__period-options > button {
   border: 0;
-  border-radius: 5px;
-  padding: 9px 10px;
+  border-radius: 4px;
+  padding: 8px 12px;
   font: inherit;
   font-size: 0.78rem;
   font-weight: 500;
@@ -1010,7 +1010,7 @@ detalle y exportación sin cambios. */
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 18px 0;
+  margin: 16px 0;
   color: var(--color-text-secondary);
   font-size: 0.8125rem;
 }
@@ -1038,19 +1038,19 @@ sin alterar las cards de otros módulos. */
 .admin-dashboard {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 14px;
+  gap: 12px;
 }
 .admin-dashboard .admin-dashboard__card {
-  padding: 12px 22px;
+  padding: 12px 20px;
 }
 .admin-dashboard .admin-dashboard__card > header {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   gap: 8px;
 }
 .admin-dashboard__card > header > h2 {
   display: flex;
   align-items: flex-end;
-  gap: 5px;
+  gap: 4px;
   margin: 0;
   font-size: 1.2rem;
 }
@@ -1059,7 +1059,7 @@ sin alterar las cards de otros módulos. */
   grid-template-columns:
     minmax(0, 2fr) minmax(100px, 0.8fr) minmax(100px, 0.8fr)
     minmax(150px, 0.9fr);
-  gap: 30px;
+  gap: 28px;
   align-items: center;
 }
 .admin-dashboard__summary > div {
@@ -1091,7 +1091,7 @@ sin alterar las cards de otros módulos. */
 .admin-dashboard__coverage progress {
   display: block;
   appearance: none;
-  height: 7px;
+  height: 8px;
   border: 0;
   border-radius: 99px;
   overflow: hidden;
@@ -1113,10 +1113,10 @@ sin alterar las cards de otros módulos. */
   display: inline-flex;
   align-items: center;
   justify-self: start;
-  gap: 5px;
+  gap: 4px;
   margin-top: 4px;
-  padding: 3px 7px;
-  border-radius: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
   font-size: 0.6875rem;
   font-weight: 600;
   color: var(--color-primary-active);
@@ -1126,7 +1126,7 @@ sin alterar las cards de otros módulos. */
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
   font-size: 1rem;
   line-height: 1.7;
   font-variant-numeric: tabular-nums;
@@ -1152,10 +1152,10 @@ sin alterar las cards de otros módulos. */
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
   height: 36px;
   min-height: 36px;
-  margin-top: 6px;
+  margin-top: 4px;
   padding: 8px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -1217,7 +1217,7 @@ sin alterar las cards de otros módulos. */
   box-shadow: none;
 }
 .admin-dashboard__detail > .admin-main-table {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   max-height: 320px;
   isolation: isolate;
 }
@@ -1254,7 +1254,7 @@ sin alterar las cards de otros módulos. */
 }
 @media (max-width: 1023px) {
   .admin-dashboard__summary {
-    gap: 18px;
+    gap: 16px;
   }
 }
 @media (max-width: 767px) {
@@ -1275,17 +1275,17 @@ sin alterar las cards de otros módulos. */
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  padding: 3px;
+  padding: 4px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--color-surface-secondary);
 }
 
 .dashboard-period-switch button {
   min-height: 32px;
-  padding: 5px 11px;
+  padding: 4px 12px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--color-text-secondary);
   background: transparent;
   font: inherit;
@@ -1409,7 +1409,7 @@ sin alterar las cards de otros módulos. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   white-space: nowrap;
 }
 
@@ -1555,15 +1555,15 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-appearance {
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 .admin-appearance > button {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   min-height: 44px;
-  padding: 6px 12px;
+  padding: 4px 12px;
   border: 1px solid transparent;
   border-radius: 8px;
   color: rgb(255 255 255 / 75%);
@@ -1616,7 +1616,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   flex: 0 1 auto;
   display: flex;
   flex-wrap: nowrap;
-  gap: 6px;
+  gap: 4px;
 }
 .admin-site-context__desktop > button {
   width: 84px;
@@ -1626,7 +1626,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 10px;
+  padding: 8px;
   border: 1px solid rgb(255 255 255 / 14%);
   border-radius: 12px;
   color: color-mix(in srgb, var(--color-text-inverse) 80%, transparent);
@@ -1698,7 +1698,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   background: var(--color-surface);
 }
 .admin-device-card--authorized {
-  box-shadow: inset 3px 0
+  box-shadow: inset 4px 0
     color-mix(in srgb, var(--color-primary) 52%, transparent);
 }
 .admin-device-card__icon {
@@ -1718,7 +1718,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 0;
 }
 .admin-device-card h3 {
@@ -1730,7 +1730,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-device-card__person {
   grid-column: 2;
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 .admin-device-card__empty {
   grid-column: 2 / -1;
@@ -1762,7 +1762,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   min-width: 108px;
   color: color-mix(in srgb, var(--color-danger) 78%, var(--color-text-primary));
   background: var(--color-danger-soft);
@@ -1772,7 +1772,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-devices__empty {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   padding: 4px 0;
 }
 .admin-devices__empty > svg {
@@ -1792,7 +1792,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 @media (max-width: 767px) {
   .admin-device-card {
-    padding: 14px;
+    padding: 12px;
   }
   .admin-device-card > footer {
     grid-column: 2 / -1;
@@ -1846,7 +1846,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-v2-workspace :where(.button) {
   height: 36px;
   min-height: 36px;
-  gap: 7px;
+  gap: 8px;
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 0.8rem;
@@ -1964,7 +1964,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   align-items: end;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
   background: var(--color-surface-secondary);
@@ -1973,7 +1973,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 
 .admin-toolbar > :where(.admin-toolbar__search, .admin-toolbar__filter) {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 .admin-toolbar__search,
 .admin-filter-search-field {
@@ -2015,9 +2015,9 @@ workspace y cards permanecen como superficies estructurales neutras;
   width: fit-content;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   min-height: 24px;
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 650;
@@ -2158,7 +2158,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   margin: 0;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--color-surface);
 }
 .admin-v2-workspace
@@ -2186,22 +2186,22 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-sort__menu {
   position: absolute;
   z-index: 12;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   right: 0;
   min-width: 220px;
   display: grid;
-  gap: 3px;
-  padding: 6px;
+  gap: 4px;
+  padding: 8px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--color-surface);
   box-shadow: var(--shadow-default);
 }
 .admin-sort__menu > button {
-  min-height: 36px;
-  padding: 7px 9px;
+  height: 36px;
+  padding: 8px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--color-text-primary);
   background: transparent;
   font: inherit;
@@ -2221,7 +2221,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-site-context__desktop {
   display: flex;
   flex-wrap: nowrap;
-  gap: 6px;
+  gap: 4px;
 }
 .admin-site-context__select {
   display: none;
@@ -2235,7 +2235,7 @@ workspace y cards permanecen como superficies estructurales neutras;
     width: 100%;
     height: 36px;
     min-height: 36px;
-    padding: 6px 10px;
+    padding: 4px 8px;
     border: 1px solid rgb(255 255 255 / 14%);
     border-radius: 12px;
     color: var(--color-text-inverse);
@@ -2304,7 +2304,7 @@ workspace y cards permanecen como superficies estructurales neutras;
     min-width: 32px;
     height: 32px;
     min-height: 32px;
-    padding-inline: 6px;
+    padding-inline: 4px;
   }
 }
 
@@ -2313,7 +2313,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   .admin-v2-workspace :where(.button) {
     height: 32px;
     min-height: 32px;
-    padding: 6px 10px;
+    padding: 4px 8px;
     font-size: 0.78rem;
   }
 
@@ -2333,13 +2333,13 @@ workspace y cards permanecen como superficies estructurales neutras;
     :where(.admin-workspace__main .admin-control__period-trigger) {
     height: 32px;
     min-height: 32px;
-    padding-block: 6px;
+    padding-block: 4px;
   }
 
   .admin-state-views > button {
     height: 32px;
     min-height: 32px;
-    padding: 6px 10px;
+    padding: 4px 8px;
   }
 }
 
@@ -2350,7 +2350,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   padding: 4px 12px;
   border: 1px solid transparent;
   border-radius: 8px;
