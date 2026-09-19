@@ -1,7 +1,7 @@
 # SOLOG — UX Admin — Paginación Local de Tablas — Plan V1
 
 **Proyecto:** SOLOG  
-**Estado:** PLAN TÉCNICO — PENDIENTE DE APROBACIÓN  
+**Estado:** PLAN TÉCNICO — APROBADO  
 **Clasificación:** Nivel B — implementación funcional transversal frontend  
 **Fecha:** 2026-09-19
 
@@ -37,9 +37,9 @@ No se detecta dependencia backend.
 - No modificar backend, Supabase, RPC, Cajero ni Detalles.
 - No modificar columnas, wrappers de tablas, badges, acciones, toolbars ni geometría responsive.
 - No realizar limpieza/refactor general de `admin.css`.
-- No renombrar clases visuales existentes durante este bloque.
+- No renombrar clases visuales existentes fuera de la migración explícitamente aprobada de `.admin-control__pagination` a `.admin-pagination`.
 - Preservar `admin-main-table`, `admin-table-section`, `admin-table-actions` y demás primitives ya normalizados.
-- Reutilizar el tratamiento visual actual del paginador; `admin.css` debería quedar sin cambios.
+- `admin.css` solo puede cambiar para incorporar `.admin-pagination` y `.navigation-button`, trasladando sin reinterpretar el tratamiento visual actual del paginador.
 - No tocar paginación de detalles/modales fuera del alcance congelado.
 
 ## 4. Fase 1 — Base compartida + Productos + Control
@@ -50,6 +50,9 @@ No se detecta dependencia backend.
    - pageCount;
    - pageSize configurable.
 2. Crear `AdminPagination` reutilizable conservando exactamente el markup/tratamiento visual actual.
+   - `.admin-pagination`: contenedor común del paginador; reemplaza el nombre específico `.admin-control__pagination` sin cambiar geometría.
+   - `.navigation-button`: clase común para los botones de navegación `Anterior` / `Siguiente`, siempre combinada con `button button--secondary`.
+   - no crear variantes por módulo, dirección, estado o breakpoint.
 3. Productos:
    - conservar 50;
    - mostrar paginador solo con > 50 resultados;
