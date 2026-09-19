@@ -21,7 +21,8 @@ import type {
   MasterDataProduct,
 } from "../masterdata/admin.masterdata.v1";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminSort, IconButton } from "../admin.primitives";
+import { AdminPagination, AdminSort, IconButton } from "../admin.primitives";
+import { paginateAdminRows } from "../admin.pagination";
 import { AdminCategoriesDialog } from "./admin.categories.dialog";
 import { useGroupsStore } from "./admin.grupos.context";
 import {
@@ -320,6 +321,13 @@ export function AdminGroupsV2() {
   const [type, setType] = useState<"all" | GroupDerivedType>("all");
   const [valuation, setValuation] = useState<GroupValuationFilter>("all");
   const [sort, setSort] = useState<GroupSort>("name");
+  const [page, setPage] = useState(0);
+  const filterKey = JSON.stringify([search, categoryId, type, valuation, sort]);
+  const [previousFilter, setPreviousFilter] = useState(filterKey);
+  if (filterKey !== previousFilter) {
+    setPreviousFilter(filterKey);
+    setPage(0);
+  }
   const [create, setCreate] = useState(false);
   const [members, setMembers] = useState<string | null>(null);
   const [edit, setEdit] = useState<string | null>(null);
@@ -336,6 +344,10 @@ export function AdminGroupsV2() {
     () =>
       filterAndSortGroups(rows, { search, categoryId, type, valuation, sort }),
     [categoryId, rows, search, sort, type, valuation],
+  );
+  const paginated = useMemo(
+    () => paginateAdminRows(visible, page),
+    [page, visible],
   );
   const typeCounts = useMemo(() => {
     const available = filterAndSortGroups(rows, {
@@ -534,7 +546,7 @@ export function AdminGroupsV2() {
               </tr>
             </thead>
             <tbody>
-              {visible.map((group) => (
+              {paginated.rows.map((group) => (
                 <tr key={group.id}>
                   <th scope="row">
                     <span>{group.nombre}</span>
@@ -603,6 +615,13 @@ export function AdminGroupsV2() {
           </table>
         </div>
       </div>
+      <AdminPagination
+        total={visible.length}
+        currentPage={paginated.currentPage}
+        pageCount={paginated.pageCount}
+        onPageChange={setPage}
+        ariaLabel="Paginación de grupos"
+      />
       {create && <CreateGroupDialog onClose={() => setCreate(false)} />}
       {selectedMembers && (
         <GroupMembersDialog
