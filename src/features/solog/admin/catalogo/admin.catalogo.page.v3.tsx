@@ -101,7 +101,10 @@ function priceErrorMessage(reason: unknown) {
 
 function CatalogStatus() {
   const status = useCatalogQuery("status", {});
-  if (!status.data) return <QueryState {...status} variant="compact" />;
+  if (!status.data) {
+    if (status.error) return <QueryState {...status} variant="compact" />;
+    return null;
+  }
   const catalog = status.data.catalog;
   return (
     <p>
