@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { PageShell } from './components/page-shell'
 import { PanelLoader } from './components/panel-loader'
 import { AuthProvider, useAuth } from './features/auth/context'
 import { getSologRoute } from './features/solog/api'
@@ -54,23 +53,32 @@ function LoginRouteResolver({ userId }: { userId: string }) {
   if (!error) return <PanelLoader />
 
   return (
-    <PageShell
-      description={error}
-      eyebrow="SOLOG"
-      onLogout={() => void auth.logout()}
+    <PanelLoader
+      state="error"
       title="No se pudo resolver tu acceso"
-      variant="auth"
-    >
-      <button
-        className="button"
-        onClick={() => {
-          setError(null)
-          setAttempt((value) => value + 1)
-        }}
-      >
-        Reintentar
-      </button>
-    </PageShell>
+      description={error}
+      actions={
+        <>
+          <button
+            className="button"
+            type="button"
+            onClick={() => {
+              setError(null)
+              setAttempt((value) => value + 1)
+            }}
+          >
+            Reintentar
+          </button>
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => void auth.logout()}
+          >
+            Cerrar sesión
+          </button>
+        </>
+      }
+    />
   )
 }
 
@@ -88,11 +96,19 @@ function AuthenticatedApp() {
 
   if (auth.initializationError) {
     return (
-      <PageShell
-        description={auth.initializationError}
-        eyebrow="Configuración"
+      <PanelLoader
+        state="error"
         title="SOLOG no está disponible"
-        variant="auth"
+        description={auth.initializationError}
+        actions={
+          <button
+            className="button"
+            type="button"
+            onClick={() => window.location.reload()}
+          >
+            Reintentar
+          </button>
+        }
       />
     )
   }
