@@ -157,3 +157,30 @@ Fuera de alcance:
 8. No se modifica backend ni contratos remotos.
 9. Tests, lint, build y `git diff --check` pasan.
 10. Smoke con carga lenta/sin conexión no revela UI intermedia ajena a SOLOG.
+
+
+## 9. Estado de ejecución
+
+### Fase 1 — Contrato UX
+
+**COMPLETADA.**
+
+- fuente primaria creada;
+- decisiones aprobadas congeladas;
+- alcance y fuera de alcance establecidos.
+
+### Fase 2 — Consolidación de PanelLoader
+
+**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+
+Implementado:
+- variantes `fullscreen`, `contained` y `compact`;
+- estados `loading` y `error`;
+- compatibilidad con el prop histórico `contained`;
+- contenido configurable de error;
+- geometría compacta;
+- error sin animaciones de carga;
+- clases `.panel-loader__title`, `.panel-loader__description` y `.panel-loader__actions`;
+- cobertura dirigida en `tests/panel-loader.test.ts`.
+
+Todavía no se migraron consumidores Admin; corresponde a Fase 3.
