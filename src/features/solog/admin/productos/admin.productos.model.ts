@@ -13,9 +13,3 @@ export function filterAndSortProducts(rows: MasterDataProduct[], derived: Master
   }).sort((left, right) => filters.sort === 'code' ? left.c_interno - right.c_interno : filters.sort === 'price_asc' ? left.precio - right.precio || left.producto.localeCompare(right.producto, 'es-PE') : filters.sort === 'price_desc' ? right.precio - left.precio || left.producto.localeCompare(right.producto, 'es-PE') : left.producto.localeCompare(right.producto, 'es-PE'))
 }
 
-export function paginateProducts<T>(rows: T[], page: number, pageSize = 50) {
-  const lastPage = Math.max(0, Math.ceil(rows.length / pageSize) - 1)
-  const currentPage = Math.min(Math.max(0, page), lastPage)
-  const offset = currentPage * pageSize
-  return { rows: rows.slice(offset, offset + pageSize), currentPage, pageCount: lastPage + 1, offset }
-}
