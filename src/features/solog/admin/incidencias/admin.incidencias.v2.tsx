@@ -11,7 +11,8 @@ import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
 import { ReadNotice } from "../admin.management.presentation";
-import { AdminNotice, IconButton } from "../admin.primitives";
+import { AdminNotice, AdminPagination, IconButton } from "../admin.primitives";
+import { paginateAdminRows } from "../admin.pagination";
 import {
   incidentSiteAbbreviation,
   incidentTimestamp,
@@ -364,6 +365,7 @@ export function AdminIncidentsV2() {
   const store = useManagement();
   const [type, setType] = useState<"all" | IncidentType>("all");
   const [state, setState] = useState<IncidentState>("pendiente");
+  const [page, setPage] = useState(0);
   const [detailFamily, setDetailFamily] = useState<MergedIncidentFamily | null>(
     null,
   );
@@ -499,6 +501,16 @@ export function AdminIncidentsV2() {
           (type === "all" || item.tipo === type) && item.family_state === state,
       ),
     [displayedFamilies, state, type],
+  );
+  const paginationKey = JSON.stringify([type, state, siteId, allActive]);
+  const [previousPaginationKey, setPreviousPaginationKey] = useState(paginationKey);
+  if (paginationKey !== previousPaginationKey) {
+    setPreviousPaginationKey(paginationKey);
+    setPage(0);
+  }
+  const paginatedFamilies = useMemo(
+    () => paginateAdminRows(families, page),
+    [families, page],
   );
   const stateCounts = useMemo(() => {
     const available = displayedFamilies.filter(
@@ -759,7 +771,7 @@ export function AdminIncidentsV2() {
                 </tr>
               </thead>
               <tbody>
-                {families.map((item) => {
+                {paginatedFamilies.rows.map((item) => {
                   const product =
                     typeof item.datos.producto === "string" &&
                     item.datos.producto.trim()
@@ -872,6 +884,13 @@ export function AdminIncidentsV2() {
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            total={families.length}
+            currentPage={paginatedFamilies.currentPage}
+            pageCount={paginatedFamilies.pageCount}
+            onPageChange={setPage}
+            ariaLabel="Paginación de incidencias"
+          />
         </div>
       ) : (
         <ReadNotice {...normalQuery} />
