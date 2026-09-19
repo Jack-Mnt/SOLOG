@@ -148,8 +148,19 @@ function Shell({
   );
 
   useEffect(() => {
-    if (viewportMode !== "mobile") setDrawerOpen(false);
-  }, [viewportMode]);
+    const tablet = window.matchMedia("(max-width: 1023px)");
+    const mobile = window.matchMedia("(max-width: 767px)");
+    const closeWhenLeavingMobile = () => {
+      if (getAdminViewportMode() !== "mobile") setDrawerOpen(false);
+    };
+
+    tablet.addEventListener("change", closeWhenLeavingMobile);
+    mobile.addEventListener("change", closeWhenLeavingMobile);
+    return () => {
+      tablet.removeEventListener("change", closeWhenLeavingMobile);
+      mobile.removeEventListener("change", closeWhenLeavingMobile);
+    };
+  }, []);
 
   useEffect(() => {
     if (viewportMode !== "mobile" || !drawerOpen) return;
