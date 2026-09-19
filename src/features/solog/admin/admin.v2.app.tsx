@@ -79,6 +79,34 @@ const navigationGroups: ReadonlyArray<{ label: string; items: readonly Navigatio
 ];
 const navigation = navigationGroups.flatMap((group) => group.items);
 
+type AdminViewportMode = "desktop" | "tablet" | "mobile";
+
+function getAdminViewportMode(): AdminViewportMode {
+  if (typeof window === "undefined") return "desktop";
+  if (window.matchMedia("(max-width: 767px)").matches) return "mobile";
+  if (window.matchMedia("(max-width: 1023px)").matches) return "tablet";
+  return "desktop";
+}
+
+function useAdminViewportMode() {
+  const [mode, setMode] = useState<AdminViewportMode>(getAdminViewportMode);
+
+  useEffect(() => {
+    const tablet = window.matchMedia("(max-width: 1023px)");
+    const mobile = window.matchMedia("(max-width: 767px)");
+    const sync = () => setMode(getAdminViewportMode());
+
+    tablet.addEventListener("change", sync);
+    mobile.addEventListener("change", sync);
+    return () => {
+      tablet.removeEventListener("change", sync);
+      mobile.removeEventListener("change", sync);
+    };
+  }, []);
+
+  return mode;
+}
+
 function Shell({
   route,
   onLogout,
@@ -88,7 +116,9 @@ function Shell({
 }) {
   const store = useAdminStore();
   const bootstrap = useAdminQuery("bootstrap", {});
+  const viewportMode = useAdminViewportMode();
   const [collapsed, setCollapsed] = useState(false);
+  const sidebarCollapsed = viewportMode !== "desktop" || collapsed;
   const logout = () => {
     store.dispose();
     onLogout();
@@ -113,18 +143,19 @@ function Shell({
   const sites = orderedAdminSites(bootstrap.data.allowed_sites);
   return (
     <main
-      className={`admin-workspace admin-v2-workspace${collapsed ? " admin-workspace--collapsed" : ""}`}
+      className={`admin-workspace admin-v2-workspace admin-workspace--${viewportMode}${sidebarCollapsed ? " admin-workspace--collapsed" : ""}`}
+      data-admin-viewport={viewportMode}
     >
       <aside className="admin-sidebar" aria-label="Navegación administrativa">
         <div className="admin-sidebar__brand">
           <img
-            className={`admin-sidebar__logo${collapsed ? " admin-sidebar__logo--compact" : ""}`}
-            src={collapsed ? "/favicon-48x48.png" : "/Logo_SOLOG.png"}
+            className={`admin-sidebar__logo${sidebarCollapsed ? " admin-sidebar__logo--compact" : ""}`}
+            src={sidebarCollapsed ? "/favicon-48x48.png" : "/Logo_SOLOG.png"}
             alt="SOLOG"
           />
         </div>
         <div className="admin-sidebar__account">
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <span className="admin-sidebar__account-copy">
               <strong>{bootstrap.data.identity.nombre}</strong>
               <small>{bootstrap.data.identity.rol}</small>
@@ -149,7 +180,7 @@ function Shell({
                       "admin-tab" + (route === path ? " admin-tab--active" : "")
                     }
                     aria-label={label}
-                    title={collapsed ? label : undefined}
+                    title={sidebarCollapsed ? label : undefined}
                     aria-current={route === path ? "page" : undefined}
                     onClick={() => navigateTo(path)}
                   >
@@ -161,15 +192,17 @@ function Shell({
           ))}
         </nav>
         <div className="admin-sidebar__footer">
-          <PaletteSwitcher collapsed={collapsed} variant="sidebar" />
-          <button
-            className="admin-sidebar__collapse"
-            aria-label="Alternar navegación"
-            onClick={() => setCollapsed((v) => !v)}
-          >
-            {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-            <span>Contraer menú</span>
-          </button>
+          <PaletteSwitcher collapsed={sidebarCollapsed} variant="sidebar" />
+          {viewportMode === "desktop" && (
+            <button
+              className="admin-sidebar__collapse"
+              aria-label="Alternar navegación"
+              onClick={() => setCollapsed((v) => !v)}
+            >
+              {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+              <span>Contraer menú</span>
+            </button>
+          )}
         </div>
       </aside>
       <section className="admin-workspace__main">
