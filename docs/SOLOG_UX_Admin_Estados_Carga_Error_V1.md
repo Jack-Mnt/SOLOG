@@ -223,3 +223,115 @@ Regla adicional:
 - al resolver, `CatalogStatus` muestra normalmente versión, fecha y total de SKU;
 - no se combinan queries ni se modifican contratos, caché o backend;
 - no se realizan cambios CSS.
+
+
+## 11. Delta de revisión global — alcance repositorio completo
+
+**Fecha:** 2026-09-19  
+**Estado:** REVISIÓN AMPLIADA — HALLAZGOS PENDIENTES DE APROBACIÓN
+
+Por decisión posterior, la Fase 4 amplía su revisión desde Admin a todas las superficies runtime del repositorio en `admin-work` que participan en estados de carga/error.
+
+Este delta amplía **la revisión**, no autoriza automáticamente cambios funcionales fuera de Admin.
+
+### 11.1. Superficies revisadas
+
+- App / lazy loading global;
+- autenticación y resolución de ruta;
+- Admin;
+- Cajero;
+- Detalles;
+- Login;
+- Home;
+- componentes compartidos de loading/error;
+- fallbacks `Suspense`;
+- estados de lectura, retry y error.
+
+No se consideran bugs de loading los textos que describen operaciones explícitas del usuario, por ejemplo:
+- `Ingresando…`;
+- `Enviando…`;
+- `Solicitando…`;
+- `Generando Excel…`;
+- `Publicando…`.
+
+### 11.2. Estado correcto detectado
+
+- `App` usa `PanelLoader` para el lazy global;
+- Auth pending usa `PanelLoader`;
+- resolución de ruta pending usa `PanelLoader`;
+- Cajero bootstrap pending usa `PanelLoader`;
+- lazy de Admin/Cajero/Detalles usa `PanelLoader`;
+- Admin quedó normalizado tras Fase 3 y delta de Catálogo;
+- Home no presenta un estado transitorio problemático en este alcance.
+
+### 11.3. Hallazgos fuera de Admin
+
+#### A. Errores globales todavía usan PageShell
+
+Detectado en:
+- `protected-app.tsx` — error de resolución de ruta;
+- `protected-app.tsx` — error de inicialización Auth;
+- `cajero.v3.context.tsx` — error de bootstrap Cajero.
+
+Estos estados no comparten todavía la superficie global `PanelLoader state="error"`.
+
+`PageShell` solo tiene consumidores runtime detectados en `protected-app.tsx` y `cajero.v3.context.tsx`. Si ambos migran, deberá realizarse una auditoría de referencias antes de decidir eliminar `PageShell` y su CSS asociado.
+
+#### B. Detalles monta UI parcial durante carga inicial
+
+`detalles.panel.tsx` monta el Shell antes de disponer del resumen, mostrando contexto incompleto como sede `—` y un loader propio:
+- `Consultando detalles de la sede…`.
+
+La carga inicial debería evaluarse como bootstrap de la superficie, mientras que refrescos posteriores con datos existentes pueden conservar el Shell.
+
+#### C. Cajero mantiene loaders de lectura paralelos al sistema compartido
+
+Detectado:
+- Conteo → `Cargando grupos…`;
+- Conteo diario → `Cargando grupos…`;
+- Revisar → `Cargando casos…`;
+- Historial → `Cargando historial…`.
+
+Todos usan `.cajero-loading` + `LoaderCircle` en lugar del sistema compartido.
+
+#### D. Detalles mantiene loaders internos paralelos
+
+Detectado:
+- Historial dialog → `Cargando historial…`;
+- detalle expandido → texto aislado `Cargando detalle…`.
+
+Son candidatos naturales a `PanelLoader compact`.
+
+#### E. Sincronización posterior al conteo
+
+`cajero.tsx` utiliza `.cajero-loading` para:
+- `Actualizando el panel…` durante sincronización real;
+- un estado estático `needsSynchronization` que ya no está cargando.
+
+Además, `needsSynchronization` ya genera un aviso superior con acción de consulta. La semántica visual de este segundo bloque requiere definición antes de modificarla para no alterar el bloqueo operativo.
+
+#### F. Contrato faltante en error de inicialización Auth
+
+El error global de inicialización Auth no expone actualmente una acción explícita de retry desde `AuthProvider`.
+
+Antes de normalizarlo al contrato global con `Reintentar`, debe definirse si:
+- se añade retry de inicialización al contexto;
+- se utiliza recarga completa;
+- o el error global no ofrece retry.
+
+No asumir una alternativa sin aprobación.
+
+### 11.4. CSS potencialmente afectado si se aprueban los hallazgos
+
+No eliminar todavía.
+
+Candidatos a quedar sin uso o reducirse:
+- `.cajero-loading`;
+- `.details-loading`;
+- estilos estructurales asociados exclusivamente a `PageShell`.
+
+Su eliminación solo procederá después de migrar consumidores y comprobar referencias reales.
+
+### 11.5. Estado de cierre
+
+La Fase 4 global no puede cerrarse todavía porque existen hallazgos fuera de Admin que requieren definición/aprobación antes de decidir si forman parte de este mismo bloque o se trasladan a backlog.
