@@ -64,14 +64,12 @@ describe('Catálogo V3 integración', () => {
     for (const call of calls.filter(call => call.channel === 'mutation')) expect(call.payload).toMatchObject({ expected_catalog_revision: 7, expected_groups_revision: 3, operation_id: expect.any(String) })
   })
 
-  test('integra reincorporación, exclusión y grupo unitario en el flujo de propuestas', async () => {
+  test('integra reincorporación y exclusión autoaprobadas con grupo unitario', async () => {
     const { store, calls } = harness()
     await store.load('status', {})
     await store.mutation('propose_product_state', { c_interno: 100, action: 'reincorporate' })
-    await store.mutation('proposal_action', { propuesta_fingerprint: fingerprint, action: 'approve' })
     await store.mutation('prepare_product', { propuesta_fingerprint: fingerprint, mode: 'new_unit', categoria_id: 'category-1', marca: null })
     await store.mutation('propose_product_state', { c_interno: 101, action: 'exclude' })
-    await store.mutation('proposal_action', { propuesta_fingerprint: fingerprint, action: 'approve' })
     await previewAndPublish(store)
     expect(calls.filter(call => call.action === 'propose_product_state').map(call => call.payload.action)).toEqual(['reincorporate', 'exclude'])
     expect(calls.find(call => call.action === 'prepare_product')?.payload).toMatchObject({ mode: 'new_unit', categoria_id: 'category-1' })
