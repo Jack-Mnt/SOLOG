@@ -38,7 +38,7 @@ export function ProductSetupDialog({ target, onClose, onComplete }: { target: Pr
   const valid = !!masterData.snapshot && (mode === 'existing_group' ? !!groupId : !!categoryId)
   return <AdminDialog title="Configurar producto" description={`${target.producto} · C. interno ${target.c_interno}`} onClose={onClose} closeDisabled={!!intent?.pending} variant="wide">
     <p>La configuración queda en staging y no modifica el catálogo ni los grupos hasta la publicación.</p>
-    {!masterData.snapshot ? <QueryState error={masterData.error} retry={masterData.retry} /> : <form className="admin-v2-form" onSubmit={(event) => { event.preventDefault(); submit() }}>
+    {!masterData.snapshot ? <QueryState error={masterData.error} retry={masterData.retry} variant="compact" /> : <form className="admin-v2-form" onSubmit={(event) => { event.preventDefault(); submit() }}>
       <label>Marca opcional<input value={brand} onChange={(event) => setBrand(event.target.value)} /></label>
       <label>Destino<select value={mode} onChange={(event) => setMode(event.target.value as typeof mode)}><option value="existing_group">Grupo existente</option><option value="new_unit">Nuevo grupo unitario</option></select></label>
       {mode === 'existing_group'
