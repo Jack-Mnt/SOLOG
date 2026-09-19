@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { createAdminDialogScrollLock } from '../src/features/solog/admin/admin.dialog.scroll'
 import { createAdminDialogStack } from '../src/features/solog/admin/admin.dialog.stack'
 
 describe('AdminDialog stack', () => {
@@ -71,6 +72,57 @@ describe('AdminDialog stack', () => {
     expect(source).toMatch(
       /isTop\s*&&\s*event\.target\s*===\s*event\.currentTarget\s*&&\s*!closeDisabled/,
     )
+  })
+
+  test('scroll lock conserva el overflow previo hasta cerrar el último diálogo', () => {
+    const lock = createAdminDialogScrollLock()
+    const body = { style: { overflow: 'auto' } }
+
+    const releaseParent = lock.lock(body)
+    expect(body.style.overflow).toBe('hidden')
+    expect(lock.count()).toBe(1)
+
+    const releaseChild = lock.lock(body)
+    expect(body.style.overflow).toBe('hidden')
+    expect(lock.count()).toBe(2)
+
+    releaseParent()
+    expect(body.style.overflow).toBe('hidden')
+    expect(lock.count()).toBe(1)
+
+    releaseChild()
+    expect(body.style.overflow).toBe('auto')
+    expect(lock.count()).toBe(0)
+
+    releaseChild()
+    expect(body.style.overflow).toBe('auto')
+    expect(lock.count()).toBe(0)
+  })
+
+  test('AdminDialog renderiza siempre Footer y conecta el scroll lock', async () => {
+    const source = await Bun.file(
+      'src/features/solog/admin/admin.dialog.tsx',
+    ).text()
+
+    expect(source).toContain("adminDialogScrollLock.lock(document.body)")
+    expect(source).toContain('const resolvedFooter = footer ?? (')
+    expect(source).toContain('<footer className="admin-dialog__footer">{resolvedFooter}</footer>')
+    expect(source).toContain('button button--secondary')
+    expect(source).toContain('Cerrar')
+  })
+
+  test('CSS aplica el contrato visual y responsive congelado', async () => {
+    const css = await Bun.file('src/features/solog/admin/admin.css').text()
+
+    expect(css).toContain('var(--color-dark-surface) 50%')
+    expect(css).toContain('backdrop-filter: blur(4px)')
+    expect(css).toContain('width: min(100%, 960px)')
+    expect(css).toContain('.admin-dialog--default')
+    expect(css).toContain('max-height: calc(100dvh - 24px)')
+    expect(css).toContain('.admin-dialog-backdrop--wide,')
+    expect(css).toContain('.admin-dialog-backdrop--drawer')
+    expect(css).not.toContain('@media (max-width: 560px)')
+    expect(css).not.toContain('width: min(1100px, 100%)')
   })
 
   test('AdminDialog centraliza entrada, trap y restauración de foco', async () => {
