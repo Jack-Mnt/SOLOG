@@ -116,7 +116,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       variant="wide"
       footer={
         <>
-          <button type="button" className="button button--secondary" disabled={!!store.intent()} onClick={onClose}>
+          <button type="button" className="button button--secondary" disabled={!!store.intent()?.pending} onClick={onClose}>
             Cancelar
           </button>
           <button
@@ -225,7 +225,7 @@ function EditGroupDialog({
       closeDisabled={!!store.intent()?.pending}
       footer={
         <>
-          <button type="button" className="button button--secondary" disabled={!!store.intent()} onClick={onClose}>
+          <button type="button" className="button button--secondary" disabled={!!store.intent()?.pending} onClick={onClose}>
             Cancelar
           </button>
           <button
