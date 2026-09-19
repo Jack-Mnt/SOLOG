@@ -243,3 +243,22 @@ Bloqueo resuelto:
 - Detalles: Historial dialog;
 - detalle expandido conservando `Cargando detalle…`.
 
+
+
+## 9. Estado de ejecución
+
+### Fase 1 — Errores globales
+
+**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+
+Implementado:
+- error de resolución de ruta → `PanelLoader state="error"`;
+- retry de resolución conserva la misma consulta mediante incremento de intento;
+- resolución de ruta conserva acción `Cerrar sesión`;
+- error de inicialización Auth → `PanelLoader state="error"`;
+- retry Auth → `window.location.reload()`;
+- error de bootstrap Cajero → `PanelLoader state="error"`;
+- bootstrap Cajero conserva retry y `Cerrar sesión`;
+- `PageShell` deja de tener consumidores en estos flujos, pero su eliminación queda diferida a Fase 5;
+- sin cambios backend, contratos o lógica de negocio;
+- cobertura dirigida añadida en `tests/global-loading-errors-phase1.test.ts`.
