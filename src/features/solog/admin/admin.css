@@ -1375,7 +1375,7 @@ sin alterar las cards de otros módulos. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   white-space: nowrap;
 }
 
