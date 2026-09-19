@@ -2497,15 +2497,8 @@ workspace y cards permanecen como superficies estructurales neutras;
     height: auto;
   }
   .admin-v2-workspace .admin-site-context__select {
-    height: 40px;
-    min-height: 40px;
-    padding: 8px 10px;
-    border: 1px solid rgb(255 255 255 / 14%);
-    border-radius: 12px;
     color: var(--color-text-inverse);
     background: var(--color-dark-surface-hover);
-    font-size: 0.9rem;
-    font-weight: 640;
   }
   .admin-v2-workspace .admin-site-context__select:focus-visible {
     outline: 2px solid var(--color-primary-bright);
