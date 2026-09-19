@@ -34,7 +34,8 @@ import {
 } from "./admin.catalogo.v3";
 import { adminTimestamp } from "../admin.v2.format";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminNotice, IconButton } from "../admin.primitives";
+import { AdminNotice, AdminPagination, IconButton } from "../admin.primitives";
+import { paginateAdminRows } from "../admin.pagination";
 
 type ProposalAction = "approve" | "ignore" | "withdraw";
 type ProposalSection = "urgent" | "emerging";
@@ -180,12 +181,14 @@ function ProposalsSurface() {
         ) : (
           <div className="admin-catalog__pending">
             <ProposalSection
+              key={`${status}:urgent`}
               title="Urgentes"
               rows={urgent}
               section="urgent"
               onSelect={setSelected}
             />
             <ProposalSection
+              key={`${status}:emerging`}
               title="Emergentes"
               rows={emerging}
               section="emerging"
@@ -211,6 +214,8 @@ function ProposalSection({
   section: ProposalSection;
   onSelect: (proposal: CatalogProposal) => void;
 }) {
+  const [page, setPage] = useState(0);
+  const paginated = paginateAdminRows(rows, page, 25);
   return (
     <section
       className={`admin-catalog__section admin-catalog__section--${section}`}
@@ -231,7 +236,7 @@ function ProposalSection({
             </tr>
           </thead>
           <tbody>
-            {rows.map((proposal) => (
+            {paginated.rows.map((proposal) => (
               <ProposalRow
                 key={proposal.propuesta_fingerprint}
                 proposal={proposal}
@@ -246,6 +251,14 @@ function ProposalSection({
           </tbody>
         </table>
       </div>
+      <AdminPagination
+        total={rows.length}
+        currentPage={paginated.currentPage}
+        pageCount={paginated.pageCount}
+        pageSize={25}
+        onPageChange={setPage}
+        ariaLabel={`Paginación de ${title.toLowerCase()}`}
+      />
     </section>
   );
 }
