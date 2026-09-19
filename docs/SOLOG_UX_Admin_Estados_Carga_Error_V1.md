@@ -335,3 +335,19 @@ Su eliminación solo procederá después de migrar consumidores y comprobar refe
 ### 11.5. Estado de cierre
 
 La Fase 4 global no puede cerrarse todavía porque existen hallazgos fuera de Admin que requieren definición/aprobación antes de decidir si forman parte de este mismo bloque o se trasladan a backlog.
+
+
+## 12. Cierre del bloque Admin
+
+**Estado final: CERRADO — VALIDADO TÉCNICA Y HUMANAMENTE.**
+
+El alcance Admin de este documento queda cerrado.
+
+La revisión transversal posterior identificó hallazgos fuera de Admin. Dichos hallazgos y sus decisiones aprobadas se trasladan a la nueva fuente primaria:
+
+`docs/SOLOG_UX_Global_Estados_Carga_Error_V1.md`
+
+A partir de este punto:
+- este documento sigue siendo autoritativo para los estados de carga/error de Admin;
+- el documento global prevalece para Auth, Cajero y Detalles;
+- los hallazgos globales del apartado 11 se consideran transferidos y no reabren Admin.
