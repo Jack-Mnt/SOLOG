@@ -37,11 +37,16 @@
   grid-template-columns: 64px minmax(0, 1fr);
 }
 
-/* Fase 11: Tablet usa navegación compacta forzada.
-   Mobile reutiliza temporalmente este track hasta activar el Drawer en 11.3. */
+/* Fase 11: Tablet usa navegación compacta forzada. */
 @media (max-width: 1023px) {
   .admin-workspace {
     grid-template-columns: 64px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-workspace {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -269,6 +274,84 @@
 .admin-workspace__main {
   min-width: 0;
   min-height: 100vh;
+}
+
+.admin-sidebar-drawer__backdrop,
+.admin-drawer-trigger {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .admin-sidebar {
+    --admin-sidebar-item-height: 40px;
+
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    width: 200px;
+    max-width: calc(100vw - 48px);
+    height: 100vh;
+    height: 100dvh;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .admin-workspace--drawer-open .admin-sidebar {
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  .admin-sidebar-drawer__backdrop {
+    position: fixed;
+    z-index: 25;
+    inset: 0;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: color-mix(
+      in srgb,
+      var(--color-dark-surface) 58%,
+      transparent
+    );
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .admin-drawer-trigger {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    color: var(--color-text-inverse);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .admin-drawer-trigger:hover {
+    background: rgb(255 255 255 / 8%);
+  }
+
+  .admin-drawer-trigger:focus-visible {
+    outline: 2px solid var(--color-primary-bright);
+    outline-offset: 2px;
+  }
+
+  .admin-drawer-trigger > img {
+    width: 32px;
+    height: 32px;
+    display: block;
+    object-fit: contain;
+  }
 }
 
 .admin-header {
@@ -2319,6 +2402,20 @@ but focus no longer reuses hover styling. */
   width: 20px;
   height: 20px;
   flex: 0 0 20px;
+}
+
+@media (max-width: 767px) {
+  .admin-v2-workspace .admin-sidebar .icon-button {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+
+  .admin-sidebar .admin-appearance > button {
+    height: 40px;
+    min-height: 40px;
+  }
 }
 
 /* Narrow Admin: compact content controls,
