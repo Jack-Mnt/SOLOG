@@ -196,14 +196,14 @@ describe("Incidencias multisede", () => {
     expect(source).toMatch(
       /setDeleteProposal\(\{\s*family:\s*item,?\s*source:\s*deletable,?\s*\}\)/,
     );
-    expect(source).toContain('title="Proponer eliminación"');
+    expect(source).toContain('title="Aprobar eliminación"');
     expect(source).toContain('onConfirm={() => proposeDeleteSource(deleteProposal.source)}');
     expect(source).toContain('family.family_state === "pendiente"');
     expect(source).toContain('scope: "site"');
     expect(source).toContain('summary.revisions.incidents');
-    expect(source).toContain('Detectado en: <strong>{proposal.source.siteName}</strong>');
+    expect(source).toContain('<dt>Detectado en</dt>');
     expect(source).toMatch(/void \(retryable \? onRetry\(\) : onConfirm\(\)\)\s*\.then\(onClose\)\s*\.catch/);
-    expect(source).toContain('retryable ? "Reintentar" : "Proponer eliminación"');
+    expect(source).toContain('retryable ? "Reintentar" : "Aprobar eliminación"');
   });
 
   test("la fecha de supresión multisede solo se conserva cuando las fuentes coinciden", () => {
