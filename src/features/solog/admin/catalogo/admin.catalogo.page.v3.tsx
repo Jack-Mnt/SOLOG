@@ -388,7 +388,7 @@ function ProposalDetail({
         description={proposalLabels[proposal.tipo]}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
-        wide
+        variant="wide"
       >
         <div className="admin-catalog__proposal-context">
           <span>C. interno {proposal.c_interno}</span>
@@ -568,7 +568,7 @@ function PriceResolutionDialog({
         title="Resolver precio"
         onClose={onClose}
         closeDisabled={!!intent?.pending}
-        wide
+        variant="wide"
       >
         <QueryState {...query} />
       </AdminDialog>
@@ -667,7 +667,7 @@ function PriceResolutionDialog({
         description={`C. interno ${options.c_interno}`}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
-        wide
+        variant="wide"
       >
         <p>
           Precio propuesto: <Value value={options.nuevo_precio} money />. La
@@ -827,7 +827,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
       title="Publicar catálogo"
       onClose={onClose}
       closeDisabled={!!receipt.pending}
-      wide
+      variant="wide"
     >
       {!preview ? (
         <QueryState {...query} />
