@@ -114,11 +114,34 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       closeDisabled={!!store.intent()?.pending}
       variant="wide"
+      footer={
+        <>
+          <button type="button" className="button button--secondary" disabled={!!store.intent()} onClick={onClose}>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="admin-create-group-form"
+            className="button"
+            disabled={
+              !!store.intent() ||
+              !masterData.snapshot ||
+              !masterData.derived ||
+              !name.trim() ||
+              !categoryId ||
+              members.length < 2
+            }
+          >
+            <Plus size={16} aria-hidden="true" />
+            Crear grupo
+          </button>
+        </>
+      }
     >
       {!masterData.snapshot || !masterData.derived ? (
         <QueryState error={masterData.error} retry={masterData.retry} variant="compact" />
       ) : (
-        <form className="admin-v2-form" onSubmit={(event) => void save(event)}>
+        <form id="admin-create-group-form" className="admin-v2-form" onSubmit={(event) => void save(event)}>
           <label>
             Nombre
             <input
@@ -153,18 +176,6 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
             El precio unitario se toma del Catálogo y el backend confirma la
             compatibilidad.
           </p>
-          <button
-            className="button"
-            disabled={
-              !!store.intent() ||
-              !name.trim() ||
-              !categoryId ||
-              members.length < 2
-            }
-          >
-            <Plus size={16} aria-hidden="true" />
-            Crear grupo
-          </button>
         </form>
       )}
       {error && <MutationError error={error} retry={retry} />}
@@ -212,11 +223,27 @@ function EditGroupDialog({
       description="La nombre operativa no modifica el nombre comercial de los SKU."
       onClose={onClose}
       closeDisabled={!!store.intent()?.pending}
+      footer={
+        <>
+          <button type="button" className="button button--secondary" disabled={!!store.intent()} onClick={onClose}>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="admin-edit-group-form"
+            className="button"
+            disabled={!!store.intent() || !masterData.snapshot || !name.trim() || !categoryId}
+          >
+            <Save size={16} aria-hidden="true" />
+            Guardar cambios
+          </button>
+        </>
+      }
     >
       {!masterData.snapshot ? (
         <QueryState error={masterData.error} retry={masterData.retry} variant="compact" />
       ) : (
-        <form className="admin-v2-form" onSubmit={(event) => void save(event)}>
+        <form id="admin-edit-group-form" className="admin-v2-form" onSubmit={(event) => void save(event)}>
           <label>
             Nombre
             <input
@@ -248,13 +275,6 @@ function EditGroupDialog({
               La categoría se aplicará a todos los integrantes del grupo.
             </p>
           )}
-          <button
-            className="button"
-            disabled={!!store.intent() || !name.trim() || !categoryId}
-          >
-            <Save size={16} aria-hidden="true" />
-            Guardar cambios
-          </button>
         </form>
       )}
       {error && <MutationError error={error} retry={retry} />}
