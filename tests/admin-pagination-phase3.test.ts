@@ -7,9 +7,11 @@ test('Fase 3 pagina Urgentes y Emergentes de forma independiente a 25', async ()
 
   expect(page).toContain('key={`${status}:urgent`}')
   expect(page).toContain('key={`${status}:emerging`}')
-  expect(page).toContain('paginateAdminRows(rows, page, 25)')
+  expect(page).toContain('const CATALOG_PROPOSAL_PAGE_SIZE = 25')
+  expect(page).toContain('paginateAdminRows(rows, page, CATALOG_PROPOSAL_PAGE_SIZE)')
   expect(page).toContain('paginated.rows.map')
-  expect(page).toContain('pageSize={25}')
+  expect(page).toContain('pageSize={CATALOG_PROPOSAL_PAGE_SIZE}')
+  expect(page).toContain('if (paginated.currentPage !== page) setPage(paginated.currentPage)')
   expect(page).toContain('total={rows.length}')
 })
 
