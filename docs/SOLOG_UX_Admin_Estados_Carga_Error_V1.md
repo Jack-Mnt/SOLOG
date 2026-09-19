@@ -206,3 +206,20 @@ Implementado:
 - eliminado `Cargando sedes…` de Incidencias, conservando etiqueta estable + `aria-busy`;
 - sin cambios CSS en esta fase;
 - cobertura dirigida en `tests/admin-loading-states-phase3.test.ts`.
+
+
+## 10. Delta — Catálogo sin loader duplicado
+
+**Fecha:** 2026-09-19  
+**Estado:** APROBADO E IMPLEMENTADO
+
+Durante la revisión humana se detectó que `CatalogStatus` y `ProposalsSurface` podían mostrar loaders simultáneos durante la carga inicial del módulo.
+
+Regla adicional:
+- una misma superficie de módulo no debe mostrar más de un loader simultáneo para su carga inicial;
+- `ProposalsSurface` permanece como loader principal de Catálogo;
+- `CatalogStatus` en estado pending no renderiza loader;
+- `CatalogStatus` conserva error contextual con retry;
+- al resolver, `CatalogStatus` muestra normalmente versión, fecha y total de SKU;
+- no se combinan queries ni se modifican contratos, caché o backend;
+- no se realizan cambios CSS.
