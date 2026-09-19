@@ -227,7 +227,7 @@ export function AdminDevicesV2() {
               <button
                 type="button"
                 className="button button--secondary"
-                disabled={!!store.intent("devices")}
+                disabled={!!store.intent("devices")?.pending}
                 onClick={() => setConfirmation(null)}
               >
                 Cancelar
