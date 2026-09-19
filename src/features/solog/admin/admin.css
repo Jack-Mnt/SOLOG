@@ -1223,8 +1223,8 @@ sin alterar las cards de otros módulos. */
 }
 .admin-dashboard__detail > .admin-main-table th,
 .admin-dashboard__detail > .admin-main-table td {
-  min-width: 82px;
-  padding: 8px 16px;
+  min-width: 80px;
+  padding: 8px;
   text-align: center;
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
@@ -1350,7 +1350,7 @@ sin alterar las cards de otros módulos. */
 
 .admin-main-table th,
 .admin-main-table td {
-  padding: 8px 12px;
+  padding: 8px;
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
   font-size: 0.8rem;
@@ -2299,7 +2299,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 
 /* Dashboard % mantiene temporalmente su geometría responsive previa.
    Queda fuera de alcance hasta una decisión explícita. */
-@media (max-width: 560px) {
+@media (max-width: 767px) {
   .admin-v2-workspace .admin-workspace__main .admin__percentage-action {
     min-width: 32px;
     height: 32px;
