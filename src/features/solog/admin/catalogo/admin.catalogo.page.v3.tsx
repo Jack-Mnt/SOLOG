@@ -410,7 +410,7 @@ function ProposalDetail({
         variant="wide"
         footer={
           <>
-            <button type="button" className="button button--secondary" disabled={!!intent} onClick={onClose}>
+            <button type="button" className="button button--secondary" disabled={!!intent?.pending} onClick={onClose}>
               Cerrar
             </button>
             {proposal.estado === "pendiente" && (
@@ -665,7 +665,7 @@ function PriceResolutionDialog({
         variant="wide"
         footer={
           <>
-            <button type="button" className="button button--secondary" disabled={!!intent} onClick={onClose}>
+            <button type="button" className="button button--secondary" disabled={!!intent?.pending} onClick={onClose}>
               Cancelar
             </button>
             <button
