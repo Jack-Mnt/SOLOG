@@ -379,7 +379,8 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: color-mix(in srgb, var(--color-dark-surface) 72%, transparent);
+  background: color-mix(in srgb, var(--color-dark-surface) 50%, transparent);
+  backdrop-filter: blur(4px);
 }
 
 .admin-dialog {
@@ -406,7 +407,7 @@
 }
 
 .admin-dialog--drawer {
-  width: min(100%, 1000px);
+  width: min(100%, 960px);
   height: 100vh;
   height: 100dvh;
   max-height: 100vh;
@@ -419,9 +420,12 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   padding: 12px 16px;
+}
+
+.admin-dialog__header {
+  justify-content: space-between;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -451,7 +455,17 @@
 .admin-dialog__footer {
   justify-content: flex-end;
   border-top: 1px solid var(--color-border);
-  border-bottom: 0;
+}
+
+.admin-dialog__footer-navigation {
+  margin-right: auto;
+}
+
+.admin-dialog__footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .admin-dialog__body {
@@ -537,9 +551,22 @@
 
 @media (max-width: 767px) {
   .admin-dialog-backdrop {
+    padding: 12px;
+  }
+
+  .admin-dialog-backdrop--wide,
+  .admin-dialog-backdrop--drawer {
     padding: 0;
   }
-  .admin-dialog {
+
+  .admin-dialog--default {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  .admin-dialog--wide,
+  .admin-dialog--drawer {
     width: 100%;
     height: 100vh;
     height: 100dvh;
@@ -547,19 +574,29 @@
     max-height: 100dvh;
     border-radius: 0;
   }
+
   .admin-dialog__footer {
     display: grid;
     grid-template-columns: 1fr;
   }
+
+  .admin-dialog__footer-navigation,
+  .admin-dialog__footer-actions {
+    width: 100%;
+    margin: 0;
+  }
+
+  .admin-dialog__footer-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
   .admin-dialog__footer .button {
     width: 100%;
   }
 }
 /* Control: composición local; contratos,
 detalle y exportación sin cambios. */
-.admin-control-chronology {
-  width: min(1100px, 100%);
-}
 .admin-control-chronology__toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -851,11 +888,12 @@ detalle y exportación sin cambios. */
   color: var(--color-text-secondary);
   font-size: 0.8rem;
 }
-@media (max-width: 560px) {
+@media (max-width: 767px) {
   .admin-products__setup-item {
     align-items: stretch;
     flex-direction: column;
   }
+
   .admin-products__setup-item .button {
     width: 100%;
   }
