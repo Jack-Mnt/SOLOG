@@ -153,7 +153,13 @@ Validación reportada por el usuario sobre `admin-work`:
 
 ### Fase 2 — Grupos + Incidencias + Dashboard DailyDrawer
 
-**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+**CERRADA TÉCNICAMENTE.**
+
+Validación reportada por el usuario:
+- tests: correctos;
+- `bun run lint`: correcto;
+- `bun run build`: correcto;
+- `git diff --check`: correcto.
 
 Implementado:
 - Grupos: paginación local 50 posterior a filtros/orden;
@@ -162,4 +168,15 @@ Implementado:
 - reutilización exclusiva de `paginateAdminRows` y `AdminPagination`;
 - sin cambios CSS, backend o composición de tablas.
 
-La fase no se considera cerrada hasta completar tests, lint, build, `git diff --check` y smoke proporcional.
+
+### Fase 3 — Catálogo
+
+**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+
+Implementado:
+- Urgentes: paginación independiente de 25;
+- Emergentes: paginación independiente de 25;
+- cambio de estado reinicia ambas secciones mediante remount controlado;
+- reducción del dataset corrige la página fuera de rango;
+- contador de cada sección conserva el total completo;
+- sin cambios CSS ni composición visual.
