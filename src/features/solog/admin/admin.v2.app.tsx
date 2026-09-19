@@ -1,4 +1,11 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   LayoutDashboard,
   ScanSearch,
@@ -125,17 +132,20 @@ function Shell({
   const sidebarCollapsed =
     viewportMode === "tablet" || (viewportMode === "desktop" && collapsed);
 
-  const restoreDrawerTriggerFocus = () => {
+  const restoreDrawerTriggerFocus = useCallback(() => {
     requestAnimationFrame(() => drawerTriggerRef.current?.focus());
-  };
-  const closeDrawer = () => {
+  }, []);
+  const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
     restoreDrawerTriggerFocus();
-  };
-  const navigateFromSidebar = (path: AdminRoute) => {
-    if (viewportMode === "mobile") closeDrawer();
-    navigateTo(path);
-  };
+  }, [restoreDrawerTriggerFocus]);
+  const navigateFromSidebar = useCallback(
+    (path: AdminRoute) => {
+      if (viewportMode === "mobile") closeDrawer();
+      navigateTo(path);
+    },
+    [closeDrawer, viewportMode],
+  );
 
   useEffect(() => {
     if (viewportMode !== "mobile") setDrawerOpen(false);
@@ -165,13 +175,13 @@ function Shell({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [drawerOpen, viewportMode]);
+  }, [closeDrawer, drawerOpen, viewportMode]);
 
   useEffect(() => {
     const routeChanged = previousRouteRef.current !== route;
     previousRouteRef.current = route;
     if (routeChanged && viewportMode === "mobile" && drawerOpen) closeDrawer();
-  }, [drawerOpen, route, viewportMode]);
+  }, [closeDrawer, drawerOpen, route, viewportMode]);
 
   const logout = () => {
     store.dispose();
@@ -280,7 +290,11 @@ function Shell({
               ref={drawerTriggerRef}
               type="button"
               className="admin-drawer-trigger"
-              aria-label={drawerOpen ? "Cerrar navegación" : "Abrir navegación"}
+              aria-label={
+                drawerOpen
+                  ? "Cerrar menú administrativo"
+                  : "Abrir menú administrativo"
+              }
               aria-controls="admin-mobile-drawer"
               aria-expanded={drawerOpen}
               onClick={() => (drawerOpen ? closeDrawer() : setDrawerOpen(true))}
