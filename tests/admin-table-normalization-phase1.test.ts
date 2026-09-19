@@ -40,7 +40,7 @@ describe('Admin table normalization — Phase 1 infrastructure', () => {
     expect(primitive).toContain("'default' | 'primary' | 'warning' | 'danger'")
     expect(primitive).toContain("variant === 'warning' ? 'icon-button--warning' : ''")
     expect(css).toMatch(/\.icon-button--warning\s*\{/)
-    expect(css).toMatch(/\.icon-button--warning:hover:not\(:disabled\)/)
+    expect(css).toMatch(/\.admin-v2-workspace\s+:where\(\.icon-button--warning\):hover:not\(:disabled\)/)
   })
 
   test('percentage action existe como acción reutilizable independiente de IconButton', async () => {
