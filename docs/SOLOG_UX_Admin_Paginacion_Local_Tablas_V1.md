@@ -74,6 +74,7 @@ Para las tablas principales siguientes:
 - **Control:** 50 filas por página.
 - **Grupos:** 50 filas por página.
 - **Incidencias:** 50 filas por página.
+- **Dashboard — detalle diario:** 50 filas por página.
 
 El paginador se muestra únicamente cuando el resultado procesado contiene **más de 50 filas**.
 
@@ -130,11 +131,12 @@ Este bloque incluye únicamente:
 3. Grupos — añadir paginación local de 50 a la tabla principal.
 4. Incidencias — añadir paginación local de 50 a la tabla principal.
 5. Catálogo — añadir paginación independiente de 25 para Urgentes y Emergentes.
+6. Dashboard — añadir paginación local de 50 únicamente al diálogo de detalle diario (`DailyDrawer`).
 
 ## 9. Fuera de alcance
 
 No se añade paginación por defecto a:
-- Dashboard;
+- Dashboard fuera del diálogo de detalle diario (`DailyDrawer`);
 - Dispositivos;
 - Categorías;
 - cronologías;
@@ -179,6 +181,25 @@ Para las superficies paginadas:
 9. Una reducción del dataset no puede dejar la interfaz en una página inexistente.
 10. No se realizan nuevas peticiones backend únicamente por cambiar de página.
 11. No se introduce paginación en superficies fuera del alcance aprobado.
-12. No se modifica backend, Supabase, Cajero ni Detalles.
+12. Dashboard `DailyDrawer` renderiza como máximo 50 filas y oculta el paginador con ≤50 resultados.
+13. No se modifica backend, Supabase, Cajero ni Detalles.
 
 > **Decisiones de paginación local de SOLOG Admin congeladas.**
+
+
+## 12. Delta aprobado — Dashboard DailyDrawer
+
+**Fecha:** 2026-09-19
+
+Nueva evidencia de uso confirma que el detalle diario de Dashboard puede superar ampliamente las 50 filas, llegando a más de 400 conteos en un día.
+
+Por tanto:
+- `DailyDrawer` deja de estar fuera de alcance;
+- utiliza paginación local estándar de **50 filas**;
+- reutiliza `paginateAdminRows` y `AdminPagination`;
+- el paginador aparece únicamente con **más de 50 filas**;
+- el dataset completo permanece cargado y disponible;
+- cambiar de página no genera una nueva petición backend;
+- no se modifica el Dashboard principal, la grilla quincenal, tarjetas, métricas, columnas ni composición visual del diálogo.
+
+Este delta reemplaza únicamente la exclusión previa de `DailyDrawer`. El resto del documento permanece vigente.
