@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   ScanSearch,
@@ -118,7 +118,61 @@ function Shell({
   const bootstrap = useAdminQuery("bootstrap", {});
   const viewportMode = useAdminViewportMode();
   const [collapsed, setCollapsed] = useState(false);
-  const sidebarCollapsed = viewportMode !== "desktop" || collapsed;
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerTriggerRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+  const previousRouteRef = useRef(route);
+  const sidebarCollapsed =
+    viewportMode === "tablet" || (viewportMode === "desktop" && collapsed);
+
+  const restoreDrawerTriggerFocus = () => {
+    requestAnimationFrame(() => drawerTriggerRef.current?.focus());
+  };
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    restoreDrawerTriggerFocus();
+  };
+  const navigateFromSidebar = (path: AdminRoute) => {
+    if (viewportMode === "mobile") closeDrawer();
+    navigateTo(path);
+  };
+
+  useEffect(() => {
+    if (viewportMode !== "mobile") setDrawerOpen(false);
+  }, [viewportMode]);
+
+  useEffect(() => {
+    if (viewportMode !== "mobile" || !drawerOpen) return;
+    const frame = requestAnimationFrame(() => {
+      drawerRef.current
+        ?.querySelector<HTMLElement>('[aria-current="page"]')
+        ?.focus();
+    });
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      cancelAnimationFrame(frame);
+      document.body.style.overflow = previousBodyOverflow;
+    };
+  }, [drawerOpen, viewportMode]);
+
+  useEffect(() => {
+    if (viewportMode !== "mobile" || !drawerOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeDrawer();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [drawerOpen, viewportMode]);
+
+  useEffect(() => {
+    const routeChanged = previousRouteRef.current !== route;
+    previousRouteRef.current = route;
+    if (routeChanged && viewportMode === "mobile" && drawerOpen) closeDrawer();
+  }, [drawerOpen, route, viewportMode]);
+
   const logout = () => {
     store.dispose();
     onLogout();
@@ -143,10 +197,24 @@ function Shell({
   const sites = orderedAdminSites(bootstrap.data.allowed_sites);
   return (
     <main
-      className={`admin-workspace admin-v2-workspace admin-workspace--${viewportMode}${sidebarCollapsed ? " admin-workspace--collapsed" : ""}`}
+      className={`admin-workspace admin-v2-workspace admin-workspace--${viewportMode}${sidebarCollapsed ? " admin-workspace--collapsed" : ""}${viewportMode === "mobile" && drawerOpen ? " admin-workspace--drawer-open" : ""}`}
       data-admin-viewport={viewportMode}
     >
-      <aside className="admin-sidebar" aria-label="Navegación administrativa">
+      {viewportMode === "mobile" && drawerOpen && (
+        <button
+          type="button"
+          className="admin-sidebar-drawer__backdrop"
+          aria-label="Cerrar navegación"
+          onClick={closeDrawer}
+        />
+      )}
+      <aside
+        ref={drawerRef}
+        id="admin-mobile-drawer"
+        className="admin-sidebar"
+        aria-label="Navegación administrativa"
+        aria-hidden={viewportMode === "mobile" ? !drawerOpen : undefined}
+      >
         <div className="admin-sidebar__brand">
           <img
             className={`admin-sidebar__logo${sidebarCollapsed ? " admin-sidebar__logo--compact" : ""}`}
@@ -182,7 +250,7 @@ function Shell({
                     aria-label={label}
                     title={sidebarCollapsed ? label : undefined}
                     aria-current={route === path ? "page" : undefined}
-                    onClick={() => navigateTo(path)}
+                    onClick={() => navigateFromSidebar(path)}
                   >
                     <Icon size={20} />
                     <span>{label}</span>
@@ -207,6 +275,19 @@ function Shell({
       </aside>
       <section className="admin-workspace__main">
         <header className="admin-header">
+          {viewportMode === "mobile" && (
+            <button
+              ref={drawerTriggerRef}
+              type="button"
+              className="admin-drawer-trigger"
+              aria-label={drawerOpen ? "Cerrar navegación" : "Abrir navegación"}
+              aria-controls="admin-mobile-drawer"
+              aria-expanded={drawerOpen}
+              onClick={() => (drawerOpen ? closeDrawer() : setDrawerOpen(true))}
+            >
+              <img src="/favicon-48x48.png" alt="" aria-hidden="true" />
+            </button>
+          )}
           <h1>{navigation.find(([path]) => path === route)?.[1]}</h1>
           {["/admin/control", "/admin/incidencias"].includes(route) ? (
             <div className="admin-site-context" aria-label="Sede administrativa">
