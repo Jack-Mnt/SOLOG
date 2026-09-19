@@ -198,23 +198,28 @@ function Shell({
     store.dispose();
     onLogout();
   };
-  if (!bootstrap.data || !store.bootstrap)
+  if (!bootstrap.data || !store.bootstrap) {
+    if (!bootstrap.error) return <PanelLoader />;
+
     return (
-      <section className="notice" role="status">
-        <h1>Administración</h1>
-        <p>{bootstrap.error ?? "Validando acceso administrativo…"}</p>
-        {bootstrap.error && (
-          <button className="button" onClick={bootstrap.retry}>
-            <RotateCcw size={16} aria-hidden="true" />
-            Reintentar
-          </button>
-        )}
-        <button className="button button--secondary" onClick={logout}>
-          <LogOut size={16} aria-hidden="true" />
-          Cerrar sesión
-        </button>
-      </section>
+      <PanelLoader
+        state="error"
+        description={bootstrap.error}
+        actions={
+          <>
+            <button className="button" onClick={bootstrap.retry}>
+              <RotateCcw size={16} aria-hidden="true" />
+              Reintentar
+            </button>
+            <button className="button button--secondary" onClick={logout}>
+              <LogOut size={16} aria-hidden="true" />
+              Cerrar sesión
+            </button>
+          </>
+        }
+      />
     );
+  }
   const sites = orderedAdminSites(bootstrap.data.allowed_sites);
   return (
     <main
