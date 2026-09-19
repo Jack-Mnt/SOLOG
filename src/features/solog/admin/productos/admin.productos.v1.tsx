@@ -203,7 +203,7 @@ export function AdminProductsV1() {
       )}
       <section className="admin-products__section">
         <form
-          className="admin-v2-filters admin-toolbar admin-toolbar-surface"
+          className="admin-toolbar admin-toolbar-surface"
           onSubmit={(event) => event.preventDefault()}
         >
           <label className="admin-toolbar__search">

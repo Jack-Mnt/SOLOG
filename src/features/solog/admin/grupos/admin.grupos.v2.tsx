@@ -387,7 +387,7 @@ export function AdminGroupsV2() {
   return (
     <section className="admin-groups">
       <form
-        className="admin-v2-filters admin-toolbar admin-toolbar-surface admin-groups__filters"
+        className="admin-toolbar admin-toolbar-surface admin-groups__filters"
         onSubmit={(event) => event.preventDefault()}
       >
         <label className="admin-toolbar__search">
