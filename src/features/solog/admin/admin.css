@@ -790,6 +790,42 @@ detalle y exportación sin cambios. */
 .admin-auxiliary-table.admin-catalog__table tbody tr:hover {
   background: var(--color-surface-secondary);
 }
+.admin-products__setup-list {
+  display: grid;
+  gap: 8px;
+}
+.admin-products__setup-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-secondary);
+}
+.admin-products__setup-item > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.admin-products__setup-item strong,
+.admin-products__setup-item span {
+  overflow-wrap: anywhere;
+}
+.admin-products__setup-item span {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+@media (max-width: 560px) {
+  .admin-products__setup-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .admin-products__setup-item .button {
+    width: 100%;
+  }
+}
 .admin-products__group {
   display: inline-flex;
   align-items: center;

@@ -86,4 +86,13 @@ describe('Admin Productos con Master Data', () => {
     expect(counts).toEqual({ all: 2, Único: 0, Agrupado: 1, Excluido: 1 })
   })
 
+  test('conserva la configuración pendiente como acción persistente del toolbar', async () => {
+    const ui = await source('src/features/solog/admin/productos/admin.productos.v1.tsx')
+    expect(ui).toContain('const [setupListOpen, setSetupListOpen] = useState(false);')
+    expect(ui).toContain('className="admin-toolbar__actions"')
+    expect(ui).toContain('disabled={setupRequired.length === 0}')
+    expect(ui).toContain('ProductSetupPendingDialog')
+    expect(ui).toContain('setSetup(item);')
+    expect(ui).not.toContain('admin-catalog__section--urgent')
+  })
 })

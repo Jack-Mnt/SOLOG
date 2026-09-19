@@ -111,6 +111,50 @@ function ProductStateProposal({
   );
 }
 
+function ProductSetupPendingDialog({
+  items,
+  onConfigure,
+  onClose,
+}: {
+  items: ProductSetupTarget[];
+  onConfigure: (target: ProductSetupTarget) => void;
+  onClose: () => void;
+}) {
+  return (
+    <AdminDialog
+      title="Configuración pendiente"
+      description="Completa la configuración necesaria antes de publicar los productos."
+      onClose={onClose}
+      footer={
+        <button type="button" className="button button--secondary" onClick={onClose}>
+          Cerrar
+        </button>
+      }
+    >
+      <div className="admin-products__setup-list">
+        {items.map((item) => (
+          <article
+            key={item.propuesta_fingerprint}
+            className="admin-products__setup-item"
+          >
+            <div>
+              <strong>{item.producto}</strong>
+              <span>C. interno {item.c_interno}</span>
+            </div>
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => onConfigure(item)}
+            >
+              <Settings size={16} aria-hidden="true" />
+              Configurar
+            </button>
+          </article>
+        ))}
+      </div>
+    </AdminDialog>
+  );
+}
 export function AdminProductsV1() {
   const masterData = useMasterData();
   const catalog = useCatalogStore();
@@ -121,6 +165,7 @@ export function AdminProductsV1() {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<MasterDataProduct | null>(null);
   const [setup, setSetup] = useState<ProductSetupTarget | null>(null);
+  const [setupListOpen, setSetupListOpen] = useState(false);
   const products = useMemo(
     () =>
       masterData.snapshot && masterData.derived
@@ -177,30 +222,7 @@ export function AdminProductsV1() {
   ];
   return (
     <section className="admin-catalog admin-products">
-      {setupRequired.length > 0 && (
-        <section className="admin-catalog__section admin-catalog__section--urgent">
-          <header>
-            <h3>Configuración pendiente</h3>
-            <span>{setupRequired.length}</span>
-          </header>
-          <div className="admin-catalog__proposal-context">
-            {setupRequired.map((item) => (
-              <span key={item.propuesta_fingerprint}>
-                {item.c_interno} · {item.producto} · configuración requerida
-                antes de publicar{" "}
-                <button
-                  type="button"
-                  className="button button--secondary"
-                  onClick={() => setSetup(item)}
-                >
-                  <Settings size={16} aria-hidden="true" />
-                  Configurar
-                </button>
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
+
       <section className="admin-products__section">
         <form
           className="admin-toolbar admin-toolbar-surface"
@@ -237,6 +259,18 @@ export function AdminProductsV1() {
               ))}
             </select>
           </label>
+          <div className="admin-toolbar__actions">
+            <button
+              type="button"
+              className="button button--secondary"
+              disabled={setupRequired.length === 0}
+              onClick={() => setSetupListOpen(true)}
+            >
+              <Settings size={16} aria-hidden="true" />
+              Configurar
+              {setupRequired.length > 0 ? ` · ${setupRequired.length}` : null}
+            </button>
+          </div>
         </form>
         <div className="admin-section-secondary-row">
           <div
@@ -431,6 +465,16 @@ export function AdminProductsV1() {
               : null
           }
           onClose={() => setSelected(null)}
+        />
+      )}
+      {setupListOpen && (
+        <ProductSetupPendingDialog
+          items={setupRequired}
+          onClose={() => setSetupListOpen(false)}
+          onConfigure={(item) => {
+            setSetup(item);
+            setSetupListOpen(false);
+          }}
         />
       )}
       {setup && (
