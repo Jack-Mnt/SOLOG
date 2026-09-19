@@ -10,7 +10,7 @@ import { AdminDialog } from "../admin.dialog";
 import { useMasterData } from "../masterdata/admin.masterdata.context";
 import type { MasterDataProduct } from "../masterdata/admin.masterdata.v1";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminPagination, AdminSort, IconButton } from "../admin.primitives";
+import { AdminNotice, AdminPagination, AdminSort, IconButton } from "../admin.primitives";
 import { paginateAdminRows } from "../admin.pagination";
 import { useCatalogStore } from "../catalogo/admin.catalogo.context";
 import { CatalogMutationNotice } from "../catalogo/admin.catalogo.feedback";
@@ -39,7 +39,11 @@ function ProductStateProposal({
   const intent = store.intent();
   const action = product.estado === "Excluido" ? "reincorporate" : "exclude";
   const title =
-    action === "exclude" ? "Proponer exclusión" : "Proponer reincorporación";
+    action === "exclude" ? "Aprobar exclusión" : "Aprobar reincorporación";
+  const description =
+    action === "exclude"
+      ? "El cambio quedará aprobado y listo para incluirse en la próxima publicación del Catálogo."
+      : "El cambio quedará aprobado. Antes de publicarlo deberá completarse la configuración necesaria del producto.";
   const submit = () => {
     setError("");
     void store
@@ -49,7 +53,7 @@ function ProductStateProposal({
       })
       .then(onClose)
       .catch((reason: unknown) =>
-        setError(catalogMutationError(store, reason, "No se pudo crear la propuesta.")),
+        setError(catalogMutationError(store, reason, "No se pudo aprobar el cambio.")),
       );
   };
   const retry = () => {
@@ -64,7 +68,7 @@ function ProductStateProposal({
   return (
     <AdminDialog
       title={title}
-      description={product.producto}
+      description={description}
       onClose={onClose}
       closeDisabled={!!intent?.pending}
       footer={
@@ -79,7 +83,7 @@ function ProductStateProposal({
           </button>
           <button
             type="button"
-            className="button"
+            className={action === "exclude" ? "button button--danger" : "button"}
             disabled={!!intent}
             onClick={submit}
           >
@@ -93,30 +97,31 @@ function ProductStateProposal({
         </>
       }
     >
-      <p>
-        Esta acción solo crea una propuesta para revisión y publicación
-        posterior. No modifica el estado del producto ahora.
-      </p>
-      <dl className="admin-catalog__proposal-summary">
-        <div>
-          <dt>C. interno</dt>
-          <dd>{product.c_interno}</dd>
-        </div>
-        <div>
-          <dt>Estado actual</dt>
-          <dd>{product.estado === "Excluido" ? "Excluido" : "Incluido"}</dd>
-        </div>
-        <div>
-          <dt>Modalidad</dt>
-          <dd>{product.estado}</dd>
-        </div>
-        <div>
-          <dt>Grupo</dt>
-          <dd>{groupName ?? "—"}</dd>
-        </div>
-      </dl>
-      {intent && <CatalogMutationNotice onRetry={retry} />}
-      {error && <p role="alert">{error}</p>}
+      <div className="admin-dialog-confirmation">
+        <AdminNotice tone="info">
+          Esta acción aprueba el cambio, pero el producto no cambiará hasta publicar el Catálogo.
+        </AdminNotice>
+        <dl className="admin-dialog-context">
+          <div>
+            <dt>Producto</dt>
+            <dd>{product.producto}</dd>
+          </div>
+          <div>
+            <dt>C. interno</dt>
+            <dd>{product.c_interno}</dd>
+          </div>
+          <div>
+            <dt>Estado actual</dt>
+            <dd>{product.estado === "Excluido" ? "Excluido" : "Incluido"}</dd>
+          </div>
+          <div>
+            <dt>Grupo</dt>
+            <dd>{groupName ?? "—"}</dd>
+          </div>
+        </dl>
+        {intent && <CatalogMutationNotice onRetry={retry} />}
+        {error && <AdminNotice tone="error">{error}</AdminNotice>}
+      </div>
     </AdminDialog>
   );
 }
@@ -361,8 +366,8 @@ export function AdminProductsV1() {
                     : null;
                   const actionLabel =
                     product.estado === "Excluido"
-                      ? "Proponer reincorporación"
-                      : "Proponer exclusión";
+                      ? "Aprobar reincorporación"
+                      : "Aprobar exclusión";
                   const proposalOverride =
                     catalog.confirmedProductProposalStatus(product.c_interno);
                   const proposalState =
@@ -396,12 +401,16 @@ export function AdminProductsV1() {
                           <IconButton
                             aria-label={
                               proposalState
-                                ? `Propuesta en revisión para ${product.producto}`
+                                ? proposalState === "aprobado"
+                                  ? `Cambio aprobado para publicación: ${product.producto}`
+                                  : `Propuesta en revisión para ${product.producto}`
                                 : actionLabel
                             }
                             title={
                               proposalState
-                                ? "Propuesta en revisión"
+                                ? proposalState === "aprobado"
+                                  ? "Cambio aprobado para publicación"
+                                  : "Propuesta en revisión"
                                 : actionLabel
                             }
                             variant={
