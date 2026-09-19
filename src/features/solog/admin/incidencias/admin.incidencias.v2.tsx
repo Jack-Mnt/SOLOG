@@ -719,11 +719,12 @@ export function AdminIncidentsV2() {
         <button
           type="button"
           className="button button--primary"
+          aria-busy={allLoading}
           aria-pressed={allActive}
           disabled={allLoading || !sites.length}
           onClick={() => void toggleAll()}
         >
-          {allLoading ? "Cargando sedes…" : "Todas las sedes"}
+          Todas las sedes
         </button>
       </div>
       {noticeMessage && !mutationModalOpen && dismissedNotice !== noticeKey && (
