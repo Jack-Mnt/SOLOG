@@ -35,12 +35,22 @@ export function ValuationDialog({ unitPrice, initial, description, pending = fal
     setLocalError(''); onConfirm({ enabled: true, unitsPerPackage: parsedUnits, packagePrice: parsedPrice })
   }
   const current = initial.unitsPerPackage !== null && initial.packagePrice !== null ? `x${initial.unitsPerPackage} · S/ ${money(initial.packagePrice)}` : 'Sin valorizado'
-  return <AdminDialog title="Configuración de valorizado" description={description} onClose={onClose} closeDisabled={pending}>
+  return <AdminDialog
+    title="Configuración de valorizado"
+    description={description}
+    onClose={onClose}
+    closeDisabled={pending}
+    footer={
+      <>
+        <button type="button" className="button button--secondary" disabled={pending} onClick={onClose}>Cancelar</button>
+        <button type="button" className="button" disabled={pending} onClick={submit}><Check size={16} aria-hidden="true" />{pending ? 'Guardando…' : 'Confirmar valorizado'}</button>
+      </>
+    }
+  >
     <p>Precio unitario de referencia: <Value value={unitPrice} money />. Valorizado actual: {current}.</p>
     <label><input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} /> Valorización por paquete</label>
     {enabled && <fieldset><legend>Unidades por paquete</legend><div className="admin-v2-actions">{valuationPresets.map(value => <button type="button" className="button button--secondary" aria-pressed={!customUnits && Number(units) === value} onClick={() => chooseUnits(value)} key={value}>x{value}</button>)}<button type="button" className="button button--secondary" aria-pressed={customUnits} onClick={() => setCustomUnits(true)}>Otro</button></div>{customUnits && <label>Otro número de unidades<input required type="number" min="2" step="1" value={units} onChange={(event) => setOtherUnits(event.target.value)} /></label>}<label>Precio por paquete<input required type="number" min="0.01" step="0.01" value={packagePrice} onChange={(event) => { setPackagePrice(event.target.value); setPriceEdited(true) }} /></label><p>Referencia sugerida: S/ {money(suggestedPackagePrice(Number(units) > 1 ? Number(units) : 0, unitPrice))}. No reemplaza un precio ingresado manualmente.</p></fieldset>}
     {(localError || error) && <p role="alert">{localError || error}</p>}
     {error && onRetry && <button type="button" className="button button--secondary" disabled={pending} onClick={onRetry}><RotateCcw size={16} aria-hidden="true" />Reintentar misma operación</button>}
-    <button type="button" className="button" disabled={pending} onClick={submit}><Check size={16} aria-hidden="true" />{pending ? 'Guardando…' : 'Confirmar valorizado'}</button>
   </AdminDialog>
 }
