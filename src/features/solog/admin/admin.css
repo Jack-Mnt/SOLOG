@@ -445,17 +445,8 @@
   --admin-control-radius: 8px;
   --admin-control-border: var(--color-border-strong);
 
-  display: flex;
-  align-items: end;
-  flex-wrap: wrap;
-  gap: 8px;
   min-width: 0;
   margin: 0;
-  padding: 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  background: var(--color-surface-secondary);
-  box-shadow: none;
 }
 
 .admin-filter-bar .admin-filter-field {
@@ -536,9 +527,6 @@
 }
 
 @media (max-width: 767px) {
-  .admin-workspace__content {
-    padding: 18px 16px 24px;
-  }
   .admin-dialog__footer {
     flex-wrap: wrap;
   }
@@ -1795,9 +1783,15 @@ workspace y cards permanecen como superficies estructurales neutras;
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
+/* Fase 11: cascada explícita de contenido Desktop -> Tablet -> Mobile. */
 @media (max-width: 1023px) {
-  .admin-v2-workspace .admin-workspace__content {
+  .admin-workspace__content {
     padding: 22px 20px 28px;
+  }
+}
+@media (max-width: 767px) {
+  .admin-workspace__content {
+    padding: 18px 16px 24px;
   }
 }
 @media (max-width: 767px) {
@@ -1967,6 +1961,8 @@ workspace y cards permanecen como superficies estructurales neutras;
   background: var(--color-primary-subtle);
 }
 
+/* Superficie estructural compartida; cada familia conserva su comportamiento propio. */
+.admin-filter-bar,
 .admin-toolbar {
   display: flex;
   align-items: end;
