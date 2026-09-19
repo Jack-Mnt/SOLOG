@@ -26,6 +26,7 @@ Estado real encontrado:
 - Grupos filtra/ordena completo y renderiza todo el resultado.
 - Incidencias filtra completo y renderiza todas las familias visibles.
 - Catálogo separa correctamente Urgentes/Emergentes, pero renderiza completas ambas secciones.
+- Dashboard `DailyDrawer` renderiza directamente el detalle diario completo; evidencia de uso confirma jornadas con más de 400 filas.
 - El paginador visual existente ya está normalizado mediante `.admin-control__pagination` y botones `button button--secondary`.
 - `admin.primitives.tsx` no tiene todavía primitive de paginación.
 - La Fase 11 responsive ya está congelada; no debe alterarse geometría, breakpoints ni densidad.
@@ -64,7 +65,7 @@ No se detecta dependencia backend.
 
 Validación dirigida: helper, Productos y Control.
 
-## 5. Fase 2 — Grupos + Incidencias
+## 5. Fase 2 — Grupos + Incidencias + Dashboard DailyDrawer
 
 ### Grupos
 - añadir estado de página;
@@ -79,7 +80,15 @@ Validación dirigida: helper, Productos y Control.
 - volver a página 1 al cambiar estado, tipo, sede/alcance o Todas las sedes;
 - no tocar `FamilyDetail` ni su contrato/paginación existente.
 
-Validación dirigida: Grupos e Incidencias.
+### Dashboard — DailyDrawer
+- añadir estado de página local;
+- paginar `data.items` a 50 con el helper compartido;
+- reutilizar `AdminPagination`;
+- ocultar paginador con ≤50 filas;
+- no tocar Dashboard principal, grilla quincenal, KPIs, columnas ni geometría del diálogo;
+- no generar peticiones adicionales al cambiar página.
+
+Validación dirigida: Grupos, Incidencias y Dashboard DailyDrawer.
 
 ## 6. Fase 3 — Catálogo
 
@@ -116,6 +125,7 @@ Smoke humano mínimo:
 - Control: navegación entre páginas;
 - Grupos: filtro desde página > 1;
 - Incidencias: cambio de estado/sede desde página > 1;
+- Dashboard DailyDrawer: 50/51 y navegación con un día de alto volumen;
 - Catálogo: Urgentes y Emergentes independientes 25/26;
 - comprobación rápida Desktop, Tablet y Mobile para confirmar que el paginador conserva la UI ya normalizada.
 
