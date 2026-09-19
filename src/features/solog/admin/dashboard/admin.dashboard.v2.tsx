@@ -73,7 +73,7 @@ function DailyDrawer({
       variant="drawer"
     >
       {!data ? (
-        <QueryState {...query} />
+        <QueryState {...query} variant="compact" />
       ) : (
         <>
           <div className="admin-v2-kpis">
@@ -176,7 +176,7 @@ function Grid({ site }: { site: string }) {
         </div>
       </div>
       {!data ? (
-        <QueryState {...query} />
+        <QueryState {...query} variant="compact" />
       ) : (
         <>
           {!data.data.totals.length ? (
