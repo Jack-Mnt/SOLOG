@@ -85,7 +85,7 @@ function FamilyDetail({
           : "Detalle solicitado bajo demanda para todas las sedes."
       }
       onClose={onClose}
-      wide
+      variant="wide"
     >
       {query.data ? (
         <>
