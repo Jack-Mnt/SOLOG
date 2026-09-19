@@ -146,12 +146,6 @@
   white-space: nowrap;
 }
 
-.admin-sidebar__account-copy strong {
-  font-size: 0.8rem;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
 .admin-sidebar__account-copy small {
   color: color-mix(in srgb, var(--color-text-inverse) 58%, transparent);
   font-size: 0.65rem;
