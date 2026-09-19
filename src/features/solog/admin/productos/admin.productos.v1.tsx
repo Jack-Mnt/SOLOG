@@ -67,6 +67,31 @@ function ProductStateProposal({
       description={product.producto}
       onClose={onClose}
       closeDisabled={!!intent?.pending}
+      footer={
+        <>
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={!!intent}
+            onClick={onClose}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="button"
+            disabled={!!intent}
+            onClick={submit}
+          >
+            {action === "exclude" ? (
+              <CircleOff size={16} aria-hidden="true" />
+            ) : (
+              <RotateCcw size={16} aria-hidden="true" />
+            )}
+            {title}
+          </button>
+        </>
+      }
     >
       <p>
         Esta acción solo crea una propuesta para revisión y publicación
@@ -91,19 +116,6 @@ function ProductStateProposal({
         </div>
       </dl>
       {intent && <CatalogMutationNotice onRetry={retry} />}
-      <button
-        type="button"
-        className="button"
-        disabled={!!intent}
-        onClick={submit}
-      >
-        {action === "exclude" ? (
-          <CircleOff size={16} aria-hidden="true" />
-        ) : (
-          <RotateCcw size={16} aria-hidden="true" />
-        )}
-        {title}
-      </button>
       {error && <p role="alert">{error}</p>}
     </AdminDialog>
   );
