@@ -1438,8 +1438,8 @@ sin alterar las cards de otros módulos. */
 .admin-dashboard__percentage-cell .admin__percentage-action {
   width: calc(100% + 32px);
   min-width: calc(100% + 32px);
-  height: 52px;
-  min-height: 52px;
+  height: 48px;
+  min-height: 48px;
   margin: -8px -16px;
   border-radius: 0;
 }
