@@ -37,6 +37,14 @@
   grid-template-columns: 64px minmax(0, 1fr);
 }
 
+/* Fase 11: Tablet usa navegación compacta forzada.
+   Mobile reutiliza temporalmente este track hasta activar el Drawer en 11.3. */
+@media (max-width: 1023px) {
+  .admin-workspace {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+}
+
 .admin-sidebar {
   --admin-sidebar-item-height: 44px;
   --admin-sidebar-icon-size: 20px;
