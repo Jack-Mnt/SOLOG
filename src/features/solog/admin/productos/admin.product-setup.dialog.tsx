@@ -36,7 +36,7 @@ export function ProductSetupDialog({ target, onClose, onComplete }: { target: Pr
       .catch((reason: unknown) => setError(catalogMutationError(store, reason, 'No se pudo confirmar la configuración.')))
   }
   const valid = !!masterData.snapshot && (mode === 'existing_group' ? !!groupId : !!categoryId)
-  return <AdminDialog title="Configurar producto" description={`${target.producto} · C. interno ${target.c_interno}`} onClose={onClose} closeDisabled={!!intent?.pending} variant="wide">
+  return <AdminDialog title="Configurar producto" description={`${target.producto} · C. interno ${target.c_interno}`} onClose={onClose} closeDisabled={!!intent?.pending} footer={<><button type="button" className="button button--secondary" disabled={!!intent} onClick={onClose}>Cancelar</button><button type="button" className="button" disabled={!!intent || !valid} onClick={submit}><Plus size={16} aria-hidden="true" />{target.tipo === 'reincorporar_producto' ? 'Preparar reincorporación' : 'Preparar producto'}</button></>}>
     <p>La configuración queda en staging y no modifica el catálogo ni los grupos hasta la publicación.</p>
     {!masterData.snapshot ? <QueryState error={masterData.error} retry={masterData.retry} variant="compact" /> : <form className="admin-v2-form" onSubmit={(event) => { event.preventDefault(); submit() }}>
       <label>Marca opcional<input value={brand} onChange={(event) => setBrand(event.target.value)} /></label>
@@ -44,7 +44,6 @@ export function ProductSetupDialog({ target, onClose, onComplete }: { target: Pr
       {mode === 'existing_group'
         ? <label>Grupo<select required value={groupId} onChange={(event) => setGroupId(event.target.value)}><option value="">Seleccionar</option>{masterData.snapshot.groups.map((group) => <option key={group.id} value={group.id}>{group.nombre} · {group.precio}</option>)}</select></label>
         : <label>Categoría<select required value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Seleccionar</option>{masterData.snapshot.categories.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>}
-      <button className="button" disabled={!!intent || !valid}><Plus size={16} aria-hidden="true" />{target.tipo === 'reincorporar_producto' ? 'Preparar reincorporación' : 'Preparar producto'}</button>
     </form>}
     {intent && <CatalogMutationNotice onRetry={retry} />}
     {error && <p role="alert">{error}</p>}
