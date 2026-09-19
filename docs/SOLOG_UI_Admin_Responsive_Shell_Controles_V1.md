@@ -1,9 +1,9 @@
 # SOLOG — UI Admin — Responsive, Shell y Controles — V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** APROBADO, CONGELADO Y EJECUTADO  
 **Clasificación:** Nivel B — responsive y consolidación frontend/Admin  
-**Fecha:** 2026-09-18
+**Fecha:** 2026-09-19
 
 ## 1. Fuente primaria y precedencia
 
@@ -29,9 +29,9 @@ Admin utilizará únicamente estos modos generales:
 
 La implementación debe converger a los cortes estándar equivalentes a Tailwind `lg=1024` y `md=768`.
 
-Los breakpoints históricos `1000/850/760/720/680/560/480` deben ser absorbidos por Tablet o Mobile durante la Fase 11. No deben permanecer como arquitectura general final.
+Los breakpoints históricos `1000/850/760/720/680/560/480` fueron absorbidos por Tablet o Mobile durante la Fase 11. No forman parte de la arquitectura general final.
 
-Excepción temporal: la geometría responsive de `Dashboard %` queda pendiente de una decisión posterior y no debe reinterpretarse automáticamente en esta fase.
+`Dashboard %` constituye una excepción explícita a la densidad general: el área interactiva de la acción que ocupa la celda conserva **48 px** de alto. Esta geometría fue aprobada deliberadamente y no debe normalizarse a 36/32 px.
 
 ## 3. Shell y Sidebar
 
@@ -110,7 +110,7 @@ Composición objetivo:
 | SiteContext | 40 px | 36 px |
 | Controles Sidebar / Drawer | 44 px | 40 px |
 | QuickFilterChip | 32 px | 32 px |
-| Dashboard % | vigente actual | pendiente |
+| Dashboard % | 48 px | 48 px |
 
 Regla general Mobile: los controles reducen **4 px** respecto de Desktop/Tablet.
 
@@ -118,13 +118,17 @@ Regla general Mobile: los controles reducen **4 px** respecto de Desktop/Tablet.
 
 ## 7. Consolidación de cascada
 
-La implementación debe:
+La implementación final de Fase 11 deja:
 
-1. hacer autoritativas las geometrías vigentes en las primitives/base;
-2. migrar responsive histórico a 1024/768;
-3. retirar solo después los normalizadores de alta especificidad que queden redundantes;
-4. preservar hover, focus, disabled y variantes semánticas;
-5. evitar introducir nuevos overrides compensatorios innecesarios.
+1. geometrías vigentes autoritativas en las primitives/base;
+2. responsive general normalizado a `1024/768`;
+3. normalizadores históricos de alta especificidad retirados cuando quedaron redundantes;
+4. hover, focus, disabled y variantes semánticas preservados;
+5. `admin-toolbar` como layout compartido;
+6. `admin-toolbar-surface` como superficie visual;
+7. `admin-filter-bar` limitado a comportamiento específico, sin recrear una segunda superficie;
+8. `--admin-control-height`, `--admin-control-radius` y `--admin-control-border` eliminados;
+9. SiteContext con una única fuente de verdad responsive.
 
 ## 8. Fuera de alcance
 
@@ -132,7 +136,6 @@ La implementación debe:
 - tablas y composición de columnas;
 - lógica de negocio;
 - rediseño de módulos;
-- decisión definitiva de `Dashboard %`;
 - refactors generales no relacionados.
 
 ## 9. Validación
@@ -155,3 +158,22 @@ bun run lint
 bun run build
 git diff --check
 ```
+
+
+## 10. Cierre de Fase 11
+
+Estado consolidado al cierre:
+
+- `admin.css`: **2468 líneas**;
+- baseline aproximado previo a la limpieza: **3427 líneas**;
+- reducción acumulada aproximada: **959 líneas (~28.0 %)**;
+- breakpoints generales vigentes: únicamente `1024/768`;
+- variables locales `--admin-control-*`: eliminadas;
+- Button/IconButton: `36 px` Desktop/Tablet y `32 px` Mobile;
+- SiteContext: `40 px` Desktop/Tablet y `36 px` Mobile;
+- Sidebar/Drawer: `44 px` Desktop/Tablet y `40 px` Mobile;
+- QuickFilterChip: `32 px`;
+- Dashboard `%`: área interactiva `48 px`;
+- tablas y composición de columnas permanecieron fuera del alcance de esta fase.
+
+Fase 11 queda cerrada a nivel de implementación CSS y documentación. La validación técnica final y el smoke humano deben ejecutarse sobre el checkout local antes de considerar cerrado el ciclo de validación.
