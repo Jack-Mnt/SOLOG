@@ -44,13 +44,12 @@ export function GroupMembersDialog({ group, snapshot, derived, onClose }: { grou
   }
   const retry = () => { setError(''); void store.retryMutation().then(onClose).catch(reason => setError(groupsErrorMessage(reason))) }
   const categoryChanges = selected.some(product => product.categoria_id !== group.categoria_id)
-  return <AdminDialog title={`Integrantes · ${group.nombre}`} description={`${group.derivedType} · ${group.memberCount} SKU · precio unitario de referencia S/ ${group.precio.toFixed(2)}`} onClose={onClose} closeDisabled={!!intent?.pending} variant="wide">
+  return <AdminDialog title={`Integrantes · ${group.nombre}`} description={`${group.derivedType} · ${group.memberCount} SKU · precio unitario de referencia S/ ${group.precio.toFixed(2)}`} onClose={onClose} closeDisabled={!!intent?.pending} variant="wide" footer={<><button type="button" className="button button--secondary" disabled={!!intent} onClick={onClose}>Cancelar</button><button type="button" className="button" disabled={!!intent || !selected.length} onClick={() => void move()}><MoveRight size={16} aria-hidden="true" />Agregar o mover SKU seleccionados</button></>}>
     <div className="admin-auxiliary-table"><table><thead><tr><th scope="col">SKU</th><th scope="col">Producto</th><th scope="col">Precio</th><th scope="col">Acción</th></tr></thead><tbody>{group.members.map(member => <tr key={member.c_interno}><td>{member.c_interno}</td><th scope="row">{member.producto}</th><td><Value value={member.precio} money /></td><td>{group.derivedType === 'Agrupado' && <button type="button" className="button button--secondary" disabled={!!intent} onClick={() => void separate(member.c_interno)}><Unlink size={16} aria-hidden="true" />Separar / dejar como Único</button>}</td></tr>)}</tbody></table></div>
     <h3>Agregar o mover productos</h3>
     <p>El grupo destino es <strong>{group.nombre}</strong>. El movimiento es atómico: todos los SKU se mueven o no se aplica ninguno.</p>
     <GroupCandidatePicker snapshot={snapshot} derived={derived} selected={selected} onChange={setSelected} price={group.precio} excludeGroupId={group.id} />
     {categoryChanges && <p className="notice">La categoría operativa de los SKU seleccionados cambiará a {group.categoryName}.</p>}
-    <button type="button" className="button" disabled={!!intent || !selected.length} onClick={() => void move()}><MoveRight size={16} aria-hidden="true" />Agregar o mover SKU seleccionados</button>
     {error && <div className="notice notice--error" role="alert"><p>{error}</p>{intent && !intent.pending && <button type="button" className="button button--secondary" onClick={retry}><RotateCcw size={16} aria-hidden="true" />Reintentar misma operación</button>}</div>}
   </AdminDialog>
 }
