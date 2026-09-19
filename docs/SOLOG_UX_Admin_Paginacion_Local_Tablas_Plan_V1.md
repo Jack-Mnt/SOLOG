@@ -171,7 +171,9 @@ Implementado:
 
 ### Fase 3 — Catálogo
 
-**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+**CERRADA TÉCNICAMENTE.**
+
+Validación confirmada por el usuario antes de iniciar Fase 4.
 
 Implementado:
 - Urgentes: paginación independiente de 25;
@@ -180,3 +182,27 @@ Implementado:
 - reducción del dataset corrige la página fuera de rango;
 - contador de cada sección conserva el total completo;
 - sin cambios CSS ni composición visual.
+
+
+### Fase 4 — Validación global
+
+**REVISIÓN ESTRUCTURAL COMPLETADA — PENDIENTE DE VALIDACIÓN GLOBAL EJECUTABLE Y SMOKE FINAL.**
+
+Revisión de repositorio:
+- Productos, Control, Grupos, Incidencias y Dashboard usan el límite estándar de 50;
+- Catálogo conserva 25 por sección con estados independientes;
+- búsqueda, filtros, orden y contadores permanecen antes de la paginación;
+- no quedan referencias a `.admin-control__pagination` en las superficies migradas;
+- `.admin-pagination` y `.navigation-button` tienen una única definición compartida;
+- `FamilyDetail` mantiene su paginación backend preexistente;
+- cambiar página en las nuevas superficies no modifica payloads ni genera paginación remota;
+- no se detectaron cambios backend/Supabase atribuibles al bloque.
+
+Durante el bloque existieron cambios concurrentes independientes sobre AdminDialog/UI. Se preservan como trabajo separado y no forman parte del alcance funcional de esta implementación.
+
+Pendiente para cierre:
+- `bun test --reporter=dot`;
+- `bun run lint`;
+- `bun run build`;
+- `git diff --check`;
+- smoke humano proporcional de las seis superficies paginadas.
