@@ -553,7 +553,7 @@
   opacity: 0.65;
 }
 
-@media (max-width: 560px) {
+@media (max-width: 767px) {
   .admin-filter-bar .admin-filter-field {
     flex-basis: 100%;
     min-width: 0;
@@ -561,10 +561,7 @@
   }
 }
 
-@media (max-width: 760px) {
-  .admin-header {
-    padding-inline: 14px;
-  }
+@media (max-width: 767px) {
   .admin-workspace__content {
     padding: 18px 16px 24px;
   }
@@ -573,7 +570,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 767px) {
   .admin-dialog-backdrop {
     padding: 0;
   }
@@ -714,7 +711,7 @@ detalle y exportación sin cambios. */
   margin-top: 2px;
   color: var(--color-text-secondary);
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .admin-categories__row {
     align-items: stretch;
     flex-direction: column;
@@ -890,7 +887,7 @@ detalle y exportación sin cambios. */
   font-size: 0.88rem;
   overflow-wrap: anywhere;
 }
-@media (max-width: 680px) {
+@media (max-width: 767px) {
   .admin-catalog__header {
     align-items: flex-start;
     flex-direction: column;
@@ -1052,7 +1049,7 @@ detalle y exportación sin cambios. */
   font-size: 0.75rem;
   color: var(--color-text-secondary);
 }
-@media (max-width: 850px) {
+@media (max-width: 1023px) {
   .admin-control__filters .admin-filter-field {
     flex: 1 1 170px;
     max-width: none;
@@ -1281,12 +1278,12 @@ sin alterar las cards de otros módulos. */
 .admin-dashboard__detail > .admin-main-table tbody tr:last-child {
   font-weight: 600;
 }
-@media (max-width: 1000px) {
+@media (max-width: 1023px) {
   .admin-dashboard__summary {
     gap: 18px;
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .admin-dashboard .admin-dashboard__card {
     padding: 12px 16px;
   }
@@ -1816,28 +1813,12 @@ workspace y cards permanecen como superficies estructurales neutras;
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
-@media (max-width: 1000px) {
-  .admin-v2-workspace .admin-header {
-    padding: 18px 20px;
-  }
+@media (max-width: 1023px) {
   .admin-v2-workspace .admin-workspace__content {
     padding: 22px 20px 28px;
   }
 }
-@media (max-width: 680px) {
-  .admin-v2-workspace .admin-header {
-    padding: 16px;
-  }
-  .admin-v2-workspace .admin-workspace__content {
-    padding: 18px 16px;
-  }
-  .admin-site-context {
-    width: 100%;
-  }
-  .admin-site-context__desktop > button {
-    flex: 1 0 76px;
-    min-width: 76px;
-  }
+@media (max-width: 767px) {
   .admin-device-card {
     padding: 14px;
   }
@@ -1878,7 +1859,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-incidents__detail-table {
   margin: 0;
 }
-@media (max-width: 720px) {
+@media (max-width: 767px) {
   .admin-incidents__controls {
     align-items: stretch;
   }
@@ -2016,7 +1997,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   color: var(--color-text-secondary);
   background: var(--color-primary-subtle);
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .admin-toolbar,
   .admin-filter-bar {
     align-items: stretch;
@@ -2057,7 +2038,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 .admin-control__custom-period-filters > .admin-filter-field {
   order: 2;
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .admin-toolbar > .admin-toolbar__filter,
   .admin-toolbar > .admin-toolbar__filters,
   .admin-control__custom-period-filters > .admin-filter-field {
