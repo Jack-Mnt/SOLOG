@@ -273,7 +273,7 @@ function GroupDetail({
         )}
       </div>
       {!query.data ? (
-        <QueryState {...query} />
+        <QueryState {...query} variant="compact" />
       ) : !query.data.chronology.length ? (
         <p role="status">No hay registros en esta quincena.</p>
       ) : (
