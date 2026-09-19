@@ -447,10 +447,6 @@
 
 /* Sistema compartido de controles administrativos */
 .admin-filter-bar {
-  --admin-control-height: 36px;
-  --admin-control-radius: 8px;
-  --admin-control-border: var(--color-border-strong);
-
   min-width: 0;
   margin: 0;
 }
@@ -493,12 +489,12 @@
 
 .admin-filter-bar :where(input, select) {
   width: 100%;
-  height: var(--admin-control-height);
-  min-height: var(--admin-control-height);
+  height: 36px;
+  min-height: 36px;
   min-width: 0;
   padding: 8px 12px;
-  border: 1px solid var(--admin-control-border);
-  border-radius: var(--admin-control-radius);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
   color: var(--color-text-primary);
   background: var(--color-surface);
   font-size: 0.8rem;
@@ -522,14 +518,6 @@
   );
   cursor: not-allowed;
   opacity: 0.65;
-}
-
-@media (max-width: 767px) {
-  .admin-filter-bar .admin-filter-field {
-    flex-basis: 100%;
-    min-width: 0;
-    max-width: none;
-  }
 }
 
 @media (max-width: 767px) {
@@ -896,7 +884,7 @@ detalle y exportación sin cambios. */
   height: 36px;
   min-height: 36px;
   padding: 8px 12px;
-  border: 1px solid var(--admin-control-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   font: inherit;
   font-size: 0.8rem;
@@ -1790,13 +1778,20 @@ workspace y cards permanecen como superficies estructurales neutras;
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
-/* Fase 11: cascada explícita de contenido Desktop -> Tablet -> Mobile. */
+/* Fase 11: cascada global explícita Desktop -> Tablet -> Mobile. */
 @media (max-width: 1023px) {
+  .admin-v2-workspace .admin-header {
+    padding: 0 16px;
+  }
   .admin-workspace__content {
     padding: 24px 20px;
   }
 }
 @media (max-width: 767px) {
+  .admin-v2-workspace .admin-header {
+    gap: 8px;
+    padding: 0 8px;
+  }
   .admin-workspace__content {
     padding: 16px;
   }
@@ -1968,18 +1963,12 @@ workspace y cards permanecen como superficies estructurales neutras;
   background: var(--color-primary-subtle);
 }
 
-/* Superficie estructural compartida; cada familia conserva su comportamiento propio. */
-.admin-filter-bar,
+/* Layout compartido de Toolbar; la superficie visual pertenece a admin-toolbar-surface. */
 .admin-toolbar {
   display: flex;
   align-items: end;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  background: var(--color-surface-secondary);
-  box-shadow: none;
 }
 
 .admin-toolbar > :where(.admin-toolbar__search, .admin-toolbar__filter) {
@@ -2053,18 +2042,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   color: var(--color-text-secondary);
   background: var(--color-primary-subtle);
 }
-@media (max-width: 767px) {
-  .admin-toolbar,
-  .admin-filter-bar {
-    align-items: stretch;
-  }
-  .admin-toolbar__search,
-  .admin-filter-search-field,
-  .admin-toolbar__actions {
-    width: 100%;
-    margin-left: 0;
-  }
-}
 /* Admin toolbars — Fase C. El orden visual no altera el estado de cada módulo. */
 .admin-toolbar__filter {
   flex: 0 0 auto;
@@ -2095,6 +2072,21 @@ workspace y cards permanecen como superficies estructurales neutras;
   order: 2;
 }
 @media (max-width: 767px) {
+  .admin-toolbar,
+  .admin-filter-bar {
+    align-items: stretch;
+  }
+  .admin-filter-bar .admin-filter-field {
+    flex-basis: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+  .admin-toolbar__search,
+  .admin-filter-search-field,
+  .admin-toolbar__actions {
+    width: 100%;
+    margin-left: 0;
+  }
   .admin-toolbar > .admin-toolbar__filter,
   .admin-toolbar > .admin-toolbar__filters,
   .admin-control__custom-period-filters > .admin-filter-field {
@@ -2238,6 +2230,9 @@ workspace y cards permanecen como superficies estructurales neutras;
   display: none;
 }
 @media (max-width: 767px) {
+  .admin-site-context {
+    width: min(160px, 36vw);
+  }
   .admin-site-context__desktop {
     display: none;
   }
@@ -2259,6 +2254,10 @@ workspace y cards permanecen como superficies estructurales neutras;
     outline: 2px solid var(--color-primary-bright);
     outline-offset: 2px;
     border-color: var(--color-primary);
+  }
+  .admin-header__context-logo {
+    width: min(240px, 45vw);
+    height: auto;
   }
 }
 
@@ -2491,37 +2490,4 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-incidents__type-badge {
   white-space: nowrap;
-}
-
-/* Fase 11.4 — Header + SiteContext.
-   Fuente primaria: docs/SOLOG_UI_Admin_Responsive_Shell_Controles_V1.md */
-@media (max-width: 1023px) {
-  .admin-v2-workspace .admin-header {
-    padding: 0 16px;
-  }
-}
-
-@media (max-width: 767px) {
-  .admin-v2-workspace .admin-header {
-    gap: 8px;
-    padding: 0 8px;
-  }
-
-  .admin-site-context {
-    width: min(160px, 36vw);
-  }
-
-  .admin-header__context-logo {
-    width: min(240px, 45vw);
-    height: auto;
-  }
-  .admin-v2-workspace .admin-site-context__select {
-    color: var(--color-text-inverse);
-    background: var(--color-dark-surface-hover);
-  }
-  .admin-v2-workspace .admin-site-context__select:focus-visible {
-    outline: 2px solid var(--color-primary-bright);
-    outline-offset: 2px;
-    border-color: var(--color-primary);
-  }
 }
