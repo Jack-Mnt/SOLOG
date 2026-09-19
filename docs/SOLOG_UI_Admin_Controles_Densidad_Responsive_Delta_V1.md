@@ -1,9 +1,21 @@
 # SOLOG — UI Admin — Controles, Densidad y Responsive — Delta V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** VIGENTE PARCIALMENTE — RESPONSIVE REEMPLAZADO POR FASE 11  
 **Clasificación:** Nivel B — delta visual frontend/Admin  
 **Fecha:** 2026-09-14
+
+## 0. Nota de vigencia
+
+Desde 2026-09-18, `docs/SOLOG_UI_Admin_Responsive_Shell_Controles_V1.md` prevalece para:
+
+- breakpoints generales;
+- densidad Mobile;
+- StateView responsive;
+- SiteContext responsive;
+- Sidebar/Drawer responsive.
+
+Este Delta V1 continúa vigente para geometría Desktop/Tablet, hover/focus/disabled y decisiones no reemplazadas explícitamente.
 
 ## 1. Fuente primaria y precedencia
 
