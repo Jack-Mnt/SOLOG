@@ -13,6 +13,7 @@ import {
   restoreDialogFocusAfterLifecycle,
   trapDialogTab,
 } from './admin.dialog.focus'
+import { adminDialogScrollLock } from './admin.dialog.scroll'
 import { adminDialogStack } from './admin.dialog.stack'
 
 export type AdminDialogVariant = 'default' | 'wide' | 'drawer'
@@ -58,8 +59,10 @@ export function AdminDialog({
 
     const lifecycle = ++lifecycleRef.current
     const unregister = adminDialogStack.register(dialogToken)
+    const unlockScroll = adminDialogScrollLock.lock(document.body)
     return () => {
       unregister()
+      unlockScroll()
       restoreDialogFocusAfterLifecycle(
         returnFocusRef.current,
         lifecycleRef,
@@ -94,6 +97,17 @@ export function AdminDialog({
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [closeDisabled, isTop, onClose])
+
+  const resolvedFooter = footer ?? (
+    <button
+      type="button"
+      className="button button--secondary"
+      disabled={closeDisabled}
+      onClick={onClose}
+    >
+      Cerrar
+    </button>
+  )
 
   return (
     <div
@@ -134,7 +148,7 @@ export function AdminDialog({
           </button>
         </header>
         <div className="admin-dialog__body">{children}</div>
-        {footer ? <footer className="admin-dialog__footer">{footer}</footer> : null}
+        <footer className="admin-dialog__footer">{resolvedFooter}</footer>
       </section>
     </div>
   )
