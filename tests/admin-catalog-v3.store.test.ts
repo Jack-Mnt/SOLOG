@@ -97,6 +97,42 @@ describe('store Catálogo V3', () => {
     expect(store.confirmedProductState(100)).toBe('exclude')
     expect(store.confirmedProductProposalStatus(100)).toBe('aprobado')
   })
+  test('reincorporación autoaprobada queda disponible para configuración sin refetch adicional', async () => {
+    const fingerprint = 'b'.repeat(64)
+    const { store } = setup({
+      mutate: (action) => ({
+        ...envelope(),
+        replay: false,
+        result:
+          action === 'propose_product_state'
+            ? {
+                ok: true,
+                codigo: 'CATALOG_CHANGE_APPROVED',
+                propuesta_fingerprint: fingerprint,
+                estado: 'aprobado',
+                tipo: 'reincorporar_producto',
+                producto: 'Producto reincorporado',
+                precio: 4.5,
+              }
+            : {},
+      }),
+    })
+    await store.load('status', {})
+    await store.mutation('propose_product_state', {
+      c_interno: 100,
+      action: 'reincorporate',
+    })
+    expect(store.confirmedProductProposalStatus(100)).toBe('aprobado')
+    expect(store.confirmedSetupRequired()).toEqual([
+      {
+        propuesta_fingerprint: fingerprint,
+        tipo: 'reincorporar_producto',
+        c_interno: 100,
+        producto: 'Producto reincorporado',
+        precio: 4.5,
+      },
+    ])
+  })
   test('prepara onboarding en staging para grupo existente y grupo unitario nuevo', async () => {
     const { store, calls } = setup()
     await store.load('status', {})
