@@ -71,6 +71,26 @@ function DailyDrawer({
       description="Estado vigente de los conteos de esta fecha. Zona horaria America/Lima."
       onClose={close}
       variant="drawer"
+      footer={
+        <>
+          {data && (
+            <div className="admin-dialog__footer-navigation">
+              <AdminPagination
+                total={data.items.length}
+                currentPage={paginated.currentPage}
+                pageCount={paginated.pageCount}
+                onPageChange={setPage}
+                ariaLabel="Paginación del detalle diario"
+              />
+            </div>
+          )}
+          <div className="admin-dialog__footer-actions">
+            <button type="button" className="button button--secondary" onClick={close}>
+              Cerrar
+            </button>
+          </div>
+        </>
+      }
     >
       {!data ? (
         <QueryState {...query} variant="compact" />
@@ -115,13 +135,6 @@ function DailyDrawer({
               </tbody>
             </table>
           </div>
-          <AdminPagination
-            total={data.items.length}
-            currentPage={paginated.currentPage}
-            pageCount={paginated.pageCount}
-            onPageChange={setPage}
-            ariaLabel="Paginación del detalle diario"
-          />
           {!data.items.length && <p>No hay conteos originados este día.</p>}
         </>
       )}
