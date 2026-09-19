@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { PanelLoader } from '../../../components/panel-loader'
-import { PageShell } from '../../../components/page-shell'
 import { getOrCreateDeviceToken } from '../device'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { clearCajeroMemory, purgePersistedCajeroData } from './cajero.storage'
@@ -21,9 +20,29 @@ export function CashierV3Provider({ userId, children, onLogout }: { userId: stri
     })
     return () => { active = false; store.dispose() }
   }, [store, attempt])
-  if (error) return <PageShell title="No se pudo cargar Cajero" description={error} eyebrow="SOLOG" onLogout={() => void onLogout()}>
-    <button className="button" onClick={() => { setError(null); setAttempt((n) => n + 1) }}>Reintentar</button>
-  </PageShell>
+  if (error) return <PanelLoader
+    state="error"
+    title="No se pudo cargar Cajero"
+    description={error}
+    actions={
+      <>
+        <button
+          className="button"
+          type="button"
+          onClick={() => { setError(null); setAttempt((n) => n + 1) }}
+        >
+          Reintentar
+        </button>
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={() => void onLogout()}
+        >
+          Cerrar sesión
+        </button>
+      </>
+    }
+  />
   if (!store.bootstrap) return <PanelLoader />
   return <Context.Provider value={store}>{children}</Context.Provider>
 }
