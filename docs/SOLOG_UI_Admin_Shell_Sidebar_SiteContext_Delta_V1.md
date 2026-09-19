@@ -1,9 +1,21 @@
 # SOLOG — UI Admin — Shell, Sidebar y SiteContext — Delta V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** VIGENTE COMO BASE DESKTOP — RESPONSIVE REEMPLAZADO POR FASE 11  
 **Clasificación:** Nivel B — ajuste y consolidación frontend/Admin  
 **Fecha:** 2026-09-18  
+
+## 0. Nota de vigencia
+
+Desde 2026-09-18, `docs/SOLOG_UI_Admin_Responsive_Shell_Controles_V1.md` prevalece para:
+
+- Header fijo de 64 px y sin wrapping;
+- Sidebar forzado a 64 px en Tablet;
+- Drawer Mobile activado por isotipo SOLOG;
+- SiteContext responsive;
+- breakpoints 1024/768.
+
+Este Delta V1 continúa vigente como baseline Desktop de Fase 9 para Sidebar 200/64, superficies Navy y decisiones no reemplazadas explícitamente.
 
 ## 1. Fuente primaria
 
