@@ -72,7 +72,7 @@ function ProductStateProposal({
           <button
             type="button"
             className="button button--secondary"
-            disabled={!!intent}
+            disabled={!!intent?.pending}
             onClick={onClose}
           >
             Cancelar
