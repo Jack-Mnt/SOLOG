@@ -249,7 +249,13 @@ Bloqueo resuelto:
 
 ### Fase 1 — Errores globales
 
-**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+**CERRADA TÉCNICAMENTE.**
+
+Validación reportada por el usuario:
+- tests dirigidos: correctos;
+- lint: correcto;
+- build: correcto;
+- `git diff --check`: correcto.
 
 Implementado:
 - error de resolución de ruta → `PanelLoader state="error"`;
@@ -262,3 +268,21 @@ Implementado:
 - `PageShell` deja de tener consumidores en estos flujos, pero su eliminación queda diferida a Fase 5;
 - sin cambios backend, contratos o lógica de negocio;
 - cobertura dirigida añadida en `tests/global-loading-errors-phase1.test.ts`.
+
+
+### Fase 2 — Detalles
+
+**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE Y SMOKE.**
+
+Implementado:
+- primera carga sin `summary` → `PanelLoader` fullscreen;
+- error inicial sin `summary` → `PanelLoader state="error"` fullscreen;
+- error inicial conserva `Reintentar` y `Cerrar sesión`;
+- el Shell de Detalles no se monta durante la primera carga;
+- eliminado el estado parcial `PR —` + `Consultando detalles de la sede…`;
+- refresh con `summary` existente conserva Shell y datos visibles;
+- errores con datos existentes permanecen contextuales dentro del Shell;
+- Historial dialog → `PanelLoader compact`;
+- se conserva deliberadamente `Cargando detalle…` en el detalle expandido;
+- sin cambios backend, contratos o CSS;
+- cobertura dirigida añadida en `tests/global-loading-details-phase2.test.ts`.
