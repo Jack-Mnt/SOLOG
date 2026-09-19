@@ -1,5 +1,6 @@
 import { ArrowDownWideNarrow, CheckCircle2, ChevronLeft, ChevronRight, Info, TriangleAlert, XCircle } from 'lucide-react'
 import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { ADMIN_PAGE_SIZE } from './admin.pagination'
 
 type IconButtonVariant = 'default' | 'primary' | 'warning' | 'danger'
 type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'children'> & {
@@ -40,7 +41,7 @@ export function AdminPagination({
   total,
   currentPage,
   pageCount,
-  pageSize = 50,
+  pageSize = ADMIN_PAGE_SIZE,
   onPageChange,
   ariaLabel = 'Paginación',
 }: AdminPaginationProps) {
