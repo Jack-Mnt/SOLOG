@@ -384,10 +384,10 @@
 }
 
 .admin-workspace .button {
-  min-height: 38px;
+  min-height: 36px;
   padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 0.82rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
 }
 
 .admin-dialog-backdrop {
@@ -452,8 +452,8 @@
 
 /* Sistema compartido de controles administrativos */
 .admin-filter-bar {
-  --admin-control-height: 38px;
-  --admin-control-radius: 10px;
+  --admin-control-height: 36px;
+  --admin-control-radius: 8px;
   --admin-control-border: var(--color-border-strong);
 
   display: flex;
@@ -514,7 +514,7 @@
   border-radius: var(--admin-control-radius);
   color: var(--color-text-primary);
   background: var(--color-surface);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.2;
   transition:
     border-color var(--transition-fast),
@@ -1600,7 +1600,7 @@ workspace y cards permanecen como superficies estructurales neutras;
   align-items: center;
   gap: 10px;
   width: 100%;
-  min-height: 34px;
+  min-height: 44px;
   padding: 6px 12px;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -1639,7 +1639,7 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 .admin-appearance--collapsed > button {
   justify-content: center;
-  min-height: 36px;
+  min-height: 44px;
   padding: 8px 0;
 }
 .admin-appearance--collapsed > button[aria-pressed="true"] {
@@ -1891,11 +1891,11 @@ workspace y cards permanecen como superficies estructurales neutras;
 }
 /* Admin primitives — Fase B. Base visual; la adopción por módulos comienza en Fase C. */
 .admin-v2-workspace :where(.button) {
-  min-height: 38px;
+  min-height: 36px;
   gap: 7px;
   padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 0.82rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
   box-shadow: none;
 }
 .admin-v2-workspace :where(.button):hover:not(:disabled) {
@@ -1931,11 +1931,11 @@ workspace y cards permanecen como superficies estructurales neutras;
   background: var(--color-danger-soft);
 }
 .admin-v2-workspace :where(.icon-button) {
-  width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
   color: var(--color-text-secondary);
   background: var(--color-surface);
   box-shadow: none;
@@ -2225,8 +2225,8 @@ workspace y cards permanecen como superficies estructurales neutras;
   }
 }
 
-/* Admin control density + responsive delta V1 — 2026-09-14.
-   Primary source: docs/SOLOG_UI_Admin_Controles_Densidad_Responsive_Delta_V1.md */
+/* Admin control density — Fase 11.
+   Primary source: docs/SOLOG_UI_Admin_Responsive_Shell_Controles_V1.md */
 /* Common action geometry. Sidebar is intentionally outside this scope. */
 .admin-v2-workspace .admin-workspace__main .button {
   height: 36px;
@@ -2431,8 +2431,8 @@ but focus no longer reuses hover styling. */
   }
 }
 
-/* Narrow Admin: compact content controls,
-while structural exceptions keep their size. */
+/* Dashboard % mantiene temporalmente su geometría responsive previa.
+   Queda fuera de alcance hasta una decisión explícita. */
 @media (max-width: 560px) {
   .admin-v2-workspace .admin-workspace__main .admin__percentage-action {
     min-width: 32px;
@@ -2440,26 +2440,37 @@ while structural exceptions keep their size. */
     min-height: 32px;
     padding-inline: 6px;
   }
+}
+
+/* Mobile Admin: densidad contractual 32 px. */
+@media (max-width: 767px) {
   .admin-v2-workspace .admin-workspace__main .button {
     height: 32px;
     min-height: 32px;
     padding: 6px 10px;
     font-size: 0.78rem;
   }
+
   .admin-v2-workspace .admin-workspace__main .icon-button {
     width: 32px;
     min-width: 32px;
     height: 32px;
     min-height: 32px;
   }
+
   .admin-v2-workspace
     .admin-workspace__main
-    :where(.admin-toolbar, .admin-filter-bar, .admin-v2-filters)
     :where(input:not([type="checkbox"]):not([type="radio"]), select),
   .admin-v2-workspace .admin-workspace__main .admin-control__period-trigger {
     height: 32px;
     min-height: 32px;
     padding-block: 6px;
+  }
+
+  .admin-state-views > button {
+    height: 32px;
+    min-height: 32px;
+    padding: 6px 10px;
   }
 }
 
