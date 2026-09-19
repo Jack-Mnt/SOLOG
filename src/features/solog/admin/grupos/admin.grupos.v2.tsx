@@ -116,7 +116,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       variant="wide"
     >
       {!masterData.snapshot || !masterData.derived ? (
-        <QueryState error={masterData.error} retry={masterData.retry} />
+        <QueryState error={masterData.error} retry={masterData.retry} variant="compact" />
       ) : (
         <form className="admin-v2-form" onSubmit={(event) => void save(event)}>
           <label>
@@ -214,7 +214,7 @@ function EditGroupDialog({
       closeDisabled={!!store.intent()?.pending}
     >
       {!masterData.snapshot ? (
-        <QueryState error={masterData.error} retry={masterData.retry} />
+        <QueryState error={masterData.error} retry={masterData.retry} variant="compact" />
       ) : (
         <form className="admin-v2-form" onSubmit={(event) => void save(event)}>
           <label>
