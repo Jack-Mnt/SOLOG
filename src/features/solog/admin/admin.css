@@ -921,7 +921,7 @@ detalle y exportación sin cambios. */
   flex: 1 1 200px;
   min-width: 180px;
 }
-.admin-control__pagination > .button {
+.admin-v2-workspace .navigation-button {
   background: var(--color-primary-soft);
   border-color: var(--color-border);
 }
@@ -980,7 +980,7 @@ detalle y exportación sin cambios. */
   color: var(--color-text-secondary);
   font-size: 0.8125rem;
 }
-.admin-control__pagination {
+.admin-pagination {
   display: flex;
   align-items: center;
   justify-content: flex-end;
