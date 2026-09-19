@@ -3,7 +3,6 @@ import {
   Check,
   Inbox,
   MapPinOff,
-  RefreshCw,
   ShieldCheck,
   ShieldOff,
   Tablet,
@@ -20,12 +19,11 @@ import {
 } from "../admin.site-ui";
 import type { Device } from "../admin.management.v2";
 
-type Action = "authorize" | "replace" | "revoke" | "reject";
-const labels: Record<Action, string> = {
-  authorize: "Autorizar",
-  replace: "Reemplazar",
-  revoke: "Revocar",
-  reject: "Rechazar",
+type Action = "authorize" | "revoke" | "reject";
+const titles: Record<Action, string> = {
+  authorize: "Autorizar dispositivo",
+  revoke: "Revocar dispositivo",
+  reject: "Rechazar solicitud",
 };
 export function AdminDevicesV2() {
   const admin = useAdminStore(),
@@ -150,11 +148,6 @@ export function AdminDevicesV2() {
               <h2 id="admin-requests-title">Solicitudes pendientes</h2>
               <div className="admin-devices__list">
                 {pending.map((device) => {
-                  const hasTablet = devices.some(
-                    (item) =>
-                      item.site_id === device.site_id &&
-                      item.estado === "autorizado",
-                  );
                   return (
                     <article
                       className="admin-device-card"
@@ -177,19 +170,10 @@ export function AdminDevicesV2() {
                           <button
                             className="button"
                             disabled={!!store.intent("devices")}
-                            onClick={() =>
-                              openAction(
-                                device,
-                                hasTablet ? "replace" : "authorize",
-                              )
-                            }
+                            onClick={() => openAction(device, "authorize")}
                           >
-                            {hasTablet ? (
-                              <RefreshCw size={16} aria-hidden="true" />
-                            ) : (
-                              <ShieldCheck size={16} aria-hidden="true" />
-                            )}
-                            {hasTablet ? "Reemplazar tablet" : "Autorizar"}
+                            <ShieldCheck size={16} aria-hidden="true" />
+                            Autorizar
                           </button>
                           <button
                             className="button button--secondary admin-device-revoke"
@@ -219,7 +203,7 @@ export function AdminDevicesV2() {
       </div>
       {confirmation && (
         <AdminDialog
-          title={`${labels[confirmation.action]} dispositivo`}
+          title={titles[confirmation.action]}
           onClose={() => setConfirmation(null)}
           closeDisabled={!!store.intent("devices")?.pending}
           footer={
@@ -234,34 +218,41 @@ export function AdminDevicesV2() {
               </button>
               <button
                 type="button"
-                className="button"
+                className={
+                  confirmation.action === "authorize"
+                    ? "button"
+                    : "button button--danger"
+                }
                 disabled={!!store.intent("devices")}
                 onClick={confirm}
               >
                 <Check size={16} aria-hidden="true" />
-                Confirmar {labels[confirmation.action].toLowerCase()}
+                {titles[confirmation.action]}
               </button>
             </>
           }
         >
-          <p>
-            {confirmation.device.site} · {confirmation.device.id}
-          </p>
-          <p>
-            {confirmation.action === "replace"
-              ? "Se revocará el dispositivo actual y se autorizará esta solicitud en una única operación backend."
-              : confirmation.action === "revoke"
-                ? "El dispositivo perderá autorización. El siguiente acceso protegido volverá a validarla."
+          <div className="admin-dialog-confirmation">
+            <dl className="admin-dialog-context">
+              <div>
+                <dt>Sede</dt>
+                <dd>{adminSiteLabel(confirmation.device.site)}</dd>
+              </div>
+            </dl>
+            <p>
+              {confirmation.action === "revoke"
+                ? "El dispositivo perderá autorización. La sede quedará disponible para una nueva solicitud de acceso."
                 : confirmation.action === "reject"
                   ? "Se rechazará esta solicitud pendiente."
-                  : "El backend comprobará que no exista otro dispositivo autorizado."}
-          </p>
-          {error && <p role="alert">{error}</p>}
-          <MutationNotice
-            domain="devices"
-            showResult={false}
-            onSuccess={() => setConfirmation(null)}
-          />
+                  : "La sede quedará vinculada a este dispositivo autorizado."}
+            </p>
+            {error && <p role="alert">{error}</p>}
+            <MutationNotice
+              domain="devices"
+              showResult={false}
+              onSuccess={() => setConfirmation(null)}
+            />
+          </div>
         </AdminDialog>
       )}
     </>
