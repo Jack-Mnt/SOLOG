@@ -97,22 +97,22 @@
   display: flex;
   flex-direction: column;
   align-content: start;
-  gap: 16px;
+  gap: 8px;
   overflow-x: hidden;
   overflow-y: auto;
-  padding-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid rgb(255 255 255 / 8%);
 }
 
 .admin-main-tabs__group {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   margin: 0;
 }
 
 .admin-main-tabs__label {
   display: block;
-  padding: 6px 12px 8px;
+  padding: 4px 8px;
   color: rgb(255 255 255 / 50%);
   font-size: 0.65rem;
   font-weight: 600;
@@ -127,9 +127,9 @@
   min-height: 54px;
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin-bottom: 10px;
-  padding: 7px 8px 10px;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding: 8px;
 }
 
 .admin-sidebar__account-copy {
@@ -376,7 +376,7 @@
 
 .admin-workspace__content {
   min-width: 0;
-  padding: 26px 30px 32px;
+  padding: 24px 28px;
 }
 
 .admin-dialog-backdrop {
@@ -1786,12 +1786,12 @@ workspace y cards permanecen como superficies estructurales neutras;
 /* Fase 11: cascada explícita de contenido Desktop -> Tablet -> Mobile. */
 @media (max-width: 1023px) {
   .admin-workspace__content {
-    padding: 22px 20px 28px;
+    padding: 24px 20px;
   }
 }
 @media (max-width: 767px) {
   .admin-workspace__content {
-    padding: 18px 16px 24px;
+    padding: 16px;
   }
 }
 @media (max-width: 767px) {
