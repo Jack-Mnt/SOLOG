@@ -171,7 +171,13 @@ Fuera de alcance:
 
 ### Fase 2 — Consolidación de PanelLoader
 
-**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+**CERRADA TÉCNICAMENTE.**
+
+Validación reportada por el usuario:
+- tests dirigidos: correctos;
+- lint: correcto;
+- build: correcto;
+- `git diff --check`: correcto.
 
 Implementado:
 - variantes `fullscreen`, `contained` y `compact`;
@@ -184,3 +190,19 @@ Implementado:
 - cobertura dirigida en `tests/panel-loader.test.ts`.
 
 Todavía no se migraron consumidores Admin; corresponde a Fase 3.
+
+
+### Fase 3 — Migración de estados Admin
+
+**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE Y SMOKE.**
+
+Implementado:
+- bootstrap pending → `PanelLoader` fullscreen;
+- bootstrap error → estado global SOLOG con retry/logout;
+- `QueryState` pending → `PanelLoader`, error → feedback contextual;
+- `ReadNotice` pending → `PanelLoader`, error → feedback contextual;
+- páginas principales → variante contenida por defecto;
+- dialogs/drawers/sublecturas → variante compacta;
+- eliminado `Cargando sedes…` de Incidencias, conservando etiqueta estable + `aria-busy`;
+- sin cambios CSS en esta fase;
+- cobertura dirigida en `tests/admin-loading-states-phase3.test.ts`.
