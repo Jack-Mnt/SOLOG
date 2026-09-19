@@ -240,7 +240,7 @@ function GroupDetail({
       title={`Cronología de ${name}`}
       description="Evolución del grupo por quincena. Fechas y horas de Lima."
       onClose={close}
-      wide
+      variant="wide"
       className="admin-control-chronology"
     >
       <div className="admin-control-chronology__toolbar">
