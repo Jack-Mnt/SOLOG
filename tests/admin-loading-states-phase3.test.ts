@@ -60,4 +60,6 @@ test('vistas principales conservan loader contenido por defecto', async () => {
   expect(groups).toContain('<QueryState error={masterData.error} retry={masterData.retry} />')
   expect(products).toContain('<QueryState error={masterData.error} retry={masterData.retry} />')
   expect(incidents).toContain('<ReadNotice {...normalQuery} />')
+  expect(incidents).not.toContain('Cargando sedes…')
+  expect(incidents).toContain('aria-busy={allLoading}')
 })
