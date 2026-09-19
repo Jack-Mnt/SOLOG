@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 import { useManagement } from './admin.management.context'
+import { PanelLoader, type PanelLoaderVariant } from '../../../components/panel-loader'
 import { AdminNotice } from './admin.primitives'
 import type { Domain, MutationResult, Payload } from './admin.management.v2'
 
@@ -8,8 +9,24 @@ export function PageControls({ offset, length, onChange }: { offset: number; len
   return <div className="admin-v2-toolbar"><button type="button" className="button button--secondary" disabled={offset === 0} onClick={() => onChange(Math.max(0, offset - 50))}><ChevronLeft size={16} aria-hidden="true" />Anterior</button><span>Desde {offset + 1} · {length} filas</span><button type="button" className="button button--secondary" disabled={length < 50} onClick={() => onChange(offset + 50)}>Siguiente<ChevronRight size={16} aria-hidden="true" /></button></div>
 }
 
-export function ReadNotice({ error, retry }: { error?: string; retry: () => void }) {
-  return <p role={error ? 'alert' : 'status'}>{error ?? 'Cargando…'}{error && <button type="button" className="button" onClick={retry}><RotateCcw size={16} aria-hidden="true" />Reintentar lectura</button>}</p>
+export function ReadNotice({
+  error,
+  retry,
+  variant = 'contained',
+}: {
+  error?: string
+  retry: () => void
+  variant?: Exclude<PanelLoaderVariant, 'fullscreen'>
+}) {
+  if (!error) return <PanelLoader variant={variant} />
+
+  return <div className="notice notice--error" role="alert">
+    <p>{error}</p>
+    <button type="button" className="button" onClick={retry}>
+      <RotateCcw size={16} aria-hidden="true" />
+      Reintentar lectura
+    </button>
+  </div>
 }
 
 function confirmedMutationMessage(result: MutationResult | undefined) {
