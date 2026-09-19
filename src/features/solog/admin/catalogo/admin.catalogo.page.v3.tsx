@@ -101,7 +101,7 @@ function priceErrorMessage(reason: unknown) {
 
 function CatalogStatus() {
   const status = useCatalogQuery("status", {});
-  if (!status.data) return <QueryState {...status} />;
+  if (!status.data) return <QueryState {...status} variant="compact" />;
   const catalog = status.data.catalog;
   return (
     <p>
@@ -586,7 +586,7 @@ function PriceResolutionDialog({
         closeDisabled={!!intent?.pending}
         variant="wide"
       >
-        <QueryState {...query} />
+        <QueryState {...query} variant="compact" />
       </AdminDialog>
     );
   const options = query.data;
@@ -846,7 +846,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
       variant="wide"
     >
       {!preview ? (
-        <QueryState {...query} />
+        <QueryState {...query} variant="compact" />
       ) : (
         <>
           <p>{preview.codigo}</p>
