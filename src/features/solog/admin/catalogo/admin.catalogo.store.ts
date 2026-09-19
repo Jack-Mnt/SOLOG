@@ -295,7 +295,27 @@ export class CatalogStore {
       this.observeMutation(result.revisions)
       if (intent.action === 'propose_product_state') {
         const payload = intent.payload as CatalogMutations['propose_product_state']
-        this.productStateOverlay.set(payload.c_interno, { action: payload.action, status: 'pendiente', masterGeneration: this.masterGeneration() })
+        const details = result.result
+        const masterGeneration = this.masterGeneration()
+        this.productStateOverlay.set(payload.c_interno, { action: payload.action, status: 'aprobado', masterGeneration })
+        if (
+          payload.action === 'reincorporate' &&
+          typeof details.propuesta_fingerprint === 'string' &&
+          typeof details.producto === 'string' &&
+          typeof details.precio === 'number'
+        ) {
+          this.productSetupOverlay.set(details.propuesta_fingerprint, {
+            hidden: false,
+            masterGeneration,
+            target: {
+              propuesta_fingerprint: details.propuesta_fingerprint,
+              tipo: 'reincorporar_producto',
+              c_interno: payload.c_interno,
+              producto: details.producto,
+              precio: details.precio,
+            },
+          })
+        }
       }
       if (intent.action === 'prepare_product') {
         const payload = intent.payload as CatalogMutations['prepare_product']
