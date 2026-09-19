@@ -86,7 +86,39 @@ function FamilyDetail({
           : "Detalle solicitado bajo demanda para todas las sedes."
       }
       onClose={onClose}
-      variant="wide"
+      variant="drawer"
+      footer={
+        <>
+          {query.data && (
+            <div className="admin-dialog__footer-navigation admin-v2-toolbar">
+              <button
+                type="button"
+                className="button button--secondary"
+                disabled={!page}
+                onClick={() => setPage(page - 1)}
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+                Anterior
+              </button>
+              <span>Página {page + 1}</span>
+              <button
+                type="button"
+                className="button button--secondary"
+                disabled={query.data.items.length < 100}
+                onClick={() => setPage(page + 1)}
+              >
+                Siguiente
+                <ChevronRight size={16} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+          <div className="admin-dialog__footer-actions">
+            <button type="button" className="button button--secondary" onClick={onClose}>
+              Cerrar
+            </button>
+          </div>
+        </>
+      }
     >
       {query.data ? (
         <>
@@ -137,27 +169,6 @@ function FamilyDetail({
                 ))}
               </tbody>
             </table>
-          </div>
-          <div className="admin-v2-toolbar">
-            <button
-              type="button"
-              className="button button--secondary"
-              disabled={!page}
-              onClick={() => setPage(page - 1)}
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              Anterior
-            </button>
-            <span>Página {page + 1}</span>
-            <button
-              type="button"
-              className="button button--secondary"
-              disabled={query.data.items.length < 100}
-              onClick={() => setPage(page + 1)}
-            >
-              Siguiente
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
           </div>
         </>
       ) : (
