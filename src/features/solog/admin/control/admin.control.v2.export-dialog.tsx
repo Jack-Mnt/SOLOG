@@ -3,6 +3,7 @@ import { Download } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { AdminBinarySwitch, AdminNotice } from '../admin.primitives'
 import { useAdminStore } from '../admin.v2.context'
+import { adminSiteLabel } from '../admin.site-ui'
 import type { Biweekly } from '../admin.v2'
 
 const periodOptions = [
@@ -12,6 +13,8 @@ const periodOptions = [
 
 export function AdminExportDialog({ siteId, onClose }: { siteId: string; onClose: () => void }) {
   const store = useAdminStore()
+  const site = store.bootstrap?.allowed_sites.find(candidate => candidate.id === siteId)
+  const siteName = site ? adminSiteLabel(site.nombre) : '—'
   const [period, setPeriod] = useState<Biweekly>('current_biweekly')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -60,6 +63,12 @@ export function AdminExportDialog({ siteId, onClose }: { siteId: string; onClose
     }
   >
     <div className="admin-dialog-task">
+      <dl className="admin-dialog-context">
+        <div>
+          <dt>Sede</dt>
+          <dd>{siteName}</dd>
+        </div>
+      </dl>
       <AdminBinarySwitch
         label="Quincena"
         value={period}
