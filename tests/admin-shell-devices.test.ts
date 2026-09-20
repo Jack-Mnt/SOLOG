@@ -72,6 +72,7 @@ test('Device confirmation omite UUID y no conserva el flujo histórico de reempl
   expect(source).not.toContain('| "replace"')
   expect(source).not.toContain('Reemplazar tablet')
   expect(source).not.toContain('{confirmation.device.site} · {confirmation.device.id}')
+  expect(source).toContain('<AdminNotice tone="info">')
   expect(source).toContain('La sede quedará disponible para una nueva solicitud de acceso.')
   expect(source).toContain('confirmation.action === "authorize"')
   expect(source).toContain('"button button--danger"')
