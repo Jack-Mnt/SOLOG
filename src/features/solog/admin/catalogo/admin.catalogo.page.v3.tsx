@@ -445,11 +445,11 @@ function ProposalDetailChange({ proposal }: { proposal: CatalogProposal }) {
         ) : change.kind === "text" ? (
           <>
             <div>
-              <dt>Valor actual</dt>
+              <dt>{proposal.tipo === "nombre" ? "Nombre actual" : "Código actual"}</dt>
               <dd>{change.previous ?? "—"}</dd>
             </div>
             <div>
-              <dt>Valor nuevo</dt>
+              <dt>{proposal.tipo === "nombre" ? "Nombre nuevo" : "Código nuevo"}</dt>
               <dd>{change.next ?? "—"}</dd>
             </div>
           </>
@@ -1403,7 +1403,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
           <AdminNotice tone="error">
             {recoverable
               ? "No se pudo confirmar el resultado de la publicación. Usa Recuperar publicación para reutilizar la misma operación."
-              : receipt.error}
+              : "No se pudo completar la publicación. Revisa el preview y vuelve a intentarlo."}
           </AdminNotice>
         )}
 
