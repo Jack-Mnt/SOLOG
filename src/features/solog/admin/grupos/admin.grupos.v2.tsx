@@ -55,25 +55,6 @@ function Valuation({
   );
 }
 
-function MutationError({ error, retry }: { error: string; retry: () => void }) {
-  const intent = useGroupsStore().intent();
-  return (
-    <div className="notice notice--error" role="alert">
-      <p>{error}</p>
-      {intent && !intent.pending && (
-        <button
-          type="button"
-          className="button button--secondary"
-          onClick={retry}
-        >
-          <RotateCcw size={16} aria-hidden="true" />
-          Reintentar misma operación
-        </button>
-      )}
-    </div>
-  );
-}
-
 function CreateGroupDialog({ onClose }: { onClose: () => void }) {
   const masterData = useMasterData();
   const store = useGroupsStore();
@@ -81,7 +62,15 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
   const [categoryId, setCategoryId] = useState("");
   const [members, setMembers] = useState<MasterDataProduct[]>([]);
   const [error, setError] = useState("");
+  const intent = store.intent();
   const selectedPrice = members[0]?.precio;
+  const selectedCategory = masterData.snapshot?.categories.find(
+    (category) => category.id === categoryId,
+  );
+  const categoryChanges =
+    !!categoryId &&
+    members.some((member) => member.categoria_id !== categoryId);
+
   const save = async (event: FormEvent) => {
     event.preventDefault();
     if (members.length < 2) {
@@ -100,6 +89,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       setError(groupsErrorMessage(reason));
     }
   };
+
   const retry = () => {
     setError("");
     void store
@@ -107,16 +97,22 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       .then(onClose)
       .catch((reason) => setError(groupsErrorMessage(reason)));
   };
+
   return (
     <AdminDialog
       title="Crear grupo"
-      description="Crea una estructura de conteo con dos o más SKU incluidos y compatibles."
+      description="Crea un grupo de conteo con dos o más SKU del mismo precio."
       onClose={onClose}
-      closeDisabled={!!store.intent()?.pending}
+      closeDisabled={!!intent?.pending}
       variant="wide"
       footer={
         <>
-          <button type="button" className="button button--secondary" disabled={!!store.intent()?.pending} onClick={onClose}>
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={!!intent?.pending}
+            onClick={onClose}
+          >
             Cancelar
           </button>
           <button
@@ -124,7 +120,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
             form="admin-create-group-form"
             className="button"
             disabled={
-              !!store.intent() ||
+              !!intent ||
               !masterData.snapshot ||
               !masterData.derived ||
               !name.trim() ||
@@ -139,32 +135,43 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       }
     >
       {!masterData.snapshot || !masterData.derived ? (
-        <QueryState error={masterData.error} retry={masterData.retry} variant="compact" />
+        <QueryState
+          error={masterData.error}
+          retry={masterData.retry}
+          variant="compact"
+        />
       ) : (
-        <form id="admin-create-group-form" className="admin-v2-form" onSubmit={(event) => void save(event)}>
-          <label>
-            Nombre
-            <input
-              required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-          <label>
-            Categoría
-            <select
-              required
-              value={categoryId}
-              onChange={(event) => setCategoryId(event.target.value)}
-            >
-              <option value="">Seleccionar</option>
-              {masterData.snapshot.categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
+        <form
+          id="admin-create-group-form"
+          className="admin-v2-form"
+          onSubmit={(event) => void save(event)}
+        >
+          <div className="admin-group-create__fields">
+            <label>
+              Nombre
+              <input
+                required
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </label>
+            <label>
+              Categoría
+              <select
+                required
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+              >
+                <option value="">Seleccionar</option>
+                {masterData.snapshot.categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
           <GroupCandidatePicker
             snapshot={masterData.snapshot}
             derived={masterData.derived}
@@ -172,13 +179,38 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
             onChange={setMembers}
             price={selectedPrice}
           />
-          <p>
-            El precio unitario se toma del Catálogo y el backend confirma la
-            compatibilidad.
-          </p>
+
+          {!!members.length && (
+            <AdminNotice tone="info">
+              Los SKU seleccionados pasarán al nuevo grupo. Si pertenecen a otro
+              grupo, se moverán automáticamente.
+              {categoryChanges && selectedCategory
+                ? ` Su categoría operativa cambiará a ${selectedCategory.nombre}.`
+                : ""}
+            </AdminNotice>
+          )}
         </form>
       )}
-      {error && <MutationError error={error} retry={retry} />}
+
+      {error && (
+        <AdminNotice
+          tone="error"
+          action={
+            intent && !intent.pending ? (
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={retry}
+              >
+                <RotateCcw size={16} aria-hidden="true" />
+                Reintentar misma operación
+              </button>
+            ) : undefined
+          }
+        >
+          {error}
+        </AdminNotice>
+      )}
     </AdminDialog>
   );
 }
