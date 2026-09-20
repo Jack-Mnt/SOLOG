@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClockOff,
-  ChevronLeft,
-  ChevronRight,
   CircleOff,
   Eye,
   RotateCcw,
@@ -63,114 +61,69 @@ function StateBadge({ state }: { state: IncidentState }) {
 
 function FamilyDetail({
   family,
-  site,
   onClose,
 }: {
   family: Family;
-  site?: string;
   onClose: () => void;
 }) {
-  const [page, setPage] = useState(0);
-  const query = useManagementQuery("detail", {
+  const query = useManagementQuery("detail_sites", {
     family_key: family.family_key,
-    ...(site ? { site_id: site } : {}),
-    page,
-    page_size: 100,
   });
+  const product =
+    typeof family.datos.producto === "string" && family.datos.producto.trim()
+      ? family.datos.producto
+      : "Producto sin nombre";
+  const code = family.c_interno ?? family.c_interno_original;
+
   return (
     <AdminDialog
       title={`Repeticiones · ${typeLabels[family.tipo]}`}
-      description={
-        site
-          ? "Detalle solicitado bajo demanda para una sede fuente."
-          : "Detalle solicitado bajo demanda para todas las sedes."
-      }
+      description={`${product}${code ? ` · [${code}]` : ""} · Todas las sedes`}
       onClose={onClose}
       variant="drawer"
-      footer={
-        <>
-          {query.data && (
-            <div className="admin-dialog__footer-navigation admin-v2-toolbar">
-              <button
-                type="button"
-                className="button button--secondary"
-                disabled={!page}
-                onClick={() => setPage(page - 1)}
-              >
-                <ChevronLeft size={16} aria-hidden="true" />
-                Anterior
-              </button>
-              <span>Página {page + 1}</span>
-              <button
-                type="button"
-                className="button button--secondary"
-                disabled={query.data.items.length < 100}
-                onClick={() => setPage(page + 1)}
-              >
-                Siguiente
-                <ChevronRight size={16} aria-hidden="true" />
-              </button>
-            </div>
-          )}
-          <div className="admin-dialog__footer-actions">
-            <button type="button" className="button button--secondary" onClick={onClose}>
-              Cerrar
-            </button>
-          </div>
-        </>
-      }
+      drawerMaxWidth={640}
     >
       {query.data ? (
-        <>
-          <div
-            className="admin-auxiliary-table admin-incidents__detail-table"
-            role="region"
-            aria-label="Detalle de repeticiones"
-            tabIndex={0}
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th>Sede</th>
-                  <th>Estado</th>
-                  <th>Vigencia</th>
-                  <th>Primera detección</th>
-                  <th>Última detección</th>
-                  <th>Resuelta</th>
-                  <th>Apariciones</th>
-                  <th>Datos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {query.data.items.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.sede}</td>
-                    <td>
-                      <StateBadge state={item.estado} />
-                    </td>
-                    <td>{item.active ? "Vigente" : "Histórica"}</td>
-                    <td>{incidentTimestamp(item.first_seen_at)}</td>
-                    <td>{incidentTimestamp(item.last_seen_at)}</td>
-                    <td>
-                      {item.resuelta_at
-                        ? incidentTimestamp(item.resuelta_at)
-                        : "—"}
-                    </td>
-                    <td>{item.occurrence_count}</td>
-                    <td>
-                      <details>
-                        <summary>Ver datos</summary>
-                        <pre className="admin-v2-json">
-                          {JSON.stringify(item.datos, null, 2)}
-                        </pre>
-                      </details>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
+        <div
+          className="admin-incidents__site-repetitions"
+          role="list"
+          aria-label="Repeticiones por sede"
+        >
+          {query.data.sites.map((item) => (
+            <article
+              className="admin-incidents__site-repetition"
+              role="listitem"
+              key={item.site_id}
+            >
+              <div className="admin-incidents__site-repetition-header">
+                <strong>{item.site}</strong>
+                <span className="admin-incidents__site-occurrences">
+                  {item.occurrences} {item.occurrences === 1 ? "vez" : "veces"}
+                </span>
+              </div>
+
+              {item.occurrences ? (
+                <div className="admin-incidents__site-repetition-meta">
+                  <span>
+                    Primera:{" "}
+                    {item.first_seen_at
+                      ? incidentTimestamp(item.first_seen_at)
+                      : "—"}
+                  </span>
+                  <span>
+                    Última:{" "}
+                    {item.last_seen_at
+                      ? incidentTimestamp(item.last_seen_at)
+                      : "—"}
+                  </span>
+                  {item.state && <StateBadge state={item.state} />}
+                </div>
+              ) : (
+                <p>Sin registros</p>
+              )}
+            </article>
+          ))}
+        </div>
       ) : (
         <ReadNotice {...query} variant="compact" />
       )}
@@ -178,7 +131,7 @@ function FamilyDetail({
   );
 }
 
-function canProposeDelete(family: Family) {
+function canProposeDelete(family: Family) {function canProposeDelete(family: Family) {
   return (
     family.tipo === "producto_ausente" &&
     family.active &&
@@ -936,7 +889,6 @@ export function AdminIncidentsV2() {
         <FamilyDetail
           key={`${allActive ? "all" : siteId}:${detailFamily.family_key}`}
           family={detailFamily}
-          site={allActive ? undefined : siteId}
           onClose={() => setDetailFamily(null)}
         />
       )}

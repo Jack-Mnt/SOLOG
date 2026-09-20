@@ -83,6 +83,10 @@ export class ManagementStore {
         const r = result as Reads['detail'], p = payload as ReadPayloads['detail']
         if (r.family_key !== p.family_key || r.page !== p.page || r.page_size !== p.page_size) throw new Error('Detalle de otra familia/página.')
       }
+      if (action === 'detail_sites') {
+        const r = result as Reads['detail_sites'], p = payload as ReadPayloads['detail_sites']
+        if (r.family_key !== p.family_key) throw new Error('Detalle por sede de otra familia.')
+      }
       if (action === 'price_mismatch_options' && (result as Reads['price_mismatch_options']).propuesta_fingerprint !== (payload as ReadPayloads['price_mismatch_options']).propuesta_fingerprint) throw new Error('Opciones de otra propuesta.')
       if (action === 'list') {
         const devices = (result as Reads['list']).devices

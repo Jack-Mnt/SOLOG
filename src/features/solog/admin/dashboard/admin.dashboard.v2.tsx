@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -10,10 +10,10 @@ import {
   ZoomIn,
 } from "lucide-react";
 import { AdminDialog } from "../admin.dialog";
-import { useAdminQuery } from "../admin.v2.context";
-import type { Biweekly, DashboardCards } from "../admin.v2";
+import { useAdminQuery, useAdminStore } from "../admin.v2.context";
+import type { Biweekly, DashboardCards, DifferenceState } from "../admin.v2";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminPagination } from "../admin.primitives";
+import { AdminBinarySwitch, AdminPagination } from "../admin.primitives";
 import { paginateAdminRows } from "../admin.pagination";
 import { adminSiteLabel, orderedAdminSites } from "../admin.site-ui";
 import { AdminExportDialog } from "../control/admin.control.v2.export-dialog";
@@ -49,6 +49,15 @@ function dashboardTimestamp(value: string) {
   return `${day}, ${time}`;
 }
 
+type DailyStockView = "positive" | "zero";
+
+const dailyStateViews: Array<{ state: DifferenceState; label: string }> = [
+  { state: "Coincide", label: "Coincide" },
+  { state: "Recontar", label: "Por recontar" },
+  { state: "Confirmada", label: "Confirmadas" },
+  { state: "Inconsistente", label: "Inconsistentes" },
+];
+
 function DailyDrawer({
   site,
   date,
@@ -58,25 +67,52 @@ function DailyDrawer({
   date: string;
   close: () => void;
 }) {
+  const admin = useAdminStore();
   const [page, setPage] = useState(0);
+  const [stockView, setStockView] = useState<DailyStockView>("positive");
+  const [selectedState, setSelectedState] =
+    useState<DifferenceState>("Coincide");
   const query = useAdminQuery("daily_detail", {
     site_id: site,
     origin_date: date,
   });
   const data = query.data;
-  const paginated = paginateAdminRows(data?.items ?? [], page);
+  const siteName = adminSiteLabel(
+    admin.bootstrap?.allowed_sites.find((item) => item.id === site)?.nombre ??
+      site,
+  );
+  const stockItems =
+    data?.items.filter((item) => item.stock_class === stockView) ?? [];
+  const stateCounts: Record<DifferenceState, number> = {
+    Coincide: stockItems.filter((item) => item.estado === "Coincide").length,
+    Recontar: stockItems.filter((item) => item.estado === "Recontar").length,
+    Confirmada: stockItems.filter((item) => item.estado === "Confirmada").length,
+    Inconsistente: stockItems.filter(
+      (item) => item.estado === "Inconsistente",
+    ).length,
+  };
+  const filteredItems = stockItems.filter(
+    (item) => item.estado === selectedState,
+  );
+  const paginated = paginateAdminRows(filteredItems, page);
+
+  useEffect(() => {
+    setPage(0);
+  }, [selectedState, stockView]);
+
   return (
     <AdminDialog
-      title={`Conteos originados el ${dashboardDate(date)}`}
-      description="Estado vigente de los conteos de esta fecha. Zona horaria America/Lima."
+      title={`Detalle diario · ${siteName}`}
+      description={`${dashboardDate(date)} · Estado vigente de los conteos de esta fecha.`}
       onClose={close}
       variant="drawer"
+      drawerMaxWidth={720}
       footer={
         <>
           {data && (
             <div className="admin-dialog__footer-navigation">
               <AdminPagination
-                total={data.items.length}
+                total={filteredItems.length}
                 currentPage={paginated.currentPage}
                 pageCount={paginated.pageCount}
                 onPageChange={setPage}
@@ -96,52 +132,123 @@ function DailyDrawer({
         <QueryState {...query} variant="compact" />
       ) : (
         <>
-          <div className="admin-v2-kpis">
-            <span>Por recontar: {data.summary.pending_recount}</span>
-            <span>Confirmadas: {data.summary.confirmed}</span>
-            <span>Inconsistentes: {data.summary.inconsistent}</span>
+          <div className="admin-drawer-stock-filter">
+            <AdminBinarySwitch
+              label="Stock"
+              value={stockView}
+              options={[
+                { value: "positive", label: "Stock positivo" },
+                { value: "zero", label: "Stock 0" },
+              ]}
+              onChange={setStockView}
+            />
           </div>
-          <div className="admin-auxiliary-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Grupo · estado</th>
-                  <th>Teórico</th>
-                  <th>Físico</th>
-                  <th>Diferencia</th>
-                  <th>Valorizado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.rows.map((row) => (
-                  <tr key={row.case_id}>
-                    <td>
-                      {row.grupo} · {row.estado}
-                    </td>
-                    <td>
-                      <Value value={row.theoretical} />
-                    </td>
-                    <td>
-                      <Value value={row.physical} />
-                    </td>
-                    <td>
-                      <Value value={row.difference} />
-                    </td>
-                    <td>
-                      <Value value={row.value} money />
-                    </td>
+
+          <div className="admin-dashboard-daily__views">
+            <div
+              className="admin-state-views"
+              role="tablist"
+              aria-label="Estado del conteo"
+              onKeyDown={(event) => {
+                if (
+                  ![
+                    "ArrowRight",
+                    "ArrowDown",
+                    "ArrowLeft",
+                    "ArrowUp",
+                    "Home",
+                    "End",
+                  ].includes(event.key)
+                )
+                  return;
+                event.preventDefault();
+                const currentIndex = dailyStateViews.findIndex(
+                  (view) => view.state === selectedState,
+                );
+                const direction =
+                  event.key === "ArrowRight" || event.key === "ArrowDown"
+                    ? 1
+                    : -1;
+                const nextIndex =
+                  event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                      ? dailyStateViews.length - 1
+                      : (currentIndex + direction + dailyStateViews.length) %
+                        dailyStateViews.length;
+                const next = dailyStateViews[nextIndex];
+                setSelectedState(next.state);
+                event.currentTarget
+                  .querySelector<HTMLButtonElement>(
+                    `[data-daily-state="${next.state}"]`,
+                  )
+                  ?.focus();
+              }}
+            >
+              {dailyStateViews.map((view) => (
+                <button
+                  key={view.state}
+                  type="button"
+                  role="tab"
+                  data-daily-state={view.state}
+                  aria-selected={selectedState === view.state}
+                  aria-controls="admin-dashboard-daily-state-panel"
+                  tabIndex={selectedState === view.state ? 0 : -1}
+                  onClick={() => setSelectedState(view.state)}
+                >
+                  <span>{view.label}</span>
+                  <strong>{stateCounts[view.state]}</strong>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {filteredItems.length ? (
+            <div
+              id="admin-dashboard-daily-state-panel"
+              role="tabpanel"
+              className="admin-auxiliary-table"
+              aria-label={dailyStateViews.find((view) => view.state === selectedState)?.label}
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th>Grupo</th>
+                    <th>Teórico</th>
+                    <th>Físico</th>
+                    <th>Diferencia</th>
+                    <th>Valorizado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {!data.items.length && <p>No hay conteos originados este día.</p>}
+                </thead>
+                <tbody>
+                  {paginated.rows.map((row) => (
+                    <tr key={row.case_id}>
+                      <td>{row.grupo}</td>
+                      <td><Value value={row.theoretical} /></td>
+                      <td><Value value={row.physical} /></td>
+                      <td><Value value={row.difference} /></td>
+                      <td><Value value={row.value} money /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p
+              id="admin-dashboard-daily-state-panel"
+              className="admin-dashboard-daily__empty"
+              role="status"
+            >
+              No hay conteos para este estado y tipo de stock.
+            </p>
+          )}
         </>
       )}
     </AdminDialog>
   );
 }
-function Grid({ site }: { site: string }) {
+
+function Grid({ site }: { site: string }) {function Grid({ site }: { site: string }) {
   const [period, setPeriod] = useState<Biweekly>("current_biweekly");
   const [date, setDate] = useState<string | null>(null);
   const query = useAdminQuery("shift_grid", { site_id: site, period });

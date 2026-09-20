@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type ReactNode,
 } from 'react'
 import { X } from 'lucide-react'
@@ -26,6 +27,7 @@ export function AdminDialog({
   onClose,
   closeDisabled = false,
   variant = 'default',
+  drawerMaxWidth,
   className,
 }: {
   title: string
@@ -35,6 +37,7 @@ export function AdminDialog({
   onClose: () => void
   closeDisabled?: boolean
   variant?: AdminDialogVariant
+  drawerMaxWidth?: number
   className?: string
 }) {
   const titleId = useId()
@@ -98,6 +101,12 @@ export function AdminDialog({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [closeDisabled, isTop, onClose])
 
+  const drawerStyle = variant === 'drawer' && drawerMaxWidth
+    ? ({
+        '--admin-dialog-drawer-max-width': `${Math.min(Math.max(drawerMaxWidth, 320), 960)}px`,
+      } as CSSProperties)
+    : undefined
+
   const resolvedFooter = footer ?? (
     <button
       type="button"
@@ -130,6 +139,7 @@ export function AdminDialog({
         className={`admin-dialog admin-dialog--${variant}${className ? ` ${className}` : ''}`}
         ref={dialogRef}
         role="dialog"
+        style={drawerStyle}
         tabIndex={-1}
       >
         <header className="admin-dialog__header">

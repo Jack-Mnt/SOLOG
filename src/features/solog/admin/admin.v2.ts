@@ -26,7 +26,7 @@ export interface ShiftGrid extends Envelope {
 export interface DailyDetail extends Envelope {
   site_id: string; origin_date: string
   summary: { pending_recount: number; confirmed: number; inconsistent: number }
-  items: { case_id: string; grupo_id: string; grupo: string; estado: DifferenceState; contado_at: string; recontado_at: string | null; theoretical: number; physical: number; difference: number; value: number | null; source: 'initial' | 'posterior' | 'recount' }[]
+  items: { case_id: string; grupo_id: string; grupo: string; estado: DifferenceState; contado_at: string; recontado_at: string | null; theoretical: number; physical: number; stock_class: 'positive' | 'zero'; difference: number; value: number | null; source: 'initial' | 'posterior' | 'recount' }[]
 }
 export interface StateSummary { total: number; coincide: number; pending_recount: number; confirmed: number; inconsistent: number }
 export interface ControlGroupsPayload { site_id: string; period: ControlPeriod; date_from?: string; date_to?: string }
@@ -129,7 +129,7 @@ export function validateAdminResponse<A extends AdminAction>(action: A, value: u
   if (valid) {
     const requiredRevisions = action === 'bootstrap' ? ['groups', 'catalog'] : action === 'dashboard_cards' ? ['groups'] : action === 'shift_grid' || action === 'export' ? ['operational', 'groups'] : ['operational']
     valid = numbers(value.revisions, requiredRevisions)
-    if (action === 'daily_detail') valid = valid && array(value.items, r => strings(r, ['case_id', 'grupo_id', 'grupo', 'contado_at']) && state(r.estado) && source(r.source) && numbers(r, ['theoretical', 'physical', 'difference']) && nullableNumbers(r, ['value']) && nullableTime(r.recontado_at))
+    if (action === 'daily_detail') valid = valid && array(value.items, r => strings(r, ['case_id', 'grupo_id', 'grupo', 'contado_at', 'stock_class']) && ['positive', 'zero'].includes(String(r.stock_class)) && state(r.estado) && source(r.source) && numbers(r, ['theoretical', 'physical', 'difference']) && nullableNumbers(r, ['value']) && nullableTime(r.recontado_at))
     if (action === 'control_page') valid = valid && array(value.items, r => strings(r, ['case_id', 'grupo_id', 'grupo', 'categoria', 'contado_at']) && state(r.estado_diferencia) && numbers(r, ['diferencia']) && nullableNumbers(r, ['valor_diferencia']) && nullableTime(r.recontado_at)) && Array.isArray(value.items) && value.items.length <= Number(value.page_size)
     if (action === 'control_detail') valid = valid && array(value.chronology, r => strings(r, ['case_id', 'contado_at']) && nullableTime(r.recontado_at) && state(r.estado_diferencia) && numbers(r, ['stock_teorico', 'stock_fisico', 'diferencia_inicial', 'diferencia']) && nullableNumbers(r, ['stock_posterior', 'stock_teorico_reconteo', 'stock_reconteo', 'valor_diferencia']))
     if (action === 'export') valid = valid && array(value.adjustments, exportResult) && array(value.all, r => exportResult(r) && nullableTime(r.recontado_at)) && array(value.pending_recount, r => exportBase(r) && numbers(r, ['teorico_conteo', 'fisico_conteo', 'diferencia']) && nullableNumbers(r, ['stock_posterior'])) && array(value.inconsistent, r => exportBase(r) && r.estado === 'Inconsistente' && numbers(r, ['teorico_conteo', 'fisico_conteo', 'diferencia_conteo']) && nullableNumbers(r, ['teorico_reconteo', 'fisico_reconteo', 'diferencia_reconteo']))

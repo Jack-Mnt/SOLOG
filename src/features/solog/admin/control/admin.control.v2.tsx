@@ -16,8 +16,8 @@ import { AdminDialog } from "../admin.dialog";
 import { useAdminQuery, useAdminStore } from "../admin.v2.context";
 import type {
   AdminPayloads,
+  ControlChronologyResponse,
   ControlPeriod,
-  ControlChronologyPeriod,
   DifferenceState,
 } from "../admin.v2";
 import { QueryState, Value } from "../admin.v2.presentation";
@@ -25,6 +25,7 @@ import { validCustomRange } from "../admin.v2.format";
 import { AdminExportDialog } from "./admin.control.v2.export-dialog";
 import { controlView, type ControlSort } from "./admin.control.data";
 import { AdminPagination, AdminSort, IconButton } from "../admin.primitives";
+import { adminSiteLabel } from "../admin.site-ui";
 
 const periods: [ControlPeriod, string][] = [
   ["today", "Hoy"],
@@ -187,6 +188,92 @@ function eventTime(value: string) {
     .format(new Date(value))
     .toLowerCase();
 }
+function ChronologyPeriod({
+  label,
+  data,
+}: {
+  label: string;
+  data: ControlChronologyResponse;
+}) {
+  const rows = [...data.chronology].reverse();
+  return (
+    <section className="admin-control-chronology__period">
+      <header className="admin-control-chronology__period-header">
+        <strong>{label}</strong>
+        <span>
+          {controlDate(data.period.from)} — {controlDate(data.period.to)}
+        </span>
+      </header>
+
+      {!rows.length ? (
+        <p className="admin-control-chronology__empty" role="status">
+          No hay registros en esta quincena.
+        </p>
+      ) : (
+        <ol className="admin-control-chronology__timeline">
+          {rows.map((row) => (
+            <li className="admin-control-chronology__event" key={row.row_id}>
+              <article>
+                <header>
+                  <time dateTime={row.event_at}>
+                    {eventDate(row.event_at)} · {eventTime(row.event_at)}
+                  </time>
+                  <span
+                    className={`admin-control__badge admin-status-badge admin-status-badge--${row.state === "Recontado" ? "info" : stateTone[row.state]} admin-control__tone--${row.state === "Recontado" ? "info" : stateTone[row.state]}`}
+                  >
+                    {row.state}
+                  </span>
+                </header>
+
+                <dl className="admin-control-chronology__event-values">
+                  <div>
+                    <dt>Teórico</dt>
+                    <dd><Value value={row.theoretical} /></dd>
+                  </div>
+                  <div>
+                    <dt>Físico</dt>
+                    <dd><Value value={row.physical} /></dd>
+                  </div>
+                  <div>
+                    <dt>Diferencia</dt>
+                    <dd
+                      className={`admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}
+                    >
+                      {row.difference > 0 ? "+" : ""}
+                      <Value value={row.difference} />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Valorizado</dt>
+                    <dd><Value value={row.valued_difference} money /></dd>
+                  </div>
+                </dl>
+
+                <div className="admin-control-chronology__valuation">
+                  <span>
+                    Unidad: <Value value={row.valuation.unit_price} money />
+                  </span>
+                  {row.valuation.units_per_package !== null && (
+                    <span>
+                      Unidades por paquete:{" "}
+                      <Value value={row.valuation.units_per_package} />
+                    </span>
+                  )}
+                  {row.valuation.package_price !== null && (
+                    <span>
+                      Paquete: <Value value={row.valuation.package_price} money />
+                    </span>
+                  )}
+                </div>
+              </article>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
 function GroupDetail({
   site,
   group,
@@ -198,134 +285,81 @@ function GroupDetail({
   name: string;
   close: () => void;
 }) {
-  const [period, setPeriod] =
-    useState<ControlChronologyPeriod>("current_biweekly");
-  const query = useAdminQuery("control_chronology", {
+  const admin = useAdminStore();
+  const [showPrevious, setShowPrevious] = useState(false);
+  const currentQuery = useAdminQuery("control_chronology", {
     site_id: site,
     group_id: group,
-    period,
+    period: "current_biweekly",
   });
+  const previousQuery = useAdminQuery(
+    "control_chronology",
+    {
+      site_id: site,
+      group_id: group,
+      period: "previous_biweekly",
+    },
+    { enabled: showPrevious },
+  );
+  const siteName = adminSiteLabel(
+    admin.bootstrap?.allowed_sites.find((item) => item.id === site)?.nombre ??
+      site,
+  );
+  const category =
+    currentQuery.data?.group.category ?? previousQuery.data?.group.category;
+
   return (
     <AdminDialog
       title={`Cronología de ${name}`}
-      description="Evolución del grupo por quincena. Fechas y horas de Lima."
+      description={`${siteName}${category ? ` · ${category}` : ""} · Horas de Lima`}
       onClose={close}
       variant="drawer"
-      footer={
-        <>
-          <div className="admin-dialog__footer-navigation admin-control-chronology__toolbar">
-            <div
-              role="group"
-              aria-label="Quincena de cronología"
-              className="admin-control-chronology__periods"
-            >
-              <button
-                type="button"
-                aria-pressed={period === "current_biweekly"}
-                onClick={() => setPeriod("current_biweekly")}
-              >
-                Actual
-              </button>
-              <button
-                type="button"
-                aria-pressed={period === "previous_biweekly"}
-                onClick={() => setPeriod("previous_biweekly")}
-              >
-                Anterior
-              </button>
+      drawerMaxWidth={720}
+    >
+      {!currentQuery.data ? (
+        <QueryState {...currentQuery} variant="compact" />
+      ) : (
+        <div className="admin-control-chronology">
+          <div className="admin-control-chronology__history-toggle">
+            <div className="admin-control-chronology__history-copy">
+              <strong>Mostrar cronología de la quincena anterior</strong>
+              <span>La quincena actual permanece visible.</span>
             </div>
-            {query.data && (
-              <span>
-                {controlDate(query.data.period.from)} —{" "}
-                {controlDate(query.data.period.to)}
-              </span>
-            )}
-          </div>
-          <div className="admin-dialog__footer-actions">
-            <button type="button" className="button button--secondary" onClick={close}>
-              Cerrar
+            <button
+              type="button"
+              className="admin-control-chronology__switch"
+              role="switch"
+              aria-checked={showPrevious}
+              aria-label="Mostrar cronología de la quincena anterior"
+              onClick={() => setShowPrevious((current) => !current)}
+            >
+              <span aria-hidden="true" />
             </button>
           </div>
-        </>
-      }
-    >
-      {!query.data ? (
-        <QueryState {...query} variant="compact" />
-      ) : !query.data.chronology.length ? (
-        <p role="status">No hay registros en esta quincena.</p>
-      ) : (
-        <div className="admin-auxiliary-table admin-control-chronology__table">
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Estado</th>
-                <th>Teórico</th>
-                <th>Físico</th>
-                <th>Diferencia</th>
-                <th>Valorizado</th>
-                <th>Detalle</th>
-              </tr>
-            </thead>
-            <tbody>
-              {query.data.chronology.map((row) => (
-                <tr key={row.row_id}>
-                  <td>
-                    <time dateTime={row.event_at}>
-                      {eventDate(row.event_at)}
-                    </time>
-                  </td>
-                  <td>{eventTime(row.event_at)}</td>
-                  <td>
-                    <span
-                      className={`admin-control__badge admin-status-badge admin-status-badge--${row.state === "Recontado" ? "info" : stateTone[row.state]} admin-control__tone--${row.state === "Recontado" ? "info" : stateTone[row.state]}`}
-                    >
-                      {row.state}
-                    </span>
-                  </td>
-                  <td className="admin-control__number">
-                    <Value value={row.theoretical} />
-                  </td>
-                  <td className="admin-control__number">
-                    <Value value={row.physical} />
-                  </td>
-                  <td
-                    className={`admin-control__number admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}
-                  >
-                    {row.difference > 0 ? "+" : ""}
-                    <Value value={row.difference} />
-                  </td>
-                  <td className="admin-control__number">
-                    <Value value={row.valued_difference} money />
-                  </td>
-                  <td className="admin-control-chronology__valuation">
-                    <span>
-                      Unidad: <Value value={row.valuation.unit_price} money />
-                    </span>
-                    {row.valuation.units_per_package !== null && (
-                      <span>
-                        Unidades por paquete:{" "}
-                        <Value value={row.valuation.units_per_package} />
-                      </span>
-                    )}
-                    {row.valuation.package_price !== null && (
-                      <span>
-                        Paquete:{" "}
-                        <Value value={row.valuation.package_price} money />
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+          <ChronologyPeriod label="Quincena actual" data={currentQuery.data} />
+
+          {showPrevious &&
+            (previousQuery.data ? (
+              <ChronologyPeriod
+                label="Quincena anterior"
+                data={previousQuery.data}
+              />
+            ) : (
+              <section className="admin-control-chronology__period">
+                <header className="admin-control-chronology__period-header">
+                  <strong>Quincena anterior</strong>
+                </header>
+                <QueryState {...previousQuery} variant="compact" />
+              </section>
+            ))}
         </div>
       )}
     </AdminDialog>
   );
 }
-function ControlResults({
+
+function ControlResults({function ControlResults({
   payload,
   selectedState,
   onStateChange,

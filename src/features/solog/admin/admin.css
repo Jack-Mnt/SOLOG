@@ -435,7 +435,8 @@
 }
 
 .admin-dialog--drawer {
-  width: min(100%, 960px);
+  width: min(calc(100% - 48px), var(--admin-dialog-drawer-max-width, 960px));
+  max-width: 960px;
   height: 100vh;
   height: 100dvh;
   max-height: 100vh;
@@ -770,6 +771,32 @@
     width: 100%;
   }
 
+  .admin-dialog__footer-navigation .admin-pagination {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .admin-dialog__footer-navigation .admin-pagination > span {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: center;
+  }
+
+  .admin-control-chronology__history-toggle {
+    align-items: flex-start;
+  }
+
+  .admin-control-chronology__period-header,
+  .admin-control-chronology__event > article > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-control-chronology__event-values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .admin-dialog-context > div {
     grid-template-columns: 1fr;
     gap: 2px;
@@ -783,61 +810,229 @@
     font-size: 0.78rem;
   }
 }
-/* Control: composición local; contratos,
-detalle y exportación sin cambios. */
-.admin-control-chronology__toolbar {
+/* Fase 8 — Drawers: primera pasada funcional y visual. */
+.admin-drawer-stock-filter {
+  width: min(320px, 100%);
+  margin-bottom: 16px;
+}
+.admin-dashboard-daily__views .admin-state-views {
+  margin-bottom: 16px;
+}
+.admin-dashboard-daily__empty,
+.admin-control-chronology__empty {
+  margin: 0;
+  padding: 16px 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+.admin-control-chronology {
+  display: grid;
+  gap: 24px;
+}
+.admin-control-chronology__history-toggle {
+  min-width: 0;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
 }
-.admin-control-chronology__periods {
-  display: flex;
+.admin-control-chronology__history-copy {
+  min-width: 0;
+  display: grid;
   gap: 4px;
 }
-.admin-control-chronology__periods button {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font: inherit;
+.admin-control-chronology__history-copy strong {
+  font-size: 0.8125rem;
+}
+.admin-control-chronology__history-copy span {
   color: var(--color-text-secondary);
-  background: var(--color-surface);
+  font-size: 0.75rem;
+}
+.admin-control-chronology__switch {
+  position: relative;
+  width: 44px;
+  min-width: 44px;
+  height: 24px;
+  padding: 2px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-surface-secondary);
   cursor: pointer;
 }
-.admin-control-chronology__periods button[aria-pressed="true"] {
-  border-color: var(--color-primary);
-  color: var(--color-primary-active);
-  background: var(--color-primary-soft);
+.admin-control-chronology__switch > span {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 16%);
+  transition: transform var(--transition-fast);
 }
-.admin-control-chronology__periods button:focus-visible {
+.admin-control-chronology__switch[aria-checked="true"] {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+.admin-control-chronology__switch[aria-checked="true"] > span {
+  transform: translateX(20px);
+}
+.admin-control-chronology__switch:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
-.admin-control-chronology__table {
-  overflow: auto;
-  max-height: 60vh;
+.admin-control-chronology__period {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
 }
-.admin-control-chronology__table table {
-  min-width: 850px;
-  font-size: 0.8rem;
+.admin-control-chronology__period-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
-.admin-control-chronology__table th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--color-surface-secondary);
+.admin-control-chronology__period-header strong {
+  font-size: 0.875rem;
 }
-.admin-control-chronology__table th:nth-child(n + 4):nth-child(-n + 7) {
-  text-align: right;
+.admin-control-chronology__period-header span {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
 }
-.admin-control-chronology__table td {
-  vertical-align: middle;
+.admin-control-chronology__timeline {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0 0 0 28px;
+  list-style: none;
 }
-.admin-groups {
+.admin-control-chronology__timeline::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 7px;
+  width: 1px;
+  background: var(--color-border);
+}
+.admin-control-chronology__event {
+  position: relative;
+  min-width: 0;
+}
+.admin-control-chronology__event::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: -27px;
+  width: 12px;
+  height: 12px;
+  border: 3px solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
+}
+.admin-control-chronology__event > article {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+.admin-control-chronology__event > article > header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin-control-chronology__event time {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.admin-control-chronology__event-values {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.admin-control-chronology__event-values > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.admin-control-chronology__event-values dt {
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+}
+.admin-control-chronology__event-values dd {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.admin-control-chronology__valuation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+}
+.admin-dialog__footer-navigation .admin-pagination {
+  margin-top: 0;
+}
+.admin-incidents__site-repetitions {
+  display: grid;
+  gap: 0;
+}
+.admin-incidents__site-repetition {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-incidents__site-repetition:first-child {
+  padding-top: 0;
+}
+.admin-incidents__site-repetition:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.admin-incidents__site-repetition-header {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin-incidents__site-repetition-header strong {
+  font-size: 0.875rem;
+}
+.admin-incidents__site-occurrences {
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.admin-incidents__site-repetition-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+.admin-incidents__site-repetition > p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.admin-groups {.admin-groups {
   min-width: 0;
 }
 .admin-groups__table .admin-main-table:focus-visible {
@@ -1375,22 +1570,7 @@ detalle y exportación sin cambios. */
   }
 }
 
-.admin-control-chronology__table .admin-control__number {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-.admin-control-chronology__table tbody tr:hover {
-  background: var(--color-surface-secondary);
-}
-.admin-control-chronology__valuation {
-  min-width: 170px;
-  font-size: 0.72rem;
-  color: var(--color-text-secondary);
-}
-.admin-control-chronology__valuation span {
-  display: block;
-}
-.admin-control .admin-control__filters .admin-control__period-field {
+.admin-control .admin-control__filters .admin-control__period-field {.admin-control .admin-control__filters .admin-control__period-field {
   flex-basis: 210px;
 }
 .admin-control__period-select {
@@ -2346,9 +2526,6 @@ workspace y cards permanecen como superficies estructurales neutras;
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-primary-soft);
-}
-.admin-incidents__detail-table {
-  margin: 0;
 }
 @media (max-width: 767px) {
   .admin-incidents__controls {

@@ -32,7 +32,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
     )
 
     expect(totalDialogs).toBe(21)
-    expect(explicitFooters).toBe(20)
+    expect(explicitFooters).toBe(18)
   })
 
   test('los drill-down principales usan drawer y Cronología ya no implementa trap local', async () => {
@@ -49,7 +49,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
     expect(control).toMatch(
       /title=\{`Cronología de \$\{name\}`\}[\s\S]*?variant="drawer"/,
     )
-    expect(control).not.toContain('className="admin-control-chronology"')
+    expect(control).toContain('className="admin-control-chronology"')
     expect(control).not.toContain('actualButton')
     expect(control).not.toContain("closest('[role=\"dialog\"]')")
 
@@ -57,7 +57,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
       /title=\{`Repeticiones · \$\{typeLabels\[family\.tipo\]\}`\}[\s\S]*?variant="drawer"/,
     )
     expect(dashboard).toMatch(
-      /title=\{`Conteos originados el \$\{dashboardDate\(date\)\}`\}[\s\S]*?variant="drawer"/,
+      /title=\{`Detalle diario · \$\{siteName\}`\}[\s\S]*?variant="drawer"/,
     )
   })
 
@@ -72,12 +72,8 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
       'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
     )
 
-    expect(control).toContain(
-      'className="admin-dialog__footer-navigation admin-control-chronology__toolbar"',
-    )
-    expect(incidents).toContain(
-      'className="admin-dialog__footer-navigation admin-v2-toolbar"',
-    )
+    expect(control).not.toContain('admin-control-chronology__toolbar')
+    expect(incidents).not.toContain('admin-v2-toolbar')
     expect(dashboard).toContain(
       'className="admin-dialog__footer-navigation"',
     )

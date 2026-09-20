@@ -23,6 +23,7 @@ export type IncidentType = typeof incidentTypes[number]
 export type IncidentState = typeof incidentStates[number]
 export interface Family { family_key: string; tipo: IncidentType; c_interno: number | null; c_interno_original: string | null; datos: Payload; representative_id: string; representative_site_id: string; cases: number; occurrences: number; sites: number; pending_cases: number; suppressed_cases: number; resolved_cases: number; active_cases: number; active: boolean; family_state: IncidentState; first_seen_at: string; last_seen_at: string; resolved_at: string | null; active_suppression_until: string | null; scope_suppression_until: string | null; reactivate_available: boolean; deletion_proposed: boolean }
 export interface Incident { id: string; sede_id: string; sede: string; c_interno: number | null; c_interno_original: string | null; tipo: IncidentType; estado: IncidentState; datos: Payload; first_seen_at: string; last_seen_at: string; resuelta_at: string | null; active: boolean; occurrence_count: number; primer_snapshot_id: string | null; ultimo_snapshot_id: string | null }
+export interface IncidentSiteDetail { site_id: string; site: string; occurrences: number; state: IncidentState | null; active: boolean; first_seen_at: string | null; last_seen_at: string | null; resolved_at: string | null }
 export interface Device { id: string; site_id: string; site: string; estado: 'pendiente' | 'autorizado'; solicitado_por: string; solicitante: string; solicitado_at: string; autorizado_at: string | null; revocado_at: string | null; ultimo_acceso_at: string | null; revision: number }
 export interface Reads {
   status: MasterEnvelope & { catalog: { version_actual: number | null; publicado_at: string | null } }
@@ -34,6 +35,7 @@ export interface Reads {
   price_mismatch_options: PriceOptions
   summary: ManagementEnvelope & { site_id: string | null; period: { from: string; to: string }; families: Family[]; revisions: { incidents: number; incidents_global: number } }
   detail: ManagementEnvelope & { site_id: string | null; family_key: string; items: Incident[]; page: number; page_size: number; revisions: { incidents: number } }
+  detail_sites: ManagementEnvelope & { family_key: string; sites: IncidentSiteDetail[]; revisions: { incidents: number } }
   list: ManagementEnvelope & { devices: Device[] }
 }
 export type ReadAction = keyof Reads
@@ -44,7 +46,7 @@ export interface ReadPayloads {
   group_products: Page & { categoria_id?: string; grupo_id?: string; estado?: GroupProduct['estado']; buscar?: string }
   catalog_changes: Page & { c_interno?: number; tipo?: CatalogChange['tipo']; estado?: SologCatalogChangeRow['estado']; producto?: string; ambito?: 'producto' | 'grupo' }
   price_mismatch_options: { propuesta_fingerprint: string }
-  summary: { site_id?: string }; detail: { family_key: string; site_id?: string; page: number; page_size: number }; list: { site_id?: string }
+  summary: { site_id?: string }; detail: { family_key: string; site_id?: string; page: number; page_size: number }; detail_sites: { family_key: string }; list: { site_id?: string }
 }
 export interface Mutations {
   group_change_save: SologGroupChangePayload & { member_codes?: number[] }
@@ -59,7 +61,7 @@ export type MutationAction = keyof Mutations
 export interface MutationResult extends ManagementEnvelope { replay: boolean; revisions: Revisions; result?: Payload; status?: string; site_id?: string | null; family_key?: string; scope?: string; until?: string; cambio_catalogo_id?: string; action?: string; authorized_device?: { id: string; estado: string; autorizado_at: string; ultimo_acceso_at: string | null } | null; pending_devices?: { id: string; estado: string; solicitado_por: string; solicitado_at: string; ultimo_acceso_at: string | null }[] }
 export interface PublicationResult { ok: boolean; codigo: string; operation_id?: string; replay?: boolean; completion_recorded?: boolean; version?: number; productos?: number; grupos_activos?: number; cambios_incorporados?: number; detalle?: string }
 export function domain(action: ReadAction | MutationAction): Domain {
-  if (['summary', 'detail', 'ignore_30d', 'reactivate', 'propose_delete'].includes(action)) return 'incidents'
+  if (['summary', 'detail', 'detail_sites', 'ignore_30d', 'reactivate', 'propose_delete'].includes(action)) return 'incidents'
   if (['list', 'authorize', 'replace', 'revoke', 'reject'].includes(action)) return 'devices'
   return 'master'
 }
@@ -84,6 +86,11 @@ function validIncident(value: Payload) {
   if (value.c_interno !== null && !revision(value.c_interno)) return false
   return value.active === (value.estado === 'pendiente' || value.estado === 'suprimida')
 }
+function validIncidentSiteDetail(value: Payload) {
+  if (typeof value.site_id !== 'string' || typeof value.site !== 'string' || !revision(value.occurrences) || typeof value.active !== 'boolean' || !nullableTimestamp(value.first_seen_at) || !nullableTimestamp(value.last_seen_at) || !nullableTimestamp(value.resolved_at)) return false
+  if (value.state !== null && !incidentState(value.state)) return false
+  return value.active === (value.state === 'pendiente' || value.state === 'suprimida')
+}
 function envelope(v: unknown): asserts v is Payload {
   if (!object(v) || v.contract_version !== 2 || typeof v.generated_at !== 'string' || !Number.isFinite(Date.parse(v.generated_at))) throw new ManagementError('Respuesta incompatible con contrato v2')
 }
@@ -91,7 +98,7 @@ export function validateRead<A extends ReadAction>(action: A, value: unknown): R
   envelope(value)
   const d = domain(action)
   if (action !== 'list' && (!object(value.revisions) || !(d === 'master' ? revision(value.revisions.groups) && revision(value.revisions.catalog) : revision(value.revisions.incidents) && (action !== 'summary' || revision(value.revisions.incidents_global))))) throw new ManagementError('Revisiones incompletas')
-  const rows = action === 'summary' ? value.families : action === 'detail' ? value.items : action === 'list' ? value.devices : ['groups', 'group_products', 'catalog_changes'].includes(action) ? value.rows : null
+  const rows = action === 'summary' ? value.families : action === 'detail' ? value.items : action === 'detail_sites' ? value.sites : action === 'list' ? value.devices : ['groups', 'group_products', 'catalog_changes'].includes(action) ? value.rows : null
   if (rows !== null && (!Array.isArray(rows) || !rows.every(object))) throw new ManagementError('Lista incompatible con contrato v2')
   if (['groups', 'group_products', 'catalog_changes'].includes(action) && (!revision(value.offset) || !revision(value.limit) || Number(value.limit) < 1 || Number(value.limit) > 50 || (rows as unknown[]).length > Number(value.limit))) throw new ManagementError('Paginación maestra incompatible')
   if (action === 'status' && (!object(value.catalog) || !('version_actual' in value.catalog))) throw new ManagementError('Status incompatible')
@@ -101,6 +108,7 @@ export function validateRead<A extends ReadAction>(action: A, value: unknown): R
   if (action === 'list' && !(value.devices as Payload[]).every(v => typeof v.id === 'string' && typeof v.site_id === 'string' && revision(v.revision) && ['pendiente', 'autorizado'].includes(String(v.estado)))) throw new ManagementError('Dispositivos incompatibles')
   if (action === 'summary' && (!object(value.period) || typeof value.period.from !== 'string' || typeof value.period.to !== 'string' || !Number.isFinite(Date.parse(value.period.to)) || !(value.families as Payload[]).every(validFamily))) throw new ManagementError('Familias incompatibles')
   if (action === 'detail' && (!revision(value.page) || !revision(value.page_size) || Number(value.page_size) < 1 || Number(value.page_size) > 100 || !(value.items as Payload[]).every(validIncident))) throw new ManagementError('Página incompatible')
+  if (action === 'detail_sites' && (typeof value.family_key !== 'string' || !/^[a-f0-9]{64}$/i.test(value.family_key) || !(value.sites as Payload[]).every(validIncidentSiteDetail))) throw new ManagementError('Detalle por sede incompatible')
   return value as unknown as Reads[A]
 }
 export async function managementRead<A extends ReadAction>(action: A, payload: ReadPayloads[A]): Promise<Reads[A]> {
