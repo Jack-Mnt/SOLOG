@@ -1,5 +1,6 @@
-import { AlertCircle, CalendarCheck2, LoaderCircle } from 'lucide-react'
+import { AlertCircle, CalendarCheck2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { PanelLoader } from '../../../components/panel-loader'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { CajeroCaptureModal } from './cajero.captura.dialog'
 import {
@@ -144,9 +145,7 @@ export function CajeroDiario({ session }: { session: CajeroSessionController }) 
       ) : null}
 
       {loading && !groupsState ? (
-        <div className="cajero-loading" role="status">
-          <LoaderCircle aria-hidden="true" className="spin" size={24} /> Cargando grupos…
-        </div>
+        <PanelLoader variant="contained" />
       ) : groupsState && groups.length === 0 && !error ? (
         <div className="cajero-empty-state" role="status">
           <CalendarCheck2 aria-hidden="true" size={28} />
