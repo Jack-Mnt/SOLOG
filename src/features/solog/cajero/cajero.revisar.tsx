@@ -1,7 +1,6 @@
 import {
   AlertCircle,
   ChevronRight,
-  LoaderCircle,
   SearchCheck,
 } from 'lucide-react'
 import {
@@ -11,6 +10,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { PanelLoader } from '../../../components/panel-loader'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { CajeroCaptureModal } from './cajero.captura.dialog'
 import { CajeroStartEmptyState } from './cajero.operativo'
@@ -160,10 +160,7 @@ export function CajeroRevisar({ session }: { session: CajeroSessionController })
       ) : null}
 
       {loading && !groupsState ? (
-        <div className="cajero-loading" role="status">
-          <LoaderCircle aria-hidden="true" className="spin" size={24} />
-          Cargando casos…
-        </div>
+        <PanelLoader variant="contained" />
       ) : groupsState && groups.length > 0 && visibleGroups.length > 0 ? (
         <div className="cajero-review-list">
           <div className="cajero-review-list__head" aria-hidden="true">
