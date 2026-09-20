@@ -1,7 +1,7 @@
 # SOLOG — UI Admin — Dialogs Fase 6 — Gestión Wide V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO PARA IMPLEMENTACIÓN  
+**Estado:** CERRADA · VALIDADA TÉCNICA Y VISUALMENTE  
 **Clasificación:** Nivel B — UI/UX frontend/Admin  
 **Fecha:** 2026-09-19  
 **Rama:** `admin-work`
@@ -487,6 +487,29 @@ No se modifica:
 
 El cleanup global permanece reservado para Fase 10.
 
-## 10. Estado
+## 10. Cierre y validación
 
-> **Fase 6 — Gestión Wide V1: APROBADA Y CONGELADA PARA IMPLEMENTACIÓN.**
+La Fase 6 queda cerrada sobre la implementación validada técnica y visualmente.
+
+La composición final incluye además el refinamiento aprobado en:
+
+- `docs/SOLOG_UI_Admin_Dialogs_Fase6_Refinamiento_Visual_V1.md`
+
+Cuando exista diferencia visual entre este documento y el refinamiento, prevalece el refinamiento validado.
+
+Estado de cierre:
+
+- validación técnica: ✅ aprobada;
+- smoke funcional: ✅ aprobado;
+- validación visual: ✅ aprobada;
+- responsive: ✅ aprobado;
+- búsqueda previa de candidatos: ✅ aprobada;
+- nested de descarte de orden: ✅ aprobado;
+- nested de separación de producto: ✅ aprobado;
+- refinamiento visual posterior: ✅ aceptado como baseline autoritativo.
+
+Baseline observado al cierre en `admin-work`:
+
+`bff75622e7c1fbaa16fab07c33cbd9dbbc44e8bf`
+
+> **Fase 6 — Gestión Wide V1: CERRADA Y VALIDADA.**
