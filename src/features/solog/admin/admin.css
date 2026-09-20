@@ -846,40 +846,171 @@ detalle y exportación sin cambios. */
 .admin-groups__actions .button {
   white-space: nowrap;
 }
+
+.admin-group-create__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.admin-group-create__fields > label,
+.admin-groups__candidate-search {
+  display: grid;
+  gap: 4px;
+}
+.admin-groups__candidates {
+  display: grid;
+  gap: 8px;
+}
+.admin-groups__candidate-summary {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
 .admin-groups__candidates .admin-v2-picker {
   max-height: 280px;
   overflow: auto;
+  margin: 0;
 }
-.admin-categories__create,
-.admin-categories__rename {
-  margin-bottom: 12px;
+.admin-groups__candidate-list {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-secondary);
+}
+.admin-groups__candidate {
+  align-items: flex-start;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.admin-groups__candidate:last-child {
+  border-bottom: 0;
+}
+.admin-groups__candidate > input[type="checkbox"] {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin-top: 2px;
+  padding: 0;
+}
+.admin-groups__candidate-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.admin-groups__candidate-copy strong,
+.admin-groups__candidate-copy small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-groups__candidate-copy small {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.admin-groups-members__section {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.admin-groups-members__section > h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.admin-groups-members__section .admin-auxiliary-table {
+  margin: 0;
+}
+
+.admin-categories__create {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+.admin-categories__create > label {
+  display: grid;
+  gap: 4px;
 }
 .admin-categories__list {
   display: grid;
   gap: 4px;
-  margin: 12px 0;
+  margin: 0;
 }
 .admin-categories__row {
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 8px;
+  padding: 8px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
+  background: var(--color-surface);
 }
-.admin-categories__row span,
-.admin-categories__row small {
-  display: block;
+.admin-categories__identity {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
 }
-.admin-categories__row small {
-  margin-top: 2px;
+.admin-categories__identity strong,
+.admin-categories__identity small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-categories__identity small,
+.admin-categories__counts {
   color: var(--color-text-secondary);
+  font-size: 0.75rem;
 }
+.admin-categories__row-actions,
+.admin-categories__inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.admin-categories__rename-inline {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+.admin-categories__rename-inline > label {
+  min-width: 0;
+}
+.admin-categories__rename-inline input {
+  width: 100%;
+}
+.admin-categories__counts {
+  flex: 0 0 auto;
+}
+
 @media (max-width: 767px) {
+  .admin-group-create__fields,
+  .admin-categories__create,
+  .admin-categories__rename-inline {
+    grid-template-columns: 1fr;
+  }
+
   .admin-categories__row {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .admin-categories__row-actions,
+  .admin-categories__inline-actions {
+    justify-content: flex-end;
+  }
+
+  .admin-categories__create .button,
+  .admin-categories__inline-actions .button {
+    width: 100%;
+  }
+
+  .admin-categories__inline-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }
 
