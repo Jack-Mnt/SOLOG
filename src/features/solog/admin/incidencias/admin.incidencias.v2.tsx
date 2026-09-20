@@ -363,12 +363,16 @@ function DeleteProposalDialog({
             disabled={proposing}
             onClick={confirm}
           >
+            <CircleOff size={16} aria-hidden="true" />
             {proposing ? "Procesando…" : retryable ? "Reintentar" : "Aprobar eliminación"}
           </button>
         </>
       }
     >
       <div className="admin-dialog-confirmation">
+        <AdminNotice tone="info">
+          El producto no se eliminará hasta publicar el Catálogo.
+        </AdminNotice>
         <dl className="admin-dialog-context">
           <div>
             <dt>Producto</dt>
@@ -387,7 +391,6 @@ function DeleteProposalDialog({
             <dd>{proposal.source.siteName}</dd>
           </div>
         </dl>
-        <p>El producto no se eliminará hasta publicar el Catálogo.</p>
         {error && <AdminNotice tone="error">{error}</AdminNotice>}
       </div>
     </AdminDialog>
