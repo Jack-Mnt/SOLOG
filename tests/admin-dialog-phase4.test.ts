@@ -29,10 +29,12 @@ describe('AdminDialog Fase 4 — confirmaciones', () => {
     expect(incidents).toContain('<dt>Producto</dt>')
     expect(incidents).toContain('<dt>C. interno</dt>')
     expect(incidents).toContain('<dt>Detectado en</dt>')
+    expect(incidents).toContain('<AdminNotice tone="info">')
     expect(incidents).toContain(
       'El producto no se eliminará hasta publicar el Catálogo.',
     )
     expect(incidents).toContain('className="button button--danger"')
+    expect(incidents).toContain('<CircleOff size={16} aria-hidden="true" />')
   })
 
   test('Productos autoaprueba estado manual, elimina Modalidad y diferencia tonos', async () => {
