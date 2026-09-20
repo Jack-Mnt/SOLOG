@@ -116,7 +116,8 @@ describe('AdminDialog stack', () => {
 
     expect(css).toContain('var(--color-dark-surface) 50%')
     expect(css).toContain('backdrop-filter: blur(4px)')
-    expect(css).toContain('width: min(100%, 960px)')
+    expect(css).toContain('width: min(calc(100% - 48px), var(--admin-dialog-drawer-max-width, 960px))')
+    expect(css).toContain('max-width: 960px')
     expect(css).toContain('.admin-dialog--default')
     expect(css).toContain('max-height: calc(100dvh - 24px)')
     expect(css).toContain('.admin-dialog-backdrop--wide,')
