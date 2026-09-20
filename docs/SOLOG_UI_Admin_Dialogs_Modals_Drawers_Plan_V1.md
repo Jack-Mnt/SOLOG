@@ -272,7 +272,7 @@ con composiciones definitivas, excepciones y estado final.
 1. Preflight                              ✅
 2. Primitive / normalización global      ✅
 3. Consumidores / estructura             ✅
-4. Default — confirmaciones
+4. Default — confirmaciones             ✅
 5. Default — formularios/tareas
 6. Wide — gestión
 7. Catálogo + nesting
