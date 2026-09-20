@@ -63,9 +63,9 @@ export function AdminBinarySwitch<T extends string>({
           ? 0
           : event.key === 'End'
             ? 1
-            : event.key === 'ArrowRight' || event.key === 'ArrowDown'
-              ? (current + 1) % 2
-              : (current + 1) % 2
+            : current === 0
+              ? 1
+              : 0
         const option = options[next]
         onChange(option.value)
         items.current[next]?.focus()
