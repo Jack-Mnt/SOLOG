@@ -1047,32 +1047,30 @@ function PriceResolutionContent({
         }
       >
         <div className="admin-dialog-task">
-          <AdminNotice tone="info">
-            La resolución quedará preparada y se aplicará al publicar el
-            Catálogo.
-          </AdminNotice>
-
-          <dl className="admin-dialog-context">
-            <div>
-              <dt>Grupo</dt>
-              <dd>{options.grupo.nombre}</dd>
-            </div>
-            <div>
-              <dt>Precio actual</dt>
-              <dd><Value value={options.grupo.precio} money /></dd>
-            </div>
-            <div>
-              <dt>Precio nuevo</dt>
-              <dd><Value value={options.nuevo_precio} money /></dd>
-            </div>
-            <div>
-              <dt>Valorizado actual</dt>
-              <dd>{currentValuation}</dd>
-            </div>
-          </dl>
+          <section className="admin-catalog__dialog-section">
+            <h3>Resumen del cambio</h3>
+            <dl className="admin-catalog__price-summary">
+              <div>
+                <dt>Grupo</dt>
+                <dd>{options.grupo.nombre}</dd>
+              </div>
+              <div>
+                <dt>Precio</dt>
+                <dd className="admin-catalog__price-flow">
+                  <Value value={options.grupo.precio} money />
+                  <span aria-hidden="true">→</span>
+                  <Value value={options.nuevo_precio} money />
+                </dd>
+              </div>
+              <div>
+                <dt>Valorizado</dt>
+                <dd>{currentValuation}</dd>
+              </div>
+            </dl>
+          </section>
 
           <section className="admin-catalog__dialog-section">
-            <h3>Integrantes afectados</h3>
+            <h3>Integrantes afectados · {options.members.length}</h3>
             <div className="admin-auxiliary-table admin-catalog__table">
               <table>
                 <thead>
@@ -1117,62 +1115,63 @@ function PriceResolutionContent({
           )}
 
           {resolution && (
-            <fieldset className="admin-catalog__valuation-decision">
-              <legend>Valorizado al publicar</legend>
+            <section className="admin-catalog__dialog-section admin-catalog__valuation-section">
+              <h3>Valorizado al publicar</h3>
+              <div className="admin-catalog__valuation-actions">
+                {canKeep && (
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    aria-pressed={packageAction === "keep"}
+                    disabled={!!intent}
+                    onClick={() => {
+                      setPackageAction("keep");
+                      setPreparedValuation(null);
+                      setError("");
+                    }}
+                  >
+                    <Package size={16} aria-hidden="true" />
+                    {options.package_decision_required
+                      ? "Conservar valorizado"
+                      : "Mantener sin valorizado"}
+                  </button>
+                )}
 
-              {canKeep && (
-                <button
-                  type="button"
-                  className="button button--secondary"
-                  aria-pressed={packageAction === "keep"}
-                  disabled={!!intent}
-                  onClick={() => {
-                    setPackageAction("keep");
-                    setPreparedValuation(null);
-                    setError("");
-                  }}
-                >
-                  <Package size={16} aria-hidden="true" />
-                  {options.package_decision_required
-                    ? "Conservar valorizado"
-                    : "Mantener sin valorizado"}
-                </button>
-              )}
-
-              <button
-                type="button"
-                className="button button--secondary"
-                aria-pressed={
-                  packageAction === "set" ||
-                  packageAction === "update" ||
-                  packageAction === "clear"
-                }
-                disabled={!!intent}
-                onClick={() => setValuation(true)}
-              >
-                <RefreshCw size={16} aria-hidden="true" />
-                Configurar valorizado
-              </button>
-
-              {resolution === "separate_sku" && (
                 <button
                   type="button"
                   className="button button--secondary"
                   aria-pressed={
-                    packageAction === "not_applicable" ||
+                    packageAction === "set" ||
+                    packageAction === "update" ||
                     packageAction === "clear"
                   }
                   disabled={!!intent}
-                  onClick={() => {
-                    setPackageAction("not_applicable");
-                    setPreparedValuation(null);
-                    setError("");
-                  }}
+                  onClick={() => setValuation(true)}
                 >
-                  <CircleOff size={16} aria-hidden="true" />
-                  Sin valorizado
+                  <RefreshCw size={16} aria-hidden="true" />
+                  Configurar
                 </button>
-              )}
+
+                {resolution === "separate_sku" && (
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    aria-pressed={
+                      packageAction === "not_applicable" ||
+                      packageAction === "clear"
+                    }
+                    disabled={!!intent}
+                    onClick={() => {
+                      setPackageAction("not_applicable");
+                      setPreparedValuation(null);
+                      setError("");
+                    }}
+                  >
+                    <CircleOff size={16} aria-hidden="true" />
+                    Sin valorizado
+                  </button>
+                )}
+              </div>
 
               {(packageAction === "clear" ||
                 packageAction === "not_applicable") && (
@@ -1188,8 +1187,12 @@ function PriceResolutionContent({
                     {preparedValuation.precio_paquete.toFixed(2)} al publicar.
                   </p>
                 )}
-            </fieldset>
+            </section>
           )}
+
+          <AdminNotice tone="info">
+            Los cambios se aplicarán al publicar el Catálogo.
+          </AdminNotice>
 
           {intent && <CatalogMutationNotice onRetry={retry} />}
           {error && <AdminNotice tone="error">{error}</AdminNotice>}
