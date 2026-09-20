@@ -2,9 +2,9 @@ import {
   AlertCircle,
   History,
   Layers3,
-  LoaderCircle,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { PanelLoader } from '../../../components/panel-loader'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import type { CajeroSessionController } from './cajero.session'
 import { cashierHistoryDate } from './cajero.history'
@@ -209,7 +209,7 @@ export function CajeroHistorial({ session }: { session: CajeroSessionController 
       ) : null}
 
       {loading ? (
-        <div className="cajero-loading" role="status"><LoaderCircle aria-hidden="true" className="spin" size={24} /> Cargando historial…</div>
+        <PanelLoader variant="contained" />
       ) : history && visibleItems.length > 0 ? (
         <div className="cajero-history-list">
           <div className="cajero-history-list__head" aria-hidden="true">
