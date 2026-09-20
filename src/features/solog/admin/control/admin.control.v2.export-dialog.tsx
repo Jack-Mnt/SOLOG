@@ -1,29 +1,74 @@
 import { useEffect, useRef, useState } from 'react'
 import { Download } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
+import { AdminBinarySwitch, AdminNotice } from '../admin.primitives'
 import { useAdminStore } from '../admin.v2.context'
 import type { Biweekly } from '../admin.v2'
+
+const periodOptions = [
+  { value: 'previous_biweekly', label: 'Anterior' },
+  { value: 'current_biweekly', label: 'Actual' },
+] as const
+
 export function AdminExportDialog({ siteId, onClose }: { siteId: string; onClose: () => void }) {
   const store = useAdminStore()
-  const [site, setSite] = useState(siteId)
   const [period, setPeriod] = useState<Biweekly>('current_biweekly')
-  const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null)
-  const running = useRef(false), active = useRef(true)
-  useEffect(() => { active.current = true; return () => { active.current = false } }, [])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const running = useRef(false)
+  const active = useRef(true)
+
+  useEffect(() => {
+    active.current = true
+    return () => { active.current = false }
+  }, [])
+
   const download = async () => {
     if (running.current) return
-    running.current = true; setBusy(true); setError(null)
+    running.current = true
+    setBusy(true)
+    setError(null)
     try {
-      const response = await store.load('export', { site_id: site, period })
+      const response = await store.load('export', { site_id: siteId, period })
       const { downloadAdminWorkbook } = await import('./admin.control.v2.export')
       if (!active.current || !store.current() || !store.bootstrap) return
       await downloadAdminWorkbook(response, () => active.current && store.current() && !!store.bootstrap)
       if (active.current) onClose()
-    } catch (e) { if (active.current) setError(e instanceof Error ? e.message : 'No se pudo descargar.') }
-    finally { running.current = false; if (active.current) setBusy(false) }
+    } catch (reason) {
+      if (active.current) setError(reason instanceof Error ? reason.message : 'No se pudo descargar.')
+    } finally {
+      running.current = false
+      if (active.current) setBusy(false)
+    }
   }
-  return <AdminDialog title="DESCARGAR AJUSTE" description="Descarga toda la información del período quincenal seleccionado. Los resultados se consultan al descargar; no se reutiliza la tabla visible." onClose={onClose} closeDisabled={busy} footer={<><button type="button" className="button button--secondary" disabled={busy} onClick={onClose}>Cancelar</button><button type="button" className="button" disabled={busy || !site} onClick={() => void download()}><Download size={16} aria-hidden="true" />{busy ? 'Preparando…' : 'Descargar Excel'}</button></>}>
-    <div className="admin-export-dialog__fields"><label>Sede de exportación<select disabled={busy} value={site} onChange={e => setSite(e.target.value)}>{store.bootstrap?.allowed_sites.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}</select></label><label>Período de exportación<select disabled={busy} value={period} onChange={e => setPeriod(e.target.value as Biweekly)}><option value="current_biweekly">Período actual quincenal</option><option value="previous_biweekly">Período anterior quincenal</option></select></label></div>
-    <p>{period === 'current_biweekly' ? 'Período actual quincenal' : 'Período anterior quincenal'} · fechas resueltas por backend en America/Lima.</p>{error && <p role="alert">{error}</p>}
+
+  return <AdminDialog
+    title="Descargar ajuste"
+    description="Genera un archivo Excel con la información de la quincena seleccionada."
+    onClose={onClose}
+    closeDisabled={busy}
+    footer={
+      <>
+        <button type="button" className="button button--secondary" disabled={busy} onClick={onClose}>
+          Cancelar
+        </button>
+        <button type="button" className="button" disabled={busy} onClick={() => void download()}>
+          <Download size={16} aria-hidden="true" />
+          {busy ? 'Preparando…' : 'Descargar Excel'}
+        </button>
+      </>
+    }
+  >
+    <div className="admin-dialog-task">
+      <AdminBinarySwitch
+        label="Quincena"
+        value={period}
+        options={periodOptions}
+        onChange={setPeriod}
+        disabled={busy}
+      />
+      <p className="admin-dialog-help">Las fechas se calculan con horario de Lima.</p>
+      {error && <AdminNotice tone="error">{error}</AdminNotice>}
+    </div>
   </AdminDialog>
 }
