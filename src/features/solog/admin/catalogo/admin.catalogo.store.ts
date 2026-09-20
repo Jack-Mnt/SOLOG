@@ -248,6 +248,16 @@ export class CatalogStore {
     if (!this.intentState) return Promise.reject(new Error('No hay una operación de Catálogo pendiente.'))
     return this.execute(this.intentState)
   }
+  acknowledgeCompletedPublication() {
+    if (
+      this.publication.pending ||
+      this.publication.operationId ||
+      !this.publication.result?.completion_recorded
+    ) return
+    this.publication = {}
+    this.emit()
+  }
+
   publish(): Promise<CatalogPublicationResult> {
     if (this.access().identity.rol !== 'admin') return Promise.reject(new Error('Solo admin puede publicar.'))
     if (this.publication.pending) return this.publication.pending
