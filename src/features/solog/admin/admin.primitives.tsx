@@ -28,6 +28,67 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
 
 IconButton.displayName = 'IconButton'
 
+export type AdminBinarySwitchOption<T extends string> = {
+  value: T
+  label: string
+}
+
+export function AdminBinarySwitch<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  disabled = false,
+}: {
+  label: string
+  value: T
+  options: readonly [AdminBinarySwitchOption<T>, AdminBinarySwitchOption<T>]
+  onChange: (value: T) => void
+  disabled?: boolean
+}) {
+  const items = useRef<(HTMLButtonElement | null)[]>([])
+  const selectedIndex = value === options[1].value ? 1 : 0
+
+  return <div className="admin-binary-field">
+    <span className="admin-binary-field__label">{label}</span>
+    <div
+      className="admin-binary-switch"
+      role="radiogroup"
+      aria-label={label}
+      onKeyDown={(event) => {
+        if (disabled || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return
+        const target = event.target
+        if (!(target instanceof HTMLButtonElement) || target.getAttribute('role') !== 'radio') return
+        event.preventDefault()
+        const current = items.current.indexOf(target)
+        const next = event.key === 'Home'
+          ? 0
+          : event.key === 'End'
+            ? 1
+            : event.key === 'ArrowRight' || event.key === 'ArrowDown'
+              ? (current + 1) % 2
+              : (current + 1) % 2
+        const option = options[next]
+        onChange(option.value)
+        items.current[next]?.focus()
+      }}
+    >
+      {options.map((option, index) => <button
+        key={option.value}
+        ref={(node) => { items.current[index] = node }}
+        type="button"
+        role="radio"
+        aria-checked={value === option.value}
+        tabIndex={value === option.value ? 0 : -1}
+        disabled={disabled}
+        onClick={() => onChange(option.value)}
+      >
+        {option.label}
+      </button>)}
+    </div>
+  </div>
+}
+
 type AdminPaginationProps = {
   total: number
   currentPage: number
