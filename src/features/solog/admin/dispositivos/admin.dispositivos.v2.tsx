@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Check,
   Inbox,
   MapPinOff,
   ShieldCheck,
@@ -226,7 +225,13 @@ export function AdminDevicesV2() {
                 disabled={!!store.intent("devices")}
                 onClick={confirm}
               >
-                <Check size={16} aria-hidden="true" />
+                {confirmation.action === "authorize" ? (
+                  <ShieldCheck size={16} aria-hidden="true" />
+                ) : confirmation.action === "revoke" ? (
+                  <ShieldOff size={16} aria-hidden="true" />
+                ) : (
+                  <X size={16} aria-hidden="true" />
+                )}
                 {titles[confirmation.action]}
               </button>
             </>
