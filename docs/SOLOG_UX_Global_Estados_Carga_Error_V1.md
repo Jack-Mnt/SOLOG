@@ -272,7 +272,13 @@ Implementado:
 
 ### Fase 2 — Detalles
 
-**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE Y SMOKE.**
+**CERRADA TÉCNICAMENTE.**
+
+Validación reportada por el usuario:
+- tests dirigidos: correctos;
+- lint: correcto;
+- build: correcto;
+- `git diff --check`: correcto.
 
 Implementado:
 - primera carga sin `summary` → `PanelLoader` fullscreen;
@@ -286,3 +292,21 @@ Implementado:
 - se conserva deliberadamente `Cargando detalle…` en el detalle expandido;
 - sin cambios backend, contratos o CSS;
 - cobertura dirigida añadida en `tests/global-loading-details-phase2.test.ts`.
+
+
+### Fase 3 — Cajero tablet-first
+
+**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE Y SMOKE TABLET.**
+
+Implementado:
+- Conteo → `PanelLoader variant="contained"`;
+- Conteo diario → `PanelLoader variant="contained"`;
+- Revisar → `PanelLoader variant="contained"`;
+- Historial → `PanelLoader variant="contained"`;
+- eliminados los textos directos `Cargando grupos…`, `Cargando casos…` y `Cargando historial…` en esas lecturas;
+- retirados los imports `LoaderCircle` que quedaron sin uso en esos cuatro módulos;
+- Header y Bottom Navigation no fueron modificados;
+- sin cambios de breakpoints, densidad, geometría tablet o CSS;
+- sincronización posterior al conteo queda sin modificar para Fase 4;
+- `.cajero-loading` permanece temporalmente porque aún tiene consumidores fuera de estas cuatro lecturas;
+- cobertura dirigida añadida en `tests/global-loading-cajero-phase3.test.ts`.
