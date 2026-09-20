@@ -9,15 +9,15 @@ describe('AdminDialog Fase 6 — gestión wide', () => {
     )
 
     expect(members).toContain('const CANDIDATE_LIMIT = 50')
-    expect(members).toContain('if (!term) return []')
+    expect(members).toContain('if (term.length < 2) return []')
     expect(members).toContain(
       'const candidates = matchedCandidates.slice(0, CANDIDATE_LIMIT)',
     )
     expect(members).toContain(
-      'Busca un producto para mostrar candidatos compatibles.',
+      'Busca por código, producto, marca o grupo.',
     )
     expect(members).toContain(
-      'Mostrando 50 resultados. Refina la búsqueda para encontrar el',
+      'Mostrando 50 resultados. Refina la búsqueda.',
     )
     expect(members).toContain(
       'checked={selectedCodes.has(product.c_interno)}',
@@ -33,6 +33,7 @@ describe('AdminDialog Fase 6 — gestión wide', () => {
     expect(groups).toContain('title="Crear grupo"')
     expect(groups).toContain('variant="wide"')
     expect(groups).toContain('className="admin-group-create__fields"')
+    expect(groups).toContain('<h3>Integrantes</h3>')
     expect(groups).toContain(
       'Crea un grupo de conteo con dos o más SKU del mismo precio.',
     )
@@ -63,6 +64,7 @@ describe('AdminDialog Fase 6 — gestión wide', () => {
     )
     expect(categories).toContain('Guardar orden')
     expect(categories).not.toContain('Guardar orden completo')
+    expect(categories).not.toContain('admin-categories__counts')
   })
 
   test('Cerrar Categorías con orden pendiente abre confirmación nested', async () => {
@@ -90,12 +92,13 @@ describe('AdminDialog Fase 6 — gestión wide', () => {
     expect(members).toContain(
       'description="El producto dejará el grupo y quedará como Único."',
     )
-    expect(members).toContain('<dt>Grupo actual</dt>')
+    expect(members).toContain('<dt>Grupo nuevo</dt>')
+    expect(members).toContain('<dd>{separating.producto}</dd>')
     expect(members).toContain(
       "await store.mutation('make_unique', {",
     )
     expect(members).toContain('closeDisabled={!!intent}')
-    expect(members).toContain('Separar y dejar como Único')
+    expect(members).toMatch(/onClick=\{\(\) => void separate\(\)\}[\s\S]*?>[\s\S]*?<Unlink[\s\S]*?Separar\s*<\/button>/)
   })
 
   test('Integrantes simplifica el movimiento y Fase 6 elimina notices legacy locales', async () => {
@@ -111,6 +114,10 @@ describe('AdminDialog Fase 6 — gestión wide', () => {
     const css = await source('src/features/solog/admin/admin.css')
 
     expect(members).toContain('Agregar al grupo')
+    expect(members).toContain('Buscar SKU compatible')
+    expect(members).not.toContain('Sin SKU seleccionados')
+    expect(members).not.toContain('Los SKU seleccionados pasarán a este grupo.')
+    expect(members).not.toContain('admin-groups-members__context')
     expect(members).not.toContain('Agregar o mover SKU seleccionados')
     expect(members).not.toContain('El movimiento es atómico')
     expect(members).toContain('<AdminNotice tone="info">')
@@ -120,6 +127,9 @@ describe('AdminDialog Fase 6 — gestión wide', () => {
     expect(css).toContain('.admin-group-create__fields')
     expect(css).toContain('.admin-groups__candidate-list')
     expect(css).toContain('.admin-categories__rename-inline')
+    expect(css).toContain('min-height: 48px')
+    expect(css).toMatch(/\.admin-categories__row \{[\s\S]*?border-bottom: 1px solid var\(--color-border\)/)
+    expect(css).not.toMatch(/\.admin-categories__row \{[\s\S]*?border-radius:/)
     expect(css).toMatch(
       /@media \(max-width: 767px\)[\s\S]*?\.admin-group-create__fields,[\s\S]*?\.admin-categories__rename-inline/,
     )
