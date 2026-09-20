@@ -154,7 +154,12 @@ function ProductSetupPendingDialog({
           >
             <div>
               <strong>{item.producto}</strong>
-              <span>C. interno {item.c_interno}</span>
+              <span>
+                {item.tipo === "reincorporar_producto"
+                  ? "Reincorporación"
+                  : "Nuevo producto"}{" "}
+                · C. interno {item.c_interno}
+              </span>
             </div>
             <button
               type="button"
