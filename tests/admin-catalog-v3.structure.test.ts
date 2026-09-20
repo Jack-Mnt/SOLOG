@@ -32,7 +32,7 @@ describe('Catálogo V3: estructura principal', () => {
     for (const emerging of ['eliminar_producto', 'excluir_producto', 'nombre', 'codigo']) expect(ui).toMatch(new RegExp(`["']${emerging}["']`))
     expect(ui).toMatch(/store\s*\.\s*mutation\(\s*["']proposal_action["']/)
     expect(ui).toMatch(/run\(\s*["']withdraw["']\s*\)/)
-    expect(ui).toContain('Candidato automático')
+    expect(ui).toContain('"Automático"')
     expect(ui).toContain('proposal.stale')
     expect(ui).toContain('proposal.block_reason')
     expect(ui).not.toContain('admin.package-price.v2')
@@ -45,19 +45,29 @@ describe('Catálogo V3: estructura principal', () => {
     expect(ui).toContain('store.publish()')
   })
 
-  test('expone estados UI, reintentos y controles accesibles de staging y publicación', async () => {
+  test('expone estados UI, reintentos y controles accesibles de preparación y publicación', async () => {
     const [ui, feedback] = await Promise.all([
       source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx'),
       source('src/features/solog/admin/catalogo/admin.catalogo.feedback.tsx'),
     ])
-    for (const state of ['QueryState', 'role="alert"', 'role="status"', 'No hay propuestas', 'Existe staging preparado', 'No publicable:', 'Confirmar publicación', 'Recuperar publicación']) expect(ui).toContain(state)
+    for (const state of [
+      'QueryState',
+      'No hay propuestas',
+      'Guardar resolución',
+      'Recuperar publicación',
+      'Publicar catálogo',
+      'No se puede publicar todavía.',
+    ]) expect(ui).toContain(state)
     expect(feedback).toContain('Reintentar misma operación')
     expect(ui).toContain('aria-label="Estado de propuestas"')
-    expect(ui).toMatch(/disabled=\{\s*!admin\s*\|\|\s*!!receipt\.pending\s*\|\|\s*\(\s*!receipt\.operationId\s*&&\s*!preview\?\.ok\s*\)\s*\}/s)
     expect(ui).toContain('preview.ok ?')
     expect(ui).toContain('preview.conflictos.length > 0')
     expect(ui).toContain('onClick={query.retry}')
     expect(ui).toContain('typeof conflict.mensaje === "string"')
+    expect(ui).toContain('solo un administrador puede')
+    expect(ui).toContain('receipt.result?.completion_recorded === true')
+    expect(ui).not.toContain('Existe staging preparado')
+    expect(ui).not.toContain('Confirmar publicación')
   })
 
   test('Productos opera sobre Master Data completo y conserva las mutaciones Catálogo V3', async () => {
