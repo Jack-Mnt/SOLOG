@@ -75,6 +75,7 @@ describe('AdminDialog Fase 4 — confirmaciones', () => {
     expect(devices).toContain('"Autorizar dispositivo"')
     expect(devices).toContain('"Revocar dispositivo"')
     expect(devices).toContain('"Rechazar solicitud"')
+    expect(devices).toContain('<AdminNotice tone="info">')
     expect(devices).toContain(
       'La sede quedará disponible para una nueva solicitud de acceso.',
     )
