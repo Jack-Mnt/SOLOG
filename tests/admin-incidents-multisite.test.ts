@@ -201,7 +201,9 @@ describe("Incidencias multisede", () => {
     expect(source).toContain('family.family_state === "pendiente"');
     expect(source).toContain('scope: "site"');
     expect(source).toContain('summary.revisions.incidents');
+    expect(source).toContain('<AdminNotice tone="info">');
     expect(source).toContain('<dt>Detectado en</dt>');
+    expect(source).toContain('<CircleOff size={16} aria-hidden="true" />');
     expect(source).toMatch(/void \(retryable \? onRetry\(\) : onConfirm\(\)\)\s*\.then\(onClose\)\s*\.catch/);
     expect(source).toContain('retryable ? "Reintentar" : "Aprobar eliminación"');
   });
