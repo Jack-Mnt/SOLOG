@@ -1,7 +1,7 @@
 # SOLOG — UI Admin — Dialogs Fase 4 — Confirmaciones V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** CERRADA · VALIDADA TÉCNICA Y VISUALMENTE  
 **Clasificación:** Nivel B — UI/UX frontend/Admin  
 **Fecha:** 2026-09-19  
 **Rama:** `admin-work`
@@ -222,6 +222,29 @@ Acción restaurativa                → Primary
 Revocar/rechazar autorización      → Danger
 ```
 
-## 9. Estado
+## 9. Cierre y validación
 
-> **Fase 4 — Confirmaciones V1: APROBADA Y CONGELADA.**
+La Fase 4 queda cerrada sobre la implementación corregida después del smoke humano.
+
+Las correcciones realizadas durante el smoke se consideran parte autoritativa de la composición final, en particular:
+
+- los mensajes operativos relevantes usan `AdminNotice tone="info"` encima del bloque de contexto;
+- `Aprobar eliminación` conserva tono Danger e icono `CircleOff`;
+- los notices informativos de confirmación usan tipografía compacta para mantener jerarquía;
+- el flujo de dispositivos no ofrece reemplazo ni muestra UUID;
+- exclusión, reincorporación y eliminación manual conservan la semántica de autoaprobación congelada;
+- `Modalidad` permanece eliminada del Dialog de estado de producto.
+
+Estado de cierre:
+
+- validación técnica: ✅ aprobada;
+- smoke funcional: ✅ aprobado;
+- validación visual: ✅ aprobada;
+- composición responsive: ✅ aprobada;
+- decisiones funcionales relacionadas: ✅ congeladas.
+
+Baseline de cierre observado en `admin-work`:
+
+`c5bebcc50aff7030bcdacac1a1ab87e27c059f33`
+
+> **Fase 4 — Confirmaciones V1: CERRADA Y VALIDADA.**
