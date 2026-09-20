@@ -123,7 +123,7 @@ function finiteNumber(value: unknown): number | null {
 }
 
 function proposalSetupPrice(proposal: CatalogProposal): number | null {
-  const proposed = finiteNumber(proposal.datos.precio);
+  const proposed = finiteNumber(proposal.datos["precio"]);
   const current = finiteNumber(proposal.catalogo_actual.precio);
   if (proposal.tipo === "agregar_producto") return proposed;
   if (proposal.tipo === "reincorporar_producto") return current ?? proposed;
@@ -1095,11 +1095,13 @@ function PriceResolutionContent({
               value={
                 resolution === "separate_sku"
                   ? "separate_sku"
-                  : "update_group_price"
+                  : resolution === "update_group_price"
+                    ? "update_group_price"
+                    : ""
               }
               options={resolutionSwitchOptions}
               onChange={selectResolution}
-              disabled={!!intent?.pending}
+              disabled={!!intent}
             />
           )}
 
@@ -1112,6 +1114,7 @@ function PriceResolutionContent({
                   type="button"
                   className="button button--secondary"
                   aria-pressed={packageAction === "keep"}
+                  disabled={!!intent}
                   onClick={() => {
                     setPackageAction("keep");
                     setPreparedValuation(null);
@@ -1133,6 +1136,7 @@ function PriceResolutionContent({
                   packageAction === "update" ||
                   packageAction === "clear"
                 }
+                disabled={!!intent}
                 onClick={() => setValuation(true)}
               >
                 <RefreshCw size={16} aria-hidden="true" />
@@ -1147,6 +1151,7 @@ function PriceResolutionContent({
                     packageAction === "not_applicable" ||
                     packageAction === "clear"
                   }
+                  disabled={!!intent}
                   onClick={() => {
                     setPackageAction("not_applicable");
                     setPreparedValuation(null);
@@ -1187,8 +1192,6 @@ function PriceResolutionContent({
           description="Esta configuración se aplicará al guardar la resolución y publicar el Catálogo."
           confirmLabel="Aplicar"
           pending={!!intent?.pending}
-          error={error}
-          onRetry={retry}
           onClose={() => setValuation(false)}
           onConfirm={chooseValuation}
         />
