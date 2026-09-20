@@ -799,8 +799,21 @@ function PriceResolutionContent({
     : options.options.includes(preparedResolution as PriceResolution)
       ? preparedResolution
       : "";
+  const compatiblePreparedPackageAction: PackageAction =
+    initialResolution === "separate_sku"
+      ? preparedPackageAction === "set" ||
+        preparedPackageAction === "clear" ||
+        preparedPackageAction === "not_applicable"
+        ? preparedPackageAction
+        : ""
+      : preparedPackageAction === "keep" ||
+          preparedPackageAction === "clear" ||
+          preparedPackageAction === "set" ||
+          preparedPackageAction === "update"
+        ? preparedPackageAction
+        : "";
   const initialPackageAction: PackageAction =
-    preparedPackageAction ||
+    compatiblePreparedPackageAction ||
     (initialResolution &&
     initialResolution !== "separate_sku" &&
     !options.package_decision_required
@@ -1209,6 +1222,11 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
   const completed = receipt.result?.completion_recorded === true;
   const recoverable = !!receipt.operationId && !completed;
 
+  const closeDialog = () => {
+    if (completed) store.acknowledgeCompletedPublication();
+    onClose();
+  };
+
   const publish = () => {
     void store.publish().catch(() => {});
   };
@@ -1218,7 +1236,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
       type="button"
       className="button button--secondary"
       disabled={!!receipt.pending}
-      onClick={onClose}
+      onClick={closeDialog}
     >
       Cerrar
     </button>
@@ -1228,7 +1246,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
         type="button"
         className="button button--secondary"
         disabled={!!receipt.pending}
-        onClick={onClose}
+        onClick={closeDialog}
       >
         Cerrar
       </button>
@@ -1248,7 +1266,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
         type="button"
         className="button button--secondary"
         disabled={!!receipt.pending}
-        onClick={onClose}
+        onClick={closeDialog}
       >
         Cancelar
       </button>
@@ -1268,7 +1286,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
     <AdminDialog
       title="Publicar catálogo"
       description="Revisa los cambios antes de publicar una nueva versión."
-      onClose={onClose}
+      onClose={closeDialog}
       closeDisabled={!!receipt.pending}
       variant="wide"
       footer={footer}
