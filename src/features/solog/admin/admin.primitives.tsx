@@ -41,7 +41,7 @@ export function AdminBinarySwitch<T extends string>({
   disabled = false,
 }: {
   label: string
-  value: T
+  value: T | ''
   options: readonly [AdminBinarySwitchOption<T>, AdminBinarySwitchOption<T>]
   onChange: (value: T) => void
   disabled?: boolean
@@ -77,7 +77,7 @@ export function AdminBinarySwitch<T extends string>({
         type="button"
         role="radio"
         aria-checked={value === option.value}
-        tabIndex={value === option.value ? 0 : -1}
+        tabIndex={value === option.value || (selectedIndex < 0 && index === 0) ? 0 : -1}
         disabled={disabled}
         onClick={() => onChange(option.value)}
       >
