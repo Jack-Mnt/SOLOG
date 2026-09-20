@@ -86,23 +86,23 @@ Descripción:
 
 `El cambio quedará aprobado y listo para incluirse en la próxima publicación del Catálogo.`
 
-Contexto:
+Body:
 
-- Producto;
-- C. interno;
-- Detectado en.
-
-Aclaración:
-
-`El producto no se eliminará hasta publicar el Catálogo.`
+1. `AdminNotice tone="info"` encima del contexto:
+   - `El producto no se eliminará hasta publicar el Catálogo.`
+2. Contexto:
+   - Producto;
+   - C. interno;
+   - Detectado en.
+3. Error, si existe.
 
 Footer:
 
 ```text
-[ Cancelar ] [ Aprobar eliminación ]
+[ Cancelar ] [ ⊘ Aprobar eliminación ]
 ```
 
-CTA: Danger.
+CTA: Danger con icono `CircleOff`.
 
 ## 5. Dispositivos
 
