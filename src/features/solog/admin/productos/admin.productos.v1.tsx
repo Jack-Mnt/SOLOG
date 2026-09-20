@@ -98,9 +98,9 @@ function ProductStateProposal({
       }
     >
       <div className="admin-dialog-confirmation">
-        <p>
+        <AdminNotice tone="info">
           Esta acción aprueba el cambio, pero el producto no cambiará hasta publicar el Catálogo.
-        </p>
+        </AdminNotice>
         <dl className="admin-dialog-context">
           <div>
             <dt>Producto</dt>
