@@ -21,7 +21,7 @@ import type {
   MasterDataProduct,
 } from "../masterdata/admin.masterdata.v1";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminPagination, AdminSort, IconButton } from "../admin.primitives";
+import { AdminNotice, AdminPagination, AdminSort, IconButton } from "../admin.primitives";
 import { paginateAdminRows } from "../admin.pagination";
 import { AdminCategoriesDialog } from "./admin.categories.dialog";
 import { useGroupsStore } from "./admin.grupos.context";
@@ -195,7 +195,10 @@ function EditGroupDialog({
   const [name, setName] = useState(group.nombre);
   const [categoryId, setCategoryId] = useState(group.categoria_id);
   const [error, setError] = useState("");
+  const intent = store.intent();
+  const nameChanged = name.trim() !== group.nombre.trim();
   const categoryChanged = categoryId !== group.categoria_id;
+  const hasChanges = nameChanged || categoryChanged;
   const save = async (event: FormEvent) => {
     event.preventDefault();
     try {
@@ -219,20 +222,31 @@ function EditGroupDialog({
   };
   return (
     <AdminDialog
-      title="Editar nombre y categoría"
-      description="La nombre operativa no modifica el nombre comercial de los SKU."
+      title="Editar grupo"
+      description="Actualiza el nombre operativo o la categoría del grupo. Esto no modifica los nombres comerciales de sus SKU."
       onClose={onClose}
-      closeDisabled={!!store.intent()?.pending}
+      closeDisabled={!!intent?.pending}
       footer={
         <>
-          <button type="button" className="button button--secondary" disabled={!!store.intent()?.pending} onClick={onClose}>
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={!!intent?.pending}
+            onClick={onClose}
+          >
             Cancelar
           </button>
           <button
             type="submit"
             form="admin-edit-group-form"
             className="button"
-            disabled={!!store.intent() || !masterData.snapshot || !name.trim() || !categoryId}
+            disabled={
+              !!intent ||
+              !masterData.snapshot ||
+              !name.trim() ||
+              !categoryId ||
+              !hasChanges
+            }
           >
             <Save size={16} aria-hidden="true" />
             Guardar cambios
@@ -241,9 +255,17 @@ function EditGroupDialog({
       }
     >
       {!masterData.snapshot ? (
-        <QueryState error={masterData.error} retry={masterData.retry} variant="compact" />
+        <QueryState
+          error={masterData.error}
+          retry={masterData.retry}
+          variant="compact"
+        />
       ) : (
-        <form id="admin-edit-group-form" className="admin-v2-form" onSubmit={(event) => void save(event)}>
+        <form
+          id="admin-edit-group-form"
+          className="admin-v2-form"
+          onSubmit={(event) => void save(event)}
+        >
           <label>
             Nombre
             <input
@@ -266,18 +288,32 @@ function EditGroupDialog({
               ))}
             </select>
           </label>
-          <p>
-            Precio unitario: <Value value={group.precio} money /> · solo
-            lectura.
-          </p>
           {categoryChanged && (
-            <p className="notice">
+            <AdminNotice tone="info">
               La categoría se aplicará a todos los integrantes del grupo.
-            </p>
+            </AdminNotice>
           )}
         </form>
       )}
-      {error && <MutationError error={error} retry={retry} />}
+      {error && (
+        <AdminNotice
+          tone="error"
+          action={
+            intent && !intent.pending ? (
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={retry}
+              >
+                <RotateCcw size={16} aria-hidden="true" />
+                Reintentar misma operación
+              </button>
+            ) : undefined
+          }
+        >
+          {error}
+        </AdminNotice>
+      )}
     </AdminDialog>
   );
 }
