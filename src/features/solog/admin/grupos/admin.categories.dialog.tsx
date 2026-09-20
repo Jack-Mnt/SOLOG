@@ -251,11 +251,9 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                         }
                       >
                         <label>
-                          <span className="admin-categories__sr-label">
-                            Nuevo nombre
-                          </span>
                           <input
                             autoFocus
+                            aria-label={`Nuevo nombre de ${category.nombre}`}
                             value={editName}
                             onChange={(event) => setEditName(event.target.value)}
                           />
@@ -338,9 +336,11 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                       </>
                     )}
 
-                    <small className="admin-categories__counts">
-                      {counts.groups} grupos · {counts.products} productos
-                    </small>
+                    {isEditing && (
+                      <small className="admin-categories__counts">
+                        {counts.groups} grupos · {counts.products} productos
+                      </small>
+                    )}
                   </div>
                 )
               })}
