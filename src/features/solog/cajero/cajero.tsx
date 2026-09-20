@@ -1,5 +1,6 @@
-import { AlertTriangle, LoaderCircle, RefreshCw, X } from 'lucide-react'
+import { AlertTriangle, RefreshCw, X } from 'lucide-react'
 import { useEffect } from 'react'
+import { PanelLoader } from '../../../components/panel-loader'
 import { replaceRoute } from '../../../lib/router'
 import type { CashierV3Bootstrap } from './cajero.v3'
 import { CajeroConteo } from './cajero.conteo'
@@ -111,13 +112,7 @@ export function Cajero({
           </div>
         ) : null}
         {session.synchronizingAfterFinish ? (
-          <div className="cajero-loading" role="status">
-            <LoaderCircle aria-hidden="true" className="spin" size={24} /> Actualizando el panel…
-          </div>
-        ) : session.needsSynchronization ? (
-          <div className="cajero-loading" role="status">
-            El conteo finalizó. Reintenta la sincronización del panel para continuar.
-          </div>
+          <PanelLoader variant="contained" label="Actualizando el panel…" />
         ) : route === '/cajero' ? (
           <CajeroInicio bootstrap={bootstrap} session={session} />
         ) : route === '/cajero/conteo' ? (
