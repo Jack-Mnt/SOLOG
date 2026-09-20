@@ -50,9 +50,15 @@ describe('AdminDialog Fase 4 — confirmaciones', () => {
       'action === "exclude" ? "button button--danger" : "button"',
     )
     expect(products).toContain('className="admin-dialog-context"')
-    expect(products).not.toContain('<AdminNotice tone="info">')
+    expect(products).toContain('<AdminNotice tone="info">')
     expect(store).toContain("status: 'aprobado'")
     expect(store).toContain("tipo: 'reincorporar_producto'")
+  })
+
+  test('notice informativo de confirmación usa tipografía compacta sin alterar notices globales', async () => {
+    const css = await source('src/features/solog/admin/admin.css')
+    expect(css).toContain('.admin-dialog-confirmation > .admin-notice--info .admin-notice__message')
+    expect(css).toContain('font-size: 0.8125rem')
   })
 
   test('Dispositivos no ofrece reemplazo ni muestra UUID en el Dialog', async () => {
