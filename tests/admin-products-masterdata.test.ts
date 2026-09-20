@@ -62,10 +62,10 @@ describe('Admin Productos con Master Data', () => {
   test('onboarding conserva prepare_product y no vuelve a Catalog reference', async () => {
     const setup = await source('src/features/solog/admin/productos/admin.product-setup.dialog.tsx')
     expect(setup).toMatch(/store\s*\.\s*mutation\(\s*["']prepare_product["']/)
-    expect(setup).toContain('masterData.snapshot.groups.map')
+    expect(setup).toMatch(/masterData\.snapshot\?\.groups\.filter\(\(group\) => group\.precio === target\.precio\)/)
     expect(setup).toContain('masterData.snapshot.categories.map')
     expect(setup).not.toMatch(/["']reference["']/)
-    expect(setup).toContain('La configuración queda en staging')
+    expect(setup).toContain('La configuración quedará preparada y se aplicará al publicar el Catálogo.')
   })
 
   test('QuickFilterChip muestra contadores derivados sin lectura adicional y conserva filtros restantes', async () => {
