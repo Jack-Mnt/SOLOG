@@ -3,7 +3,7 @@ import { CatalogContractError, validateCatalogMutationPayload } from '../src/fea
 
 const base = { operation_id: '123e4567-e89b-12d3-a456-426614174000', expected_catalog_revision: 7, expected_groups_revision: 3, propuesta_fingerprint: 'a'.repeat(64) }
 
-describe('Catálogo V3: valorizado staged', () => {
+describe('Catálogo V3: valorizado preparado', () => {
   test('acepta keep, update, set y clear para estructuras existentes', () => {
     for (const payload of [
       { ...base, resolution: 'keep_structure' as const, package_action: 'keep' as const },
@@ -20,12 +20,14 @@ describe('Catálogo V3: valorizado staged', () => {
     ]) expect(() => validateCatalogMutationPayload('prepare_price', payload)).not.toThrow()
     expect(() => validateCatalogMutationPayload('prepare_price', { ...base, resolution: 'separate_sku', package_action: 'keep' })).toThrow(CatalogContractError)
   })
-  test('la superficie usa el mismo modal y solamente prepara staging', async () => {
+  test('la superficie usa el mismo modal y solamente prepara la resolución', async () => {
     const source = await Bun.file('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx').text()
     expect(source).toContain('ValuationDialog')
     expect(source).toMatch(/store\s*\.\s*mutation\(\s*["']prepare_price["']/)
     expect(source).not.toContain('valuation_save')
-    expect(source).toMatch(/se aplicarán solo al\s+publicar Catálogo/)
+    expect(source).toMatch(/se aplicará al publicar el\s+Catálogo/)
+    expect(source).toContain('confirmLabel="Aplicar"')
+    expect(source).not.toContain('staging')
     for (const code of ['INVALID_PACKAGE_CONFIGURATION', 'INVALID_PACKAGE_PRICE', 'PACKAGE_PRICE_DECISION_REQUIRED']) expect(source).toContain(code)
   })
 })
