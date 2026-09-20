@@ -44,9 +44,10 @@ No se crea todavía una nueva primitive `ConfirmationDialog`.
 
 Regla visual:
 
-- explicación neutra o consecuencia esperada → párrafo normal del Body;
-- `AdminNotice` → feedback asíncrono, warning o error real;
-- no usar `AdminNotice tone="info"` como sustituto visual de un párrafo explicativo.
+- explicación secundaria simple → párrafo normal del Body;
+- consecuencia operativa importante que conviene destacar → `AdminNotice tone="info"`;
+- warning, error y feedback asíncrono conservan sus tonos correspondientes;
+- los notices informativos dentro de confirmaciones usan tipografía ligeramente más compacta (`0.8125rem`) para mantener jerarquía sin competir con el contexto principal.
 
 ## 3. Ignorar incidencia durante 30 días
 
@@ -160,7 +161,7 @@ Descripción:
 
 Body:
 
-- texto explicativo normal:
+- notice informativo:
   - el cambio queda aprobado;
   - el producto no cambia hasta publicar;
 - contexto:
