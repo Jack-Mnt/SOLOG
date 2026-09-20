@@ -1,7 +1,7 @@
 # SOLOG — UI Admin — Fase 6 — Refinamiento Visual V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO PARA IMPLEMENTACIÓN  
+**Estado:** CERRADO · VALIDADO VISUALMENTE  
 **Clasificación:** Nivel B — refinamiento visual frontend/Admin  
 **Fecha:** 2026-09-20  
 **Rama:** `admin-work`
@@ -342,6 +342,21 @@ Objetivo explícito:
 
 Esta pasada debe simplificar superficies, no aumentar complejidad visual ni arquitectónica.
 
-## 10. Estado
+## 10. Cierre
 
-> **Fase 6 — Refinamiento Visual V1: APROBADO Y CONGELADO PARA IMPLEMENTACIÓN.**
+El refinamiento visual fue implementado y validado mediante smoke humano.
+
+Estado:
+
+- densidad y jerarquía: ✅ aprobadas;
+- GroupCandidatePicker refinado: ✅ aprobado;
+- Categorías en lista plana: ✅ aprobadas;
+- rename inline simplificado: ✅ aprobado;
+- composición de Integrantes: ✅ aprobada;
+- nested Separar producto: ✅ aprobado;
+- apariencia global de IconButton preservada: ✅;
+- validación visual final: ✅ aprobada.
+
+Los cambios visuales posteriores realizados sobre esta fase se consideran correctos y forman parte del baseline final.
+
+> **Fase 6 — Refinamiento Visual V1: CERRADO Y VALIDADO.**
