@@ -139,7 +139,7 @@ describe('Admin feedback fases 2 y 3', () => {
     expect(incidents).toMatch(/retryable\s*\?\s*store\.retryMutation\("incidents"\)/)
     expect(incidents).toContain('"La incidencia fue reactivada."')
     expect(incidents).toContain('"La incidencia fue ignorada durante 30 días."')
-    expect(incidents).toContain('"La propuesta de eliminación quedó pendiente para revisión en Catálogo."')
+    expect(incidents).toContain('"La eliminación quedó aprobada y lista para la próxima publicación del Catálogo."')
   })
 
   test('notices retryable no pueden ocultar la única acción de retry', async () => {
