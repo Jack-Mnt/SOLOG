@@ -82,7 +82,10 @@ function DailyDrawer({
       site,
   );
   const stockItems =
-    data?.items.filter((item) => item.stock_class === stockView) ?? [];
+    data?.items.filter((item) =>
+      (item.stock_class ?? (item.physical === 0 ? "zero" : "positive")) ===
+      stockView,
+    ) ?? [];
   const stateCounts: Record<DifferenceState, number> = {
     Coincide: stockItems.filter((item) => item.estado === "Coincide").length,
     Recontar: stockItems.filter((item) => item.estado === "Recontar").length,

@@ -164,6 +164,17 @@ Frontend:
 - `git diff --check`;
 - smoke humano en Preview para los tres Drawers.
 
+## 7.1. Compatibilidad de primera pasada
+
+Para no invalidar respuestas V2 ya cacheadas ni fixtures previos:
+
+- frontend acepta temporalmente `daily_detail.items[].stock_class` ausente;
+- cuando falta, usa `physical === 0 ? "zero" : "positive"` únicamente como fallback de compatibilidad;
+- el backend desplegado continúa siendo la fuente autoritativa y sí devuelve `stock_class`;
+- Repeticiones usa `detail_sites` como ruta primaria;
+- si el cliente recibe `SOLOG_INVALID_ACTION`, usa una lectura legacy `detail` de hasta 100 filas y agrega por las sedes autorizadas del bootstrap;
+- este fallback no reemplaza el contrato nuevo: existe para tolerar caché/bundles o entornos desfasados durante la primera pasada.
+
 ## 8. Estado
 
 Backend: **DESPLEGADO Y VALIDADO SINTÉTICAMENTE**.  

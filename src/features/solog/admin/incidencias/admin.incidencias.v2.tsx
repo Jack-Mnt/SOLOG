@@ -66,9 +66,60 @@ function FamilyDetail({
   family: Family;
   onClose: () => void;
 }) {
+  const admin = useAdminStore();
   const query = useManagementQuery("detail_sites", {
     family_key: family.family_key,
   });
+  const legacyFallback =
+    !!query.error &&
+    query.error.toLowerCase().includes("acción solicitada no está disponible");
+  const legacyQuery = useManagementQuery(
+    "detail",
+    {
+      family_key: family.family_key,
+      page: 0,
+      page_size: 100,
+    },
+    { enabled: legacyFallback },
+  );
+  const legacySites = useMemo(() => {
+    if (!legacyQuery.data) return null;
+    const allowedSites = orderedAdminSites(admin.bootstrap?.allowed_sites ?? []);
+    return allowedSites.map((site) => {
+      const rows = legacyQuery.data!.items.filter(
+        (item) => item.sede_id === site.id,
+      );
+      const timestamps = rows.map((item) => item.first_seen_at).sort();
+      const latest = rows.map((item) => item.last_seen_at).sort();
+      const resolved = rows
+        .map((item) => item.resuelta_at)
+        .filter((value): value is string => value !== null)
+        .sort();
+      const state: IncidentState | null = rows.some(
+        (item) => item.estado === "pendiente",
+      )
+        ? "pendiente"
+        : rows.some((item) => item.estado === "suprimida")
+          ? "suprimida"
+          : rows.length
+            ? "resuelta"
+            : null;
+      return {
+        site_id: site.id,
+        site: site.nombre,
+        occurrences: rows.reduce(
+          (total, item) => total + item.occurrence_count,
+          0,
+        ),
+        state,
+        active: state === "pendiente" || state === "suprimida",
+        first_seen_at: timestamps[0] ?? null,
+        last_seen_at: latest.at(-1) ?? null,
+        resolved_at: resolved.at(-1) ?? null,
+      };
+    });
+  }, [admin.bootstrap, legacyQuery.data]);
+  const sites = query.data?.sites ?? legacySites;
   const product =
     typeof family.datos.producto === "string" && family.datos.producto.trim()
       ? family.datos.producto
@@ -83,13 +134,13 @@ function FamilyDetail({
       variant="drawer"
       drawerMaxWidth={640}
     >
-      {query.data ? (
+      {sites ? (
         <div
           className="admin-incidents__site-repetitions"
           role="list"
           aria-label="Repeticiones por sede"
         >
-          {query.data.sites.map((item) => (
+          {sites.map((item) => (
             <article
               className="admin-incidents__site-repetition"
               role="listitem"
@@ -124,6 +175,8 @@ function FamilyDetail({
             </article>
           ))}
         </div>
+      ) : legacyFallback ? (
+        <ReadNotice {...legacyQuery} variant="compact" />
       ) : (
         <ReadNotice {...query} variant="compact" />
       )}

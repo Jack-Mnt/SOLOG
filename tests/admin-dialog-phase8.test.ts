@@ -26,7 +26,8 @@ describe('AdminDialog Fase 8 — Drawers', () => {
     expect(dashboard).toContain('Stock 0')
     expect(dashboard).toContain('role="tablist"')
     expect(dashboard).toContain('{ state: "Coincide", label: "Coincide" }')
-    expect(contract).toContain("stock_class: 'positive' | 'zero'")
+    expect(contract).toContain("stock_class?: 'positive' | 'zero'")
+    expect(dashboard).toContain('item.stock_class ?? (item.physical === 0 ? "zero" : "positive")')
     expect(migration).toContain("'stock_class'")
   })
 
@@ -52,6 +53,8 @@ describe('AdminDialog Fase 8 — Drawers', () => {
     expect(incidents).toContain('useManagementQuery("detail_sites"')
     expect(incidents).toContain('drawerMaxWidth={640}')
     expect(incidents).toContain('className="admin-incidents__site-repetitions"')
+    expect(incidents).toContain('useManagementQuery(\n    "detail"')
+    expect(incidents).toContain('legacyFallback')
     expect(incidents).not.toContain('admin-incidents__detail-table')
     expect(management).toContain('detail_sites:')
     expect(migration).toContain("p_action='detail_sites'")

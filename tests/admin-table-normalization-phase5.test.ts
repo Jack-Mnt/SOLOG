@@ -31,8 +31,10 @@ describe('Admin table normalization — Phase 5 auxiliary migration + local clea
     expect(dashboard).toContain('className="admin-auxiliary-table"')
     expect(catalog).toContain('className="admin-auxiliary-table admin-catalog__table"')
     expect(groupsDialog).toContain('className="admin-auxiliary-table"')
-    expect(incidents).toContain('className="admin-auxiliary-table admin-incidents__detail-table"')
-    expect(control).toContain('className="admin-auxiliary-table admin-control-chronology__table"')
+    expect(incidents).not.toContain('admin-incidents__detail-table')
+    expect(incidents).toContain('className="admin-incidents__site-repetitions"')
+    expect(control).not.toContain('admin-control-chronology__table')
+    expect(control).toContain('className="admin-control-chronology__timeline"')
   })
 
   test('CSS mantiene una base mínima para tablas auxiliares y separa main-table', async () => {

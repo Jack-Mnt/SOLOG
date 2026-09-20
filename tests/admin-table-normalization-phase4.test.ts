@@ -15,11 +15,12 @@ describe('Admin table normalization — Phase 4 Grupos + Incidencias', () => {
     expect(groups.match(/<IconButton/g) ?? []).toHaveLength(2)
   })
 
-  test('Incidencias usa main table y mantiene la tabla de detalle en la familia auxiliar', async () => {
+  test('Incidencias usa main table y Fase 8 reemplaza el detalle auxiliar por resumen por sede', async () => {
     const incidents = await source('src/features/solog/admin/incidencias/admin.incidencias.v2.tsx')
 
     expect(incidents).toContain('className="admin-main-table"')
-    expect(incidents).toContain('className="admin-auxiliary-table admin-incidents__detail-table"')
+    expect(incidents).not.toContain('admin-incidents__detail-table')
+    expect(incidents).toContain('className="admin-incidents__site-repetitions"')
     expect(incidents).not.toContain('className="admin-table-section admin__table"')
     expect(incidents).toContain('<th scope="col">Tipo</th>')
     expect(incidents).toContain('<th scope="col">Producto</th>')
