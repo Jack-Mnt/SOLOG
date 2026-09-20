@@ -128,8 +128,8 @@ describe('AdminDialog Fase 6 — gestión wide', () => {
     expect(css).toContain('.admin-groups__candidate-list')
     expect(css).toContain('.admin-categories__rename-inline')
     expect(css).toContain('min-height: 48px')
-    expect(css).toMatch(/\.admin-categories__row \{[\s\S]*?border-bottom: 1px solid var\(--color-border\)/)
-    expect(css).not.toMatch(/\.admin-categories__row \{[\s\S]*?border-radius:/)
+    expect(css).toMatch(/\.admin-categories__row \{[^}]*border-bottom: 1px solid var\(--color-border\)/)
+    expect(css).not.toMatch(/\.admin-categories__row \{[^}]*border-radius:/)
     expect(css).toMatch(
       /@media \(max-width: 767px\)[\s\S]*?\.admin-group-create__fields,[\s\S]*?\.admin-categories__rename-inline/,
     )
