@@ -110,7 +110,9 @@ describe('Admin feedback fases 2 y 3', () => {
     expect(feedbackUtils).toContain("if (store.intent()) return ''")
     expect(catalog).toContain('catalogMutationError(store, reason')
     expect(catalog).toContain('store.intent() ? "" : priceErrorMessage(reason)')
-    expect(catalog).toContain('intent && !setup && !price && <CatalogMutationNotice')
+    expect(catalog).toMatch(
+      /intent\s*&&\s*!setup\s*&&\s*!price\s*&&[\s\S]*?<CatalogMutationNotice\s+onRetry=\{retry\}/,
+    )
   })
 
   test('Dispositivos separa feedback modal y feedback de página', async () => {
