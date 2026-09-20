@@ -48,7 +48,17 @@ describe('Detalles — transición de autorización hacia Cajero', () => {
     expect(source).toContain('isCurrentDeviceAuthorized')
     expect(source).toContain('onClick={() => navigateTo("/cajero")}')
     expect(source).toContain('Ir a Cajero')
+    expect(source).toContain('aria-label="Cerrar aviso"')
+    expect(source).toContain('className="cajero-alert__dismiss"')
+    expect(source).toContain('onClick={clearNotice}')
     expect(source).not.toContain('Solicitud registrada')
+  })
+
+  test('cerrar el notice solo elimina su visualización local', async () => {
+    const source = await Bun.file('src/features/solog/detalles/detalles.hook.ts').text()
+
+    expect(source).toContain('const clearNotice = useCallback(() => setNotice(null), [])')
+    expect(source).toContain('clearNotice, requestAccess')
   })
 
   test('Cajero conserva la validación autoritativa del dispositivo', async () => {

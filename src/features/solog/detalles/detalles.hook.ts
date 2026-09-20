@@ -59,6 +59,7 @@ export function useSologDetailsSummary(userId: string) {
         'La sede ya cuenta con un dispositivo autorizado.')
     } catch (e) { if (generation === store.generation) setError(getSologErrorMessageFromUnknown(e)) }
   }, [checkAuthorization, store])
+  const clearNotice = useCallback(() => setNotice(null), [])
   const visibleError = error ?? (status === 'ready' && !store.summary ? 'El contexto de acceso cambió. Vuelve a consultar el resumen.' : null)
-  return { store, status, error: visibleError, notice, summary: store.summary, requesting: store.accessBusy, loadSummary, checkAuthorization, requestAccess }
+  return { store, status, error: visibleError, notice, summary: store.summary, requesting: store.accessBusy, loadSummary, checkAuthorization, clearNotice, requestAccess }
 }

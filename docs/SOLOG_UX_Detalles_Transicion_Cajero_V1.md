@@ -23,7 +23,8 @@ Desde `/detalles`, un dispositivo sin autorización puede solicitar acceso corre
 7. Cajero conserva su bootstrap como validación autoritativa; si el dispositivo no está autorizado, devuelve a `/detalles`.
 8. Si `request_access` devuelve `authorized`, Detalles sincroniza inmediatamente el `summary` autoritativo.
 9. No se modifica backend, Supabase, RPC ni contratos.
-10. No se reabre el bloque global de estados de carga/error.
+10. Los notices de transición pueden cerrarse con un IconButton **X** que solo elimina su visualización local.
+11. No se reabre el bloque global de estados de carga/error.
 
 ## 3. Alcance implementado
 
@@ -37,6 +38,7 @@ Desde `/detalles`, un dispositivo sin autorización puede solicitar acceso corre
 - pendiente → puede consultar autorización sin recargar la página;
 - pendiente sin cambios → permanece pendiente con feedback;
 - autorizado para la sede → muestra **Ir a Cajero**;
+- cualquier notice de transición puede cerrarse sin alterar estado, autorización ni navegación;
 - `/cajero` vuelve a validar autorización;
 - autorización inmediata no deja un estado local incoherente;
 - no hay cambios backend ni de contratos;

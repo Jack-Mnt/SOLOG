@@ -14,6 +14,7 @@ import {
   Send,
   ShieldAlert,
   Tablet,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import { PanelLoader } from "../../../components/panel-loader";
@@ -80,6 +81,7 @@ export function SologDetailsPanel({
     store,
     error,
     checkAuthorization,
+    clearNotice,
     loadSummary,
     notice,
     requestAccess,
@@ -185,6 +187,14 @@ export function SologDetailsPanel({
             <div className="cajero-alert details-notice" role="status">
               <CheckCircle2 aria-hidden="true" size={22} />
               <p>{notice}</p>
+              <button
+                aria-label="Cerrar aviso"
+                className="cajero-alert__dismiss"
+                onClick={clearNotice}
+                type="button"
+              >
+                <X aria-hidden="true" size={18} />
+              </button>
             </div>
           ) : null}
 
