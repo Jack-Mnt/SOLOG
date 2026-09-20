@@ -172,13 +172,16 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
             </label>
           </div>
 
-          <GroupCandidatePicker
-            snapshot={masterData.snapshot}
-            derived={masterData.derived}
-            selected={members}
-            onChange={setMembers}
-            price={selectedPrice}
-          />
+          <section className="admin-groups-members__section">
+            <h3>Integrantes</h3>
+            <GroupCandidatePicker
+              snapshot={masterData.snapshot}
+              derived={masterData.derived}
+              selected={members}
+              onChange={setMembers}
+              price={selectedPrice}
+            />
+          </section>
 
           {!!members.length && (
             <AdminNotice tone="info">
