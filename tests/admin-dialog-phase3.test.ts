@@ -20,7 +20,7 @@ async function source(path: string) {
 }
 
 describe('AdminDialog Fase 3 — normalización estructural de consumidores', () => {
-  test('mantiene 19 consumidores y usa Footer explícito salvo el estado de carga de Resolver precio', async () => {
+  test('mantiene los 19 consumidores base y añade 2 confirmaciones nested con Footer explícito', async () => {
     const sources = await Promise.all(dialogConsumerPaths.map(source))
     const totalDialogs = sources.reduce(
       (total, current) => total + (current.match(/<AdminDialog\b/g)?.length ?? 0),
@@ -31,8 +31,8 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
       0,
     )
 
-    expect(totalDialogs).toBe(19)
-    expect(explicitFooters).toBe(18)
+    expect(totalDialogs).toBe(21)
+    expect(explicitFooters).toBe(20)
   })
 
   test('los drill-down principales usan drawer y Cronología ya no implementa trap local', async () => {
