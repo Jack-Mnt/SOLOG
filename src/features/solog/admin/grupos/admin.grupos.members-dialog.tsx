@@ -34,7 +34,7 @@ export function GroupCandidatePicker({
   const term = search.trim().toLocaleLowerCase('es-PE')
 
   const matchedCandidates = useMemo(() => {
-    if (!term) return []
+    if (term.length < 2) return []
     return groupCandidates(snapshot, { price, excludeGroupId }).filter((product) => {
       const group = product.grupo_id
         ? derived.groupById.get(product.grupo_id)?.nombre ?? ''
@@ -67,7 +67,7 @@ export function GroupCandidatePicker({
       aria-label="Seleccionar SKU compatibles"
     >
       <label className="admin-groups__candidate-search">
-        Buscar SKU
+        Buscar SKU compatible
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -75,21 +75,21 @@ export function GroupCandidatePicker({
         />
       </label>
 
-      <p className="admin-groups__candidate-summary">
-        {selected.length
-          ? `${selected.length} SKU seleccionados`
-          : 'Sin SKU seleccionados'}
-        {price !== undefined && (
-          <>
-            {' '}
-            · Precio <Value value={price} money />
-          </>
-        )}
-      </p>
+      {!!selected.length && (
+        <p className="admin-groups__candidate-summary">
+          {`${selected.length} seleccionados`}
+          {price !== undefined && (
+            <>
+              {' '}
+              · <Value value={price} money />
+            </>
+          )}
+        </p>
+      )}
 
-      {!term ? (
+      {term.length < 2 ? (
         <p className="admin-dialog-help">
-          Busca un producto para mostrar candidatos compatibles.
+          Busca por código, producto, marca o grupo.
         </p>
       ) : (
         <>
@@ -138,8 +138,7 @@ export function GroupCandidatePicker({
 
           {matchedCandidates.length > CANDIDATE_LIMIT && (
             <p className="admin-dialog-help">
-              Mostrando 50 resultados. Refina la búsqueda para encontrar el
-              producto.
+              Mostrando 50 resultados. Refina la búsqueda.
             </p>
           )}
         </>
@@ -235,7 +234,7 @@ export function GroupMembersDialog({
     <>
       <AdminDialog
         title={`Integrantes · ${group.nombre}`}
-        description={`${group.categoryName} · ${group.memberCount} SKU`}
+        description={`${group.categoryName} · ${group.memberCount} SKU · ${group.derivedType} · S/ ${group.precio.toFixed(2)}`}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
         variant="wide"
@@ -262,19 +261,6 @@ export function GroupMembersDialog({
         }
       >
         <div className="admin-dialog-task">
-          <dl className="admin-dialog-context admin-groups-members__context">
-            <div>
-              <dt>Precio unitario</dt>
-              <dd>
-                <Value value={group.precio} money />
-              </dd>
-            </div>
-            <div>
-              <dt>Tipo</dt>
-              <dd>{group.derivedType}</dd>
-            </div>
-          </dl>
-
           <section className="admin-groups-members__section">
             <h3>Integrantes actuales</h3>
             <div className="admin-auxiliary-table">
@@ -319,10 +305,6 @@ export function GroupMembersDialog({
 
           <section className="admin-groups-members__section">
             <h3>Agregar productos</h3>
-            <p className="admin-dialog-help">
-              Los SKU seleccionados pasarán a este grupo.
-            </p>
-
             <GroupCandidatePicker
               snapshot={snapshot}
               derived={derived}
@@ -370,7 +352,7 @@ export function GroupMembersDialog({
                 onClick={() => void separate()}
               >
                 <Unlink size={16} aria-hidden="true" />
-                Separar y dejar como Único
+                Separar
               </button>
             </>
           }
@@ -386,8 +368,8 @@ export function GroupMembersDialog({
                 <dd>{separating.c_interno}</dd>
               </div>
               <div>
-                <dt>Grupo actual</dt>
-                <dd>{group.nombre}</dd>
+                <dt>Grupo nuevo</dt>
+                <dd>{separating.producto}</dd>
               </div>
             </dl>
 
