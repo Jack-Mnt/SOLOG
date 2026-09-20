@@ -1,6 +1,6 @@
 # SOLOG — UX Global — Estados de carga y error V1
 
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** CERRADO — IMPLEMENTADO Y VALIDADO  
 **Clasificación:** Nivel B — normalización UX transversal frontend  
 **Fecha:** 2026-09-19
 
@@ -368,7 +368,14 @@ Implementado:
 
 ### Fase 6 — Revisión global y cierre
 
-**REVISIÓN ESTÁTICA COMPLETADA — PENDIENTE DE VALIDACIÓN GLOBAL Y SMOKE HUMANO FINAL.**
+**CERRADA.**
+
+Validación final reportada por el usuario:
+- suite global: correcta;
+- lint: correcto;
+- build: correcto;
+- `git diff --check`: correcto;
+- smoke humano final: correcto, incluyendo Cajero tablet-first.
 
 Baseline de revisión:
 - rama: `admin-work`;
@@ -389,17 +396,10 @@ Revisión global:
 - Admin permanece fuera de alcance y no se reabre;
 - sin cambios backend ni de contratos como parte de esta fase.
 
-Pendiente para cierre:
-- criterio 13: suite global ejecutable, lint, build y `git diff --check`;
-- criterio 14: smoke humano final, incluyendo Cajero tablet-first.
-
-Comandos de validación global:
-
-```powershell
-bun test --reporter=dot
-bun run lint
-bun run build
-git diff --check
-```
-
-El bloque solo se declarará cerrado después de completar ambos pendientes.
+Cierre:
+- criterio 13 cumplido mediante validación ejecutable global;
+- criterio 14 cumplido mediante smoke humano final;
+- los 14 criterios de aceptación quedan satisfechos;
+- no quedan fases pendientes dentro de este bloque;
+- el bloque queda cerrado sobre `admin-work`;
+- cualquier trabajo posterior requerirá bug/regresión, nueva evidencia o un nuevo alcance explícito; no se reabre este bloque por defecto.
