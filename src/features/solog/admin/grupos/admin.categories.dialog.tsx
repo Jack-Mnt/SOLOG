@@ -200,7 +200,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                 Nueva categoría
                 <input
                   value={createName}
-                  disabled={hasCurrentOrderDraft}
+                  disabled={!!intent || hasCurrentOrderDraft}
                   onChange={(event) => setCreateName(event.target.value)}
                 />
               </label>
@@ -258,6 +258,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                             autoFocus
                             aria-label={`Nuevo nombre de ${category.nombre}`}
                             value={editName}
+                            disabled={!!intent}
                             onChange={(event) => setEditName(event.target.value)}
                           />
                         </label>
@@ -278,7 +279,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                           <button
                             type="button"
                             className="button button--secondary"
-                            disabled={!!intent?.pending}
+                            disabled={!!intent}
                             onClick={() => {
                               setEditing(null)
                               setEditName('')
