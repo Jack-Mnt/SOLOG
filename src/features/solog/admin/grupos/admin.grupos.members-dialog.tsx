@@ -210,25 +210,26 @@ export function GroupMembersDialog({
     (product) => product.grupo_id !== group.id,
   )
 
-  const errorNotice = error ? (
-    <AdminNotice
-      tone="error"
-      action={
-        intent && !intent.pending ? (
-          <button
-            type="button"
-            className="button button--secondary"
-            onClick={retry}
-          >
-            <RotateCcw size={16} aria-hidden="true" />
-            Reintentar misma operación
-          </button>
-        ) : undefined
-      }
-    >
-      {error}
-    </AdminNotice>
-  ) : null
+  const renderErrorNotice = () =>
+    error ? (
+      <AdminNotice
+        tone="error"
+        action={
+          intent && !intent.pending ? (
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={retry}
+            >
+              <RotateCcw size={16} aria-hidden="true" />
+              Reintentar misma operación
+            </button>
+          ) : undefined
+        }
+      >
+        {error}
+      </AdminNotice>
+    ) : null
 
   return (
     <>
@@ -342,7 +343,7 @@ export function GroupMembersDialog({
             )}
           </section>
 
-          {errorNotice}
+          {!separating && renderErrorNotice()}
         </div>
       </AdminDialog>
 
@@ -351,13 +352,13 @@ export function GroupMembersDialog({
           title="Separar producto"
           description="El producto dejará el grupo y quedará como Único."
           onClose={() => setSeparating(null)}
-          closeDisabled={!!intent?.pending}
+          closeDisabled={!!intent}
           footer={
             <>
               <button
                 type="button"
                 className="button button--secondary"
-                disabled={!!intent?.pending}
+                disabled={!!intent}
                 onClick={() => setSeparating(null)}
               >
                 Cancelar
@@ -395,7 +396,7 @@ export function GroupMembersDialog({
               cambia.
             </AdminNotice>
 
-            {errorNotice}
+            {renderErrorNotice()}
           </div>
         </AdminDialog>
       )}
