@@ -54,6 +54,10 @@ describe('Catálogo V3: estructura principal', () => {
     expect(feedback).toContain('Reintentar misma operación')
     expect(ui).toContain('aria-label="Estado de propuestas"')
     expect(ui).toMatch(/disabled=\{\s*!admin\s*\|\|\s*!!receipt\.pending\s*\|\|\s*\(\s*!receipt\.operationId\s*&&\s*!preview\?\.ok\s*\)\s*\}/s)
+    expect(ui).toContain('preview.ok ?')
+    expect(ui).toContain('preview.conflictos.length > 0')
+    expect(ui).toContain('onClick={query.retry}')
+    expect(ui).toContain('typeof conflict.mensaje === "string"')
   })
 
   test('Productos opera sobre Master Data completo y conserva las mutaciones Catálogo V3', async () => {

@@ -861,7 +861,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
     >
       {!preview ? (
         <QueryState {...query} variant="compact" />
-      ) : (
+      ) : preview.ok ? (
         <>
           <p>{preview.codigo}</p>
           <p>
@@ -877,16 +877,51 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
               </div>
             ))}
           </dl>
-          {preview.errores.map((error) => (
-            <p role="alert" key={error}>
-              {error}
+        </>
+      ) : (
+        <>
+          <AdminNotice
+            tone="error"
+            action={
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={query.retry}
+              >
+                <RotateCcw size={16} aria-hidden="true" />
+                Reintentar
+              </button>
+            }
+          >
+            {preview.codigo}
+          </AdminNotice>
+          {preview.version_actual !== undefined ||
+          preview.version_nueva !== undefined ||
+          preview.cambios_total !== undefined ? (
+            <p>
+              Versión {preview.version_actual ?? "sin publicación"} →{" "}
+              {preview.version_nueva ?? "pendiente"}
+              {preview.cambios_total !== undefined
+                ? ` · ${preview.cambios_total} cambios`
+                : ""}
             </p>
-          ))}
-          {preview.conflictos.map((conflict, index) => (
-            <p role="alert" key={index}>
-              Conflicto: {JSON.stringify(conflict)}
-            </p>
-          ))}
+          ) : null}
+          {preview.conflictos.length > 0
+            ? preview.conflictos.map((conflict, index) => (
+                <p role="alert" key={String(conflict.codigo ?? index)}>
+                  {typeof conflict.mensaje === "string"
+                    ? conflict.mensaje
+                    : JSON.stringify(conflict)}
+                  {typeof conflict.entidad_id === "string"
+                    ? ` · ${conflict.entidad_id}`
+                    : ""}
+                </p>
+              ))
+            : preview.errores.map((error) => (
+                <p role="alert" key={error}>
+                  {error}
+                </p>
+              ))}
         </>
       )}
       {receipt.operationId && !receipt.error && !receipt.result && (

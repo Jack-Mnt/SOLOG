@@ -746,11 +746,20 @@ Respuesta:
 
 `productos` y `grupos` son proyecciones internas ricas usadas por el proceso de publicación. El frontend **no debe depender de su estructura completa** ni utilizarlas para reconstruir el maestro.
 
-Para UI, los campos contractuales de preview son:
+Para UI, el preview es un contrato discriminado por `ok`.
+
+Campos comunes:
 
 ```text
 ok
 codigo
+conflictos
+errores
+```
+
+Si `ok = true`, también son obligatorios:
+
+```text
 version_actual
 version_nueva
 schema_version
@@ -759,11 +768,11 @@ sku_resultantes
 cambios_total
 cambios
 change_ids
-conflictos
-errores
 ```
 
-Si `ok = false`, la UI debe mostrar `codigo`, `errores[]` y/o `conflictos[]` y bloquear publicación.
+Si `ok = false`, `version_actual`, `version_nueva`, `schema_version` y `cambios_total` pueden aparecer cuando el backend ya alcanzó esa etapa del preview, pero no son obligatorios. La UI debe mostrar `codigo`, `errores[]` y/o `conflictos[]`, conservar una acción de reintento y bloquear publicación.
+
+Para configuraciones `new_unit`, la clave autoritativa guardada por `prepare_product` es `_setup.categoria_id`. El preview consume `categoria_id` y acepta `category_id` únicamente como fallback de compatibilidad para datos legacy.
 
 ---
 

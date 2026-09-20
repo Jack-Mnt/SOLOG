@@ -27,6 +27,43 @@ describe('Catálogo V3 contratos de lectura', () => {
     expect(() => validateCatalogRead('proposals', { ...fixture('proposals'), total: 2 })).toThrow(/truncado/)
     expect(() => validateCatalogRead('products', { ...fixture('products'), complete: false })).toThrow(/incompleto/)
   })
+  test('publication_preview acepta un rechazo de negocio válido sin campos exclusivos del éxito', () => {
+    const rejected = {
+      ...envelope(),
+      preview: {
+        ok: false,
+        codigo: 'CATALOG_VALIDATION_FAILED',
+        version_actual: 6,
+        version_nueva: 7,
+        schema_version: 2,
+        cambios_total: 2,
+        conflictos: [{ codigo: 'CATEGORY_NOT_AVAILABLE', mensaje: 'La categoría seleccionada no está disponible.', entidad_id: '20450' }],
+        errores: ['La categoría seleccionada no está disponible.'],
+      },
+    }
+    expect(validateCatalogRead('publication_preview', rejected)).toBe(rejected)
+
+    const terminal = {
+      ...envelope(),
+      preview: {
+        ok: false,
+        codigo: 'CATALOG_PREVIEW_ERROR',
+        conflictos: [],
+        errores: ['Error interno del preview.'],
+      },
+    }
+    expect(validateCatalogRead('publication_preview', terminal)).toBe(terminal)
+  })
+  test('publication_preview rechazado sigue validando errores y conflictos', () => {
+    expect(() => validateCatalogRead('publication_preview', {
+      ...envelope(),
+      preview: { ok: false, codigo: 'CATALOG_VALIDATION_FAILED', conflictos: ['inválido'], errores: [] },
+    })).toThrow(CatalogContractError)
+    expect(() => validateCatalogRead('publication_preview', {
+      ...envelope(),
+      preview: { ok: false, codigo: 'CATALOG_VALIDATION_FAILED', conflictos: [], errores: [7] },
+    })).toThrow(CatalogContractError)
+  })
   test('rechaza campos legacy y respuestas incompletas de V3', () => {
     const preview = fixture('publication_preview')
     expect(() => validateCatalogRead('publication_preview', { ...preview, preview: { ...preview.preview, puede_publicar: true, cambios: { precio: 1 } } })).toThrow(CatalogContractError)

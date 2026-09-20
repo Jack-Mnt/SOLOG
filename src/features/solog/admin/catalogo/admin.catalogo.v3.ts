@@ -67,13 +67,39 @@ export function catalogProposalChange(proposal: Pick<CatalogProposal, 'tipo' | '
 }
 export interface CatalogSetupRequired { cambio_id: string; propuesta_fingerprint: string; tipo: 'agregar_producto' | 'reincorporar_producto'; c_interno: number; producto: string; precio: number; setup: null; block_reason: 'configuracion_requerida' }
 
+export interface CatalogPublicationPreviewSuccess {
+  ok: true
+  codigo: string
+  version_actual: number | null
+  version_nueva: number | null
+  schema_version: number
+  sku_actuales: number
+  sku_resultantes: number
+  cambios_total: number
+  cambios: Record<CatalogProposalType, number>
+  change_ids: string[]
+  conflictos: CatalogPayload[]
+  errores: string[]
+}
+export interface CatalogPublicationPreviewFailure {
+  ok: false
+  codigo: string
+  version_actual?: number | null
+  version_nueva?: number | null
+  schema_version?: number
+  cambios_total?: number
+  conflictos: CatalogPayload[]
+  errores: string[]
+}
+export type CatalogPublicationPreview = CatalogPublicationPreviewSuccess | CatalogPublicationPreviewFailure
+
 export interface CatalogReads {
   status: CatalogEnvelope & { catalog: { version_actual: number | null; publicado_at: string | null; incluidos: number; excluidos: number; total: number } }
   reference: CatalogEnvelope & { categories: CatalogCategory[]; groups: CatalogGroup[] }
   proposals: CatalogEnvelope & { estado: CatalogProposalStatus; rows: CatalogProposal[]; total: number; complete: true; counts: Record<CatalogProposalStatus, number> }
   products: CatalogEnvelope & { rows: CatalogProduct[]; total: number; complete: true; setup_required: CatalogSetupRequired[] }
   price_options: CatalogEnvelope & { propuesta_fingerprint: string; change_id: string | null; change_state: CatalogProposalStatus; grupo: Pick<CatalogGroup, 'id' | 'nombre' | 'precio' | 'unidades_por_paquete' | 'precio_paquete'>; c_interno: number; nuevo_precio: number; members: { c_interno: number; producto: string; precio: number }[]; options: Array<'update_group_price' | 'separate_sku' | 'keep_structure'>; package_decision_required: boolean; prepared_resolution: CatalogPayload | null }
-  publication_preview: CatalogEnvelope & { preview: { ok: boolean; codigo: string; version_actual: number | null; version_nueva: number | null; schema_version: number; sku_actuales: number; sku_resultantes: number; cambios_total: number; cambios: Record<CatalogProposalType, number>; change_ids: string[]; conflictos: CatalogPayload[]; errores: string[] } }
+  publication_preview: CatalogEnvelope & { preview: CatalogPublicationPreview }
 }
 export interface CatalogReadPayloads { status: Record<string, never>; reference: Record<string, never>; proposals: { estado?: CatalogProposalStatus }; products: Record<string, never>; price_options: { propuesta_fingerprint: string }; publication_preview: Record<string, never> }
 export type CatalogReadAction = keyof CatalogReads
@@ -157,8 +183,16 @@ export function validateCatalogRead<A extends CatalogReadAction>(action: A, valu
   if (action === 'publication_preview') {
     assert(object(response.preview), 'Preview Catálogo V3 inválido.')
     const preview = response.preview
-    const changes = preview.cambios
-    assert(typeof preview.ok === 'boolean' && typeof preview.codigo === 'string' && (preview.version_actual === null || integer(preview.version_actual)) && (preview.version_nueva === null || integer(preview.version_nueva)) && integer(preview.schema_version) && integer(preview.sku_actuales) && integer(preview.sku_resultantes) && integer(preview.cambios_total) && object(changes) && types.every(type => integer(changes[type])) && Array.isArray(preview.change_ids) && preview.change_ids.every(id => typeof id === 'string') && Array.isArray(preview.conflictos) && preview.conflictos.every(object) && Array.isArray(preview.errores) && preview.errores.every(error => typeof error === 'string'), 'Preview Catálogo V3 inválido.')
+    assert(typeof preview.ok === 'boolean' && typeof preview.codigo === 'string' && Array.isArray(preview.conflictos) && preview.conflictos.every(object) && Array.isArray(preview.errores) && preview.errores.every(error => typeof error === 'string'), 'Preview Catálogo V3 inválido.')
+    if (preview.ok) {
+      const changes = preview.cambios
+      assert((preview.version_actual === null || integer(preview.version_actual)) && (preview.version_nueva === null || integer(preview.version_nueva)) && integer(preview.schema_version) && integer(preview.sku_actuales) && integer(preview.sku_resultantes) && integer(preview.cambios_total) && object(changes) && types.every(type => integer(changes[type])) && Array.isArray(preview.change_ids) && preview.change_ids.every(id => typeof id === 'string'), 'Preview Catálogo V3 inválido.')
+    } else {
+      if ('version_actual' in preview) assert(preview.version_actual === null || integer(preview.version_actual), 'version_actual de preview inválida.')
+      if ('version_nueva' in preview) assert(preview.version_nueva === null || integer(preview.version_nueva), 'version_nueva de preview inválida.')
+      if ('schema_version' in preview) assert(integer(preview.schema_version), 'schema_version de preview inválida.')
+      if ('cambios_total' in preview) assert(integer(preview.cambios_total), 'cambios_total de preview inválido.')
+    }
   }
   return value as unknown as CatalogReads[A]
 }
