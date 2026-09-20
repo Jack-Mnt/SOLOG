@@ -170,6 +170,34 @@ describe('store Catálogo V3', () => {
     auth.identity.rol = 'moderador'
     await expect(store.publish()).rejects.toThrow('Solo admin')
   })
+  test('reconoce el recibo completado sin alterar una operación recuperable', async () => {
+    const completed = setup()
+    await completed.store.publish()
+    expect(completed.store.publication.result?.completion_recorded).toBe(true)
+    completed.store.acknowledgeCompletedPublication()
+    expect(completed.store.publication).toEqual({})
+
+    const recoverable = setup({
+      publish: (operationId) => ({
+        ok: true,
+        codigo: 'CATALOG_PUBLISHED',
+        operation_id: operationId,
+        replay: false,
+        completion_recorded: false,
+        version: 8,
+        hash: 'hash',
+        storage_path: 'catalog.json',
+        productos: 2,
+        grupos_activos: 1,
+        cambios_incorporados: 1,
+      }),
+    })
+    await recoverable.store.publish()
+    const operationId = recoverable.store.publication.operationId
+    recoverable.store.acknowledgeCompletedPublication()
+    expect(recoverable.store.publication.operationId).toBe(operationId)
+  })
+
   test('mantiene el recibo cuando el commit se confirmó pero falta registrar el cierre', async () => {
     const ids: string[] = []
     const { store } = setup({ publish: (operationId) => {
