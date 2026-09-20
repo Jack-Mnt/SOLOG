@@ -595,7 +595,7 @@ Los denominadores diarios quedan congelados para evitar reinterpretación histó
 
 ---
 
-## 8.3 Coverage Cron
+## 8.3 Coverage durante rollout piloto
 
 Jobs existentes:
 
@@ -605,24 +605,78 @@ solog_shift_day
 solog_shift_night
 ```
 
-Estado actual deliberado durante rebuild:
+Estado actual deliberado:
 
 ```text
 active = false
 ```
 
-Las tablas de coverage se limpiaron intencionalmente junto con snapshots/conteos de prueba.
+Los cron permanecen desactivados mientras las sedes se incorporan progresivamente.
 
-No reconstruir historial eliminado.
-
-Cuando se reanude operación real:
+Desde la migración:
 
 ```text
-primer snapshot válido
-→ validar estado_stock_grupo
-→ reactivar cuts
-→ iniciar nueva historia de cobertura
+solog_pilot_daily_coverage_from_snapshot_and_cutervo_backfill
 ```
+
+cada snapshot confirmado que pasa por `inventario.solog_evaluar_snapshot()` ejecuta, después de refrescar `estado_stock_grupo`:
+
+```text
+solog_ensure_daily_coverage_base(sede, fecha_operativa)
+```
+
+La operación es idempotente. Por tanto:
+
+```text
+primer snapshot confirmado de una sede/día
+→ refrescar estado_stock_grupo
+→ congelar universo diario de esa sede/día
+→ dashboard_cards puede calcular daily_coverage
+```
+
+Una sede sin snapshot confirmado no recibe universo diario vacío. Esto permite mantener los cron apagados durante el rollout y habilitar cobertura solo para sedes que realmente empiezan a operar.
+
+### Backfill piloto autorizado — Cutervo
+
+Para pruebas se reconstruyó deliberadamente el universo de:
+
+```text
+2026-09-18 → 485 grupos
+2026-09-19 → 485 grupos
+2026-09-20 → 485 grupos
+```
+
+usando la revisión de grupos vigente al momento del backfill. El 18 y 19 constituyen historia sintética autorizada; no representan una reconstrucción exacta de la revisión histórica original.
+
+También se recalcularon con ese universo los cortes ya finalizados:
+
+```text
+18 set. → early / day / night
+19 set. → early / day / night
+20 set. → early
+```
+
+Los cortes aún no finalizados del 20 no se precargaron.
+
+### Casuarinas / Casua
+
+El nombre canónico en base de datos es:
+
+```text
+Casuarinas
+```
+
+El Admin puede presentarlo visualmente como:
+
+```text
+Casua
+```
+
+mediante `adminSiteLabel()`.
+
+Casuarinas queda preparada por el mismo flujo general: su primer snapshot confirmado generará su universo diario real. No se crea cobertura con denominador cero antes de que empiece a operar.
+
+Cuando el rollout termine y se decida retomar cortes automáticos, los tres cron pueden reactivarse. `solog_ensure_daily_coverage_base()` sigue siendo compatible porque es idempotente.
 
 ---
 
