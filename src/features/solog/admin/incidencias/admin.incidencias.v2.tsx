@@ -131,7 +131,7 @@ function FamilyDetail({
   );
 }
 
-function canProposeDelete(family: Family) {function canProposeDelete(family: Family) {
+function canProposeDelete(family: Family) {
   return (
     family.tipo === "producto_ausente" &&
     family.active &&

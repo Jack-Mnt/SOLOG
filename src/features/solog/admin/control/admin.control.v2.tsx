@@ -359,7 +359,7 @@ function GroupDetail({
   );
 }
 
-function ControlResults({function ControlResults({
+function ControlResults({
   payload,
   selectedState,
   onStateChange,

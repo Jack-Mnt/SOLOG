@@ -248,7 +248,7 @@ function DailyDrawer({
   );
 }
 
-function Grid({ site }: { site: string }) {function Grid({ site }: { site: string }) {
+function Grid({ site }: { site: string }) {
   const [period, setPeriod] = useState<Biweekly>("current_biweekly");
   const [date, setDate] = useState<string | null>(null);
   const query = useAdminQuery("shift_grid", { site_id: site, period });

@@ -1032,7 +1032,7 @@
   font-size: 0.75rem;
 }
 
-.admin-groups {.admin-groups {
+.admin-groups {
   min-width: 0;
 }
 .admin-groups__table .admin-main-table:focus-visible {
@@ -1570,7 +1570,7 @@
   }
 }
 
-.admin-control .admin-control__filters .admin-control__period-field {.admin-control .admin-control__filters .admin-control__period-field {
+.admin-control .admin-control__filters .admin-control__period-field {
   flex-basis: 210px;
 }
 .admin-control__period-select {
