@@ -446,13 +446,26 @@ try {
   await page.waitForFunction(() => document.querySelector('.admin-workspace')?.dataset.adminViewport === 'mobile')
   const mobileDrawer = page.locator('#admin-mobile-drawer')
   const drawerTrigger = page.locator('.admin-drawer-trigger')
+  const drawerBackdrop = page.locator('.admin-sidebar-drawer__backdrop')
   await mobileDrawer.waitFor({ state: 'hidden' })
+  assert.equal(await drawerBackdrop.count(), 1)
+  assert.equal(await drawerBackdrop.isVisible(), false)
+  const drawerMotion = await mobileDrawer.evaluate(node => {
+    const style = getComputedStyle(node)
+    return {
+      properties: style.transitionProperty,
+      duration: style.transitionDuration,
+    }
+  })
+  assert.match(drawerMotion.properties, /transform/)
+  assert.notEqual(drawerMotion.duration, '0s')
   assert.equal(await page.getByRole('button', { name: 'Alternar navegación' }).count(), 0)
   assert.equal(await drawerTrigger.getAttribute('aria-label'), 'Abrir menú administrativo')
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true)
 
   await drawerTrigger.click()
   await mobileDrawer.waitFor({ state: 'visible' })
+  assert.equal(await drawerBackdrop.isVisible(), true)
   await page.waitForFunction(() => document.activeElement?.getAttribute('aria-current') === 'page')
   assert.equal(await drawerTrigger.getAttribute('aria-expanded'), 'true')
   assert.equal(await mobileDrawer.getByRole('button', { name: 'Cerrar sesión' }).isVisible(), true)
@@ -466,6 +479,7 @@ try {
 
   await page.keyboard.press('Escape')
   await mobileDrawer.waitFor({ state: 'hidden' })
+  assert.equal(await drawerBackdrop.isVisible(), false)
   assert.equal(await drawerTrigger.getAttribute('aria-expanded'), 'false')
   assert.equal(await drawerTrigger.evaluate(node => document.activeElement === node), true)
 

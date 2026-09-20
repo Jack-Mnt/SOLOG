@@ -226,11 +226,13 @@ function Shell({
       className={`admin-workspace admin-v2-workspace admin-workspace--${viewportMode}${sidebarCollapsed ? " admin-workspace--collapsed" : ""}${viewportMode === "mobile" && drawerOpen ? " admin-workspace--drawer-open" : ""}`}
       data-admin-viewport={viewportMode}
     >
-      {viewportMode === "mobile" && drawerOpen && (
+      {viewportMode === "mobile" && (
         <button
           type="button"
           className="admin-sidebar-drawer__backdrop"
           aria-label="Cerrar navegación"
+          aria-hidden={!drawerOpen}
+          tabIndex={drawerOpen ? 0 : -1}
           onClick={closeDrawer}
         />
       )}
