@@ -37,7 +37,7 @@ describe('Admin table normalization — Phase 4 Grupos + Incidencias', () => {
     expect(incidents).toContain('variant="warning"')
     expect(incidents).toContain('variant="danger"')
     expect(incidents).toContain('aria-label="Ignorar 30 días"')
-    expect(incidents).toContain('aria-label="Proponer eliminación"')
+    expect(incidents).toContain('aria-label="Aprobar eliminación"')
     expect(incidents).toContain('aria-label="Reactivar incidencia"')
   })
 
