@@ -122,8 +122,10 @@ Tono: Primary.
 
 Body:
 
-- contexto Sede;
-- aclarar que la sede quedará vinculada al dispositivo autorizado.
+1. `AdminNotice tone="info"` encima del contexto:
+   - `La sede quedará vinculada a este dispositivo autorizado.`
+2. Contexto:
+   - Sede.
 
 ### Revocar
 
@@ -133,9 +135,12 @@ Título/CTA:
 
 Tono: Danger.
 
-Texto:
+Body:
 
-`El dispositivo perderá autorización. La sede quedará disponible para una nueva solicitud de acceso.`
+1. `AdminNotice tone="info"` encima del contexto:
+   - `El dispositivo perderá autorización. La sede quedará disponible para una nueva solicitud de acceso.`
+2. Contexto:
+   - Sede.
 
 ### Rechazar
 
@@ -145,9 +150,12 @@ Título/CTA:
 
 Tono: Danger.
 
-Texto:
+Body:
 
-`Se rechazará esta solicitud pendiente.`
+1. `AdminNotice tone="info"` encima del contexto:
+   - `Se rechazará esta solicitud pendiente.`
+2. Contexto:
+   - Sede.
 
 ## 6. Aprobar exclusión
 
