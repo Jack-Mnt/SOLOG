@@ -50,6 +50,7 @@ describe('AdminDialog Fase 4 — confirmaciones', () => {
       'action === "exclude" ? "button button--danger" : "button"',
     )
     expect(products).toContain('className="admin-dialog-context"')
+    expect(products).not.toContain('<AdminNotice tone="info">')
     expect(store).toContain("status: 'aprobado'")
     expect(store).toContain("tipo: 'reincorporar_producto'")
   })
