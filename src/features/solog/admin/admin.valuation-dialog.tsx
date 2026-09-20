@@ -18,6 +18,7 @@ export interface ValuationDialogProps {
   initial: Pick<ValuationDecision, 'unitsPerPackage' | 'packagePrice'>
   description?: string
   pending?: boolean
+  confirmLabel?: string
   error?: string
   onRetry?: () => void
   onClose: () => void
@@ -29,6 +30,7 @@ export function ValuationDialog({
   initial,
   description,
   pending = false,
+  confirmLabel = 'Guardar valorizado',
   error,
   onRetry,
   onClose,
@@ -138,7 +140,7 @@ export function ValuationDialog({
           onClick={submit}
         >
           <Check size={16} aria-hidden="true" />
-          {pending ? 'Guardando…' : 'Guardar valorizado'}
+          {pending ? 'Guardando…' : confirmLabel}
         </button>
       </>
     }
