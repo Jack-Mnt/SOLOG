@@ -21,9 +21,9 @@ Las confirmaciones simples de Fase 4 usan:
 ```text
 Header
 Body
-  ├── explicación / notice
+  ├── explicación / consecuencia
   ├── contexto estructurado
-  └── error / feedback
+  └── notice solo para feedback, warning o error
 Footer
   ├── Cancelar
   └── Acción principal
@@ -41,6 +41,12 @@ El contexto se representa mediante una superficie discreta con:
 - una columna en Mobile.
 
 No se crea todavía una nueva primitive `ConfirmationDialog`.
+
+Regla visual:
+
+- explicación neutra o consecuencia esperada → párrafo normal del Body;
+- `AdminNotice` → feedback asíncrono, warning o error real;
+- no usar `AdminNotice tone="info"` como sustituto visual de un párrafo explicativo.
 
 ## 3. Ignorar incidencia durante 30 días
 
@@ -154,7 +160,7 @@ Descripción:
 
 Body:
 
-- notice informativo:
+- texto explicativo normal:
   - el cambio queda aprobado;
   - el producto no cambia hasta publicar;
 - contexto:
