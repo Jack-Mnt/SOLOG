@@ -483,6 +483,10 @@
   margin: 0;
 }
 
+.admin-dialog-confirmation > .admin-notice--info .admin-notice__message {
+  font-size: 0.8125rem;
+}
+
 .admin-dialog-context {
   display: grid;
   gap: 8px;
