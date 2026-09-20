@@ -131,9 +131,7 @@ function proposalSetupPrice(proposal: CatalogProposal): number | null {
 }
 
 function proposalOrigin(proposal: CatalogProposal) {
-  return proposal.cambio_id === null
-    ? "Automático"
-    : proposal.sedes.map((site) => site.nombre).join(", ") || "Propuesto";
+  return proposal.cambio_id === null ? "Automático" : "Propuesto";
 }
 
 function preparedText(
