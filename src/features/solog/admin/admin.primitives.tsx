@@ -47,8 +47,6 @@ export function AdminBinarySwitch<T extends string>({
   disabled?: boolean
 }) {
   const items = useRef<(HTMLButtonElement | null)[]>([])
-  const selectedIndex = value === options[1].value ? 1 : 0
-
   return <div className="admin-binary-field">
     <span className="admin-binary-field__label">{label}</span>
     <div
