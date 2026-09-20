@@ -15,26 +15,50 @@ export function useSologDetailsSummary(userId: string) {
   const [notice, setNotice] = useState<string | null>(null)
   const loadSummary = useCallback(async () => {
     const generation = store.generation
-    setStatus('loading'); setError(null)
-    try { await store.loadSummary(); if (generation === store.generation) setStatus('ready') }
-    catch (e) { if (generation === store.generation) { setError(getSologErrorMessageFromUnknown(e)); setStatus('error') } }
+    setStatus('loading'); setError(null); setNotice(null)
+    try {
+      await store.loadSummary()
+      if (generation !== store.generation) return false
+      setStatus('ready')
+      return true
+    } catch (e) {
+      if (generation === store.generation) {
+        setError(getSologErrorMessageFromUnknown(e))
+        setStatus('error')
+      }
+      return false
+    }
   }, [store])
   useEffect(() => {
     let active = true
     queueMicrotask(() => { if (active) void loadSummary() })
     return () => { active = false; store.dispose() }
   }, [store, loadSummary])
+  const checkAuthorization = useCallback(async () => {
+    const generation = store.generation
+    const refreshed = await loadSummary()
+    if (!refreshed || generation !== store.generation) return
+    const access = store.summary?.access
+    if (access?.current_device_state === 'autorizado' && access.current_device_matches_site) {
+      setNotice('Dispositivo autorizado. Ya puedes acceder a Cajero.')
+    } else if (access?.current_device_state === 'pendiente') {
+      setNotice('La solicitud continúa pendiente de autorización.')
+    }
+  }, [loadSummary, store])
   const requestAccess = useCallback(async () => {
     const generation = store.generation
     setError(null); setNotice(null)
     try {
       const r = await store.requestAccess()
       if (generation !== store.generation) return
+      if (r.status === 'authorized') {
+        await checkAuthorization()
+        return
+      }
       setNotice(r.status === 'pending' ? 'Solicitud enviada. El dispositivo queda pendiente de autorización.' :
-        r.status === 'site_already_authorized' ? 'La sede ya cuenta con un dispositivo autorizado.' :
-        'Este dispositivo ya está autorizado. Esta pantalla continúa en modo informativo.')
+        'La sede ya cuenta con un dispositivo autorizado.')
     } catch (e) { if (generation === store.generation) setError(getSologErrorMessageFromUnknown(e)) }
-  }, [store])
+  }, [checkAuthorization, store])
   const visibleError = error ?? (status === 'ready' && !store.summary ? 'El contexto de acceso cambió. Vuelve a consultar el resumen.' : null)
-  return { store, status, error: visibleError, notice, summary: store.summary, requesting: store.accessBusy, loadSummary, requestAccess }
+  return { store, status, error: visibleError, notice, summary: store.summary, requesting: store.accessBusy, loadSummary, checkAuthorization, requestAccess }
 }

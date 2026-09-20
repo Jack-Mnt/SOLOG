@@ -155,7 +155,7 @@ export class DetailsStore {
           access: r.status === 'site_already_authorized'
             ? { ...s.access, authorized_device_id: r.authorized_device_id, can_request: false }
             : { ...s.access, current_device_id: r.device_id, current_device_state: r.status === 'pending' ? 'pendiente' : 'autorizado',
-                ...(r.status === 'authorized' ? { authorized_device_id: r.device_id, can_request: false } : {}) } }
+                ...(r.status === 'authorized' ? { authorized_device_id: r.device_id, current_device_matches_site: true, can_request: false } : {}) } }
       }
       return r
     }).catch((error: unknown) => {

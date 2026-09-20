@@ -1,4 +1,5 @@
 import {
+  ArrowRight,
   AlertTriangle,
   CheckCircle2,
   Clock3,
@@ -8,6 +9,7 @@ import {
   LoaderCircle,
   LockKeyhole,
   LogOut,
+  RefreshCw,
   SearchCheck,
   Send,
   ShieldAlert,
@@ -15,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { PanelLoader } from "../../../components/panel-loader";
+import { navigateTo } from "../../../lib/router";
 import type { DetailsExportPeriod } from "./detalles.v2";
 import { useSologDetailsExport } from "./detalles.export.hook";
 import { SologDetailsHistoryDialog } from "./detalles.historial.dialog";
@@ -76,6 +79,7 @@ export function SologDetailsPanel({
   const {
     store,
     error,
+    checkAuthorization,
     loadSummary,
     notice,
     requestAccess,
@@ -121,16 +125,18 @@ export function SologDetailsPanel({
     ? Math.max(0, Math.min(100, coverage.porcentaje))
     : 0;
   const device = summary?.access;
-
-  const authorizationMessage =
+  const isCurrentDeviceAuthorized =
     device?.current_device_state === "autorizado" &&
-    device.current_device_matches_site
-      ? "Este dispositivo ya está autorizado."
-      : device?.authorized_device_id
-        ? "La sede ya cuenta con otro dispositivo autorizado."
-        : device?.current_device_state === "pendiente"
-          ? "La solicitud está pendiente de revisión."
-          : "Este dispositivo todavía no está autorizado.";
+    device.current_device_matches_site;
+  const checkingAuthorization = status === "loading" && Boolean(summary);
+
+  const authorizationMessage = isCurrentDeviceAuthorized
+    ? "Este dispositivo ya está autorizado. Puedes continuar al panel de Cajero."
+    : device?.authorized_device_id
+      ? "La sede ya cuenta con otro dispositivo autorizado."
+      : device?.current_device_state === "pendiente"
+        ? "La solicitud está pendiente de revisión."
+        : "Este dispositivo todavía no está autorizado.";
 
   return (
     <div className="cajero-shell details-shell">
@@ -189,8 +195,7 @@ export function SologDetailsPanel({
                 aria-labelledby="details-device-title"
               >
                 <span className="details-device-card__icon" aria-hidden="true">
-                  {device?.current_device_state === "autorizado" &&
-                  device.current_device_matches_site ? (
+                  {isCurrentDeviceAuthorized ? (
                     <Tablet size={30} />
                   ) : (
                     <ShieldAlert size={30} />
@@ -203,10 +208,7 @@ export function SologDetailsPanel({
                   <h2 id="details-device-title">
                     {formatDeviceState(summary.access.current_device_state)}
                   </h2>
-                  <p>
-                    {authorizationMessage} El acceso disponible en esta pantalla
-                    es únicamente informativo.
-                  </p>
+                  <p>{authorizationMessage}</p>
                   {!summary.access.current_device_matches_site ? (
                     <strong className="details-device-card__warning">
                       El dispositivo no corresponde a la sede asignada.
@@ -235,9 +237,35 @@ export function SologDetailsPanel({
                     </button>
                   ) : null}
                   {summary.access.current_device_state === "pendiente" ? (
-                    <span className="details-request-status">
-                      Solicitud registrada
-                    </span>
+                    <button
+                      className="button button--secondary"
+                      disabled={checkingAuthorization}
+                      onClick={() => void checkAuthorization()}
+                      type="button"
+                    >
+                      {checkingAuthorization ? (
+                        <LoaderCircle
+                          aria-hidden="true"
+                          className="spin"
+                          size={18}
+                        />
+                      ) : (
+                        <RefreshCw aria-hidden="true" size={18} />
+                      )}
+                      {checkingAuthorization
+                        ? "Consultando…"
+                        : "Consultar autorización"}
+                    </button>
+                  ) : null}
+                  {isCurrentDeviceAuthorized ? (
+                    <button
+                      className="button"
+                      onClick={() => navigateTo("/cajero")}
+                      type="button"
+                    >
+                      <ArrowRight aria-hidden="true" size={18} />
+                      Ir a Cajero
+                    </button>
                   ) : null}
                 </div>
               </section>
