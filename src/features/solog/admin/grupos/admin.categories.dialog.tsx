@@ -340,11 +340,6 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                       </>
                     )}
 
-                    {isEditing && (
-                      <small className="admin-categories__counts">
-                        {counts.groups} grupos · {counts.products} productos
-                      </small>
-                    )}
                   </div>
                 )
               })}
