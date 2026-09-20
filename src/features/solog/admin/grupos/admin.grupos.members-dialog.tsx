@@ -93,8 +93,9 @@ export function GroupCandidatePicker({
         </p>
       ) : (
         <>
-          <div className="admin-v2-picker admin-groups__candidate-list">
-            {candidates.map((product) => {
+          {!!candidates.length && (
+            <div className="admin-v2-picker admin-groups__candidate-list">
+              {candidates.map((product) => {
               const sourceType = product.grupo_id
                 ? derived.derivedTypeByGroupId.get(product.grupo_id)
                 : undefined
@@ -125,8 +126,9 @@ export function GroupCandidatePicker({
                   </span>
                 </label>
               )
-            })}
-          </div>
+              })}
+            </div>
+          )}
 
           {!matchedCandidates.length && (
             <p className="admin-dialog-help">
