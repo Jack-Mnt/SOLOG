@@ -1,13 +1,13 @@
 import {
   AlertCircle,
   Boxes,
-  LoaderCircle,
   MinusCircle,
   PackageCheck,
   PackageOpen,
   Play,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PanelLoader } from "../../../components/panel-loader";
 import { getSologErrorMessageFromUnknown } from "../errors";
 import type { CashierV3Bootstrap } from "./cajero.v3";
 import {
@@ -229,10 +229,7 @@ export function CajeroConteo({
       ) : null}
 
       {loading && !groupsState ? (
-        <div className="cajero-loading" role="status">
-          <LoaderCircle aria-hidden="true" className="spin" size={24} />{" "}
-          Cargando grupos…
-        </div>
+        <PanelLoader variant="contained" />
       ) : groupsState && typeItems.every((item) => item.count === 0) ? (
         <div className="cajero-empty-state" role="status">
           <Boxes aria-hidden="true" size={28} />
