@@ -296,7 +296,14 @@ Implementado:
 
 ### Fase 3 — Cajero tablet-first
 
-**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE Y SMOKE TABLET.**
+**CERRADA TÉCNICAMENTE.**
+
+Validación reportada por el usuario:
+- tests dirigidos: correctos;
+- lint: correcto;
+- build: correcto;
+- `git diff --check`: correcto;
+- smoke tablet: correcto.
 
 Implementado:
 - Conteo → `PanelLoader variant="contained"`;
@@ -310,3 +317,23 @@ Implementado:
 - sincronización posterior al conteo queda sin modificar para Fase 4;
 - `.cajero-loading` permanece temporalmente porque aún tiene consumidores fuera de estas cuatro lecturas;
 - cobertura dirigida añadida en `tests/global-loading-cajero-phase3.test.ts`.
+
+
+### Fase 4 — Sincronización posterior al conteo
+
+**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE Y SMOKE.**
+
+Implementado:
+- `session.synchronizingAfterFinish` → `PanelLoader variant="contained"`;
+- se conserva el texto `Actualizando el panel…` mediante el prop `label`;
+- eliminado el spinner paralelo `LoaderCircle` de `cajero.tsx`;
+- eliminado el segundo bloque visual asociado a `session.needsSynchronization`;
+- `needsSynchronization` conserva únicamente el warning existente;
+- se conserva la acción autoritativa `Consultar estado de sesión`;
+- Header y Bottom Navigation permanecen montados;
+- no se modificó `cajero.session.ts`, lógica de sesión, recovery, finish ni bloqueo operativo;
+- sin cambios CSS;
+- cobertura dirigida añadida en `tests/global-loading-cajero-phase4.test.ts`.
+
+Nota:
+- `.cajero-loading` queda candidato a eliminación en Fase 5 si la auditoría global confirma cero referencias runtime.
