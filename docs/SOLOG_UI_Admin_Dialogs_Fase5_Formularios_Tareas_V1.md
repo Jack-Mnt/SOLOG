@@ -1,7 +1,7 @@
 # SOLOG — UI Admin — Dialogs Fase 5 — Formularios y Tareas V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** CERRADA · VALIDADA TÉCNICA Y VISUALMENTE  
 **Clasificación:** Nivel B — UI/UX frontend/Admin  
 **Fecha:** 2026-09-19  
 **Rama:** `admin-work`
@@ -388,6 +388,21 @@ Los cinco consumidores continúan bajo el contrato `default`:
 - Footer Mobile apilado;
 - selector binario conserva las dos opciones visibles sin convertirse en `select`.
 
-## 10. Estado
+## 10. Cierre y validación
 
-> **Fase 5 — Formularios y Tareas V1: APROBADA Y CONGELADA PARA IMPLEMENTACIÓN.**
+La Fase 5 queda cerrada sobre la implementación validada técnicamente y mediante smoke visual.
+
+Estado de cierre:
+
+- validación técnica: ✅ aprobada;
+- smoke funcional: ✅ aprobado;
+- validación visual: ✅ aprobada;
+- comportamiento responsive: ✅ aprobado;
+- selector binario compartido: ✅ validado;
+- composiciones individuales: ✅ congeladas.
+
+Baseline de cierre observado en `admin-work`:
+
+`9c0a4a736bb30c156622d030c6d5085f490e9ef0`
+
+> **Fase 5 — Formularios y Tareas V1: CERRADA Y VALIDADA.**
