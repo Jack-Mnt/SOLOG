@@ -188,34 +188,8 @@
 
 
 @media (max-width: 760px) {
-  .shell {
-    padding: 0;
-  }
-  .status-card,
-  .status-card--wide {
-    min-height: 100vh;
-    border: 0;
-    border-radius: 0;
-  }
-  .page-workspace {
-    padding: 22px 16px;
-  }
-  .app-bar {
-    padding: 11px 14px;
-  }
-  .app-bar__button span {
-    display: none;
-  }
-  .app-bar__button {
-    width: 38px;
-    justify-content: center;
-    padding: 0;
-  }
   .palette-switcher > svg {
     display: none;
-  }
-  .page-heading {
-    margin-bottom: 20px;
   }
   .section-heading {
     align-items: flex-start;
@@ -223,12 +197,6 @@
 }
 
 @media (max-width: 480px) {
-  .app-brand__name {
-    display: none;
-  }
-  .page-workspace {
-    padding: 20px 14px;
-  }
   .status-grid {
     grid-template-columns: 1fr;
   }

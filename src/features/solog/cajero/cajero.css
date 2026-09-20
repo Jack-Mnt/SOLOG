@@ -615,15 +615,6 @@
   opacity: 0.78;
 }
 
-.cajero-loading {
-  min-height: 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.65rem;
-  color: var(--color-text-secondary);
-}
-
 .cajero-row-status {
   display: inline-flex;
   align-items: center;

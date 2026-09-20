@@ -136,10 +136,6 @@
   background: var(--color-success-soft);
 }
 
-.details-loading {
-  min-height: 180px;
-}
-
 .details-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

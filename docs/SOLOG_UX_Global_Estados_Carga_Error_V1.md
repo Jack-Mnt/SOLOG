@@ -337,3 +337,29 @@ Implementado:
 
 Nota:
 - `.cajero-loading` queda candidato a eliminación en Fase 5 si la auditoría global confirma cero referencias runtime.
+
+
+### Fase 5 — Limpieza estructural derivada
+
+**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+
+Auditoría realizada:
+- revisión de referencias sobre todos los archivos runtime bajo `src/`;
+- `PageShell` confirmó cero consumidores;
+- `.cajero-loading` confirmó cero consumidores;
+- `.details-loading` confirmó cero consumidores;
+- el CSS exclusivo de `PageShell` quedó sin consumidores;
+- `LoaderCircle` conserva usos operativos legítimos y no se elimina globalmente;
+- `Cargando detalle…` permanece deliberadamente en `DetailsCaseView`.
+
+Implementado:
+- eliminado `src/components/page-shell.tsx`;
+- eliminado únicamente el CSS exclusivo de `PageShell` en `src/shared.css` y sus reglas responsive duplicadas en `src/styles.css`;
+- eliminada `.cajero-loading`;
+- eliminada `.details-loading`;
+- preservados `PanelLoader`, sus variantes y su contrato visual;
+- preservados los feedback operativos `Ingresando…`, `Enviando…`, `Solicitando…`, `Generando Excel…` y `Publicando…`;
+- sin cambios de backend, lógica de negocio, breakpoints ni geometría tablet-first;
+- cobertura dirigida añadida en `tests/global-loading-cleanup-phase5.test.ts`.
+
+Fase 6 no ejecutada.
