@@ -25,7 +25,7 @@ describe('Catálogo V3: valorizado preparado', () => {
     expect(source).toContain('ValuationDialog')
     expect(source).toMatch(/store\s*\.\s*mutation\(\s*["']prepare_price["']/)
     expect(source).not.toContain('valuation_save')
-    expect(source).toMatch(/se aplicará al publicar el\s+Catálogo/)
+    expect(source).toContain('Los cambios se aplicarán al publicar el Catálogo.')
     expect(source).toContain('confirmLabel="Aplicar"')
     expect(source).not.toContain('staging')
     for (const code of ['INVALID_PACKAGE_CONFIGURATION', 'INVALID_PACKAGE_PRICE', 'PACKAGE_PRICE_DECISION_REQUIRED']) expect(source).toContain(code)
