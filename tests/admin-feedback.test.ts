@@ -108,10 +108,10 @@ describe('Admin feedback fases 2 y 3', () => {
     ).text()
 
     expect(feedbackUtils).toContain("if (store.intent()) return ''")
-    expect(catalog).toContain('catalogMutationError(store, reason')
+    expect(catalog).toMatch(/catalogMutationError\(\s*store,\s*reason,/)
     expect(catalog).toContain('store.intent() ? "" : priceErrorMessage(reason)')
     expect(catalog).toMatch(
-      /intent\s*&&\s*!setup\s*&&\s*!price\s*&&[\s\S]*?<CatalogMutationNotice\s+onRetry=\{retry\}/,
+      /intent\s*&&\s*!setup\s*&&\s*!price[\s\S]{0,120}<CatalogMutationNotice\s+onRetry=\{retry\}/,
     )
   })
 
