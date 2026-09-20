@@ -11,6 +11,7 @@ import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
 import { AdminDialog } from "../admin.dialog";
 import { ReadNotice, MutationNotice } from "../admin.management.presentation";
+import { AdminNotice } from "../admin.primitives";
 import {
   adminSiteLabel,
   orderedAdminSites,
@@ -238,19 +239,19 @@ export function AdminDevicesV2() {
           }
         >
           <div className="admin-dialog-confirmation">
+            <AdminNotice tone="info">
+              {confirmation.action === "revoke"
+                ? "El dispositivo perderá autorización. La sede quedará disponible para una nueva solicitud de acceso."
+                : confirmation.action === "reject"
+                  ? "Se rechazará esta solicitud pendiente."
+                  : "La sede quedará vinculada a este dispositivo autorizado."}
+            </AdminNotice>
             <dl className="admin-dialog-context">
               <div>
                 <dt>Sede</dt>
                 <dd>{adminSiteLabel(confirmation.device.site)}</dd>
               </div>
             </dl>
-            <p>
-              {confirmation.action === "revoke"
-                ? "El dispositivo perderá autorización. La sede quedará disponible para una nueva solicitud de acceso."
-                : confirmation.action === "reject"
-                  ? "Se rechazará esta solicitud pendiente."
-                  : "La sede quedará vinculada a este dispositivo autorizado."}
-            </p>
             {error && <p role="alert">{error}</p>}
             <MutationNotice
               domain="devices"
