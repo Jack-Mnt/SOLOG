@@ -1,6 +1,6 @@
 # SOLOG — Detalles → Cajero — Continuidad de autorización V1
 
-**Estado:** IMPLEMENTADO — PENDIENTE DE VALIDACIÓN TÉCNICA  
+**Estado:** CERRADO — IMPLEMENTADO Y VALIDADO  
 **Clasificación:** Nivel B — corrección de flujo UX/frontend  
 **Fecha:** 2026-09-19
 
@@ -43,3 +43,25 @@ Desde `/detalles`, un dispositivo sin autorización puede solicitar acceso corre
 - autorización inmediata no deja un estado local incoherente;
 - no hay cambios backend ni de contratos;
 - tests dirigidos, lint, build y `git diff --check` pasan.
+
+
+## 5. Cierre
+
+**BLOQUE CERRADO.**
+
+Validación final reportada por el usuario:
+- tests dirigidos: correctos;
+- lint: correcto;
+- build: correcto;
+- `git diff --check`: correcto;
+- smoke visual del flujo completo: correcto;
+- notice dismissible con IconButton **X**: correcto.
+
+Resultado:
+- el flujo pendiente → consulta → autorizado → Cajero queda operativo sin recarga manual de página;
+- Cajero conserva su validación autoritativa de dispositivo;
+- el cierre del notice es únicamente visual y no altera estado funcional;
+- no se introdujeron cambios backend, Supabase, RPC ni de contratos;
+- no quedan pendientes dentro de este bloque.
+
+El bloque no se reabre salvo bug, regresión, nueva evidencia o nuevo alcance explícito.
