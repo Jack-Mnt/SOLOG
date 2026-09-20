@@ -1245,6 +1245,86 @@ detalle y exportación sin cambios. */
   font-size: 0.88rem;
   overflow-wrap: anywhere;
 }
+
+.admin-catalog__dialog-section {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.admin-catalog__dialog-section > h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.admin-catalog__dialog-section .admin-dialog-context,
+.admin-catalog__dialog-section .admin-catalog__proposal-summary {
+  margin: 0;
+}
+
+.admin-catalog__valuation-decision {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.admin-catalog__valuation-decision legend {
+  padding: 0 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.admin-catalog__valuation-decision .admin-dialog-help {
+  flex-basis: 100%;
+}
+
+.admin-catalog__publication-changes {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+.admin-catalog__publication-changes > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-catalog__publication-changes > div:last-child {
+  border-bottom: 0;
+}
+.admin-catalog__publication-changes dt {
+  color: var(--color-text-secondary);
+}
+.admin-catalog__publication-changes dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.admin-catalog__conflicts {
+  display: grid;
+  gap: 8px;
+}
+.admin-catalog__conflict {
+  display: grid;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-catalog__conflict:last-child {
+  border-bottom: 0;
+}
+.admin-catalog__conflict strong {
+  font-size: 0.82rem;
+}
+.admin-catalog__conflict span {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
 @media (max-width: 767px) {
   .admin-catalog__header {
     align-items: flex-start;
@@ -1252,6 +1332,15 @@ detalle y exportación sin cambios. */
   }
   .admin-catalog__proposal-summary {
     grid-template-columns: 1fr;
+  }
+
+  .admin-catalog__valuation-decision {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-catalog__valuation-decision .button {
+    width: 100%;
   }
 }
 
