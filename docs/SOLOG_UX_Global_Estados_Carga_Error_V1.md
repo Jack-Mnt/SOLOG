@@ -321,7 +321,9 @@ Implementado:
 
 ### Fase 4 — Sincronización posterior al conteo
 
-**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE Y SMOKE.**
+**CERRADA TÉCNICAMENTE.**
+
+Validación técnica reportada por el usuario: correcta. El smoke transversal final se consolida en Fase 6.
 
 Implementado:
 - `session.synchronizingAfterFinish` → `PanelLoader variant="contained"`;
@@ -341,7 +343,9 @@ Nota:
 
 ### Fase 5 — Limpieza estructural derivada
 
-**IMPLEMENTADA — PENDIENTE DE VALIDACIÓN EJECUTABLE.**
+**CERRADA TÉCNICAMENTE.**
+
+Validación técnica reportada por el usuario: correcta.
 
 Auditoría realizada:
 - revisión de referencias sobre todos los archivos runtime bajo `src/`;
@@ -362,4 +366,40 @@ Implementado:
 - sin cambios de backend, lógica de negocio, breakpoints ni geometría tablet-first;
 - cobertura dirigida añadida en `tests/global-loading-cleanup-phase5.test.ts`.
 
-Fase 6 no ejecutada.
+### Fase 6 — Revisión global y cierre
+
+**REVISIÓN ESTÁTICA COMPLETADA — PENDIENTE DE VALIDACIÓN GLOBAL Y SMOKE HUMANO FINAL.**
+
+Baseline de revisión:
+- rama: `admin-work`;
+- HEAD revisado: `ff19a54cdb48d45ebb0d21347042773d677ff94b`;
+- implementación de Fase 5: `c5bebcc50aff7030bcdacac1a1ab87e27c059f33`;
+- los dos commits posteriores a Fase 5 modifican únicamente documentación Admin, por lo que no alteran el runtime de este bloque.
+
+Revisión global:
+- los criterios de aceptación 1–12 se mantienen conformes a nivel estructural con la fuente congelada;
+- Auth/ruta/Cajero bootstrap conservan `PanelLoader state="error"` y sus mecanismos de recuperación congelados;
+- Detalles conserva fullscreen solo para primera carga sin `summary`, mantiene Shell durante refresh y usa `PanelLoader compact` en Historial;
+- Cajero conserva `PanelLoader contained` en las cuatro lecturas, Header y Bottom Navigation;
+- sincronización activa y pendiente permanecen separadas según contrato;
+- `Cargando detalle…` continúa como excepción deliberada;
+- feedback operativos explícitos permanecen intactos;
+- `PageShell`, `.cajero-loading` y `.details-loading` continúan ausentes;
+- no se detectó necesidad de cambios correctivos de código;
+- Admin permanece fuera de alcance y no se reabre;
+- sin cambios backend ni de contratos como parte de esta fase.
+
+Pendiente para cierre:
+- criterio 13: suite global ejecutable, lint, build y `git diff --check`;
+- criterio 14: smoke humano final, incluyendo Cajero tablet-first.
+
+Comandos de validación global:
+
+```powershell
+bun test --reporter=dot
+bun run lint
+bun run build
+git diff --check
+```
+
+El bloque solo se declarará cerrado después de completar ambos pendientes.
