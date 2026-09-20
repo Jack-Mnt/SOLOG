@@ -264,8 +264,13 @@ describe("Incidencias multisede", () => {
     expect(source).not.toContain("runningSite");
     expect(source).not.toContain('className="admin-incidents__sources"');
     expect(source).toContain(
-      "Esta incidencia se ignorará durante 30 días en todas las sedes.",
+      "Esta incidencia dejará de aparecer como pendiente durante el período indicado.",
     );
+    expect(source).toContain("<dt>Alcance</dt>");
+    expect(source).toContain("<dd>Todas las sedes</dd>");
+    expect(source).toContain("<dt>Duración</dt>");
+    expect(source).toContain("<dd>30 días</dd>");
+    expect(source).toContain("Ignorar no resuelve ni elimina la incidencia.");
     expect(source).toContain('setNotice("La incidencia fue reactivada.")');
     expect(source).toContain(
       'setNotice("La incidencia fue ignorada durante 30 días.")',
