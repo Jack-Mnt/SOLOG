@@ -42,7 +42,8 @@ test('dialogs, drawers y sublecturas usan variante compacta', async () => {
   const setup = await source('src/features/solog/admin/productos/admin.product-setup.dialog.tsx')
 
   expect(catalog.match(/variant="compact"/g)?.length).toBeGreaterThanOrEqual(2)
-  expect(control).toContain('<QueryState {...query} variant="compact" />')
+  expect(control).toContain('<QueryState {...currentQuery} variant="compact" />')
+  expect(control).toContain('<QueryState {...previousQuery} variant="compact" />')
   expect(dashboard.match(/variant="compact"/g)?.length).toBeGreaterThanOrEqual(2)
   expect(categories).toContain('variant="compact"')
   expect(groups.match(/variant="compact"/g)?.length).toBe(2)

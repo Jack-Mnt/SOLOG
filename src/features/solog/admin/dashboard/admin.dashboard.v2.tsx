@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -98,10 +98,14 @@ function DailyDrawer({
     (item) => item.estado === selectedState,
   );
   const paginated = paginateAdminRows(filteredItems, page);
-
-  useEffect(() => {
+  const selectStockView = (next: DailyStockView) => {
+    setStockView(next);
     setPage(0);
-  }, [selectedState, stockView]);
+  };
+  const selectDailyState = (next: DifferenceState) => {
+    setSelectedState(next);
+    setPage(0);
+  };
 
   return (
     <AdminDialog
@@ -143,7 +147,7 @@ function DailyDrawer({
                 { value: "positive", label: "Stock positivo" },
                 { value: "zero", label: "Stock 0" },
               ]}
-              onChange={setStockView}
+              onChange={selectStockView}
             />
           </div>
 
@@ -180,7 +184,7 @@ function DailyDrawer({
                       : (currentIndex + direction + dailyStateViews.length) %
                         dailyStateViews.length;
                 const next = dailyStateViews[nextIndex];
-                setSelectedState(next.state);
+                selectDailyState(next.state);
                 event.currentTarget
                   .querySelector<HTMLButtonElement>(
                     `[data-daily-state="${next.state}"]`,
@@ -197,7 +201,7 @@ function DailyDrawer({
                   aria-selected={selectedState === view.state}
                   aria-controls="admin-dashboard-daily-state-panel"
                   tabIndex={selectedState === view.state ? 0 : -1}
-                  onClick={() => setSelectedState(view.state)}
+                  onClick={() => selectDailyState(view.state)}
                 >
                   <span>{view.label}</span>
                   <strong>{stateCounts[view.state]}</strong>

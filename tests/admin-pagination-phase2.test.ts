@@ -22,13 +22,13 @@ test('Fase 2 pagina solo la tabla principal de Incidencias', async () => {
   expect(page).toMatch(/page_size:\s*100/)
 })
 
-test('Fase 2 pagina Dashboard DailyDrawer sin cambiar su consulta', async () => {
+test('Fase 2 pagina Dashboard DailyDrawer después de los filtros locales de Fase 8', async () => {
   const page = await source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx')
 
   expect(page).toMatch(/useAdminQuery\(["']daily_detail["'],\s*\{\s*site_id:\s*site,\s*origin_date:\s*date/)
-  expect(page).toContain('paginateAdminRows(data?.items ?? [], page)')
+  expect(page).toContain('paginateAdminRows(filteredItems, page)')
   expect(page).toContain('paginated.rows.map')
-  expect(page).toContain('total={data.items.length}')
+  expect(page).toContain('total={filteredItems.length}')
   expect(page).toContain('ariaLabel="Paginación del detalle diario"')
 })
 

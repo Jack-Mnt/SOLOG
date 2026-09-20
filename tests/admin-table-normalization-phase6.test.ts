@@ -33,7 +33,7 @@ describe('Admin table normalization — Phase 6 global review', () => {
     }
   })
 
-  test('las tablas auxiliares conocidas permanecen aisladas de main-table', async () => {
+  test('las tablas auxiliares vigentes permanecen aisladas y Fase 8 retira dos superficies tabulares', async () => {
     const [dashboard, control, catalog, groupsDialog, incidents] = await Promise.all([
       source(adminTableFiles[0]),
       source(adminTableFiles[1]),
@@ -43,10 +43,12 @@ describe('Admin table normalization — Phase 6 global review', () => {
     ])
 
     expect(dashboard.match(/admin-auxiliary-table/g) ?? []).toHaveLength(1)
-    expect(control.match(/admin-auxiliary-table/g) ?? []).toHaveLength(1)
+    expect(control.match(/admin-auxiliary-table/g) ?? []).toHaveLength(0)
     expect(catalog.match(/admin-auxiliary-table/g) ?? []).toHaveLength(1)
     expect(groupsDialog.match(/admin-auxiliary-table/g) ?? []).toHaveLength(1)
-    expect(incidents.match(/admin-auxiliary-table/g) ?? []).toHaveLength(1)
+    expect(incidents.match(/admin-auxiliary-table/g) ?? []).toHaveLength(0)
+    expect(control).toContain('className="admin-control-chronology__timeline"')
+    expect(incidents).toContain('className="admin-incidents__site-repetitions"')
   })
 
   test('el contrato CSS global conserva sticky, densidad, números, acciones e identidad', async () => {

@@ -35,10 +35,11 @@ describe('Admin table normalization — Phase 2 Dashboard + Control', () => {
     expect(control).toContain('title="Ver detalle"')
   })
 
-  test('Control mantiene la cronología como tabla auxiliar fuera del alcance principal', async () => {
+  test('Control Fase 8 reemplaza la cronología auxiliar por timeline fuera de main-table', async () => {
     const control = await source('src/features/solog/admin/control/admin.control.v2.tsx')
 
-    expect(control).toContain('className="admin-auxiliary-table admin-control-chronology__table"')
+    expect(control).not.toContain('admin-control-chronology__table')
+    expect(control).toContain('className="admin-control-chronology__timeline"')
     expect(control).toContain('useAdminQuery("control_chronology"')
   })
 

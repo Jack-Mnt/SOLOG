@@ -13,7 +13,8 @@ describe('Admin table normalization — Phase 1 infrastructure', () => {
     expect(css).toMatch(/\.admin-auxiliary-table/)
     expect(css).not.toContain('.admin-v2-table')
     expect(control).toContain('className="admin-main-table"')
-    expect(control).toContain('className="admin-auxiliary-table admin-control-chronology__table"')
+    expect(control).not.toContain('admin-control-chronology__table')
+    expect(control).toContain('className="admin-control-chronology__timeline"')
   })
 
   test('admin-main-table congela densidad, sticky header, hover y utilities comunes', async () => {
