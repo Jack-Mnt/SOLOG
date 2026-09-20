@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { Save } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { AdminBinarySwitch, AdminNotice } from '../admin.primitives'
-import { Value } from '../admin.v2.presentation'
+import { QueryState, Value } from '../admin.v2.presentation'
 import { CatalogMutationNotice } from '../catalogo/admin.catalogo.feedback'
 import { catalogMutationError } from '../catalogo/admin.catalogo.feedback.utils'
 import { useCatalogStore } from '../catalogo/admin.catalogo.context'
 import { useMasterData } from '../masterdata/admin.masterdata.context'
 import type { MasterDataSetupRequired } from '../masterdata/admin.masterdata.v1'
-import { QueryState } from '../admin.v2.presentation'
 
 export type ProductSetupTarget = Pick<
   MasterDataSetupRequired,
