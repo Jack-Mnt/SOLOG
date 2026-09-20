@@ -518,6 +518,109 @@
   overflow-wrap: anywhere;
 }
 
+.admin-dialog-task {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-dialog-help {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.admin-binary-field {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-binary-field__label,
+.admin-field-label {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-binary-switch {
+  min-width: 0;
+  height: 36px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.admin-binary-switch > button {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--color-text-secondary);
+  background: transparent;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-binary-switch > button + button {
+  border-left: 1px solid var(--color-border);
+}
+
+.admin-binary-switch > button[aria-checked="true"] {
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-primary) 42%, transparent);
+}
+
+.admin-binary-switch > button:hover:not(:disabled) {
+  color: var(--color-primary-active);
+  background: var(--color-primary-subtle);
+}
+
+.admin-binary-switch > button:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.admin-binary-switch > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.admin-valuation-config {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.admin-valuation-config legend {
+  padding: 0 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.admin-valuation-config > label {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-valuation-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .admin-export-dialog__fields {
   display: flex;
   align-items: end;
@@ -642,6 +745,14 @@
   .admin-dialog-context > div {
     grid-template-columns: 1fr;
     gap: 2px;
+  }
+
+  .admin-binary-switch {
+    height: 32px;
+  }
+
+  .admin-binary-switch > button {
+    font-size: 0.78rem;
   }
 }
 /* Control: composición local; contratos,
