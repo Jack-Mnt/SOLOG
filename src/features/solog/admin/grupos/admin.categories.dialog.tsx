@@ -42,7 +42,10 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
   const authoritativeOrder =
     masterData.snapshot?.categories.map((category) => category.id) ?? []
   const hasCurrentOrderDraft = orderDraft?.revision === categoryRevision
-  const order = hasCurrentOrderDraft ? orderDraft.ids : authoritativeOrder
+  const order =
+    orderDraft?.revision === categoryRevision
+      ? orderDraft.ids
+      : authoritativeOrder
   const intent = store.intent()
 
   const categories = useMemo(() => {
