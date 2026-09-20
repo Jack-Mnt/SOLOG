@@ -95,7 +95,7 @@ test('la tabla de propuestas compone identidad y Cambio sin lecturas adicionales
   expect(ui).toContain('admin-table-cell-secondary')
   expect(ui).toContain('catalogProposalChange(proposal)')
   expect(ui).toMatch(/\?\s*["']Automático["']/)
-  expect(ui).toMatch(/:\s*proposal\.sedes[\s\S]*?\|\|\s*["']Propuesto["']/)
+  expect(ui).toContain('return proposal.cambio_id === null ? "Automático" : "Propuesto";')
 })
 
 
