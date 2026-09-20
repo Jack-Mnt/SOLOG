@@ -61,6 +61,30 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
     expect(primitive).toContain('selectedIndex < 0 && index === 0')
   })
 
+  test('Resolver precio usa jerarquía compacta y valorizado sin caja adicional', async () => {
+    const ui = await source(
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+    )
+    const css = await source('src/features/solog/admin/admin.css')
+
+    expect(ui).toContain('<h3>Resumen del cambio</h3>')
+    expect(ui).toContain('className="admin-catalog__price-summary"')
+    expect(ui).toContain('className="admin-catalog__price-flow"')
+    expect(ui).toContain('<h3>Integrantes afectados · {options.members.length}</h3>')
+    expect(ui).toContain('admin-catalog__valuation-section')
+    expect(ui).toContain('admin-catalog__valuation-actions')
+    expect(ui).toContain('Configurar')
+    expect(ui).toContain('Los cambios se aplicarán al publicar el Catálogo.')
+    expect(ui).not.toContain('admin-catalog__valuation-decision')
+    expect(ui).not.toContain('Configurar valorizado')
+    expect(css).toContain('.admin-catalog__price-summary')
+    expect(css).toContain('grid-template-columns: repeat(3, minmax(0, 1fr))')
+    expect(css).toContain('.admin-catalog__valuation-actions')
+    expect(css).toMatch(
+      /@media \(max-width: 767px\)[\s\S]*?\.admin-catalog__price-summary \{[\s\S]*?grid-template-columns: 1fr/,
+    )
+  })
+
   test('Resolver precio restaura prepared_resolution y bloquea guardado sin cambios', async () => {
     const ui = await source(
       'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
