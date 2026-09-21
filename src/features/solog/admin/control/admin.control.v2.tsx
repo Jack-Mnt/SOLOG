@@ -188,6 +188,47 @@ function eventTime(value: string) {
     .format(new Date(value))
     .toLowerCase();
 }
+type ChronologyMetric = {
+  label: string;
+  value: number;
+  money?: boolean;
+  signed?: boolean;
+};
+
+function chronologyMetrics(
+  row: ControlChronologyResponse["chronology"][number],
+): ChronologyMetric[] {
+  if (row.state === "Coincide") {
+    return [{ label: "Stock", value: row.physical }];
+  }
+  if (row.state === "Confirmada") {
+    return [
+      { label: "Diferencia", value: row.difference, signed: true },
+      { label: "Valorizado", value: row.valued_difference, money: true },
+    ];
+  }
+  if (row.state === "Inconsistente") {
+    return [
+      { label: "Teórico", value: row.theoretical },
+      // TODO Fase 8.2B: sustituir este signo invertido por initial_difference autoritativo.
+      { label: "Inicial", value: -row.difference, signed: true },
+      { label: "Encontrada", value: row.difference, signed: true },
+    ];
+  }
+  return [
+    { label: "Físico", value: row.physical },
+    { label: "Diferencia", value: row.difference, signed: true },
+  ];
+}
+
+function chronologyStateLabel(
+  state: ControlChronologyResponse["chronology"][number]["state"],
+) {
+  if (state === "Recontar") return "Por recontar";
+  if (state === "Confirmada") return "Confirmado";
+  return state;
+}
+
 function ChronologyPeriod({
   label,
   data,
@@ -196,6 +237,17 @@ function ChronologyPeriod({
   data: ControlChronologyResponse;
 }) {
   const rows = [...data.chronology].reverse();
+  const days: Array<{
+    label: string;
+    rows: ControlChronologyResponse["chronology"];
+  }> = [];
+  rows.forEach((row) => {
+    const labelForDay = eventDate(row.event_at);
+    const current = days.at(-1);
+    if (current?.label === labelForDay) current.rows.push(row);
+    else days.push({ label: labelForDay, rows: [row] });
+  });
+
   return (
     <section className="admin-control-chronology__period">
       <header className="admin-control-chronology__period-header">
@@ -210,65 +262,51 @@ function ChronologyPeriod({
           No hay registros en esta quincena.
         </p>
       ) : (
-        <ol className="admin-control-chronology__timeline">
-          {rows.map((row) => (
-            <li className="admin-control-chronology__event" key={row.row_id}>
-              <article>
-                <header>
-                  <time dateTime={row.event_at}>
-                    {eventDate(row.event_at)} · {eventTime(row.event_at)}
-                  </time>
-                  <span
-                    className={`admin-control__badge admin-status-badge admin-status-badge--${row.state === "Recontado" ? "info" : stateTone[row.state]} admin-control__tone--${row.state === "Recontado" ? "info" : stateTone[row.state]}`}
-                  >
-                    {row.state}
-                  </span>
-                </header>
-
-                <dl className="admin-control-chronology__event-values">
-                  <div>
-                    <dt>Teórico</dt>
-                    <dd><Value value={row.theoretical} /></dd>
-                  </div>
-                  <div>
-                    <dt>Físico</dt>
-                    <dd><Value value={row.physical} /></dd>
-                  </div>
-                  <div>
-                    <dt>Diferencia</dt>
-                    <dd
-                      className={`admin-control__difference--${row.difference < 0 ? "negative" : row.difference > 0 ? "positive" : "zero"}`}
+        <div className="admin-control-chronology__days">
+          {days.map((day) => (
+            <section className="admin-control-chronology__day" key={day.label}>
+              <h4>{day.label}</h4>
+              <ol className="admin-control-chronology__timeline">
+                {day.rows.map((row) => {
+                  const metrics = chronologyMetrics(row);
+                  const tone =
+                    row.state === "Recontado" ? "info" : stateTone[row.state];
+                  return (
+                    <li
+                      className="admin-control-chronology__event"
+                      key={row.row_id}
                     >
-                      {row.difference > 0 ? "+" : ""}
-                      <Value value={row.difference} />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Valorizado</dt>
-                    <dd><Value value={row.valued_difference} money /></dd>
-                  </div>
-                </dl>
+                      <article>
+                        <header>
+                          <time dateTime={row.event_at}>
+                            {eventTime(row.event_at)}
+                          </time>
+                          <span
+                            className={`admin-control__badge admin-status-badge admin-status-badge--${tone} admin-control__tone--${tone}`}
+                          >
+                            {chronologyStateLabel(row.state)}
+                          </span>
+                        </header>
 
-                <div className="admin-control-chronology__valuation">
-                  <span>
-                    Unidad: <Value value={row.valuation.unit_price} money />
-                  </span>
-                  {row.valuation.units_per_package !== null && (
-                    <span>
-                      Unidades por paquete:{" "}
-                      <Value value={row.valuation.units_per_package} />
-                    </span>
-                  )}
-                  {row.valuation.package_price !== null && (
-                    <span>
-                      Paquete: <Value value={row.valuation.package_price} money />
-                    </span>
-                  )}
-                </div>
-              </article>
-            </li>
+                        <dl className="admin-control-chronology__event-values">
+                          {metrics.map((metric) => (
+                            <div key={metric.label}>
+                              <dt>{metric.label}</dt>
+                              <dd>
+                                {metric.signed && metric.value > 0 ? "+" : ""}
+                                <Value value={metric.value} money={metric.money} />
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </article>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
           ))}
-        </ol>
+        </div>
       )}
     </section>
   );
@@ -314,7 +352,7 @@ function GroupDetail({
       description={`${siteName}${category ? ` · ${category}` : ""} · Horas de Lima`}
       onClose={close}
       variant="drawer"
-      drawerMaxWidth={720}
+      drawerMaxWidth={560}
     >
       {!currentQuery.data ? (
         <QueryState {...currentQuery} variant="compact" />
@@ -322,8 +360,7 @@ function GroupDetail({
         <div className="admin-control-chronology">
           <div className="admin-control-chronology__history-toggle">
             <div className="admin-control-chronology__history-copy">
-              <strong>Mostrar cronología de la quincena anterior</strong>
-              <span>La quincena actual permanece visible.</span>
+              <strong>Quincena anterior</strong>
             </div>
             <button
               type="button"
