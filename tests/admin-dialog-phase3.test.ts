@@ -32,7 +32,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
     )
 
     expect(totalDialogs).toBe(21)
-    expect(explicitFooters).toBe(18)
+    expect(explicitFooters).toBe(20)
   })
 
   test('los drill-down principales usan drawer y Cronología ya no implementa trap local', async () => {
@@ -74,9 +74,9 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
 
     expect(control).not.toContain('admin-control-chronology__toolbar')
     expect(incidents).not.toContain('admin-v2-toolbar')
-    expect(dashboard).toContain(
-      'className="admin-dialog__footer-navigation"',
-    )
+    expect(dashboard).toContain('admin-dashboard-daily__footer')
+    expect(control).toContain('admin-control-chronology__footer-toggle')
+    expect(incidents).toContain('admin-incidents__detail-actions')
   })
 
   test('Configurar producto vuelve a default y conserva submit nativo desde Footer', async () => {
