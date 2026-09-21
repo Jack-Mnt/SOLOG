@@ -195,14 +195,16 @@ No se crean nuevos variants.
 
 ### 6.1. Transición de Drawer
 
-Todos los Drawers usan una transición de entrada sutil basada exclusivamente en `var(--transition-fast)`:
+Los Drawers replican el contrato de movimiento ya usado por el Sidebar mobile:
 
-- fade ligero del backdrop;
-- desplazamiento horizontal corto del Drawer;
-- sin alterar geometría ni stacking;
+- estado cerrado: Drawer fuera del viewport mediante `translateX(100%)`;
+- estado abierto: `translateX(0)`;
+- backdrop coordinado de `opacity: 0` a `opacity: 1`;
+- `visibility` y `pointer-events` sincronizados con la transición;
+- entrada y salida usan `var(--transition-fast)`;
 - `prefers-reduced-motion: reduce` desactiva la transición.
 
-No se introduce infraestructura JS de animación ni lifecycle de cierre.
+`AdminDialog` mantiene un lifecycle local mínimo únicamente para Drawers: solicita el cierre, ejecuta la transición de salida y llama `onClose` al finalizar el `transform`. El stack, scroll lock y restauración de foco se mantienen activos hasta el desmontaje real. Existe un fallback temporal de seguridad para evitar un Drawer bloqueado si el navegador no emite `transitionend`.
 
 ## 7. Corrección de gap superior
 
