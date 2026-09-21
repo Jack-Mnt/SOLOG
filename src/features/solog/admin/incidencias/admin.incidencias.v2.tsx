@@ -132,7 +132,7 @@ function FamilyDetail({
       description={`${product}${code ? ` · [${code}]` : ""} · Todas las sedes`}
       onClose={onClose}
       variant="drawer"
-      drawerMaxWidth={640}
+      drawerMaxWidth={520}
     >
       {sites ? (
         <div
@@ -148,29 +148,35 @@ function FamilyDetail({
             >
               <div className="admin-incidents__site-repetition-header">
                 <strong>{item.site}</strong>
-                <span className="admin-incidents__site-occurrences">
-                  {item.occurrences} {item.occurrences === 1 ? "vez" : "veces"}
+                <span
+                  className={`admin-incidents__site-occurrences${item.occurrences ? "" : " admin-incidents__site-occurrences--empty"}`}
+                >
+                  {item.occurrences
+                    ? `${item.occurrences} ${item.occurrences === 1 ? "vez" : "veces"}`
+                    : "Sin registros"}
                 </span>
               </div>
 
-              {item.occurrences ? (
+              {!!item.occurrences && (
                 <div className="admin-incidents__site-repetition-meta">
-                  <span>
-                    Primera:{" "}
-                    {item.first_seen_at
-                      ? incidentTimestamp(item.first_seen_at)
-                      : "—"}
-                  </span>
-                  <span>
-                    Última:{" "}
-                    {item.last_seen_at
-                      ? incidentTimestamp(item.last_seen_at)
-                      : "—"}
+                  <span
+                    className="admin-incidents__site-range"
+                    aria-label={`Primera: ${item.first_seen_at ? incidentTimestamp(item.first_seen_at) : "sin fecha"}; última: ${item.last_seen_at ? incidentTimestamp(item.last_seen_at) : "sin fecha"}`}
+                  >
+                    <span>
+                      {item.first_seen_at
+                        ? incidentTimestamp(item.first_seen_at)
+                        : "—"}
+                    </span>
+                    <span aria-hidden="true">→</span>
+                    <span>
+                      {item.last_seen_at
+                        ? incidentTimestamp(item.last_seen_at)
+                        : "—"}
+                    </span>
                   </span>
                   {item.state && <StateBadge state={item.state} />}
                 </div>
-              ) : (
-                <p>Sin registros</p>
               )}
             </article>
           ))}
