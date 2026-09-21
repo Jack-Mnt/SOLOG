@@ -1,7 +1,7 @@
 # SOLOG — UI Admin — Drawers Fase 8.2A — Composición V2
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTADO / PENDIENTE VALIDACIÓN TÉCNICA Y SMOKE  
+**Estado:** CERRADO / APROBADO  
 **Fecha:** 2026-09-21  
 **Clasificación:** Nivel B — composición frontend, sin cambios backend
 
@@ -240,14 +240,24 @@ La UI aprobada en esta V2 será la base para diseñar el contrato mínimo de Fas
 
 ## 10. Estado de implementación
 
+**Fase 8.2A V2 — CERRADA Y APROBADA.**
+
 Implementación frontend V2 aplicada en `admin-work`.
 
-Pendiente para cierre de 8.2A V2:
+Validaciones completadas:
 
-- suite Bun;
-- lint;
-- build;
-- `git diff --check`;
-- smoke humano de Detalle diario, Cronología e Incidencias.
+- `bun test --reporter=dot`;
+- `bun lint`;
+- `bun run build`;
+- validación técnica;
+- smoke visual humano;
+- responsive;
+- transiciones reales de entrada y salida de Drawer;
+- `prefers-reduced-motion`;
+- preservación de stack, focus y scroll lock durante el lifecycle de cierre.
 
-Fase 8.2B Backend no debe comenzar hasta aprobar este smoke visual.
+La composición de esta V2 queda congelada y es la base autoritativa para Fase 8.2B.
+
+La fuente primaria backend de 8.2B es:
+
+`docs/SOLOG_Backend_Admin_Drawers_Fase8_2B_Optimizacion_Egress_V1.md`
