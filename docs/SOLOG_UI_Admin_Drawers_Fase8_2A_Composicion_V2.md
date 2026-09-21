@@ -1,7 +1,7 @@
 # SOLOG — UI Admin — Drawers Fase 8.2A — Composición V2
 
 **Proyecto:** SOLOG  
-**Estado:** CONGELADO PARA IMPLEMENTACIÓN  
+**Estado:** IMPLEMENTADO / PENDIENTE VALIDACIÓN TÉCNICA Y SMOKE  
 **Fecha:** 2026-09-21  
 **Clasificación:** Nivel B — composición frontend, sin cambios backend
 
@@ -220,3 +220,18 @@ queda eliminada. Las separaciones necesarias deben pertenecer a selectores espec
 - smoke humano de los tres Drawers.
 
 La UI aprobada en esta V2 será la base para diseñar el contrato mínimo de Fase 8.2B.
+
+
+## 10. Estado de implementación
+
+Implementación frontend V2 aplicada en `admin-work`.
+
+Pendiente para cierre de 8.2A V2:
+
+- suite Bun;
+- lint;
+- build;
+- `git diff --check`;
+- smoke humano de Detalle diario, Cronología e Incidencias.
+
+Fase 8.2B Backend no debe comenzar hasta aprobar este smoke visual.
