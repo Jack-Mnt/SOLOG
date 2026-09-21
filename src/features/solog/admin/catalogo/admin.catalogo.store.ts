@@ -1,6 +1,6 @@
 import type { AdminBootstrap } from '../admin.v2'
 import type { MasterDataRevisionCoordinator } from '../masterdata/admin.masterdata.store'
-import { CatalogPublicationError, catalogMutate, catalogRead, publishCatalog, type CatalogMutationAction, type CatalogMutationResult, type CatalogMutations, type CatalogPublicationResult, type CatalogReadAction, type CatalogReadPayloads, type CatalogReads, type CatalogRevisions } from './admin.catalogo.v3'
+import { CatalogPublicationError, catalogMutate, catalogRead, publishCatalog, type CatalogMutationAction, type CatalogMutationResult, type CatalogMutations, type CatalogPublicationResult, type CatalogReadAction, type CatalogReadPayloads, type CatalogReads, type CatalogRevisions } from './admin.catalogo.v4'
 
 type CatalogMutationInput<T> = T extends { operation_id: string; expected_catalog_revision: number; expected_groups_revision: number }
   ? Omit<T, 'operation_id' | 'expected_catalog_revision' | 'expected_groups_revision'>
@@ -69,7 +69,7 @@ export class CatalogStore {
     this.scope = scope
     return bootstrap
   }
-  private receiptKey() { return `solog:catalog:publication:v3:${this.userId}` }
+  private receiptKey() { return `solog:catalog:publication:v4:${this.userId}` }
   private key(action: CatalogQueryAction, payload: Record<string, unknown>) {
     return JSON.stringify([this.userId, this.scope, action, Object.entries(payload).sort(([left], [right]) => left.localeCompare(right))])
   }
@@ -163,25 +163,11 @@ export class CatalogStore {
     if (proposal.tipo === 'excluir_producto' || proposal.tipo === 'reincorporar_producto' || proposal.tipo === 'eliminar_producto') {
       const current = this.productStateOverlay.get(proposal.c_interno)
       const action = proposal.tipo === 'excluir_producto' ? 'exclude' : proposal.tipo === 'reincorporar_producto' ? 'reincorporate' : current?.action
-      const status: ProductProposalStatus = payload.action === 'approve' ? 'aprobado' : payload.action === 'withdraw' ? 'pendiente' : 'none'
+      const status: ProductProposalStatus = payload.action === 'approve' ? 'aprobado' : payload.action === 'withdraw' || payload.action === 'reactivate' ? 'pendiente' : 'none'
       this.productStateOverlay.set(proposal.c_interno, { action, status, masterGeneration })
     }
     if (proposal.tipo === 'agregar_producto' || proposal.tipo === 'reincorporar_producto') {
-      if (payload.action === 'approve') {
-        this.productSetupOverlay.set(payload.propuesta_fingerprint, {
-          hidden: false,
-          masterGeneration,
-          target: {
-            propuesta_fingerprint: payload.propuesta_fingerprint,
-            tipo: proposal.tipo,
-            c_interno: proposal.c_interno,
-            producto: proposal.producto ?? proposal.catalogo_actual.producto ?? `SKU ${proposal.c_interno}`,
-            precio: proposal.catalogo_actual.precio ?? 0,
-          },
-        })
-      } else {
-        this.productSetupOverlay.set(payload.propuesta_fingerprint, { hidden: true, masterGeneration })
-      }
+      if (payload.action !== 'approve') this.productSetupOverlay.set(payload.propuesta_fingerprint, { hidden: true, masterGeneration })
     }
   }
 
@@ -305,31 +291,17 @@ export class CatalogStore {
       this.observeMutation(result.revisions)
       if (intent.action === 'propose_product_state') {
         const payload = intent.payload as CatalogMutations['propose_product_state']
-        const details = result.result
-        const masterGeneration = this.masterGeneration()
-        this.productStateOverlay.set(payload.c_interno, { action: payload.action, status: 'aprobado', masterGeneration })
-        if (
-          payload.action === 'reincorporate' &&
-          typeof details.propuesta_fingerprint === 'string' &&
-          typeof details.producto === 'string' &&
-          typeof details.precio === 'number'
-        ) {
-          this.productSetupOverlay.set(details.propuesta_fingerprint, {
-            hidden: false,
-            masterGeneration,
-            target: {
-              propuesta_fingerprint: details.propuesta_fingerprint,
-              tipo: 'reincorporar_producto',
-              c_interno: payload.c_interno,
-              producto: details.producto,
-              precio: details.precio,
-            },
-          })
-        }
+        this.productStateOverlay.set(payload.c_interno, { action: payload.action, status: 'aprobado', masterGeneration: this.masterGeneration() })
       }
-      if (intent.action === 'prepare_product') {
-        const payload = intent.payload as CatalogMutations['prepare_product']
+      if (intent.action === 'resolve_product' || intent.action === 'prepare_product') {
+        const payload = intent.payload as CatalogMutations['resolve_product'] | CatalogMutations['prepare_product']
         this.productSetupOverlay.set(payload.propuesta_fingerprint, { hidden: true, masterGeneration: this.masterGeneration() })
+        if (intent.action === 'resolve_product') {
+          const proposal = this.cachedProposal(payload.propuesta_fingerprint)
+          if (proposal?.tipo === 'reincorporar_producto') {
+            this.productStateOverlay.set(proposal.c_interno, { action: 'reincorporate', status: 'aprobado', masterGeneration: this.masterGeneration() })
+          }
+        }
       }
       if (intent.action === 'proposal_action') this.applyProposalActionOverlay(intent.payload as CatalogMutations['proposal_action'], intent.proposal)
       this.invalidate()
