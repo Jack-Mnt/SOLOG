@@ -783,51 +783,37 @@
     text-align: center;
   }
 
-  .admin-control-chronology__history-toggle {
-    align-items: flex-start;
-  }
-
-  .admin-control-chronology__period-header,
-  .admin-control-chronology__event > article > header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .admin-control-chronology__event-values {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .admin-dialog-context > div {
-    grid-template-columns: 1fr;
-    gap: 2px;
-  }
-
-  .admin-binary-switch {
-    height: 32px;
-  }
-
-  .admin-binary-switch > button {
-    font-size: 0.78rem;
-  }
+  .admin-drawer-stock-filter {
+  width: min(300px, 100%);
+  margin-bottom: 12px;
 }
-/* Fase 8 — Drawers: primera pasada funcional y visual. */
-.admin-drawer-stock-filter {
-  width: min(320px, 100%);
-  margin-bottom: 16px;
+.admin-drawer-stock-filter .admin-binary-field {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
 }
 .admin-dashboard-daily__views .admin-state-views {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+.admin-dashboard-daily__table tbody th {
+  max-width: 260px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+.admin-dashboard-daily__table :is(th, td).admin-table-number {
+  white-space: nowrap;
 }
 .admin-dashboard-daily__empty,
 .admin-control-chronology__empty {
   margin: 0;
-  padding: 16px 0;
+  padding: 12px 0;
   color: var(--color-text-secondary);
   font-size: 0.8125rem;
 }
 .admin-control-chronology {
   display: grid;
-  gap: 24px;
+  gap: 16px;
 }
 .admin-control-chronology__history-toggle {
   min-width: 0;
@@ -835,20 +821,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--color-border);
 }
 .admin-control-chronology__history-copy {
   min-width: 0;
-  display: grid;
-  gap: 4px;
 }
 .admin-control-chronology__history-copy strong {
   font-size: 0.8125rem;
-}
-.admin-control-chronology__history-copy span {
-  color: var(--color-text-secondary);
-  font-size: 0.75rem;
 }
 .admin-control-chronology__switch {
   position: relative;
@@ -884,7 +864,7 @@
 .admin-control-chronology__period {
   min-width: 0;
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 .admin-control-chronology__period-header {
   display: flex;
@@ -899,20 +879,35 @@
   color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
+.admin-control-chronology__days {
+  display: grid;
+  gap: 12px;
+}
+.admin-control-chronology__day {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.admin-control-chronology__day > h4 {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
 .admin-control-chronology__timeline {
   position: relative;
   display: grid;
-  gap: 16px;
+  gap: 0;
   margin: 0;
-  padding: 0 0 0 28px;
+  padding: 0 0 0 24px;
   list-style: none;
 }
 .admin-control-chronology__timeline::before {
   content: "";
   position: absolute;
-  top: 8px;
-  bottom: 8px;
-  left: 7px;
+  top: 10px;
+  bottom: 10px;
+  left: 6px;
   width: 1px;
   background: var(--color-border);
 }
@@ -923,11 +918,11 @@
 .admin-control-chronology__event::before {
   content: "";
   position: absolute;
-  top: 14px;
-  left: -27px;
-  width: 12px;
-  height: 12px;
-  border: 3px solid var(--color-surface);
+  top: 15px;
+  left: -23px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-surface);
   border-radius: 50%;
   background: var(--color-primary);
   box-shadow: 0 0 0 1px var(--color-border-strong);
@@ -935,51 +930,51 @@
 .admin-control-chronology__event > article {
   min-width: 0;
   display: grid;
+  grid-template-columns: minmax(148px, auto) minmax(0, 1fr);
+  align-items: center;
   gap: 12px;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-control-chronology__event:last-child > article {
+  border-bottom: 0;
 }
 .admin-control-chronology__event > article > header {
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 .admin-control-chronology__event time {
   color: var(--color-text-secondary);
   font-size: 0.75rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 .admin-control-chronology__event-values {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px 12px;
   margin: 0;
 }
 .admin-control-chronology__event-values > div {
   min-width: 0;
-  display: grid;
-  gap: 2px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
 }
 .admin-control-chronology__event-values dt {
   color: var(--color-text-secondary);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
 }
 .admin-control-chronology__event-values dd {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
-}
-.admin-control-chronology__valuation {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  color: var(--color-text-secondary);
-  font-size: 0.72rem;
 }
 .admin-dialog__footer-navigation .admin-pagination {
   margin-top: 0;
@@ -991,8 +986,8 @@
 .admin-incidents__site-repetition {
   min-width: 0;
   display: grid;
-  gap: 8px;
-  padding: 12px 0;
+  gap: 4px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--color-border);
 }
 .admin-incidents__site-repetition:first-child {
@@ -1014,22 +1009,32 @@
 }
 .admin-incidents__site-occurrences {
   color: var(--color-text-primary);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.admin-incidents__site-occurrences--empty {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 .admin-incidents__site-repetition-meta {
+  min-width: 0;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 16px;
+  justify-content: space-between;
+  gap: 8px 12px;
   color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
-.admin-incidents__site-repetition > p {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: 0.75rem;
+.admin-incidents__site-range {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .admin-groups {
