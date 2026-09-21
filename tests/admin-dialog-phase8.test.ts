@@ -67,6 +67,8 @@ describe('AdminDialog Fase 8 — Drawers', () => {
     expect(css).toContain('.admin-control-chronology__event > article.is-latest')
     expect(css).toContain('.admin-difference--negative,')
     expect(css).not.toContain('.admin-v2-card section {\n  margin-top: 1rem;\n}')
+    expect(css).not.toContain('.admin-v2-card header,')
+    expect(css).toContain('.admin-v2-card > header,')
   })
 
   test('Repeticiones consume detalle agregado por sede sin paginación ni tabla', async () => {
