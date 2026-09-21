@@ -99,13 +99,14 @@ describe('AdminDialog stack', () => {
     expect(lock.count()).toBe(0)
   })
 
-  test('AdminDialog renderiza siempre Footer y conecta el scroll lock', async () => {
+  test('AdminDialog conserva Footer por defecto y permite omitirlo con null', async () => {
     const source = await Bun.file(
       'src/features/solog/admin/admin.dialog.tsx',
     ).text()
 
     expect(source).toContain("adminDialogScrollLock.lock(document.body)")
-    expect(source).toContain('const resolvedFooter = footer ?? (')
+    expect(source).toContain('const resolvedFooter = footer === undefined ? (')
+    expect(source).toContain('resolvedFooter !== null && resolvedFooter !== false')
     expect(source).toContain('<footer className="admin-dialog__footer">{resolvedFooter}</footer>')
     expect(source).toContain('button button--secondary')
     expect(source).toContain('Cerrar')
