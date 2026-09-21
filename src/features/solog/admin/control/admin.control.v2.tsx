@@ -188,127 +188,135 @@ function eventTime(value: string) {
     .format(new Date(value))
     .toLowerCase();
 }
+type ChronologyRow = ControlChronologyResponse["chronology"][number];
+
 type ChronologyMetric = {
   label: string;
   value: number;
   money?: boolean;
-  signed?: boolean;
+  tone?: boolean;
+  showPlus?: boolean;
 };
 
-function chronologyMetrics(
-  row: ControlChronologyResponse["chronology"][number],
-): ChronologyMetric[] {
+function chronologyMetrics(row: ChronologyRow): ChronologyMetric[] {
   if (row.state === "Coincide") {
     return [{ label: "Stock", value: row.physical }];
   }
   if (row.state === "Confirmada") {
     return [
-      { label: "Diferencia", value: row.difference, signed: true },
-      { label: "Valorizado", value: row.valued_difference, money: true },
+      {
+        label: "Diferencia",
+        value: row.difference,
+        tone: true,
+        showPlus: true,
+      },
+      {
+        label: "Valorizado",
+        value: row.valued_difference,
+        money: true,
+        tone: true,
+      },
     ];
   }
   if (row.state === "Inconsistente") {
     return [
       { label: "Teórico", value: row.theoretical },
       // TODO Fase 8.2B: sustituir este signo invertido por initial_difference autoritativo.
-      { label: "Inicial", value: -row.difference, signed: true },
-      { label: "Encontrada", value: row.difference, signed: true },
+      { label: "Inicial", value: -row.difference, tone: true, showPlus: true },
+      {
+        label: "Encontrada",
+        value: row.difference,
+        tone: true,
+        showPlus: true,
+      },
     ];
   }
   return [
     { label: "Físico", value: row.physical },
-    { label: "Diferencia", value: row.difference, signed: true },
+    {
+      label: "Diferencia",
+      value: row.difference,
+      tone: true,
+      showPlus: true,
+    },
   ];
 }
 
-function chronologyStateLabel(
-  state: ControlChronologyResponse["chronology"][number]["state"],
-) {
-  if (state === "Recontar") return "Por recontar";
-  if (state === "Confirmada") return "Confirmado";
-  return state;
+function chronologyStateLabel(row: ChronologyRow) {
+  if (row.state === "Recontar") return "Recontar";
+  if (row.state === "Confirmada") return "Confirmado";
+  return row.state;
 }
 
-function ChronologyPeriod({
-  label,
-  data,
-}: {
-  label: string;
-  data: ControlChronologyResponse;
-}) {
-  const rows = [...data.chronology].reverse();
-  const days: Array<{
-    label: string;
-    rows: ControlChronologyResponse["chronology"];
-  }> = [];
-  rows.forEach((row) => {
-    const labelForDay = eventDate(row.event_at);
-    const current = days.at(-1);
-    if (current?.label === labelForDay) current.rows.push(row);
-    else days.push({ label: labelForDay, rows: [row] });
-  });
+function chronologyTone(row: ChronologyRow) {
+  return row.state === "Recontado" ? "info" : stateTone[row.state];
+}
 
+function chronologyDifferenceClass(value: number) {
+  return `admin-difference admin-difference--${value < 0 ? "negative" : value > 0 ? "positive" : "zero"}`;
+}
+
+function sortedChronology(
+  current: ControlChronologyResponse,
+  previous?: ControlChronologyResponse,
+) {
+  return [...current.chronology, ...(previous?.chronology ?? [])].sort(
+    (left, right) =>
+      new Date(right.event_at).getTime() - new Date(left.event_at).getTime(),
+  );
+}
+
+function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
+  let lastDate = "";
   return (
-    <section className="admin-control-chronology__period">
-      <header className="admin-control-chronology__period-header">
-        <strong>{label}</strong>
-        <span>
-          {controlDate(data.period.from)} — {controlDate(data.period.to)}
-        </span>
-      </header>
+    <ol className="admin-control-chronology__timeline">
+      {rows.map((row, index) => {
+        const date = eventDate(row.event_at);
+        const showDate = date !== lastDate;
+        lastDate = date;
+        const tone = chronologyTone(row);
+        return (
+          <li className="admin-control-chronology__event" key={row.row_id}>
+            {showDate && (
+              <div className="admin-control-chronology__date-marker">
+                {date}
+              </div>
+            )}
+            <article
+              className={index === 0 ? "is-latest" : undefined}
+              data-tone={tone}
+            >
+              <header>
+                <time dateTime={row.event_at}>{eventTime(row.event_at)}</time>
+                <span
+                  className={`admin-control__badge admin-status-badge admin-status-badge--${tone} admin-control__tone--${tone}`}
+                >
+                  {chronologyStateLabel(row)}
+                </span>
+              </header>
 
-      {!rows.length ? (
-        <p className="admin-control-chronology__empty" role="status">
-          No hay registros en esta quincena.
-        </p>
-      ) : (
-        <div className="admin-control-chronology__days">
-          {days.map((day) => (
-            <section className="admin-control-chronology__day" key={day.label}>
-              <h4>{day.label}</h4>
-              <ol className="admin-control-chronology__timeline">
-                {day.rows.map((row) => {
-                  const metrics = chronologyMetrics(row);
-                  const tone =
-                    row.state === "Recontado" ? "info" : stateTone[row.state];
-                  return (
-                    <li
-                      className="admin-control-chronology__event"
-                      key={row.row_id}
+              <dl className="admin-control-chronology__event-values">
+                {chronologyMetrics(row).map((metric) => (
+                  <div key={metric.label}>
+                    <dt>{metric.label}</dt>
+                    <dd
+                      className={
+                        metric.tone
+                          ? chronologyDifferenceClass(metric.value)
+                          : undefined
+                      }
                     >
-                      <article>
-                        <header>
-                          <time dateTime={row.event_at}>
-                            {eventTime(row.event_at)}
-                          </time>
-                          <span
-                            className={`admin-control__badge admin-status-badge admin-status-badge--${tone} admin-control__tone--${tone}`}
-                          >
-                            {chronologyStateLabel(row.state)}
-                          </span>
-                        </header>
-
-                        <dl className="admin-control-chronology__event-values">
-                          {metrics.map((metric) => (
-                            <div key={metric.label}>
-                              <dt>{metric.label}</dt>
-                              <dd>
-                                {metric.signed && metric.value > 0 ? "+" : ""}
-                                <Value value={metric.value} money={metric.money} />
-                              </dd>
-                            </div>
-                          ))}
-                        </dl>
-                      </article>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
-          ))}
-        </div>
-      )}
-    </section>
+                      {metric.showPlus && metric.value > 0 ? "+" : ""}
+                      <Value value={metric.value} money={metric.money} />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -343,53 +351,63 @@ function GroupDetail({
     admin.bootstrap?.allowed_sites.find((item) => item.id === site)?.nombre ??
       site,
   );
-  const category =
-    currentQuery.data?.group.category ?? previousQuery.data?.group.category;
+  const currentData = currentQuery.data;
+  const previousData = showPrevious ? previousQuery.data : undefined;
+  const rows = currentData ? sortedChronology(currentData, previousData) : [];
+  const category = currentData?.group.category ?? previousData?.group.category;
+  const price = rows[0]?.valuation.unit_price;
 
   return (
     <AdminDialog
-      title={`Cronología de ${name}`}
-      description={`${siteName}${category ? ` · ${category}` : ""} · Horas de Lima`}
+      title={`Cronología por producto · ${siteName}`}
+      description="Horas de Lima"
       onClose={close}
       variant="drawer"
       drawerMaxWidth={560}
+      footer={
+        <div className="admin-control-chronology__footer-toggle">
+          <span>Incluir quincena anterior</span>
+          <button
+            type="button"
+            className="admin-control-chronology__switch"
+            role="switch"
+            aria-checked={showPrevious}
+            aria-label="Incluir quincena anterior"
+            onClick={() => setShowPrevious((current) => !current)}
+          >
+            <span aria-hidden="true" />
+          </button>
+        </div>
+      }
     >
-      {!currentQuery.data ? (
+      {!currentData ? (
         <QueryState {...currentQuery} variant="compact" />
       ) : (
         <div className="admin-control-chronology">
-          <div className="admin-control-chronology__history-toggle">
-            <div className="admin-control-chronology__history-copy">
-              <strong>Quincena anterior</strong>
+          <div className="admin-drawer-entity-summary">
+            <strong>{name}</strong>
+            <div className="admin-drawer-entity-summary__meta">
+              <span>{category ?? "Sin categoría"}</span>
+              <span>
+                Precio:{" "}
+                <strong>
+                  {price === undefined ? "—" : <Value value={price} money />}
+                </strong>
+              </span>
             </div>
-            <button
-              type="button"
-              className="admin-control-chronology__switch"
-              role="switch"
-              aria-checked={showPrevious}
-              aria-label="Mostrar cronología de la quincena anterior"
-              onClick={() => setShowPrevious((current) => !current)}
-            >
-              <span aria-hidden="true" />
-            </button>
           </div>
 
-          <ChronologyPeriod label="Quincena actual" data={currentQuery.data} />
+          {rows.length ? (
+            <ChronologyTimeline rows={rows} />
+          ) : (
+            <p className="admin-control-chronology__empty" role="status">
+              No hay registros en la cronología.
+            </p>
+          )}
 
-          {showPrevious &&
-            (previousQuery.data ? (
-              <ChronologyPeriod
-                label="Quincena anterior"
-                data={previousQuery.data}
-              />
-            ) : (
-              <section className="admin-control-chronology__period">
-                <header className="admin-control-chronology__period-header">
-                  <strong>Quincena anterior</strong>
-                </header>
-                <QueryState {...previousQuery} variant="compact" />
-              </section>
-            ))}
+          {showPrevious && !previousQuery.data && (
+            <QueryState {...previousQuery} variant="compact" />
+          )}
         </div>
       )}
     </AdminDialog>
