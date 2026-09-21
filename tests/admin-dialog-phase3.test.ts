@@ -20,7 +20,7 @@ async function source(path: string) {
 }
 
 describe('AdminDialog Fase 3 — normalización estructural de consumidores', () => {
-  test('mantiene los 19 consumidores base y añade 2 confirmaciones nested con Footer explícito', async () => {
+  test('mantiene 21 consumidores y 20 Footers explícitos', async () => {
     const sources = await Promise.all(dialogConsumerPaths.map(source))
     const totalDialogs = sources.reduce(
       (total, current) => total + (current.match(/<AdminDialog\b/g)?.length ?? 0),
@@ -47,7 +47,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
     )
 
     expect(control).toMatch(
-      /title=\{`Cronología de \$\{name\}`\}[\s\S]*?variant="drawer"/,
+      /title=\{`Cronología por producto · \$\{siteName\}`\}[\s\S]*?variant="drawer"/,
     )
     expect(control).toContain('className="admin-control-chronology"')
     expect(control).not.toContain('actualButton')
