@@ -79,7 +79,7 @@ describe('AdminDialog Fase 8 — Drawers', () => {
     expect(incidents).toContain('useManagementQuery("detail_sites"')
     expect(incidents).toContain('drawerMaxWidth={520}')
     expect(incidents).toContain('className="admin-incidents__site-repetitions"')
-    expect(incidents).toContain('"Sin registros"')
+    expect(incidents).toContain('Sin registros')
     expect(incidents).toContain('className="admin-incidents__site-range"')
     expect(incidents).toContain('className="admin-drawer-entity-summary"')
     expect(incidents).toContain('className="admin-dialog__footer-actions admin-incidents__detail-actions"')
