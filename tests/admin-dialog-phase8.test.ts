@@ -55,6 +55,7 @@ describe('AdminDialog Fase 8 — Drawers', () => {
     expect(control).not.toContain('admin-control-chronology__table')
     expect(context).toContain('options: { enabled?: boolean } = {}')
     expect(css).not.toContain('max-height: 60vh')
+    expect(css).toContain('}\n\n/* Fase 8.2A — Drawers: composición compacta para validación visual. */\n.admin-drawer-stock-filter {')
   })
 
   test('Repeticiones consume detalle agregado por sede sin paginación ni tabla', async () => {
