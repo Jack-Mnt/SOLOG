@@ -17,12 +17,15 @@ Este documento congela el contrato técnico que debe consumir el frontend de **A
 
 Prevalencia para Catálogo:
 
-1. `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` — **fuente primaria técnica**.
-2. `SOLOG_Arquitectura_Catalogo_Responsabilidad_Comportamiento_Funciones_V1.md` — fuente primaria funcional.
-3. `SOLOG_Arquitectura_Responsabilidades_Plataformas_V1.md` — frontera vigente entre ConeXion, Supabase y SOLOG.
-4. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — runtime compartido consolidado.
+1. `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` — **fuente primaria técnica del runtime Catálogo desplegado**.
+2. `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md` — **contrato objetivo congelado** para la frontera incidencias comerciales ↔ propuestas; prevalece en esa frontera una vez implementado.
+3. `SOLOG_Arquitectura_Catalogo_Responsabilidad_Comportamiento_Funciones_V1.md` — fuente primaria funcional.
+4. `SOLOG_Arquitectura_Responsabilidades_Plataformas_V1.md` — frontera vigente entre ConeXion, Supabase y SOLOG.
+5. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — runtime compartido consolidado.
 
-Ante una contradicción técnica específica de Catálogo, prevalece este documento. El contrato ConeXion ↔ Supabase V2 desplegado continúa siendo autoridad externa para su propia API y no se modifica desde Catálogo sin una decisión explícita. Los documentos históricos de integración que no residen actualmente en `docs/` no forman parte de la cadena necesaria para implementar el frontend actual.
+Ante una contradicción técnica específica del **runtime Catálogo actualmente desplegado**, prevalece este documento. Para el **motor objetivo todavía no implementado** de incidencias comerciales ↔ propuestas, prevalece `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`. El contrato ConeXion ↔ Supabase V2 desplegado continúa siendo autoridad externa para su propia API y no se modifica desde Catálogo sin una decisión explícita. Los documentos históricos de integración que no residen actualmente en `docs/` no forman parte de la cadena necesaria para implementar el frontend actual.
+
+> **Delta congelado pendiente:** el nuevo motor añade semánticamente `descartado` como estado backend-only, reactivación de `ignorado`, supresión por evidencia/fingerprint exacto, identidad por instancia para propuestas administrativas y aprobación resuelta/atómica. Estas reglas no deben confundirse con el runtime desplegado hasta completar su implementación.
 
 Quedan reemplazados **solo para Catálogo** los contratos legacy basados en:
 
@@ -511,6 +514,8 @@ codigo
 
 # 9. Autoridad de candidatos e historial
 
+> **Objetivo congelado pendiente de implementación:** la generación, supresión, reactivación y agregación multisede de candidatos comerciales queda normada por `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`. La descripción siguiente refleja el runtime desplegado previo a ese delta.
+
 `inventario.catalogo_candidatos()` genera únicamente candidatos automáticos aún no persistidos a partir de:
 
 ```text
@@ -866,6 +871,8 @@ El cliente debe conservar el mismo `operation_id` cuando la confirmación de una
 ---
 
 # 16. Mutación — `proposal_action`
+
+> **Objetivo congelado pendiente de implementación:** el ciclo futuro diferencia `ignorado` recuperable de `descartado` terminal, incorpora reactivación de ignorados, limpia staging en toda salida a `ignorado/descartado` y exige aprobación resuelta/atómica cuando exista configuración obligatoria. La semántica objetivo está en `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`. El bloque siguiente documenta la mutación desplegada actualmente.
 
 Payload:
 
@@ -1545,6 +1552,14 @@ Aprobados     → carga completa bajo demanda
 Ignorados     → carga completa bajo demanda
 Incorporados  → carga completa bajo demanda
 ```
+
+Contrato objetivo congelado:
+
+```text
+Descartados → backend-only; no tab, no count normal, no carga rutinaria
+```
+
+La incorporación de `descartado` y la distinción autoritativa `automatico | administrativo` se rigen por `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md` y permanecen pendientes de implementación.
 
 ## Productos
 

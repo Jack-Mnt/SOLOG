@@ -15,12 +15,13 @@ Este documento es la **fuente primaria técnica vigente del módulo Admin > Inci
 
 Precedencia:
 
-1. `SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md` — fuente primaria vigente para Incidencias.
-2. `SOLOG_Backend_Incidencias_Contrato_Tecnico_V1.md` — REEMPLAZADO por V2; histórico para los puntos no modificados.
-3. `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` — autoridad para el ciclo de propuestas y publicación una vez que Incidencias origina `eliminar_producto`.
-4. `SOLOG_Decisiones_Congeladas_Optimizacion_Global.md` — decisiones funcionales globales no reemplazadas aquí.
-5. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — runtime compartido y reglas comunes vigentes.
-6. Documentación anterior de Incidencias — histórica cuando contradiga este contrato.
+1. `SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md` — fuente primaria vigente para las incidencias operativas visibles en Admin > Incidencias.
+2. `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md` — contrato objetivo congelado para las seis incidencias comerciales y su relación con Catálogo > Propuestas; no altera la UI de Incidencias.
+3. `SOLOG_Backend_Incidencias_Contrato_Tecnico_V1.md` — REEMPLAZADO por V2; histórico para los puntos no modificados.
+4. `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` — autoridad para el ciclo general de propuestas y publicación una vez que Incidencias origina `eliminar_producto`.
+5. `SOLOG_Decisiones_Congeladas_Optimizacion_Global.md` — decisiones funcionales globales no reemplazadas aquí.
+6. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — runtime compartido y reglas comunes vigentes.
+7. Documentación anterior de Incidencias — histórica cuando contradiga este contrato.
 
 Este contrato **no modifica** los contratos de Catálogo, Grupos, Cajero, Control, Detalles, Dispositivos ni ConeXion salvo en la frontera explícitamente descrita.
 
@@ -81,6 +82,8 @@ codigo_barras_eliminado
 ```
 
 Estas seis familias continúan alimentando `inventario.catalogo_candidatos()` y se administran mediante **Catálogo > Propuestas**.
+
+El contrato objetivo congelado `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md` define su futura supresión/reactivación por evidencia exacta desde Catálogo. **No se reintroducen estas familias en Admin > Incidencias.**
 
 Incidencias no aprueba ni publica cambios de Catálogo.
 
@@ -487,6 +490,7 @@ Reglas:
 
 - las seis incidencias comerciales no se revisan/ignoran desde Admin > Incidencias;
 - su persistencia se conserva para construir propuestas de Catálogo;
+- ignorar/reactivar evidencia comercial desde Catálogo se rige por `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md` y no añade acciones a esta superficie;
 - `eliminar_producto` puede originarse desde `producto_ausente` solo mediante acción humana explícita;
 - Catálogo sigue siendo autoridad de aprobación, staging, preview y publicación.
 

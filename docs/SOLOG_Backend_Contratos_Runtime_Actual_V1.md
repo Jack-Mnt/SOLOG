@@ -49,10 +49,14 @@ Para runtime compartido:
    - `SOLOG_Backend_Catalogo_Valorizado_Mascaras_Delta_V1.md`
    - `SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`
    - `SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md`
-3. Documentos funcionales congelados correspondientes.
-4. V2–V10 — históricos una vez archivados.
+3. Contratos objetivo congelados todavía no desplegados:
+   - `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`
+4. Documentos funcionales congelados correspondientes.
+5. V2–V10 — históricos una vez archivados.
 
 Este documento **no reemplaza** los contratos específicos de Catálogo V3, Grupos V1 o Incidencias V2; los referencia como superficies vigentes independientes.
+
+Los contratos marcados como **objetivo / pendiente de implementación** no describen todavía el runtime desplegado. Se registran para impedir reinterpretaciones durante su implementación y solo pasan a formar parte del runtime actual después de despliegue y validación explícitos.
 
 ---
 
@@ -799,6 +803,14 @@ propose_delete
 
 Incidencias no publica ni elimina productos directamente.
 
+Las seis incidencias comerciales continúan fuera de esta superficie. Su contrato objetivo de integración con Catálogo está congelado en:
+
+```text
+SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md
+```
+
+Ese delta permanece pendiente de implementación y no modifica todavía esta RPC V2.
+
 ---
 
 # 11. Dispositivos
@@ -840,6 +852,12 @@ Contrato específico vigente:
 ```text
 SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md
 SOLOG_Backend_Catalogo_Valorizado_Mascaras_Delta_V1.md
+```
+
+Contrato objetivo congelado pendiente de implementación para el ciclo incidencias comerciales ↔ propuestas:
+
+```text
+SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md
 ```
 
 RPC:
