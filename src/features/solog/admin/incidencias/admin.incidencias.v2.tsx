@@ -65,12 +65,14 @@ function FamilyDetail({
   onClose,
   onIgnore,
   onDelete,
+  onReactivate,
 }: {
   family: MergedIncidentFamily;
   pending: boolean;
   onClose: () => void;
   onIgnore: () => void;
   onDelete: (source: IncidentFamilySource) => void;
+  onReactivate: () => void;
 }) {
   const admin = useAdminStore();
   const query = useManagementQuery("detail_sites", {
@@ -138,8 +140,11 @@ function FamilyDetail({
     family.family_state === "pendiente" &&
     family.active &&
     !family.sources.every((source) => source.family.reactivate_available);
+  const reactivable =
+    family.family_state === "suprimida" &&
+    family.active_suppression_until !== null;
   const footer =
-    ignorable || deletable ? (
+    ignorable || deletable || reactivable ? (
       <div className="admin-dialog__footer-actions admin-incidents__detail-actions">
         {ignorable && (
           <button
@@ -161,6 +166,17 @@ function FamilyDetail({
           >
             <CircleOff size={16} aria-hidden="true" />
             Aprobar eliminación
+          </button>
+        )}
+        {reactivable && (
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={pending}
+            onClick={onReactivate}
+          >
+            <RotateCcw size={16} aria-hidden="true" />
+            Reactivar incidencia
           </button>
         )}
       </div>
@@ -1009,6 +1025,11 @@ export function AdminIncidentsV2() {
               family: detailFamily,
               source,
             })
+          }
+          onReactivate={() =>
+            void reactivateFamily(detailFamily)
+              .then(() => setDetailFamily(null))
+              .catch(() => {})
           }
         />
       )}
