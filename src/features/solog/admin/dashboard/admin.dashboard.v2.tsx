@@ -54,9 +54,18 @@ type DailyStockView = "positive" | "zero";
 const dailyStateViews: Array<{ state: DifferenceState; label: string }> = [
   { state: "Coincide", label: "Coincide" },
   { state: "Recontar", label: "Por recontar" },
-  { state: "Confirmada", label: "Confirmadas" },
+  { state: "Confirmada", label: "Confirmados" },
   { state: "Inconsistente", label: "Inconsistentes" },
 ];
+
+function DailySignedValue({ value }: { value: number }) {
+  return (
+    <>
+      {value > 0 ? "+" : ""}
+      <Value value={value} />
+    </>
+  );
+}
 
 function DailyDrawer({
   site,
@@ -113,7 +122,7 @@ function DailyDrawer({
       description={`${dashboardDate(date)} · Estado vigente de los conteos de esta fecha.`}
       onClose={close}
       variant="drawer"
-      drawerMaxWidth={720}
+      drawerMaxWidth={620}
       footer={
         <>
           {data && (
@@ -214,27 +223,80 @@ function DailyDrawer({
             <div
               id="admin-dashboard-daily-state-panel"
               role="tabpanel"
-              className="admin-auxiliary-table"
+              className="admin-auxiliary-table admin-dashboard-daily__table"
               aria-label={dailyStateViews.find((view) => view.state === selectedState)?.label}
             >
               <table>
                 <thead>
                   <tr>
-                    <th>Grupo</th>
-                    <th>Teórico</th>
-                    <th>Físico</th>
-                    <th>Diferencia</th>
-                    <th>Valorizado</th>
+                    <th scope="col">Grupo</th>
+                    {selectedState === "Coincide" && (
+                      <th scope="col" className="admin-table-number">Stock</th>
+                    )}
+                    {selectedState === "Recontar" && (
+                      <>
+                        <th scope="col" className="admin-table-number">Físico</th>
+                        <th scope="col" className="admin-table-number">Diferencia</th>
+                      </>
+                    )}
+                    {selectedState === "Confirmada" && (
+                      <>
+                        <th scope="col" className="admin-table-number">Diferencia</th>
+                        <th scope="col" className="admin-table-number">Valorizado</th>
+                      </>
+                    )}
+                    {selectedState === "Inconsistente" && (
+                      <>
+                        <th scope="col" className="admin-table-number">Teórico</th>
+                        <th scope="col" className="admin-table-number">Diferencia inicial</th>
+                        <th scope="col" className="admin-table-number">Diferencia encontrada</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {paginated.rows.map((row) => (
                     <tr key={row.case_id}>
-                      <td>{row.grupo}</td>
-                      <td><Value value={row.theoretical} /></td>
-                      <td><Value value={row.physical} /></td>
-                      <td><Value value={row.difference} /></td>
-                      <td><Value value={row.value} money /></td>
+                      <th scope="row">{row.grupo}</th>
+                      {selectedState === "Coincide" && (
+                        <td className="admin-table-number">
+                          <Value value={row.physical} />
+                        </td>
+                      )}
+                      {selectedState === "Recontar" && (
+                        <>
+                          <td className="admin-table-number">
+                            <Value value={row.physical} />
+                          </td>
+                          <td className="admin-table-number">
+                            <DailySignedValue value={row.difference} />
+                          </td>
+                        </>
+                      )}
+                      {selectedState === "Confirmada" && (
+                        <>
+                          <td className="admin-table-number">
+                            <DailySignedValue value={row.difference} />
+                          </td>
+                          <td className="admin-table-number">
+                            <Value value={row.value} money />
+                          </td>
+                        </>
+                      )}
+                      {selectedState === "Inconsistente" && (
+                        <>
+                          <td className="admin-table-number">
+                            <Value value={row.theoretical} />
+                          </td>
+                          <td className="admin-table-number">
+                            {/* TODO Fase 8.2B: sustituir el signo invertido por initial_difference autoritativo. */}
+                            <DailySignedValue value={-row.difference} />
+                          </td>
+                          <td className="admin-table-number">
+                            <DailySignedValue value={row.difference} />
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>
