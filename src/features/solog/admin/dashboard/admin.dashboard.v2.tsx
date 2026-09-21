@@ -73,7 +73,7 @@ function DailySignedValue({
 }) {
   return (
     <span className={differenceToneClass(value)}>
-      {value > 0 ? "+" : ""}
+      {!money && value > 0 ? "+" : ""}
       <Value value={value} money={money} />
     </span>
   );
