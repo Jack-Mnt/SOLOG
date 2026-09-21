@@ -60,6 +60,8 @@
 - preview/publicación solo con aprobados elegibles.
 
 ## Fase 7 — Frontend Catálogo
+**Estado:** COMPLETADA
+
 - consumir V4;
 - `Aprobar` en tabla;
 - resolver antes de aprobar;
@@ -68,6 +70,8 @@
 - sin UI de Descartados.
 
 ## Fase 8 — Frontend Productos
+**Estado:** COMPLETADA
+
 - nueva instancia por acción administrativa;
 - reincorporación resuelta en el mismo flujo;
 - reproponer después de descarte.
@@ -574,6 +578,66 @@ aprobadas complejas incompletas = 0
 
 Catálogo V3 continúa desplegado y no fue eliminado. El frontend sigue sobre V3 hasta Fase 7.
 
+
+## 4.7. Fase 7 — Frontend Catálogo V4
+
+Implementado:
+
+- nuevo contrato TypeScript `admin.catalogo.v4.ts`;
+- `CatalogStore` consume RPC/read V4;
+- `AdminCatalogV4` sustituye a V3 como ruta activa;
+- tabla Pendientes incorpora acción `Aprobar`;
+- altas/reincorporaciones pendientes abren `resolve_product`;
+- precios pendientes abren `resolve_price`;
+- tipos simples conservan aprobación directa;
+- propuestas automáticas pendientes ofrecen `Ignorar`;
+- Ignorados ofrecen `Reactivar`;
+- Aprobados ofrecen `Volver a pendiente` y `Descartar`;
+- `Descartar` exige confirmación explícita;
+- propuestas aprobadas complejas conservan `prepare_product/prepare_price` para actualizar staging;
+- el origen visual usa `automatico | administrativo` del backend;
+- no existe tab, count ni consulta frontend de `descartado`.
+
+## 4.8. Fase 8 — Frontend Productos
+
+Implementado:
+
+- exclusión administrativa continúa como aprobación simple;
+- reincorporación abre primero la configuración;
+- `propose_product_state reincorporate` envía la configuración dentro de la misma operación;
+- una reincorporación nueva ya no crea configuración pendiente después de aprobar;
+- el diálogo compartido distingue `prepare | resolve | propose_reincorporation`;
+- `setup_required` se conserva solo como compatibilidad con staging aprobado ya existente;
+- tras un descarte, una nueva acción de Productos genera una nueva instancia administrativa mediante un nuevo `operation_id`.
+
+## 4.9. CSS Fases 7–8
+
+No se añadió ni modificó CSS.
+
+Los nuevos controles reutilizan:
+
+```text
+.button
+.button--secondary
+.button--danger
+IconButton
+.admin-table-actions
+.admin-table-action-cell
+```
+
+Un posible ajuste local de `min-width` queda condicionado al smoke visual de Fase 10.
+
+## 4.10. Compatibilidad después del corte
+
+```text
+Frontend activo → Catálogo V4
+Backend V4      → activo
+Backend V3      → compatibilidad temporal
+Frontend V3     → fuera de la ruta activa
+```
+
+Las pruebas contractuales puras de V3 se conservan. Store, integración y estructura del frontend activo pasan a pruebas V4.
+
 # 5. Estado
 
 ```text
@@ -584,8 +648,8 @@ Fase 3   COMPLETADA
 Fase 4   COMPLETADA
 Fase 5   COMPLETADA
 Fase 6   COMPLETADA
-Fase 7   PENDIENTE
-Fase 8   PENDIENTE
+Fase 7   COMPLETADA
+Fase 8   COMPLETADA
 Fase 9   PENDIENTE
 Fase 10  PENDIENTE
 ```

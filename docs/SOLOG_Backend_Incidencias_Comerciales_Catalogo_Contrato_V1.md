@@ -771,8 +771,8 @@ Orden obligatorio:
 ```text
 backend V4 desplegado            ✅
 → validación V4                  ✅
-→ frontend cambia a V4           PENDIENTE — FASE 7
-→ smoke                          PENDIENTE
+→ frontend cambia a V4           ✅
+→ smoke                          PENDIENTE — FASE 10
 → V3 queda como compatibilidad temporal
 ```
 
@@ -806,11 +806,11 @@ A la fecha de congelación:
 ```text
 Contrato funcional/backend objetivo → CONGELADO
 Implementación backend              → COMPLETADA — FASES 2–6
-Implementación frontend             → PENDIENTE — FASES 7–8
+Implementación frontend             → COMPLETADA — FASES 7–8
 Migraciones Supabase                → 6 APLICADAS — FASES 2–6
 RPC pública Catálogo V4             → DESPLEGADA / VALIDADA
-Validación técnica                  → BACKEND V4 VALIDADO
-Smoke humano                        → PENDIENTE — TRAS FRONTEND
+Validación técnica                  → BACKEND V4 VALIDADO / FRONTEND PENDIENTE FASE 9
+Smoke humano                        → PENDIENTE — FASE 10
 ```
 
 No debe declararse este motor como desplegado hasta completar implementación y validación.

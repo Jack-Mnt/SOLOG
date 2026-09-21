@@ -5,9 +5,11 @@
 **Módulo:** Admin > Catálogo  
 **Clasificación:** Nivel C — Backend / lógica / integración  
 **Fecha de congelación:** 2026-09-10  
-**Contrato de API de Catálogo:** `contract_version = 3`  
-**Estado backend:** desplegado y validado en Supabase  
-**Fuente primaria técnica del módulo Catálogo:** este documento.
+**Contrato histórico base:** `contract_version = 3`  
+**Contrato activo del frontend:** `contract_version = 4`  
+**Estado backend:** V3 y V4 desplegados; V4 activo en Admin  
+**Fuente primaria técnica V4:** `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`  
+**Rol de este documento:** contrato base/histórico de Catálogo V3 y publicación compartida.
 
 ---
 
@@ -23,9 +25,9 @@ Prevalencia para Catálogo:
 4. `SOLOG_Arquitectura_Responsabilidades_Plataformas_V1.md` — frontera vigente entre ConeXion, Supabase y SOLOG.
 5. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — runtime compartido consolidado.
 
-Ante una contradicción técnica específica del **runtime Catálogo actualmente desplegado**, prevalece este documento. Para el **motor objetivo todavía no implementado** de incidencias comerciales ↔ propuestas, prevalece `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`. El contrato ConeXion ↔ Supabase V2 desplegado continúa siendo autoridad externa para su propia API y no se modifica desde Catálogo sin una decisión explícita. Los documentos históricos de integración que no residen actualmente en `docs/` no forman parte de la cadena necesaria para implementar el frontend actual.
+Ante una contradicción sobre Catálogo V4, prevalece `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`. Este documento conserva autoridad sobre la base histórica V3 y sobre las partes de publicación compartida que no fueron reemplazadas. El contrato ConeXion ↔ Supabase V2 desplegado continúa siendo autoridad externa para su propia API y no se modifica desde Catálogo sin una decisión explícita. Los documentos históricos de integración que no residen actualmente en `docs/` no forman parte de la cadena necesaria para implementar el frontend actual.
 
-> **Delta congelado pendiente:** el nuevo motor añade semánticamente `descartado` como estado backend-only, reactivación de `ignorado`, supresión por evidencia/fingerprint exacto, identidad por instancia para propuestas administrativas y aprobación resuelta/atómica. Estas reglas no deben confundirse con el runtime desplegado hasta completar su implementación.
+> **Delta V4 implementado:** `descartado` backend-only, reactivación de `ignorado`, supresión por evidencia exacta, identidad por instancia administrativa y aprobación resuelta/atómica forman parte del runtime activo del Admin.
 
 Quedan reemplazados **solo para Catálogo** los contratos legacy basados en:
 
@@ -1542,7 +1544,7 @@ Esto no cambia el payload enviado por ConeXion.
 
 # 28. Estrategia de egress y caché frontend
 
-Catálogo V3 no pagina sus conjuntos operativos.
+Catálogo V4 mantiene la estrategia de conjuntos completos heredada de V3.
 
 ## Propuestas
 
@@ -1553,13 +1555,14 @@ Ignorados     → carga completa bajo demanda
 Incorporados  → carga completa bajo demanda
 ```
 
-Contrato objetivo congelado:
+Contrato V4 vigente:
 
 ```text
 Descartados → backend-only; no tab, no count normal, no carga rutinaria
+Origen       → automatico | administrativo
 ```
 
-La incorporación de `descartado` y la distinción autoritativa `automatico | administrativo` se rigen por `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md` y permanecen pendientes de implementación.
+La autoridad de estas reglas es `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`.
 
 ## Productos
 
@@ -1581,19 +1584,21 @@ Debe invalidar la caché relevante después de:
 
 ```text
 proposal_action
+resolve_product
+resolve_price
 propose_product_state
 prepare_product
 prepare_price
 publicación
 ```
 
-No se debe reintroducir `limit/offset` en Catálogo V3 sin una decisión posterior.
+No se debe reintroducir `limit/offset` en Catálogo V4 sin una decisión posterior.
 
 ---
 
 # 29. Reglas de integración para Codex
 
-El frontend debe consumir **exclusivamente el contrato Catálogo V3** definido aquí para este módulo.
+El frontend Admin consume **Catálogo V4**. Este contrato V3 queda como base histórica y compatibilidad backend.
 
 Codex no debe:
 
@@ -1608,8 +1613,8 @@ Codex no debe:
 
 Codex sí debe:
 
-- adaptar tipos TypeScript a `contract_version = 3`;
-- usar los RPC V3 desplegados;
+- adaptar tipos TypeScript a `contract_version = 4`;
+- usar los RPC V4 desplegados;
 - conservar `operation_id` en reintentos inciertos;
 - usar las revisiones recibidas en mutaciones;
 - invalidar caché después de mutaciones;

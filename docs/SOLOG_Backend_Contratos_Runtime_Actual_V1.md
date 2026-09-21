@@ -809,7 +809,7 @@ Las seis incidencias comerciales continúan fuera de esta superficie. Su contrat
 SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md
 ```
 
-Ese delta permanece pendiente de implementación y no modifica todavía esta RPC V2.
+El motor comercial ↔ Catálogo V4 ya está implementado. Las seis familias comerciales siguen fuera de Admin > Incidencias; `propose_delete` continúa siendo la transición explícita desde `producto_ausente` hacia Catálogo.
 
 ---
 
@@ -854,27 +854,29 @@ SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md
 SOLOG_Backend_Catalogo_Valorizado_Mascaras_Delta_V1.md
 ```
 
-Contrato objetivo congelado pendiente de implementación para el ciclo incidencias comerciales ↔ propuestas:
+Contrato vigente para el ciclo incidencias comerciales ↔ propuestas:
 
 ```text
 SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md
 ```
 
-RPC activa para el frontend actual:
-
-```sql
-public.rpc_solog_admin_catalog_read_v3(...)
-public.rpc_solog_admin_catalog_v3(...)
-```
-
-Backend V4 ya desplegado y validado, todavía en **staging contractual** hasta el corte de frontend de Fase 7:
+RPC activa del frontend:
 
 ```sql
 public.rpc_solog_admin_catalog_read_v4(...)
 public.rpc_solog_admin_catalog_v4(...)
 ```
 
-V4 incorpora aprobación atómica, origen autoritativo, ignorado recuperable y descartado backend-only. V3 no se elimina en este bloque.
+V4 incorpora aprobación atómica, origen autoritativo, ignorado recuperable y descartado backend-only.
+
+Compatibilidad temporal backend:
+
+```sql
+public.rpc_solog_admin_catalog_read_v3(...)
+public.rpc_solog_admin_catalog_v3(...)
+```
+
+El frontend Admin ya no consume V3.
 
 `contract_version = 3`.
 
