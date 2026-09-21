@@ -19,6 +19,8 @@
 - impacto CSS.
 
 ## Fase 2 — Modelo backend e identidad
+**Estado:** COMPLETADA
+
 - ampliar `cambios_catalogo`;
 - crear supresión comercial exacta;
 - backfill de origen y legacy;
@@ -26,12 +28,16 @@
 - identidad por instancia administrativa.
 
 ## Fase 3 — Motor de candidatos comerciales
+**Estado:** COMPLETADA
+
 - `catalogo_candidatos()` respeta supresión exacta;
 - conservar agregación multisede;
 - misma evidencia no reaparece;
 - evidencia distinta sí puede aparecer.
 
 ## Fase 4 — Motor de transiciones
+**Estado:** COMPLETADA
+
 - `ignore`;
 - `reactivate`;
 - `withdraw`;
@@ -306,14 +312,135 @@ Fase 2 puede comenzar.
 
 ---
 
-# 4. Estado
+# 4. Implementación Fases 2–4
+
+Migraciones aplicadas en Supabase:
+
+```text
+20260921093739_solog_catalog_v4_model_identity_v1.sql
+20260921093841_solog_catalog_v4_commercial_candidates_v1.sql
+20260921094013_solog_catalog_v4_proposal_transitions_v1.sql
+```
+
+## 4.1. Fase 2
+
+Implementado:
+
+- `origen_propuesta = automatico | administrativo`;
+- `descartado_por` / `descartado_at`;
+- estado `descartado`;
+- backfill autoritativo de origen;
+- migración de las 5 propuestas administrativas legacy `ignorado → descartado`;
+- `catalogo_supresiones_evidencia`;
+- fingerprint administrativo por `operation_id`;
+- guard de compatibilidad para inserts V3 existentes.
+
+Resultado observado:
+
+```text
+aprobado automático      5
+pendiente automático     4
+pendiente administrativo 1
+descartado administrativo 5
+```
+
+## 4.2. Fase 3
+
+Implementado:
+
+- helper único `solog_catalog_commercial_evidence_v1`;
+- `catalogo_candidatos()` consume el helper y excluye fingerprints suprimidos;
+- trigger de normalización reconoce supresión comercial exacta;
+- sincronización supresión ↔ estado de incidencias;
+- compatibilidad para propuestas automáticas que todavía entren a `ignorado` desde V3.
+
+Validación:
+
+```text
+candidatos antes de supresión de prueba = 39
+supresión transaccional de fingerprint multisede
+→ candidato ausente
+→ 2 incidencias suprimidas
+rollback
+→ estado real sin supresiones de prueba
+```
+
+## 4.3. Fase 4
+
+Implementada la función interna:
+
+```text
+inventario.solog_catalog_proposal_action_v4(uuid,jsonb)
+```
+
+Soporta:
+
+```text
+ignore
+reactivate
+withdraw
+discard
+```
+
+La función todavía **no está expuesta mediante RPC pública V4**; eso pertenece a Fase 6.
+
+Validaciones transaccionales con rollback:
+
+```text
+ignore automático multisede
+→ ignorado
+→ supresión exacta activa
+→ candidato desaparece
+→ 2 incidencias suprimidas
+
+reactivate
+→ pendiente
+→ supresión revocada
+→ candidato reaparece
+→ 2 incidencias reactivadas
+
+discard automático
+→ descartado
+→ staging eliminado
+→ supresión terminal
+→ candidato desaparece
+
+withdraw precio
+→ pendiente
+→ _price_resolution eliminado
+→ aprobado_por limpiado
+
+discard administrativo
+→ descartado
+→ sin supresión comercial
+```
+
+Después de los rollbacks de validación:
+
+```text
+supresiones activas de prueba = 0
+incidencias comerciales suprimidas de prueba = 0
+descartados reales = 5 legacy administrativos
+```
+
+## 4.4. Compatibilidad V3
+
+La RPC V3 no fue reemplazada ni eliminada.
+
+La lectura V3 continúa respondiendo con sus cuatro estados visibles. Los cinco legacy administrativos migrados a `descartado` ya no aparecen en el tab `Ignorados`.
+
+La nueva RPC pública V4 sigue pendiente.
+
+---
+
+# 5. Estado
 
 ```text
 Plan     CONGELADO / APROBADO
 Fase 1   COMPLETADA
-Fase 2   PENDIENTE
-Fase 3   PENDIENTE
-Fase 4   PENDIENTE
+Fase 2   COMPLETADA
+Fase 3   COMPLETADA
+Fase 4   COMPLETADA
 Fase 5   PENDIENTE
 Fase 6   PENDIENTE
 Fase 7   PENDIENTE

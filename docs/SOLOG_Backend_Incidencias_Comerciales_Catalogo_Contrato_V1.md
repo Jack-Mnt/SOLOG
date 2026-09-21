@@ -805,10 +805,11 @@ A la fecha de congelación:
 
 ```text
 Contrato funcional/backend objetivo → CONGELADO
-Implementación backend              → PENDIENTE
+Implementación backend              → PARCIAL — FASES 2–4 COMPLETADAS
 Implementación frontend             → PENDIENTE
-Migraciones Supabase                → PENDIENTES
-Validación técnica                  → PENDIENTE
+Migraciones Supabase                → 3 APLICADAS — FASES 2–4
+RPC pública Catálogo V4             → PENDIENTE — FASE 6
+Validación técnica                  → PARCIAL — BACKEND 2–4 VALIDADO
 Smoke humano                        → PENDIENTE
 ```
 
