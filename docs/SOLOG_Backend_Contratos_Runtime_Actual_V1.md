@@ -860,12 +860,21 @@ Contrato objetivo congelado pendiente de implementación para el ciclo incidenci
 SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md
 ```
 
-RPC:
+RPC activa para el frontend actual:
 
 ```sql
 public.rpc_solog_admin_catalog_read_v3(...)
 public.rpc_solog_admin_catalog_v3(...)
 ```
+
+Backend V4 ya desplegado y validado, todavía en **staging contractual** hasta el corte de frontend de Fase 7:
+
+```sql
+public.rpc_solog_admin_catalog_read_v4(...)
+public.rpc_solog_admin_catalog_v4(...)
+```
+
+V4 incorpora aprobación atómica, origen autoritativo, ignorado recuperable y descartado backend-only. V3 no se elimina en este bloque.
 
 `contract_version = 3`.
 

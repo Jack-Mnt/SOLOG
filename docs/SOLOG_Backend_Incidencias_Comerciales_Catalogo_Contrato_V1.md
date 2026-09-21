@@ -769,10 +769,10 @@ No se duplica la lógica de fingerprint.
 Orden obligatorio:
 
 ```text
-backend V4 desplegado
-→ validación V4
-→ frontend cambia a V4
-→ smoke
+backend V4 desplegado            ✅
+→ validación V4                  ✅
+→ frontend cambia a V4           PENDIENTE — FASE 7
+→ smoke                          PENDIENTE
 → V3 queda como compatibilidad temporal
 ```
 
@@ -805,12 +805,12 @@ A la fecha de congelación:
 
 ```text
 Contrato funcional/backend objetivo → CONGELADO
-Implementación backend              → PARCIAL — FASES 2–4 COMPLETADAS
-Implementación frontend             → PENDIENTE
-Migraciones Supabase                → 3 APLICADAS — FASES 2–4
-RPC pública Catálogo V4             → PENDIENTE — FASE 6
-Validación técnica                  → PARCIAL — BACKEND 2–4 VALIDADO
-Smoke humano                        → PENDIENTE
+Implementación backend              → COMPLETADA — FASES 2–6
+Implementación frontend             → PENDIENTE — FASES 7–8
+Migraciones Supabase                → 6 APLICADAS — FASES 2–6
+RPC pública Catálogo V4             → DESPLEGADA / VALIDADA
+Validación técnica                  → BACKEND V4 VALIDADO
+Smoke humano                        → PENDIENTE — TRAS FRONTEND
 ```
 
 No debe declararse este motor como desplegado hasta completar implementación y validación.

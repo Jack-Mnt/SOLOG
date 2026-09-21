@@ -45,11 +45,15 @@
 - staging y auditoría coordinados.
 
 ## Fase 5 — Aprobación atómica
+**Estado:** COMPLETADA
+
 - `resolve_product`;
 - `resolve_price`;
 - `propose_product_state` resuelto en una sola operación.
 
 ## Fase 6 — Lecturas, preview y publicación
+**Estado:** COMPLETADA
+
 - `origen` autoritativo;
 - `descartado` fuera de lecturas/counts;
 - RPC V4;
@@ -433,6 +437,143 @@ La nueva RPC pública V4 sigue pendiente.
 
 ---
 
+
+## 4.5. Fase 5 — Aprobación atómica
+
+Migración aplicada:
+
+```text
+20260921095019_solog_catalog_v4_atomic_resolution_v1.sql
+```
+
+Implementado:
+
+- `inventario.solog_admin_catalog_mutate_v4(uuid,text,jsonb)`;
+- `proposal_action approve` queda limitado a tipos simples;
+- propuestas complejas devuelven `SOLOG_CATALOG_CHANGE_RESOLUTION_REQUIRED`;
+- `resolve_product` realiza aprobación + `_setup` dentro de la misma transacción;
+- `resolve_price` realiza aprobación + `_price_resolution` dentro de la misma transacción;
+- `prepare_product` y `prepare_price` permanecen disponibles para editar staging de una propuesta ya aprobada;
+- `propose_product_state exclude` crea una nueva instancia administrativa aprobada;
+- `propose_product_state reincorporate` exige configuración y solo sobrevive si resolución + aprobación terminan correctamente;
+- `Incidencias > Proponer eliminación` usa también fingerprint administrativo derivado de `operation_id`.
+
+Validaciones transaccionales con rollback:
+
+```text
+agregar_producto pendiente
+→ resolve_product
+→ aprobado + _setup + block_reason null
+
+precio pendiente
+→ resolve_price
+→ aprobado + _price_resolution + block_reason null
+
+reincorporación administrativa pendiente legacy
+→ resolve_product
+→ aprobado + _setup + block_reason null
+
+resolución con categoría inválida
+→ error SOLOG_CATEGORY_NOT_AVAILABLE
+→ propuesta permanece pendiente
+→ no queda _setup
+
+approve directo sobre precio complejo
+→ SOLOG_CATALOG_CHANGE_RESOLUTION_REQUIRED
+→ propuesta permanece pendiente
+
+administrativa A
+→ aprobada
+→ descartada
+→ nueva operación administrativa B
+→ nueva propuesta aprobada con fingerprint diferente
+```
+
+## 4.6. Fase 6 — Lecturas y transporte público V4
+
+Migraciones aplicadas:
+
+```text
+20260921095141_solog_catalog_v4_public_contract_v1.sql
+20260921095431_solog_catalog_v4_suppression_security_indexes_v1.sql
+```
+
+Superficie pública desplegada:
+
+```text
+public.rpc_solog_admin_catalog_read_v4(...)
+public.rpc_solog_admin_catalog_v4(...)
+contract_version = 4
+```
+
+Lecturas V4:
+
+- exponen `origen = automatico | administrativo`;
+- no devuelven `descartado`;
+- no cuentan `descartado`;
+- `Ignorados` solo incluye propuestas automáticas recuperables;
+- `status`, `reference`, `products`, `price_options` y `publication_preview` responden con envelope V4.
+
+Mutaciones públicas V4:
+
+```text
+proposal_action
+resolve_product
+resolve_price
+propose_product_state
+prepare_product
+prepare_price
+```
+
+Conservan:
+
+- `operation_id`;
+- replay idempotente;
+- revisiones `catalog/groups`;
+- advisory lock de Catálogo;
+- permisos `admin/moderador`.
+
+Validación de transporte:
+
+```text
+primer request V4 → replay=false
+mismo operation_id + mismo payload → replay=true
+contract_version → 4
+```
+
+Seguridad:
+
+- RPC V4 sin EXECUTE para `anon`;
+- EXECUTE para `authenticated`, con validación interna de rol;
+- RLS habilitado en `catalogo_supresiones_evidencia`;
+- índices añadidos para FK de actores y `descartado_por`;
+- no se abrió acceso directo a la tabla de supresiones.
+
+Preview/publicación:
+
+```text
+descartados presentes en preview = 0
+aprobadas complejas sin staging = 0
+```
+
+La infraestructura existente de publicación sigue siendo válida porque consume únicamente cambios `aprobado`. El formato `.prcatalog` no cambia.
+
+Estado real al cierre de Fase 6:
+
+```text
+pendiente   35
+aprobado     5
+ignorado     0
+incorporado  0
+descartado   5  [backend-only legacy administrativo]
+
+supresiones comerciales activas = 0
+incidencias comerciales suprimidas = 0
+aprobadas complejas incompletas = 0
+```
+
+Catálogo V3 continúa desplegado y no fue eliminado. El frontend sigue sobre V3 hasta Fase 7.
+
 # 5. Estado
 
 ```text
@@ -441,8 +582,8 @@ Fase 1   COMPLETADA
 Fase 2   COMPLETADA
 Fase 3   COMPLETADA
 Fase 4   COMPLETADA
-Fase 5   PENDIENTE
-Fase 6   PENDIENTE
+Fase 5   COMPLETADA
+Fase 6   COMPLETADA
 Fase 7   PENDIENTE
 Fase 8   PENDIENTE
 Fase 9   PENDIENTE
