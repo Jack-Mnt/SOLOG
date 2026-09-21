@@ -26,9 +26,11 @@ test('Fase 2 pagina Dashboard DailyDrawer después de los filtros locales de Fas
   const page = await source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx')
 
   expect(page).toMatch(/useAdminQuery\(["']daily_detail["'],\s*\{\s*site_id:\s*site,\s*origin_date:\s*date/)
-  expect(page).toContain('paginateAdminRows(filteredItems, page)')
+  expect(page).toContain('DAILY_DETAIL_PAGE_SIZE = 25')
+  expect(page).toMatch(/paginateAdminRows\(\s*filteredItems,\s*page,\s*DAILY_DETAIL_PAGE_SIZE,?\s*\)/)
   expect(page).toContain('paginated.rows.map')
   expect(page).toContain('total={filteredItems.length}')
+  expect(page).toContain('pageSize={DAILY_DETAIL_PAGE_SIZE}')
   expect(page).toContain('ariaLabel="Paginación del detalle diario"')
 })
 
