@@ -41,7 +41,9 @@ describe('Admin table normalization — Phase 5 auxiliary migration + local clea
     const css = await source('src/features/solog/admin/admin.css')
 
     expect(css).toMatch(/\.admin-main-table,\s*\n\.admin-auxiliary-table\s*\{/)
-    expect(css).toMatch(/\.admin-auxiliary-table th,\s*\n\.admin-auxiliary-table td\s*\{[\s\S]*?padding:\s*0\.65rem/)
+    expect(css).toMatch(/\.admin-main-table th,[\s\S]*?\.admin-auxiliary-table td\s*\{[\s\S]*?padding:\s*8px/)
+    expect(css).toMatch(/\.admin-main-table thead th,\s*\n\.admin-auxiliary-table thead th\s*\{/)
+    expect(css).toMatch(/\.admin-main-table tbody th\[scope="row"\],[\s\S]*?\.admin-auxiliary-table tbody th\[scope="row"\]/)
     expect(css).toMatch(/\.admin-main-table thead th\s*\{[\s\S]*?position:\s*sticky/)
     expect(css).not.toContain(':where(.admin-v2-table')
   })
