@@ -36,26 +36,47 @@ function ProductStateProposal({
 }) {
   const store = useCatalogStore();
   const [error, setError] = useState("");
+  const [configure, setConfigure] = useState(false);
   const intent = store.intent();
   const action = product.estado === "Excluido" ? "reincorporate" : "exclude";
+
+  if (action === "reincorporate" && configure) {
+    return (
+      <ProductSetupDialog
+        target={{
+          propuesta_fingerprint: null,
+          c_interno: product.c_interno,
+          producto: product.producto,
+          precio: product.precio,
+          tipo: "reincorporar_producto",
+        }}
+        flow="propose_reincorporation"
+        onClose={() => setConfigure(false)}
+        onComplete={onClose}
+      />
+    );
+  }
+
   const title =
-    action === "exclude" ? "Aprobar exclusión" : "Aprobar reincorporación";
+    action === "exclude" ? "Aprobar exclusión" : "Reincorporar producto";
   const description =
     action === "exclude"
       ? "El cambio quedará aprobado y listo para incluirse en la próxima publicación del Catálogo."
-      : "El cambio quedará aprobado. Antes de publicarlo deberá completarse la configuración necesaria del producto.";
-  const submit = () => {
+      : "La reincorporación debe configurarse antes de quedar aprobada.";
+
+  const submitExclude = () => {
     setError("");
     void store
       .mutation("propose_product_state", {
         c_interno: product.c_interno,
-        action,
+        action: "exclude",
       })
       .then(onClose)
       .catch((reason: unknown) =>
-        setError(catalogMutationError(store, reason, "No se pudo aprobar el cambio.")),
+        setError(catalogMutationError(store, reason, "No se pudo aprobar la exclusión.")),
       );
   };
+
   const retry = () => {
     setError("");
     void store
@@ -65,6 +86,7 @@ function ProductStateProposal({
         setError(catalogMutationError(store, reason, "No se pudo confirmar la propuesta.")),
       );
   };
+
   return (
     <AdminDialog
       title={title}
@@ -85,21 +107,23 @@ function ProductStateProposal({
             type="button"
             className={action === "exclude" ? "button button--danger" : "button"}
             disabled={!!intent}
-            onClick={submit}
+            onClick={action === "exclude" ? submitExclude : () => setConfigure(true)}
           >
             {action === "exclude" ? (
               <CircleOff size={16} aria-hidden="true" />
             ) : (
               <RotateCcw size={16} aria-hidden="true" />
             )}
-            {title}
+            {action === "exclude" ? "Aprobar exclusión" : "Configurar reincorporación"}
           </button>
         </>
       }
     >
       <div className="admin-dialog-confirmation">
         <AdminNotice tone="info">
-          Esta acción aprueba el cambio, pero el producto no cambiará hasta publicar el Catálogo.
+          {action === "exclude"
+            ? "Esta acción aprueba el cambio, pero el producto no cambiará hasta publicar el Catálogo."
+            : "La reincorporación no se aprobará hasta guardar una configuración válida."}
         </AdminNotice>
         <dl className="admin-dialog-context">
           <div>
@@ -472,7 +496,7 @@ export function AdminProductsV1() {
           items={setupRequired}
           onClose={() => setSetupListOpen(false)}
           onConfigure={(item) => {
-            setSetup(item);
+            setSetup({ ...item, propuesta_fingerprint: item.propuesta_fingerprint });
             setSetupListOpen(false);
           }}
         />

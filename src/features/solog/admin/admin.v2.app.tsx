@@ -44,8 +44,8 @@ const Control = lazy(() =>
   })),
 );
 const Catalog = lazy(() =>
-  import("./catalogo/admin.catalogo.page.v3").then((m) => ({
-    default: m.AdminCatalogV3,
+  import("./catalogo/admin.catalogo.page.v4").then((m) => ({
+    default: m.AdminCatalogV4,
   })),
 );
 const Products = lazy(() =>

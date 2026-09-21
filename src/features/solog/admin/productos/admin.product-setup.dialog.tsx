@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Save } from 'lucide-react'
+import { Check, Save } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { AdminBinarySwitch, AdminNotice } from '../admin.primitives'
 import { QueryState, Value } from '../admin.v2.presentation'
@@ -7,12 +7,16 @@ import { CatalogMutationNotice } from '../catalogo/admin.catalogo.feedback'
 import { catalogMutationError } from '../catalogo/admin.catalogo.feedback.utils'
 import { useCatalogStore } from '../catalogo/admin.catalogo.context'
 import { useMasterData } from '../masterdata/admin.masterdata.context'
-import type { MasterDataSetupRequired } from '../masterdata/admin.masterdata.v1'
 
-export type ProductSetupTarget = Pick<
-  MasterDataSetupRequired,
-  'propuesta_fingerprint' | 'c_interno' | 'producto' | 'precio' | 'tipo'
->
+export interface ProductSetupTarget {
+  propuesta_fingerprint: string | null
+  c_interno: number
+  producto: string
+  precio: number
+  tipo: 'agregar_producto' | 'reincorporar_producto'
+}
+
+export type ProductSetupFlow = 'prepare' | 'resolve' | 'propose_reincorporation'
 
 const destinationOptions = [
   { value: 'existing_group', label: 'Grupo existente' },
@@ -21,10 +25,12 @@ const destinationOptions = [
 
 export function ProductSetupDialog({
   target,
+  flow = 'prepare',
   onClose,
   onComplete,
 }: {
   target: ProductSetupTarget
+  flow?: ProductSetupFlow
   onClose: () => void
   onComplete: () => void
 }) {
@@ -42,27 +48,47 @@ export function ProductSetupDialog({
   const submit = () => {
     if (!masterData.snapshot) return
     setError('')
-    const payload =
+    const setup =
       mode === 'existing_group'
         ? {
-            propuesta_fingerprint: target.propuesta_fingerprint,
             mode: 'existing_group' as const,
             grupo_id: groupId,
             marca: brand.trim() || null,
           }
         : {
-            propuesta_fingerprint: target.propuesta_fingerprint,
             mode: 'new_unit' as const,
             categoria_id: categoryId,
             marca: brand.trim() || null,
           }
 
-    void store
-      .mutation('prepare_product', payload)
+    const request =
+      flow === 'propose_reincorporation'
+        ? store.mutation('propose_product_state', {
+            c_interno: target.c_interno,
+            action: 'reincorporate',
+            ...setup,
+          })
+        : target.propuesta_fingerprint
+          ? store.mutation(
+              flow === 'resolve' ? 'resolve_product' : 'prepare_product',
+              {
+                propuesta_fingerprint: target.propuesta_fingerprint,
+                ...setup,
+              },
+            )
+          : Promise.reject(new Error('La propuesta no tiene una identidad válida.'))
+
+    void request
       .then(onComplete)
       .catch((reason: unknown) =>
         setError(
-          catalogMutationError(store, reason, 'No se pudo guardar la configuración.'),
+          catalogMutationError(
+            store,
+            reason,
+            flow === 'prepare'
+              ? 'No se pudo guardar la configuración.'
+              : 'No se pudo resolver y aprobar el producto.',
+          ),
         ),
       )
   }
@@ -74,7 +100,13 @@ export function ProductSetupDialog({
       .then(onComplete)
       .catch((reason: unknown) =>
         setError(
-          catalogMutationError(store, reason, 'No se pudo confirmar la configuración.'),
+          catalogMutationError(
+            store,
+            reason,
+            flow === 'prepare'
+              ? 'No se pudo confirmar la configuración.'
+              : 'No se pudo confirmar la aprobación.',
+          ),
         ),
       )
   }
@@ -84,6 +116,20 @@ export function ProductSetupDialog({
     (mode === 'existing_group'
       ? compatibleGroups.some((group) => group.id === groupId)
       : !!categoryId)
+
+  const confirmLabel =
+    flow === 'prepare'
+      ? 'Guardar configuración'
+      : flow === 'propose_reincorporation'
+        ? 'Aprobar reincorporación'
+        : 'Configurar y aprobar'
+
+  const info =
+    flow === 'prepare'
+      ? 'La configuración preparada se aplicará al publicar el Catálogo.'
+      : flow === 'propose_reincorporation'
+        ? 'La reincorporación quedará aprobada solo si esta configuración se guarda correctamente.'
+        : 'La propuesta quedará aprobada solo si esta configuración se guarda correctamente.'
 
   return <AdminDialog
     title="Configurar producto"
@@ -110,8 +156,10 @@ export function ProductSetupDialog({
           className="button"
           disabled={!!intent || !valid}
         >
-          <Save size={16} aria-hidden="true" />
-          Guardar configuración
+          {flow === 'prepare'
+            ? <Save size={16} aria-hidden="true" />
+            : <Check size={16} aria-hidden="true" />}
+          {confirmLabel}
         </button>
       </>
     }
@@ -132,9 +180,7 @@ export function ProductSetupDialog({
         </div>
       </dl>
 
-      <AdminNotice tone="info">
-        La configuración quedará preparada y se aplicará al publicar el Catálogo.
-      </AdminNotice>
+      <AdminNotice tone="info">{info}</AdminNotice>
 
       {!masterData.snapshot ? (
         <QueryState error={masterData.error} retry={masterData.retry} variant="compact" />
