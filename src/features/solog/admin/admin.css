@@ -784,6 +784,50 @@
   }
 
   .admin-drawer-stock-filter {
+    width: 100%;
+  }
+
+  .admin-drawer-stock-filter .admin-binary-field {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-control-chronology__period-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-control-chronology__event > article {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .admin-control-chronology__event-values {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .admin-incidents__site-repetition-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .admin-dialog-context > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .admin-binary-switch {
+    height: 32px;
+  }
+
+  .admin-binary-switch > button {
+    font-size: 0.78rem;
+  }
+}
+
+/* Fase 8.2A — Drawers: composición compacta para validación visual. */
+.admin-drawer-stock-filter {
   width: min(300px, 100%);
   margin-bottom: 12px;
 }
