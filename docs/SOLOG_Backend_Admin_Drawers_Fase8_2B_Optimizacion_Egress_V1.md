@@ -1,7 +1,7 @@
 # SOLOG — Backend Admin Drawers — Fase 8.2B — Optimización de Egress V1
 
 **Proyecto:** SOLOG  
-**Estado:** CONGELADO / APROBADO PARA IMPLEMENTACIÓN  
+**Estado:** CONGELADO / IMPLEMENTACIÓN EN CURSO — FASES 1–3 COMPLETADAS  
 **Fecha:** 2026-09-21  
 **Clasificación:** Nivel C — backend / contratos / lógica de consulta  
 **Rama:** `admin-work`
@@ -668,13 +668,127 @@ Codex no debe modificar backend durante 8.2B salvo solicitud explícita del usua
 
 ---
 
-# 14. Estado
+# 14. Implementación desplegada — Fases 2 y 3
 
-**Fase 1 — COMPLETADA.**
+## 14.1. Fase 2 — Detalle diario
 
-Contrato backend aprobado y congelado.  
-No se ha implementado todavía ningún cambio de Supabase correspondiente a 8.2B.
+**Estado:** COMPLETADA / DESPLEGADA / VALIDADA EN BACKEND.
 
-La siguiente fase autorizada por el plan es:
+Migración Supabase:
 
-**Fase 2 — Detalle diario.**
+`20260921184418_solog_admin_drawers_8_2b_daily_detail_v1.sql`
+
+Implementado:
+
+- helper interno `inventario.solog_daily_detail_bootstrap_v1`;
+- helper interno `inventario.solog_daily_detail_page_v1`;
+- actions públicas aditivas:
+  - `daily_detail_bootstrap`;
+  - `daily_detail_page`;
+- page size fijo de 25;
+- primera página de los cuatro estados en bootstrap;
+- counts de ambos `stock_class`;
+- páginas posteriores bajo demanda;
+- diferencias autoritativas de Inconsistente;
+- contratos legacy preservados.
+
+Validación representativa en Cutervo, 2026-09-18:
+
+```text
+daily_detail legacy        ≈ 126 526 bytes JSON
+bootstrap positive         ≈   5 428 bytes JSON
+reducción observada        ≈ 95.7 %
+Coincide página 0          = 25 filas
+Coincide página 8          = 7 filas
+página fuera de rango      = []
+Inconsistente real         = inicial +23 → encontrada -1
+bootstrap Stock 0          ≈ 3 131 bytes JSON
+```
+
+También se validó:
+
+- día sin registros → counts en 0 y arrays vacíos;
+- `daily_detail` legacy continúa respondiendo;
+- el placeholder de signo invertido ya no es necesario para el nuevo contrato.
+
+## 14.2. Fase 3 — Cronología por producto
+
+**Estado:** COMPLETADA / DESPLEGADA / VALIDADA EN BACKEND.
+
+Migración Supabase:
+
+`20260921184515_solog_admin_drawers_8_2b_chronology_v1.sql`
+
+Implementado:
+
+- helper interno `inventario.solog_control_chronology_view_v1`;
+- action pública aditiva `control_chronology_view`;
+- eventos compactos por estado;
+- orden backend reciente → antiguo;
+- `latest_unit_price` a nivel de grupo;
+- quincena actual/anterior independientes;
+- exactitud histórica del valorizado conservada;
+- valuation completa deja de viajar por evento;
+- `control_chronology` legacy permanece intacto.
+
+Validación representativa:
+
+```text
+6 eventos legacy           ≈ 2 455 bytes JSON
+6 eventos compactos        ≈ 1 288 bytes JSON
+reducción observada        ≈ 47.5 %
+```
+
+Caso Inconsistente comprobado:
+
+```text
+Teórico reconteo           = 4
+Diferencia inicial         = +23
+Diferencia encontrada      = -1
+```
+
+Caso Confirmado con valorización por paquete comprobado:
+
+```text
+HEINEKEN LATAZA 473ML
+recount_difference         = 16
+precio unitario            = 5.00
+unidades por paquete       = 4
+precio paquete histórico   = 20.00
+valued_difference backend  = 80.00
+```
+
+Quincena anterior sin eventos devuelve:
+
+- `chronology: []`;
+- `latest_unit_price: null`.
+
+## 14.3. Seguridad y compatibilidad
+
+Los helpers internos quedaron ejecutables únicamente por `postgres`.
+
+La RPC pública mantiene su ACL previa:
+
+- `authenticated`;
+- `service_role`;
+- no `anon`.
+
+`rpc_solog_operational_v2` continúa realizando autenticación y autorización Admin/Moderador antes de despachar los helpers.
+
+Los Advisors posteriores no identificaron un hallazgo nuevo específico de estas funciones. Permanecen hallazgos preexistentes del proyecto sobre RLS sin policy en tablas internas, vistas `SECURITY DEFINER`, funciones públicas históricas, FKs/índices y políticas existentes.
+
+# 15. Estado
+
+- Fase 1 — ✅ completada.
+- Fase 2 — ✅ completada.
+- Fase 3 — ✅ completada.
+- Fase 4 — pendiente.
+- Fase 5 — pendiente.
+- Fase 6 — pendiente.
+- Fase 7 — pendiente.
+
+No se han realizado todavía cambios TypeScript ni frontend para consumir las lecturas nuevas.
+
+La siguiente fase es:
+
+**Fase 4 — Validación backend global.**
