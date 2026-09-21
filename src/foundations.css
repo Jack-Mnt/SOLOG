@@ -88,7 +88,7 @@
   --radius-small: 8px;
   --radius-control: 12px;
   --radius-panel: 16px;
-  --transition-fast: 170ms ease;
+  --transition-fast: 200ms ease;
 
   /* Swatches */
   --swatch-blue: var(--ui-blue);
