@@ -600,11 +600,183 @@ La implementación debe preservar:
 
 # 21. Superficie de transporte
 
-Este contrato congela la **semántica del motor**, no obliga todavía a crear una RPC nueva ni a incrementar por sí solo un número de `contract_version`.
+## 21.1. Decisión de preflight congelada
 
-El preflight de implementación debe determinar si el delta puede introducirse de forma compatible sobre Catálogo V3 o si requiere un incremento contractual.
+La implementación utilizará **Catálogo V4** para las lecturas y mutaciones afectadas por este motor.
 
-Si se demuestra que una modificación incompatible del envelope/payload es necesaria, la implementación debe detenerse antes de cambiar el contrato y congelar explícitamente ese delta de transporte.
+Motivo:
+
+- la lectura añade información autoritativa de origen y puede mantenerse conceptualmente aditiva;
+- la semántica de aprobación cambia de forma incompatible: una propuesta compleja ya no puede pasar a `aprobado` antes de persistir su resolución;
+- el frontend V3 valida explícitamente `contract_version = 3` y hoy ejecuta `proposal_action: approve` antes de `prepare_product/prepare_price`;
+- reutilizar V3 haría ambiguo el contrato desplegado y generaría una ventana de incompatibilidad.
+
+Se congela:
+
+```text
+public.rpc_solog_admin_catalog_read_v4(...)
+public.rpc_solog_admin_catalog_v4(...)
+contract_version = 4
+```
+
+Catálogo V3 permanece intacto durante construcción y validación de V4. El frontend cambia a V4 solo cuando backend V4 esté desplegado y validado.
+
+La publicación existente puede reutilizar la infraestructura actual de preview/artefacto/commit. Este bloque no modifica el formato `.prcatalog`.
+
+## 21.2. Lecturas V4
+
+Filtros visibles:
+
+```text
+pendiente
+aprobado
+ignorado
+incorporado
+```
+
+`descartado` no forma parte de filtros ni counts ordinarios.
+
+Cada propuesta expone autoritativamente:
+
+```text
+origen = automatico | administrativo
+```
+
+No se infiere el origen mediante `cambio_id == null`.
+
+## 21.3. Mutaciones V4
+
+```text
+proposal_action:
+  approve     → solo tipos simples
+  ignore      → solo automática pendiente
+  reactivate  → ignorado automático → pendiente
+  withdraw    → aprobado → pendiente
+  discard     → aprobado → descartado
+
+resolve_product:
+  pendiente agregar/reincorporar
+  → validar configuración + guardar _setup + aprobar atómicamente
+
+resolve_price:
+  pendiente precio
+  → validar resolución + guardar _price_resolution + aprobar atómicamente
+
+prepare_product:
+  actualizar _setup de una propuesta ya aprobada
+
+prepare_price:
+  actualizar _price_resolution de una propuesta ya aprobada
+
+propose_product_state:
+  nueva instancia administrativa explícita
+  → exclusión simple aprobada
+  → reincorporación exige configuración en la misma operación
+```
+
+Estos nombres de acción quedan congelados para V4.
+
+## 21.4. Representación física congelada
+
+### `inventario.cambios_catalogo`
+
+Añadir:
+
+```text
+origen_propuesta text
+  automatico | administrativo
+
+descartado_por uuid | null
+descartado_at  timestamptz | null
+```
+
+El check de `estado` admite `descartado`.
+
+Backfill:
+
+```text
+datos._context.origen = conexion          → automatico
+datos.origen = productos                  → administrativo
+datos.origen = producto_ausente_manual    → administrativo
+datos.origen = producto_ausente_propuesto → administrativo
+```
+
+Filas legacy fuera de esta superficie pueden conservar `origen_propuesta = null`.
+
+### Supresión comercial exacta
+
+Crear:
+
+```text
+inventario.catalogo_supresiones_evidencia
+```
+
+Campos mínimos:
+
+```text
+id
+propuesta_fingerprint
+cambio_id
+modo = ignorado | descartado
+creado_por
+creado_at
+revocado_por
+revocado_at
+```
+
+Máximo una supresión activa por fingerprint. `descartado` no puede revocarse.
+
+No se reutiliza `exclusiones_incidencias` de Incidencias V2.
+
+### Identidad administrativa
+
+Cada nueva acción humana genera una nueva instancia:
+
+```text
+sha256(
+  catalog-admin |
+  operation_id |
+  c_interno |
+  tipo
+)
+```
+
+El mismo `operation_id` conserva idempotencia; una acción posterior con otro `operation_id` produce otra instancia.
+
+## 21.5. Helper de evidencia comercial
+
+Centralizar en un único helper SQL:
+
+```text
+incidencia comercial
+→ tipo de propuesta
+→ payload canónico
+→ propuesta_fingerprint
+```
+
+Debe ser reutilizado por:
+
+- `catalogo_candidatos()`;
+- trigger de normalización/supresión;
+- `ignore`;
+- `reactivate`;
+- `discard`.
+
+No se duplica la lógica de fingerprint.
+
+## 21.6. Compatibilidad de despliegue
+
+Orden obligatorio:
+
+```text
+backend V4 desplegado
+→ validación V4
+→ frontend cambia a V4
+→ smoke
+→ V3 queda como compatibilidad temporal
+```
+
+No se modifica ni elimina V3 en este bloque.
 
 ---
 
