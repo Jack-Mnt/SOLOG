@@ -267,13 +267,13 @@ function sortedChronology(
 }
 
 function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
-  let lastDate = "";
   return (
     <ol className="admin-control-chronology__timeline">
       {rows.map((row, index) => {
         const date = eventDate(row.event_at);
-        const showDate = date !== lastDate;
-        lastDate = date;
+        const previousDate =
+          index > 0 ? eventDate(rows[index - 1].event_at) : null;
+        const showDate = previousDate !== date;
         const tone = chronologyTone(row);
         return (
           <li className="admin-control-chronology__event" key={row.row_id}>
