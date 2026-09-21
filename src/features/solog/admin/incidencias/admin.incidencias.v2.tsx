@@ -61,10 +61,16 @@ function StateBadge({ state }: { state: IncidentState }) {
 
 function FamilyDetail({
   family,
+  pending,
   onClose,
+  onIgnore,
+  onDelete,
 }: {
-  family: Family;
+  family: MergedIncidentFamily;
+  pending: boolean;
   onClose: () => void;
+  onIgnore: () => void;
+  onDelete: (source: IncidentFamilySource) => void;
 }) {
   const admin = useAdminStore();
   const query = useManagementQuery("detail_sites", {
@@ -125,67 +131,114 @@ function FamilyDetail({
       ? family.datos.producto
       : "Producto sin nombre";
   const code = family.c_interno ?? family.c_interno_original;
+  const deletable = family.sources.find((source) =>
+    canProposeDelete(source.family),
+  );
+  const ignorable =
+    family.family_state === "pendiente" &&
+    family.active &&
+    !family.sources.every((source) => source.family.reactivate_available);
+  const footer =
+    ignorable || deletable ? (
+      <div className="admin-dialog__footer-actions admin-incidents__detail-actions">
+        {ignorable && (
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={pending}
+            onClick={onIgnore}
+          >
+            <AlarmClockOff size={16} aria-hidden="true" />
+            Ignorar 30 días
+          </button>
+        )}
+        {deletable && (
+          <button
+            type="button"
+            className="button button--danger"
+            disabled={pending}
+            onClick={() => onDelete(deletable)}
+          >
+            <CircleOff size={16} aria-hidden="true" />
+            Aprobar eliminación
+          </button>
+        )}
+      </div>
+    ) : null;
 
   return (
     <AdminDialog
       title={`Repeticiones · ${typeLabels[family.tipo]}`}
-      description={`${product}${code ? ` · [${code}]` : ""} · Todas las sedes`}
       onClose={onClose}
       variant="drawer"
       drawerMaxWidth={520}
+      footer={footer}
     >
-      {sites ? (
-        <div
-          className="admin-incidents__site-repetitions"
-          role="list"
-          aria-label="Repeticiones por sede"
-        >
-          {sites.map((item) => (
-            <article
-              className="admin-incidents__site-repetition"
-              role="listitem"
-              key={item.site_id}
-            >
-              <div className="admin-incidents__site-repetition-header">
-                <strong>{item.site}</strong>
-                <span
-                  className={`admin-incidents__site-occurrences${item.occurrences ? "" : " admin-incidents__site-occurrences--empty"}`}
-                >
-                  {item.occurrences
-                    ? `${item.occurrences} ${item.occurrences === 1 ? "vez" : "veces"}`
-                    : "Sin registros"}
-                </span>
-              </div>
-
-              {!!item.occurrences && (
-                <div className="admin-incidents__site-repetition-meta">
-                  <span
-                    className="admin-incidents__site-range"
-                    aria-label={`Primera: ${item.first_seen_at ? incidentTimestamp(item.first_seen_at) : "sin fecha"}; última: ${item.last_seen_at ? incidentTimestamp(item.last_seen_at) : "sin fecha"}`}
-                  >
-                    <span>
-                      {item.first_seen_at
-                        ? incidentTimestamp(item.first_seen_at)
-                        : "—"}
-                    </span>
-                    <span aria-hidden="true">→</span>
-                    <span>
-                      {item.last_seen_at
-                        ? incidentTimestamp(item.last_seen_at)
-                        : "—"}
-                    </span>
-                  </span>
-                  {item.state && <StateBadge state={item.state} />}
-                </div>
-              )}
-            </article>
-          ))}
+      <div className="admin-incidents__detail">
+        <div className="admin-drawer-entity-summary">
+          <strong>{product}</strong>
+          <div className="admin-drawer-entity-summary__meta">
+            <span>Código interno: {code ?? "Sin código"}</span>
+            <span>Todas las sedes</span>
+          </div>
         </div>
-      ) : legacyFallback ? (
-        <ReadNotice {...legacyQuery} variant="compact" />
-      ) : (
-        <ReadNotice {...query} variant="compact" />
-      )}
+
+        {sites ? (
+          <div
+            className="admin-incidents__site-repetitions"
+            role="list"
+            aria-label="Repeticiones por sede"
+          >
+            {sites.map((item) => (
+              <article
+                className="admin-incidents__site-repetition"
+                role="listitem"
+                key={item.site_id}
+              >
+                <div className="admin-incidents__site-repetition-header">
+                  <strong>{item.site}</strong>
+                </div>
+
+                {item.occurrences ? (
+                  <>
+                    <div className="admin-incidents__site-repetition-summary">
+                      <span className="admin-incidents__site-occurrences">
+                        {item.occurrences}{" "}
+                        {item.occurrences === 1 ? "repetición" : "repeticiones"}
+                      </span>
+                      {item.state && <StateBadge state={item.state} />}
+                    </div>
+                    <span
+                      className="admin-incidents__site-range"
+                      aria-label={`Primera: ${item.first_seen_at ? incidentTimestamp(item.first_seen_at) : "sin fecha"}; última: ${item.last_seen_at ? incidentTimestamp(item.last_seen_at) : "sin fecha"}`}
+                    >
+                      <span>
+                        {item.first_seen_at
+                          ? incidentTimestamp(item.first_seen_at)
+                          : "—"}
+                      </span>
+                      <span aria-hidden="true">→</span>
+                      <span>
+                        {item.last_seen_at
+                          ? incidentTimestamp(item.last_seen_at)
+                          : "—"}
+                      </span>
+                    </span>
+                  </>
+                ) : (
+                  <span className="admin-incidents__site-empty">
+                    Sin registros
+                  </span>
+                )}
+              </article>
+            ))}
+          </div>
+        ) : legacyFallback ? (
+          <ReadNotice {...legacyQuery} variant="compact" />
+        ) : (
+          <ReadNotice {...query} variant="compact" />
+        )}
+      </div>
     </AdminDialog>
   );
 }
@@ -948,7 +1001,15 @@ export function AdminIncidentsV2() {
         <FamilyDetail
           key={`${allActive ? "all" : siteId}:${detailFamily.family_key}`}
           family={detailFamily}
+          pending={pending}
           onClose={() => setDetailFamily(null)}
+          onIgnore={() => setIgnoreFamily(detailFamily)}
+          onDelete={(source) =>
+            setDeleteProposal({
+              family: detailFamily,
+              source,
+            })
+          }
         />
       )}
       {ignoreFamily && (
