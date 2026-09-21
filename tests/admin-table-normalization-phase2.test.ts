@@ -13,7 +13,7 @@ describe('Admin table normalization — Phase 2 Dashboard + Control', () => {
     expect(dashboard).toContain('<th scope="row">{label}</th>')
     expect(dashboard).toContain('<th scope="row">Total</th>')
     expect(dashboard).toContain('className="admin__percentage-action"')
-    expect(dashboard).toContain('className="admin-auxiliary-table"')
+    expect(dashboard).toContain('className="admin-auxiliary-table admin-dashboard-daily__table"')
     expect(css).toContain('.admin-dashboard__detail > .admin-main-table')
     expect(css).not.toContain('.admin-dashboard__detail > .admin-v2-table')
     expect(css).not.toContain('.admin-dashboard__detail > .admin-main-table .icon-button')
