@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
@@ -46,6 +47,9 @@ export function AdminDialog({
   const dialogRef = useRef<HTMLElement>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
   const lifecycleRef = useRef(0)
+  const closeRequestedRef = useRef(false)
+  const closeFallbackRef = useRef<number | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(variant !== 'drawer')
 
   useSyncExternalStore(
     adminDialogStack.subscribe,
@@ -76,20 +80,72 @@ export function AdminDialog({
 
   const isTop = adminDialogStack.isTop(dialogToken)
 
+  const completeDrawerClose = useCallback(() => {
+    if (!closeRequestedRef.current) return
+    closeRequestedRef.current = false
+    if (closeFallbackRef.current !== null) {
+      window.clearTimeout(closeFallbackRef.current)
+      closeFallbackRef.current = null
+    }
+    onClose()
+  }, [onClose])
+
+  const requestClose = useCallback(() => {
+    if (closeDisabled || closeRequestedRef.current) return
+    if (variant !== 'drawer') {
+      onClose()
+      return
+    }
+
+    closeRequestedRef.current = true
+    setDrawerOpen(false)
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      completeDrawerClose()
+      return
+    }
+
+    closeFallbackRef.current = window.setTimeout(completeDrawerClose, 250)
+  }, [closeDisabled, completeDrawerClose, onClose, variant])
+
+  useEffect(() => {
+    if (variant !== 'drawer') return
+    closeRequestedRef.current = false
+    const frame = window.requestAnimationFrame(() => setDrawerOpen(true))
+    return () => window.cancelAnimationFrame(frame)
+  }, [variant])
+
+  useEffect(
+    () => () => {
+      if (closeFallbackRef.current !== null) {
+        window.clearTimeout(closeFallbackRef.current)
+      }
+    },
+    [],
+  )
+
   useLayoutEffect(() => {
-    if (!isTop || !dialogRef.current) return
+    if (
+      !isTop ||
+      !dialogRef.current ||
+      (variant === 'drawer' && !drawerOpen)
+    ) return
     focusDialogEntry(dialogRef.current)
-  }, [isTop])
+  }, [drawerOpen, isTop, variant])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || !isTop) return
+      if (
+        event.defaultPrevented ||
+        !isTop ||
+        (variant === 'drawer' && !drawerOpen)
+      ) return
 
       if (event.key === 'Escape') {
         if (closeDisabled) return
         event.preventDefault()
         event.stopImmediatePropagation()
-        onClose()
+        requestClose()
         return
       }
 
@@ -99,7 +155,7 @@ export function AdminDialog({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [closeDisabled, isTop, onClose])
+  }, [closeDisabled, drawerOpen, isTop, requestClose, variant])
 
   const drawerStyle = variant === 'drawer' && drawerMaxWidth
     ? ({
@@ -112,7 +168,7 @@ export function AdminDialog({
       type="button"
       className="button button--secondary"
       disabled={closeDisabled}
-      onClick={onClose}
+      onClick={requestClose}
     >
       Cerrar
     </button>
@@ -120,15 +176,15 @@ export function AdminDialog({
 
   return (
     <div
-      className={`admin-dialog-backdrop admin-dialog-backdrop--${variant}`}
-      inert={!isTop}
+      className={`admin-dialog-backdrop admin-dialog-backdrop--${variant}${variant === 'drawer' && drawerOpen ? ' is-open' : ''}`}
+      inert={!isTop || (variant === 'drawer' && !drawerOpen)}
       onMouseDown={(event) => {
         if (
           isTop &&
           event.target === event.currentTarget &&
           !closeDisabled
         ) {
-          onClose()
+          requestClose()
         }
       }}
     >
@@ -141,6 +197,16 @@ export function AdminDialog({
         role="dialog"
         style={drawerStyle}
         tabIndex={-1}
+        onTransitionEnd={(event) => {
+          if (
+            variant === 'drawer' &&
+            closeRequestedRef.current &&
+            event.target === event.currentTarget &&
+            event.propertyName === 'transform'
+          ) {
+            completeDrawerClose()
+          }
+        }}
       >
         <header className="admin-dialog__header">
           <div>
@@ -151,7 +217,7 @@ export function AdminDialog({
             aria-label="Cerrar"
             className="icon-button"
             disabled={closeDisabled}
-            onClick={onClose}
+            onClick={requestClose}
             type="button"
           >
             <X size={20} />
