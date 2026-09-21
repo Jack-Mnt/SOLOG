@@ -174,9 +174,12 @@ Se elimina el botón `Cerrar`.
 Cuando las acciones estén disponibles, el Footer expone las mismas acciones ya existentes en la tabla:
 
 - Ignorar 30 días;
-- Aprobar/Proponer eliminación según el flujo vigente.
+- Aprobar/Proponer eliminación según el flujo vigente;
+- Reactivar incidencia cuando la familia esté suprimida y sea reactivable.
 
-Los botones conservan sus iconos y **abren los mismos modales existentes**; no ejecutan mutaciones directamente.
+Ignorar y eliminación conservan sus iconos y **abren los mismos modales existentes**; no ejecutan mutaciones directamente.
+
+Reactivar reutiliza la mutación existente de la fila. Tras una reactivación exitosa, el Drawer se cierra para evitar mostrar el estado suprimido ya obsoleto.
 
 Cuando no haya acciones disponibles, el Drawer puede no renderizar Footer.
 
@@ -189,6 +192,17 @@ Se admite explícitamente:
 - cualquier otro ReactNode → Footer personalizado.
 
 No se crean nuevos variants.
+
+### 6.1. Transición de Drawer
+
+Todos los Drawers usan una transición de entrada sutil basada exclusivamente en `var(--transition-fast)`:
+
+- fade ligero del backdrop;
+- desplazamiento horizontal corto del Drawer;
+- sin alterar geometría ni stacking;
+- `prefers-reduced-motion: reduce` desactiva la transición.
+
+No se introduce infraestructura JS de animación ni lifecycle de cierre.
 
 ## 7. Corrección de gap superior
 
