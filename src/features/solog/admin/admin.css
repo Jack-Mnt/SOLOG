@@ -2106,7 +2106,7 @@ sin alterar las cards de otros módulos. */
   min-width: 0;
   background: var(--color-surface);
 }
-.admin-v2-card header,
+.admin-v2-card > header,
 .admin-v2-toolbar {
   display: flex;
   gap: 1rem;
