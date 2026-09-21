@@ -14,6 +14,10 @@ describe('AdminDialog Fase 8 — Drawers', () => {
     expect(dialog).toContain('--admin-dialog-drawer-max-width')
     expect(css).toContain('width: min(calc(100% - 48px), var(--admin-dialog-drawer-max-width, 960px));')
     expect(css).toContain('.admin-dialog--wide,\n  .admin-dialog--drawer {\n    width: 100%;')
+    expect(css).toContain('transition: opacity var(--transition-fast)')
+    expect(css).toContain('transition: transform var(--transition-fast)')
+    expect(css).toContain('@starting-style')
+    expect(css).toContain('@media (prefers-reduced-motion: reduce)')
   })
 
   test('Detalle diario separa Stock positivo/Stock 0 y usa StateViews', async () => {
@@ -85,6 +89,10 @@ describe('AdminDialog Fase 8 — Drawers', () => {
     expect(incidents).toContain('className="admin-dialog__footer-actions admin-incidents__detail-actions"')
     expect(incidents).toContain('Ignorar 30 días')
     expect(incidents).toContain('Aprobar eliminación')
+    expect(incidents).toContain('Reactivar incidencia')
+    expect(incidents).toContain('family.family_state === "suprimida"')
+    expect(incidents).toContain('family.active_suppression_until !== null')
+    expect(incidents).toContain('.then(() => setDetailFamily(null))')
     expect(incidents).toContain('useManagementQuery(\n    "detail"')
     expect(incidents).toContain('legacyFallback')
     expect(incidents).not.toContain('admin-incidents__detail-table')
