@@ -49,7 +49,7 @@ describe('Admin Productos con Master Data', () => {
   })
 
   test('carga Master Data solo desde Productos o el diálogo de configuración', async () => {
-    const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+    const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
     const products = await source('src/features/solog/admin/productos/admin.productos.v1.tsx')
     const setup = await source('src/features/solog/admin/productos/admin.product-setup.dialog.tsx')
     expect(products).toMatch(/const\s+masterData\s*=\s*useMasterData\(\s*\)/)
@@ -59,13 +59,15 @@ describe('Admin Productos con Master Data', () => {
     expect(products).not.toMatch(/useCatalogQuery\(\s*["']products["']/)
   })
 
-  test('onboarding conserva prepare_product y no vuelve a Catalog reference', async () => {
+  test('configuración soporta prepare, resolve y reincorporación administrativa sin Catalog reference', async () => {
     const setup = await source('src/features/solog/admin/productos/admin.product-setup.dialog.tsx')
-    expect(setup).toMatch(/store\s*\.\s*mutation\(\s*["']prepare_product["']/)
+    expect(setup).toContain("flow === 'resolve' ? 'resolve_product' : 'prepare_product'")
+    expect(setup).toContain("flow === 'propose_reincorporation'")
+    expect(setup).toMatch(/store\.mutation\(\s*['"]propose_product_state['"]/
     expect(setup).toMatch(/masterData\.snapshot\?\.groups\.filter\(\(group\) => group\.precio === target\.precio\)/)
     expect(setup).toContain('masterData.snapshot.categories.map')
     expect(setup).not.toMatch(/["']reference["']/)
-    expect(setup).toContain('La configuración quedará preparada y se aplicará al publicar el Catálogo.')
+    expect(setup).toContain('La propuesta quedará aprobada solo si esta configuración se guarda correctamente.')
   })
 
   test('QuickFilterChip muestra contadores derivados sin lectura adicional y conserva filtros restantes', async () => {
@@ -93,7 +95,7 @@ describe('Admin Productos con Master Data', () => {
     expect(ui).toContain('className="admin-toolbar__actions"')
     expect(ui).toContain('disabled={setupRequired.length === 0}')
     expect(ui).toContain('ProductSetupPendingDialog')
-    expect(ui).toContain('setSetup(item);')
+    expect(ui).toContain('setSetup({ ...item, propuesta_fingerprint: item.propuesta_fingerprint });')
     expect(ui).not.toContain('admin-catalog__section--urgent')
   })
 })

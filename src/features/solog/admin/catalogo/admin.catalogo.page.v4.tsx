@@ -214,9 +214,16 @@ function ProposalsSurface() {
     setError("");
     if (
       proposal.tipo === "agregar_producto" ||
-      proposal.tipo === "reincorporar_producto" ||
-      proposal.tipo === "precio"
+      proposal.tipo === "reincorporar_producto"
     ) {
+      if (proposalSetupPrice(proposal) === null) {
+        setSelected(proposal);
+        return;
+      }
+      setApproval(proposal);
+      return;
+    }
+    if (proposal.tipo === "precio") {
       setApproval(proposal);
       return;
     }

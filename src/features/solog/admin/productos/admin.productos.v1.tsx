@@ -173,7 +173,7 @@ function ProductSetupPendingDialog({
       <div className="admin-products__setup-list">
         {items.map((item) => (
           <article
-            key={item.propuesta_fingerprint}
+            key={item.propuesta_fingerprint ?? item.c_interno}
             className="admin-products__setup-item"
           >
             <div>
