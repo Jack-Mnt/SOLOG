@@ -432,6 +432,8 @@
 .admin-dialog-backdrop--drawer {
   place-items: stretch end;
   padding: 0;
+  opacity: 1;
+  transition: opacity var(--transition-fast);
 }
 
 .admin-dialog--drawer {
@@ -442,6 +444,25 @@
   max-height: 100vh;
   max-height: 100dvh;
   border-radius: 0;
+  transform: translateX(0);
+  transition: transform var(--transition-fast);
+}
+
+@starting-style {
+  .admin-dialog-backdrop--drawer {
+    opacity: 0;
+  }
+
+  .admin-dialog--drawer {
+    transform: translateX(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-dialog-backdrop--drawer,
+  .admin-dialog--drawer {
+    transition: none;
+  }
 }
 
 .admin-dialog__header,
