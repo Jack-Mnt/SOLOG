@@ -107,7 +107,7 @@ export function AdminDialog({
       } as CSSProperties)
     : undefined
 
-  const resolvedFooter = footer ?? (
+  const resolvedFooter = footer === undefined ? (
     <button
       type="button"
       className="button button--secondary"
@@ -116,7 +116,7 @@ export function AdminDialog({
     >
       Cerrar
     </button>
-  )
+  ) : footer
 
   return (
     <div
@@ -158,7 +158,9 @@ export function AdminDialog({
           </button>
         </header>
         <div className="admin-dialog__body">{children}</div>
-        <footer className="admin-dialog__footer">{resolvedFooter}</footer>
+        {resolvedFooter !== null && resolvedFooter !== false ? (
+          <footer className="admin-dialog__footer">{resolvedFooter}</footer>
+        ) : null}
       </section>
     </div>
   )
