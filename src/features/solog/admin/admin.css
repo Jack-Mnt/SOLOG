@@ -2223,9 +2223,6 @@ sin alterar las cards de otros módulos. */
   font-size: 0.8rem;
   line-height: 1.2;
 }
-.admin-v2-card section {
-  margin-top: 1rem;
-}
 .admin-v2-card section > label {
   display: grid;
   gap: 0.4rem;
