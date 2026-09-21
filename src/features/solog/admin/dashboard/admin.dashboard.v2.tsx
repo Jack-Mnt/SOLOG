@@ -51,19 +51,31 @@ function dashboardTimestamp(value: string) {
 
 type DailyStockView = "positive" | "zero";
 
+const DAILY_DETAIL_PAGE_SIZE = 25;
+
 const dailyStateViews: Array<{ state: DifferenceState; label: string }> = [
   { state: "Coincide", label: "Coincide" },
-  { state: "Recontar", label: "Por recontar" },
+  { state: "Recontar", label: "Recontar" },
   { state: "Confirmada", label: "Confirmados" },
   { state: "Inconsistente", label: "Inconsistentes" },
 ];
 
-function DailySignedValue({ value }: { value: number }) {
+function differenceToneClass(value: number) {
+  return `admin-difference admin-difference--${value < 0 ? "negative" : value > 0 ? "positive" : "zero"}`;
+}
+
+function DailySignedValue({
+  value,
+  money = false,
+}: {
+  value: number;
+  money?: boolean;
+}) {
   return (
-    <>
+    <span className={differenceToneClass(value)}>
       {value > 0 ? "+" : ""}
-      <Value value={value} />
-    </>
+      <Value value={value} money={money} />
+    </span>
   );
 }
 
@@ -106,7 +118,11 @@ function DailyDrawer({
   const filteredItems = stockItems.filter(
     (item) => item.estado === selectedState,
   );
-  const paginated = paginateAdminRows(filteredItems, page);
+  const paginated = paginateAdminRows(
+    filteredItems,
+    page,
+    DAILY_DETAIL_PAGE_SIZE,
+  );
   const selectStockView = (next: DailyStockView) => {
     setStockView(next);
     setPage(0);
@@ -124,24 +140,21 @@ function DailyDrawer({
       variant="drawer"
       drawerMaxWidth={620}
       footer={
-        <>
-          {data && (
-            <div className="admin-dialog__footer-navigation">
-              <AdminPagination
-                total={filteredItems.length}
-                currentPage={paginated.currentPage}
-                pageCount={paginated.pageCount}
-                onPageChange={setPage}
-                ariaLabel="Paginación del detalle diario"
-              />
-            </div>
-          )}
-          <div className="admin-dialog__footer-actions">
-            <button type="button" className="button button--secondary" onClick={close}>
-              Cerrar
-            </button>
+        data ? (
+          <div className="admin-dialog__footer-navigation admin-dashboard-daily__footer">
+            <span className="admin-dialog__footer-summary">
+              {filteredItems.length} {filteredItems.length === 1 ? "conteo" : "conteos"}
+            </span>
+            <AdminPagination
+              total={filteredItems.length}
+              currentPage={paginated.currentPage}
+              pageCount={paginated.pageCount}
+              pageSize={DAILY_DETAIL_PAGE_SIZE}
+              onPageChange={setPage}
+              ariaLabel="Paginación del detalle diario"
+            />
           </div>
-        </>
+        ) : null
       }
     >
       {!data ? (
@@ -248,8 +261,7 @@ function DailyDrawer({
                     {selectedState === "Inconsistente" && (
                       <>
                         <th scope="col" className="admin-table-number">Teórico</th>
-                        <th scope="col" className="admin-table-number">Diferencia inicial</th>
-                        <th scope="col" className="admin-table-number">Diferencia encontrada</th>
+                        <th scope="col" className="admin-table-number">Diferencias</th>
                       </>
                     )}
                   </tr>
@@ -279,7 +291,7 @@ function DailyDrawer({
                             <DailySignedValue value={row.difference} />
                           </td>
                           <td className="admin-table-number">
-                            <Value value={row.value} money />
+                            <DailySignedValue value={row.value} money />
                           </td>
                         </>
                       )}
@@ -289,11 +301,12 @@ function DailyDrawer({
                             <Value value={row.theoretical} />
                           </td>
                           <td className="admin-table-number">
-                            {/* TODO Fase 8.2B: sustituir el signo invertido por initial_difference autoritativo. */}
-                            <DailySignedValue value={-row.difference} />
-                          </td>
-                          <td className="admin-table-number">
-                            <DailySignedValue value={row.difference} />
+                            <span className="admin-difference-flow">
+                              {/* TODO Fase 8.2B: sustituir el signo invertido por initial_difference autoritativo. */}
+                              <DailySignedValue value={-row.difference} />
+                              <span aria-hidden="true">→</span>
+                              <DailySignedValue value={row.difference} />
+                            </span>
                           </td>
                         </>
                       )}
