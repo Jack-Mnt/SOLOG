@@ -68,7 +68,8 @@ describe('AdminDialog stack', () => {
     expect(source).toContain('event.defaultPrevented')
     expect(source).toContain('!isTop')
     expect(source).toContain('event.stopImmediatePropagation()')
-    expect(source).toContain('inert={!isTop}')
+    expect(source).toContain("inert={!isTop || (variant === 'drawer' && !drawerOpen)}")
+    expect(source).toContain('requestClose()')
     expect(source).toMatch(
       /isTop\s*&&\s*event\.target\s*===\s*event\.currentTarget\s*&&\s*!closeDisabled/,
     )
@@ -110,6 +111,7 @@ describe('AdminDialog stack', () => {
     expect(source).toContain('<footer className="admin-dialog__footer">{resolvedFooter}</footer>')
     expect(source).toContain('button button--secondary')
     expect(source).toContain('Cerrar')
+    expect(source).toContain('onClick={requestClose}')
   })
 
   test('CSS aplica el contrato visual y responsive congelado', async () => {
@@ -142,6 +144,7 @@ describe('AdminDialog stack', () => {
     expect(source).toContain('returnFocusRef.current === null')
     expect(focus).toContain('lifecycleRef.current !== lifecycle')
     expect(source).toContain('tabIndex={-1}')
+    expect(source).toContain("(variant === 'drawer' && !drawerOpen)")
     expect(focus).toContain('button:not([disabled])')
     expect(focus).toContain("event.shiftKey")
     expect(focus).toContain("root.focus({ preventScroll: true })")
