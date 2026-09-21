@@ -60,20 +60,20 @@ const dailyStateViews: Array<{ state: DifferenceState; label: string }> = [
   { state: "Inconsistente", label: "Inconsistentes" },
 ];
 
-function differenceToneClass(value: number) {
-  return `admin-difference admin-difference--${value < 0 ? "negative" : value > 0 ? "positive" : "zero"}`;
+function differenceToneClass(value: number | null) {
+  return `admin-difference admin-difference--${value === null ? "zero" : value < 0 ? "negative" : value > 0 ? "positive" : "zero"}`;
 }
 
 function DailySignedValue({
   value,
   money = false,
 }: {
-  value: number;
+  value: number | null;
   money?: boolean;
 }) {
   return (
     <span className={differenceToneClass(value)}>
-      {!money && value > 0 ? "+" : ""}
+      {!money && value !== null && value > 0 ? "+" : ""}
       <Value value={value} money={money} />
     </span>
   );
