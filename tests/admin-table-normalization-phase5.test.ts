@@ -28,7 +28,7 @@ describe('Admin table normalization — Phase 5 auxiliary migration + local clea
       source('src/features/solog/admin/control/admin.control.v2.tsx'),
     ])
 
-    expect(dashboard).toContain('className="admin-auxiliary-table"')
+    expect(dashboard).toContain('className="admin-auxiliary-table admin-dashboard-daily__table"')
     expect(catalog).toContain('className="admin-auxiliary-table admin-catalog__table"')
     expect(groupsDialog).toContain('className="admin-auxiliary-table"')
     expect(incidents).not.toContain('admin-incidents__detail-table')
