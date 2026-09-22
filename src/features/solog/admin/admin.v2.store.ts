@@ -70,7 +70,7 @@ export class AdminStore {
     for (const [key, entry] of this.entries) {
       // V10 datasets stay cached for this Admin session, without background revalidation.
       // Access changes, explicit refresh and disposal still remove them.
-      if (preserveControl && (entry.action === 'control_groups' || entry.action === 'control_chronology')) continue
+      if (preserveControl && (entry.action === 'control_groups' || entry.action === 'control_chronology' || entry.action === 'control_chronology_view')) continue
       if (entry.action !== 'bootstrap' && (!site || entry.site === site || entry.action === 'dashboard_cards')) this.entries.delete(key)
     }
   }
@@ -130,6 +130,14 @@ export class AdminStore {
       }
       if (action === 'shift_grid' && (response as AdminResponses['shift_grid']).period.key !== ((payload as AdminPayloads['shift_grid']).period ?? 'current_biweekly')) throw new Error('Período recibido incorrecto.')
       if (action === 'daily_detail' && (response as AdminResponses['daily_detail']).origin_date !== (payload as AdminPayloads['daily_detail']).origin_date) throw new Error('Fecha recibida incorrecta.')
+      if (action === 'daily_detail_bootstrap') {
+        const r = response as AdminResponses['daily_detail_bootstrap'], p = payload as AdminPayloads['daily_detail_bootstrap']
+        if (r.origin_date !== p.origin_date || r.stock_class !== p.stock_class || r.page_size !== 25) throw new Error('Detalle diario recibido para otro scope.')
+      }
+      if (action === 'daily_detail_page') {
+        const r = response as AdminResponses['daily_detail_page'], p = payload as AdminPayloads['daily_detail_page']
+        if (r.origin_date !== p.origin_date || r.stock_class !== p.stock_class || r.state !== p.state || r.page !== p.page || r.page_size !== 25) throw new Error('Página diaria recibida para otro scope.')
+      }
       if (action === 'control_detail' && (response as AdminResponses['control_detail']).group_id !== (payload as AdminPayloads['control_detail']).group_id) throw new Error('Grupo recibido incorrecto.')
       if (action === 'control_groups') {
         const r = response as AdminResponses['control_groups'], p = payload as AdminPayloads['control_groups']
@@ -137,6 +145,10 @@ export class AdminStore {
       }
       if (action === 'control_chronology') {
         const r = response as AdminResponses['control_chronology'], p = payload as AdminPayloads['control_chronology']
+        if (r.group.id !== p.group_id || r.period.key !== p.period) throw new Error('Grupo o período recibido incorrecto.')
+      }
+      if (action === 'control_chronology_view') {
+        const r = response as AdminResponses['control_chronology_view'], p = payload as AdminPayloads['control_chronology_view']
         if (r.group.id !== p.group_id || r.period.key !== p.period) throw new Error('Grupo o período recibido incorrecto.')
       }
       if (action === 'control_page') {
