@@ -16,7 +16,7 @@ import { AdminDialog } from "../admin.dialog";
 import { useAdminQuery, useAdminStore } from "../admin.v2.context";
 import type {
   AdminPayloads,
-  ControlChronologyResponse,
+  ControlChronologyViewResponse,
   ControlPeriod,
   DifferenceState,
 } from "../admin.v2";
@@ -188,7 +188,7 @@ function eventTime(value: string) {
     .format(new Date(value))
     .toLowerCase();
 }
-type ChronologyRow = ControlChronologyResponse["chronology"][number];
+type ChronologyRow = ControlChronologyViewResponse["chronology"][number];
 
 type ChronologyMetric = {
   label: string;
@@ -200,7 +200,7 @@ type ChronologyMetric = {
 
 function chronologyMetrics(row: ChronologyRow): ChronologyMetric[] {
   if (row.state === "Coincide") {
-    return [{ label: "Stock", value: row.physical }];
+    return [{ label: "Stock", value: row.stock }];
   }
   if (row.state === "Confirmada") {
     return [
@@ -221,11 +221,15 @@ function chronologyMetrics(row: ChronologyRow): ChronologyMetric[] {
   if (row.state === "Inconsistente") {
     return [
       { label: "Teórico", value: row.theoretical },
-      // TODO Fase 8.2B: sustituir este signo invertido por initial_difference autoritativo.
-      { label: "Inicial", value: -row.difference, tone: true, showPlus: true },
+      {
+        label: "Inicial",
+        value: row.initial_difference,
+        tone: true,
+        showPlus: true,
+      },
       {
         label: "Encontrada",
-        value: row.difference,
+        value: row.found_difference,
         tone: true,
         showPlus: true,
       },
@@ -257,8 +261,8 @@ function chronologyDifferenceClass(value: number) {
 }
 
 function sortedChronology(
-  current: ControlChronologyResponse,
-  previous?: ControlChronologyResponse,
+  current: ControlChronologyViewResponse,
+  previous?: ControlChronologyViewResponse,
 ) {
   return [...current.chronology, ...(previous?.chronology ?? [])].sort(
     (left, right) =>
@@ -333,13 +337,13 @@ function GroupDetail({
 }) {
   const admin = useAdminStore();
   const [showPrevious, setShowPrevious] = useState(false);
-  const currentQuery = useAdminQuery("control_chronology", {
+  const currentQuery = useAdminQuery("control_chronology_view", {
     site_id: site,
     group_id: group,
     period: "current_biweekly",
   });
   const previousQuery = useAdminQuery(
-    "control_chronology",
+    "control_chronology_view",
     {
       site_id: site,
       group_id: group,
@@ -354,8 +358,13 @@ function GroupDetail({
   const currentData = currentQuery.data;
   const previousData = showPrevious ? previousQuery.data : undefined;
   const rows = currentData ? sortedChronology(currentData, previousData) : [];
+  const productName =
+    currentData?.group.name ?? previousData?.group.name ?? name;
   const category = currentData?.group.category ?? previousData?.group.category;
-  const price = rows[0]?.valuation.unit_price;
+  const price =
+    currentData?.group.latest_unit_price ??
+    previousData?.group.latest_unit_price ??
+    undefined;
 
   return (
     <AdminDialog
@@ -385,7 +394,7 @@ function GroupDetail({
       ) : (
         <div className="admin-control-chronology">
           <div className="admin-drawer-entity-summary">
-            <strong>{name}</strong>
+            <strong>{productName}</strong>
             <div className="admin-drawer-entity-summary__meta">
               <span>{category ?? "Sin categoría"}</span>
               <span>
