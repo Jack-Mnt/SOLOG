@@ -94,7 +94,7 @@ function dailyPageRows<S extends DifferenceState>(
   if (!pageData || pageData.state !== state) {
     return [] as unknown as DailyDetailBootstrap["views"][S];
   }
-  return pageData.items as DailyDetailBootstrap["views"][S];
+  return pageData.items as unknown as DailyDetailBootstrap["views"][S];
 }
 
 function DailyDrawer({
