@@ -153,6 +153,17 @@ function dailyRows(value: unknown, stateValue: DifferenceState) {
     return numbers(r, ['theoretical', 'initial_difference', 'found_difference'])
   })
 }
+function dailyBootstrapViews(value: unknown) {
+  if (!record(value)) return false
+  return dailyRows(value.Coincide, 'Coincide')
+    && dailyRows(value.Recontar, 'Recontar')
+    && dailyRows(value.Confirmada, 'Confirmada')
+    && dailyRows(value.Inconsistente, 'Inconsistente')
+    && (['Coincide', 'Recontar', 'Confirmada', 'Inconsistente'] as DifferenceState[]).every(key => {
+      const rows = value[key]
+      return Array.isArray(rows) && rows.length <= 25 && unique(rows, 'case_id')
+    })
+}
 function chronologyViewRows(value: unknown) {
   return array(value, r => {
     if (!strings(r, ['row_id', 'event_at']) || !nullableTime(r.event_at)) return false
@@ -198,7 +209,7 @@ export function validateAdminResponse<A extends AdminAction>(action: A, value: u
     case 'dashboard_cards': valid = array(value.sites, r => strings(r, ['site_id', 'site']) && numbers(r, ['pending_recount', 'operational_revision']) && numbers(r.period_coverage, ['counted', 'total', 'percent']) && record(r.period_coverage) && typeof r.period_coverage.complete === 'boolean' && numbers(r.daily_coverage, ['counted_today', 'total', 'percent']) && (r.snapshot === null || strings(r.snapshot, ['id', 'capturado_at', 'confirmado_at']))); break
     case 'shift_grid': valid = strings(value, ['site_id']) && strings(value.period, ['key', 'from', 'to']) && record(value.data) && array(value.data.shifts, r => strings(r, ['date', 'calculated_at']) && ['early', 'day', 'night'].includes(String(r.shift)) && numbers(r, ['numerator', 'denominator', 'percentage'])) && array(value.data.totals, r => strings(r, ['date']) && numbers(r, ['numerator', 'denominator', 'percentage'])); break
     case 'daily_detail': valid = strings(value, ['site_id', 'origin_date']) && numbers(value.summary, ['pending_recount', 'confirmed', 'inconsistent']) && rows(value.items); break
-    case 'daily_detail_bootstrap': valid = strings(value, ['site_id', 'origin_date']) && dateOnly(value.origin_date) && dailyStockClass(value.stock_class) && value.page_size === 25 && record(value.counts) && countBlock(value.counts.positive) && countBlock(value.counts.zero) && record(value.views) && dailyRows(value.views.Coincide, 'Coincide') && dailyRows(value.views.Recontar, 'Recontar') && dailyRows(value.views.Confirmada, 'Confirmada') && dailyRows(value.views.Inconsistente, 'Inconsistente') && (['Coincide', 'Recontar', 'Confirmada', 'Inconsistente'] as DifferenceState[]).every(key => Array.isArray(value.views[key]) && value.views[key].length <= 25 && unique(value.views[key], 'case_id')); break
+    case 'daily_detail_bootstrap': valid = strings(value, ['site_id', 'origin_date']) && dateOnly(value.origin_date) && dailyStockClass(value.stock_class) && value.page_size === 25 && record(value.counts) && countBlock(value.counts.positive) && countBlock(value.counts.zero) && dailyBootstrapViews(value.views); break
     case 'daily_detail_page': valid = strings(value, ['site_id', 'origin_date']) && dateOnly(value.origin_date) && dailyStockClass(value.stock_class) && state(value.state) && Number.isInteger(value.page) && Number(value.page) >= 0 && value.page_size === 25 && dailyRows(value.items, value.state as DifferenceState) && Array.isArray(value.items) && value.items.length <= 25 && unique(value.items, 'case_id'); break
     case 'control_groups': valid = strings(value, ['site_id']) && controlRange(value.period) && array(value.items, r => strings(r, ['case_id', 'group_id', 'group_name', 'category', 'origin_at']) && nullableTime(r.origin_at) && state(r.state) && numbers(r, ['difference', 'valued_difference'])) && unique(value.items, 'group_id') && unique(value.items, 'case_id'); break
     case 'control_chronology': valid = strings(value, ['site_id']) && strings(value.group, ['id', 'name']) && record(value.group) && (value.group.category === null || typeof value.group.category === 'string') && controlRange(value.period, true) && array(value.chronology, r => strings(r, ['row_id', 'case_id', 'event_at']) && nullableTime(r.event_at) && (state(r.state) || r.state === 'Recontado') && numbers(r, ['theoretical', 'physical', 'difference', 'valued_difference']) && numbers(r.valuation, ['unit_price']) && record(r.valuation) && nullableNumbers(r.valuation, ['units_per_package', 'package_price'])) && unique(value.chronology, 'row_id'); break
