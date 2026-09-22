@@ -25,7 +25,9 @@ const chronologyPayload = {
   period: 'current_biweekly' as const,
 }
 
-function setup(transform = (_action: string, value: any) => value) {
+type MutableResponse = Record<string, unknown>
+
+function setup(transform = (_action: string, value: MutableResponse) => value) {
   const calls: { action: string; payload: unknown }[] = []
   const rpc = (async (action, payload) => {
     calls.push({ action, payload })
@@ -130,7 +132,14 @@ test('8.2B cronología compacta conserva caché por grupo/período y lazy indepe
 
 test('8.2B nueva revisión invalida detalle diario pero preserva cronología de sesión', async () => {
   const { store, calls } = setup((action, value) => {
-    if (action === 'daily_detail_page') value.revisions.operational = 11
+    if (
+      action === 'daily_detail_page' &&
+      value.revisions &&
+      typeof value.revisions === 'object' &&
+      !Array.isArray(value.revisions)
+    ) {
+      ;(value.revisions as Record<string, unknown>).operational = 11
+    }
     return value
   })
   await store.load('bootstrap', {})
@@ -151,17 +160,21 @@ test('8.2B descarta respuestas de otro stock/estado/página o grupo/período', a
     [
       'daily_detail_bootstrap',
       bootstrapPayload,
-      (value: any) => { value.stock_class = 'zero' },
+      (value: MutableResponse) => { value.stock_class = 'zero' },
     ],
     [
       'daily_detail_page',
       pagePayload,
-      (value: any) => { value.page = 2 },
+      (value: MutableResponse) => { value.page = 2 },
     ],
     [
       'control_chronology_view',
       chronologyPayload,
-      (value: any) => { value.group.id = 'group-other' },
+      (value: MutableResponse) => {
+        if (value.group && typeof value.group === 'object' && !Array.isArray(value.group)) {
+          ;(value.group as Record<string, unknown>).id = 'group-other'
+        }
+      },
     ],
   ] as const) {
     const { store } = setup((currentAction, value) => {
