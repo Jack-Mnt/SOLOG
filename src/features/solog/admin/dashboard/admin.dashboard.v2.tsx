@@ -108,7 +108,7 @@ function DailyDrawer({
 }) {
   const admin = useAdminStore();
   const [page, setPage] = useState(0);
-  const [stockView, setStockView] = useState<"positive" | "zero">("positive");
+  const [stockView, setStockView] = useState<DailyStockView>("positive");
   const [selectedState, setSelectedState] =
     useState<DifferenceState>("Coincide");
   const query = useAdminQuery("daily_detail_bootstrap", {
@@ -143,7 +143,7 @@ function DailyDrawer({
       };
   const total = stateCounts[selectedState];
   const pageCount = Math.max(1, Math.ceil(total / DAILY_DETAIL_PAGE_SIZE));
-  const selectStockView = (next: "positive" | "zero") => {
+  const selectStockView = (next: DailyStockView) => {
     setStockView(next);
     setPage(0);
   };
