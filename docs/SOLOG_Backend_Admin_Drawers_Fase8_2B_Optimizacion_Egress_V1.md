@@ -1,7 +1,7 @@
 # SOLOG — Backend Admin Drawers — Fase 8.2B — Optimización de Egress V1
 
 **Proyecto:** SOLOG  
-**Estado:** CONTRATO BACKEND DESPLEGADO Y CONGELADO — FASES 1–5 COMPLETADAS  
+**Estado:** IMPLEMENTACIÓN COMPLETA — FASES 1–6 COMPLETADAS / FASE 7 PENDIENTE  
 **Fecha:** 2026-09-21  
 **Clasificación:** Nivel C — backend / contratos / lógica de consulta  
 **Rama:** `admin-work`
@@ -1321,25 +1321,183 @@ public.rpc_solog_operational_v2
 
 Los hashes son una referencia de baseline del despliegue, no una API contractual.
 
-# 17. Estado
+# 17. Fase 6 — TypeScript + frontend
+
+**Estado:** IMPLEMENTADA / PENDIENTE VALIDACIÓN FORMAL DE FASE 7.
+
+No fue necesario modificar backend ni CSS.
+
+## 17.1. Contratos TypeScript
+
+`src/features/solog/admin/admin.v2.ts` incorpora los contratos desplegados:
+
+- `DailyStockClass`;
+- shapes discriminados para Coincide, Recontar, Confirmada e Inconsistente;
+- `DailyDetailBootstrap`;
+- `DailyDetailPage`;
+- `ControlChronologyViewRow`;
+- `ControlChronologyViewResponse`;
+- payloads/responses para:
+  - `daily_detail_bootstrap`;
+  - `daily_detail_page`;
+  - `control_chronology_view`.
+
+Los validators frontend comprueban:
+
+- fecha diaria `YYYY-MM-DD`;
+- stock class;
+- page >= 0;
+- page size autoritativo = 25;
+- counts completos;
+- página 0 completa hasta `min(25, count)`;
+- shapes específicos según estado;
+- unicidad de `case_id` / `row_id`;
+- períodos quincenales de Cronología;
+- `latest_unit_price` nullable.
+
+Los contratos legacy permanecen tipados para compatibilidad.
+
+## 17.2. AdminStore
+
+`src/features/solog/admin/admin.v2.store.ts` integra las nuevas lecturas en la infraestructura existente.
+
+Scopes validados antes de publicar en caché:
+
+```text
+daily bootstrap:
+site + origin_date + stock_class
+
+daily page:
+site + origin_date + stock_class + state + page
+
+chronology:
+site + group + period
+```
+
+Comportamiento:
+
+- bootstrap diario se cachea por stock;
+- páginas diarias se cachean por estado/página;
+- cambios de revisión operacional invalidan datos diarios;
+- `control_chronology_view` conserva la semántica de caché de sesión de `control_chronology`;
+- refresh/revocación siguen limpiando cachés;
+- no se creó una infraestructura de caché paralela.
+
+## 17.3. Detalle diario
+
+`src/features/solog/admin/dashboard/admin.dashboard.v2.tsx` deja de consumir `daily_detail` para el Drawer.
+
+Ahora:
+
+1. abre con `daily_detail_bootstrap` de Stock positivo;
+2. StateViews usan las cuatro páginas 0 ya incluidas en el bootstrap;
+3. cambiar Stock carga como máximo un bootstrap nuevo para ese stock;
+4. páginas > 0 usan `daily_detail_page`;
+5. páginas visitadas quedan cacheadas;
+6. total/paginación se basan en `counts` autoritativos;
+7. página visible se limita al rango autoritativo si el total cambia.
+
+Datos visibles:
+
+- Coincide → `stock`;
+- Recontar → `physical + difference`;
+- Confirmados → `difference + valued_difference`;
+- Inconsistentes → `theoretical + initial_difference → found_difference`.
+
+Se eliminó completamente el placeholder:
+
+```text
+initial = -difference
+```
+
+No se filtra ni pagina en frontend el dataset completo del día.
+
+## 17.4. Cronología
+
+`src/features/solog/admin/control/admin.control.v2.tsx` deja de consumir `control_chronology` para el Drawer y usa `control_chronology_view`.
+
+Se conserva la UI congelada de 8.2A:
+
+- timeline;
+- ancho;
+- orden visual;
+- switch lazy de quincena anterior;
+- composición por estado.
+
+La UI consume directamente:
+
+- Coincide → `stock`;
+- Recontar/Recontado → `physical + difference`;
+- Confirmado → `difference + valued_difference`;
+- Inconsistente → `theoretical + initial_difference + found_difference`.
+
+Precio:
+
+```ts
+current.group.latest_unit_price ??
+previous.group.latest_unit_price
+```
+
+Ya no existe dependencia frontend de `valuation` por evento.
+
+## 17.5. Incidencias
+
+Sin cambios.
+
+El Drawer continúa consumiendo `detail_sites`, tal como quedó congelado en Fase 5.
+
+## 17.6. Cobertura añadida/actualizada
+
+Se añadieron fixtures para los nuevos contratos y el archivo:
+
+`tests/admin-drawers-8-2b.test.ts`
+
+Cubre conceptualmente:
+
+- validación de shapes compactos;
+- diferencias autoritativas;
+- payloads;
+- caché bootstrap por stock;
+- caché de páginas por estado/página;
+- cronología por grupo/período;
+- carga independiente de quincena anterior;
+- invalidación por revisión operacional;
+- preservación de cronología de sesión;
+- rechazo de respuestas de otro scope.
+
+También se actualizaron:
+
+- `tests/admin-dialog-phase8.test.ts`;
+- `tests/admin-control-v3.test.ts`;
+- `tests/fixtures/admin-v2.mjs`.
+
+Los tests legacy de `daily_detail` y `control_chronology` se conservan para verificar compatibilidad.
+
+## 17.7. Fuera de alcance de Fase 6
+
+No se modificó:
+
+- Supabase/backend;
+- CSS/composición aprobada;
+- Incidencias;
+- motor de estados;
+- exports;
+- contratos legacy.
+
+La validación completa de suite, lint, build, `git diff --check` y smoke humano pertenece a Fase 7.
+
+# 18. Estado
 
 - Fase 1 — ✅ completada.
 - Fase 2 — ✅ completada.
 - Fase 3 — ✅ completada.
 - Fase 4 — ✅ completada.
 - Fase 5 — ✅ completada.
-- Fase 6 — pendiente.
+- Fase 6 — ✅ implementada.
 - Fase 7 — pendiente.
 
-**Backend de 8.2B queda congelado y habilitado para consumo frontend.**
-
-A partir de este punto:
-
-- no modificar backend durante Fase 6 salvo bloqueo demostrado;
-- no reinterpretar la UI congelada de 8.2A;
-- eliminar los placeholders temporales únicamente al conectar los datos autoritativos;
-- preservar contratos legacy.
+**Backend permanece congelado. Frontend ya consume el contrato optimizado.**
 
 La siguiente fase es:
 
-**Fase 6 — TypeScript + frontend.**
+**Fase 7 — validación global y cierre de 8.2B.**
