@@ -1,7 +1,7 @@
 # SOLOG — Backend Admin Drawers — Fase 8.2B — Optimización de Egress V1
 
 **Proyecto:** SOLOG  
-**Estado:** CONGELADO / IMPLEMENTACIÓN EN CURSO — FASES 1–4 COMPLETADAS  
+**Estado:** CONTRATO BACKEND DESPLEGADO Y CONGELADO — FASES 1–5 COMPLETADAS  
 **Fecha:** 2026-09-21  
 **Clasificación:** Nivel C — backend / contratos / lógica de consulta  
 **Rama:** `admin-work`
@@ -986,18 +986,360 @@ multiple_permissive_policies 16
 
 No se identificó un finding nuevo atribuible a las funciones de 8.2B.
 
-# 16. Estado
+# 16. Fase 5 — Contrato desplegado congelado
+
+**Estado:** COMPLETADA.
+
+No fue necesario crear un delta contractual: las correcciones de Fase 4 alinearon la implementación con decisiones ya aprobadas y no cambiaron los shapes públicos, nombres de acciones ni semántica funcional congelada.
+
+Esta misma fuente continúa siendo la **única fuente primaria** de Fase 8.2B.
+
+## 16.1. Superficie pública congelada
+
+### RPC pública
+
+```text
+public.rpc_solog_operational_v2(p_action text, p_payload jsonb)
+contract_version = 2
+```
+
+Acciones nuevas congeladas:
+
+```text
+daily_detail_bootstrap
+daily_detail_page
+control_chronology_view
+```
+
+Acciones legacy preservadas:
+
+```text
+daily_detail
+control_chronology
+detail_sites
+detail
+```
+
+No se autoriza reinterpretar estos contratos durante Fase 6. Si frontend detecta una incompatibilidad real, debe detenerse y devolver el bloqueo a backend.
+
+## 16.2. Contrato definitivo — daily_detail_bootstrap
+
+Payload:
+
+```ts
+{
+  site_id: string;
+  origin_date: string; // YYYY-MM-DD estricto
+  stock_class: "positive" | "zero";
+}
+```
+
+Respuesta:
+
+```ts
+{
+  contract_version: 2;
+  generated_at: string;
+  revisions: {
+    operational: number;
+  };
+
+  site_id: string;
+  origin_date: string;
+  stock_class: "positive" | "zero";
+  page_size: 25;
+
+  counts: {
+    positive: {
+      Coincide: number;
+      Recontar: number;
+      Confirmada: number;
+      Inconsistente: number;
+    };
+    zero: {
+      Coincide: number;
+      Recontar: number;
+      Confirmada: number;
+      Inconsistente: number;
+    };
+  };
+
+  views: {
+    Coincide: Array<{
+      case_id: string;
+      grupo: string;
+      stock: number;
+    }>;
+
+    Recontar: Array<{
+      case_id: string;
+      grupo: string;
+      physical: number;
+      difference: number;
+    }>;
+
+    Confirmada: Array<{
+      case_id: string;
+      grupo: string;
+      difference: number;
+      valued_difference: number | null;
+    }>;
+
+    Inconsistente: Array<{
+      case_id: string;
+      grupo: string;
+      theoretical: number;
+      initial_difference: number;
+      found_difference: number;
+    }>;
+  };
+}
+```
+
+Semántica congelada:
+
+- `positive` = `stock_fisico > 0`;
+- `zero` = `stock_fisico = 0`;
+- página 0 de cada StateView: máximo 25 filas;
+- counts incluyen ambos stock classes;
+- `Inconsistente.initial_difference = stock_fisico - stock_teorico`;
+- `Inconsistente.found_difference = stock_reconteo - stock_teorico_reconteo`;
+- `Inconsistente.theoretical = stock_teorico_reconteo`.
+
+## 16.3. Contrato definitivo — daily_detail_page
+
+Payload:
+
+```ts
+{
+  site_id: string;
+  origin_date: string; // YYYY-MM-DD estricto
+  stock_class: "positive" | "zero";
+  state: "Coincide" | "Recontar" | "Confirmada" | "Inconsistente";
+  page: number; // entero >= 0
+}
+```
+
+Respuesta:
+
+```ts
+{
+  contract_version: 2;
+  generated_at: string;
+  revisions: {
+    operational: number;
+  };
+
+  site_id: string;
+  origin_date: string;
+  stock_class: "positive" | "zero";
+  state: "Coincide" | "Recontar" | "Confirmada" | "Inconsistente";
+  page: number;
+  page_size: 25;
+  items: StateSpecificItem[];
+}
+```
+
+Reglas:
+
+- página fuera de rango → `items: []`;
+- `page_size` no es configurable;
+- page 0 normalmente debe reutilizar el bootstrap cacheado;
+- las filas mantienen orden estable `grupo → contado_at → case_id`.
+
+## 16.4. Contrato definitivo — control_chronology_view
+
+Payload:
+
+```ts
+{
+  site_id: string;
+  group_id: string;
+  period: "current_biweekly" | "previous_biweekly";
+}
+```
+
+Respuesta:
+
+```ts
+{
+  contract_version: 2;
+  generated_at: string;
+  revisions: {
+    operational: number;
+  };
+
+  site_id: string;
+
+  group: {
+    id: string;
+    name: string;
+    category: string | null;
+    latest_unit_price: number | null;
+  };
+
+  period: {
+    key: "current_biweekly" | "previous_biweekly";
+    from: string;
+    to: string;
+  };
+
+  chronology: ChronologyEvent[];
+}
+```
+
+Eventos:
+
+```ts
+type ChronologyEvent =
+  | {
+      row_id: string;
+      event_at: string;
+      state: "Coincide";
+      stock: number;
+    }
+  | {
+      row_id: string;
+      event_at: string;
+      state: "Recontar" | "Recontado";
+      physical: number;
+      difference: number;
+    }
+  | {
+      row_id: string;
+      event_at: string;
+      state: "Confirmada";
+      difference: number;
+      valued_difference: number;
+    }
+  | {
+      row_id: string;
+      event_at: string;
+      state: "Inconsistente";
+      theoretical: number;
+      initial_difference: number;
+      found_difference: number;
+    };
+```
+
+Semántica congelada:
+
+- eventos ordenados reciente → antiguo;
+- `latest_unit_price` = precio histórico del evento más reciente contenido en esa respuesta;
+- si el período no tiene eventos → `latest_unit_price: null`;
+- frontend puede resolver precio visible con `current.latest_unit_price ?? previous.latest_unit_price`;
+- `valued_difference` es autoritativa y sigue calculándose en backend usando valoración histórica;
+- valuation detallada no viaja al frontend;
+- quincena anterior permanece lazy.
+
+## 16.5. Incidencias
+
+No hay contrato nuevo.
+
+Permanece autoritativo:
+
+```text
+rpc_solog_admin_incidents_v2
+action = detail_sites
+payload = { family_key }
+```
+
+8.2B no cambia shapes ni mutaciones de Incidencias.
+
+## 16.6. Caché congelada para el consumidor
+
+Detalle diario:
+
+```text
+bootstrap:
+site_id + origin_date + stock_class
+
+page:
+site_id + origin_date + stock_class + state + page
+```
+
+Cronología:
+
+```text
+site_id + group_id + period
+```
+
+Reglas:
+
+- page 0 se reutiliza desde bootstrap;
+- páginas ya visitadas se reutilizan mientras la revisión siga válida;
+- quincena anterior continúa bajo demanda;
+- `revisions.operational` sigue siendo la autoridad para invalidación;
+- no crear una segunda infraestructura de caché paralela a `AdminStore`.
+
+## 16.7. Errores de contrato congelados
+
+```text
+SOLOG_AUTH_REQUIRED
+SOLOG_USER_DISABLED
+SOLOG_ADMIN_ROLE_REQUIRED
+SOLOG_INVALID_PAYLOAD
+SOLOG_INVALID_SITE
+SOLOG_SITE_FORBIDDEN
+SOLOG_INVALID_DATE_RANGE
+SOLOG_INVALID_STOCK_CLASS
+SOLOG_INVALID_DIFFERENCE_STATE
+SOLOG_INVALID_PAGE_SIZE
+SOLOG_INVALID_GROUP
+SOLOG_INVALID_CHRONOLOGY_PERIOD
+SOLOG_INCONSISTENT_RECOUNT_MISSING
+SOLOG_CHRONOLOGY_RECOUNT_MISSING
+```
+
+Los dos últimos representan una inconsistencia de integridad backend y no deben convertirse silenciosamente en datos aproximados en frontend.
+
+## 16.8. Snapshot del despliegue congelado
+
+Migraciones desplegadas:
+
+```text
+20260921184418  solog_admin_drawers_8_2b_daily_detail_v1
+20260921184515  solog_admin_drawers_8_2b_chronology_v1
+20260921235613  solog_admin_drawers_8_2b_validation_guards_v1
+```
+
+Hashes de definición observados al congelar Fase 5:
+
+```text
+inventario.solog_daily_detail_bootstrap_v1
+839ac4693ab97e9e75d8679ed0a3128a
+
+inventario.solog_daily_detail_page_v1
+bc0a554ce77837100ff682786b466f0f
+
+inventario.solog_control_chronology_view_v1
+9b30554dd231eeb50751f6c92f6685d7
+
+public.rpc_solog_operational_v2
+18a7479dcf5d1e513d64328e33233eb3
+```
+
+Los hashes son una referencia de baseline del despliegue, no una API contractual.
+
+# 17. Estado
 
 - Fase 1 — ✅ completada.
 - Fase 2 — ✅ completada.
 - Fase 3 — ✅ completada.
 - Fase 4 — ✅ completada.
-- Fase 5 — pendiente.
+- Fase 5 — ✅ completada.
 - Fase 6 — pendiente.
 - Fase 7 — pendiente.
 
-No se han realizado todavía cambios TypeScript ni frontend para consumir las lecturas nuevas.
+**Backend de 8.2B queda congelado y habilitado para consumo frontend.**
+
+A partir de este punto:
+
+- no modificar backend durante Fase 6 salvo bloqueo demostrado;
+- no reinterpretar la UI congelada de 8.2A;
+- eliminar los placeholders temporales únicamente al conectar los datos autoritativos;
+- preservar contratos legacy.
 
 La siguiente fase es:
 
-**Fase 5 — congelación del contrato desplegado.**
+**Fase 6 — TypeScript + frontend.**
