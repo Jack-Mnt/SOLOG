@@ -5,21 +5,23 @@ export function cardsFixture() { return { ...envelope({ groups: 3 }), sites: ['a
 export function gridFixture(site = 'site-a', period = 'current_biweekly') { const date = period === 'current_biweekly' ? '2026-09-03' : '2026-08-31'; return { ...envelope({ operational: 10, groups: 3 }), site_id: site, period: { key: period, from: period === 'current_biweekly' ? '2026-09-01' : '2026-08-16', to: period === 'current_biweekly' ? '2026-09-15' : '2026-08-31' }, data: { shifts: ['day','night','early'].map(shift => ({ date, shift, numerator: 2, denominator: 10, percentage: 20, groups_revision: 3, calculated_at: adminNow })), totals: [{ date, numerator: site === 'site-a' ? 3 : 0, denominator: 10, percentage: site === 'site-a' ? 30 : 0, groups_revision: 3 }] } } }
 export function dailyFixture(site = 'site-a', date = '2026-09-03') { return { ...envelope(), site_id: site, origin_date: date, summary: { pending_recount: 1, confirmed: 1, inconsistent: 1 }, items: [{ case_id: 'case-0', grupo_id: 'group-0', grupo: 'Grupo 0', estado: 'Confirmada', contado_at: adminNow, recontado_at: null, theoretical: 20, physical: 18, stock_class: 'positive', difference: -2, value: -7.5, source: 'recount' }] } }
 export function dailyBootstrapFixture(site = 'site-a', date = '2026-09-03', stockClass = 'positive') {
+  const counts = {
+    positive: { Coincide: 27, Recontar: 2, Confirmada: 1, Inconsistente: 1 },
+    zero: { Coincide: 3, Recontar: 0, Confirmada: 0, Inconsistente: 0 },
+  }
+  const active = counts[stockClass]
   return {
     ...envelope(),
     site_id: site,
     origin_date: date,
     stock_class: stockClass,
     page_size: 25,
-    counts: {
-      positive: { Coincide: 27, Recontar: 2, Confirmada: 1, Inconsistente: 1 },
-      zero: { Coincide: 3, Recontar: 0, Confirmada: 0, Inconsistente: 0 },
-    },
+    counts,
     views: {
-      Coincide: Array.from({ length: 25 }, (_, i) => ({ case_id: `coincide-${stockClass}-${i}`, grupo: `Grupo coincide ${i}`, stock: i + 1 })),
-      Recontar: [{ case_id: 'recount-0', grupo: 'Grupo recontar', physical: 8, difference: -2 }],
-      Confirmada: [{ case_id: 'confirmed-0', grupo: 'Grupo confirmado', difference: -2, valued_difference: -7.5 }],
-      Inconsistente: [{ case_id: 'inconsistent-0', grupo: 'Grupo inconsistente', theoretical: 4, initial_difference: 23, found_difference: -1 }],
+      Coincide: Array.from({ length: Math.min(25, active.Coincide) }, (_, i) => ({ case_id: `coincide-${stockClass}-${i}`, grupo: `Grupo coincide ${i}`, stock: i + 1 })),
+      Recontar: Array.from({ length: Math.min(25, active.Recontar) }, (_, i) => ({ case_id: `recount-${stockClass}-${i}`, grupo: `Grupo recontar ${i}`, physical: 8 + i, difference: -2 + i })),
+      Confirmada: Array.from({ length: Math.min(25, active.Confirmada) }, (_, i) => ({ case_id: `confirmed-${stockClass}-${i}`, grupo: `Grupo confirmado ${i}`, difference: -2, valued_difference: -7.5 })),
+      Inconsistente: Array.from({ length: Math.min(25, active.Inconsistente) }, (_, i) => ({ case_id: `inconsistent-${stockClass}-${i}`, grupo: `Grupo inconsistente ${i}`, theoretical: 4, initial_difference: 23, found_difference: -1 })),
     },
   }
 }
