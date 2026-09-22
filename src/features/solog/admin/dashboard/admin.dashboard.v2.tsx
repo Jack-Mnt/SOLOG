@@ -11,10 +11,15 @@ import {
 } from "lucide-react";
 import { AdminDialog } from "../admin.dialog";
 import { useAdminQuery, useAdminStore } from "../admin.v2.context";
-import type { Biweekly, DashboardCards, DifferenceState } from "../admin.v2";
+import type {
+  Biweekly,
+  DashboardCards,
+  DailyDetailBootstrap,
+  DailyDetailPage,
+  DifferenceState,
+} from "../admin.v2";
 import { QueryState, Value } from "../admin.v2.presentation";
 import { AdminBinarySwitch, AdminPagination } from "../admin.primitives";
-import { paginateAdminRows } from "../admin.pagination";
 import { adminSiteLabel, orderedAdminSites } from "../admin.site-ui";
 import { AdminExportDialog } from "../control/admin.control.v2.export-dialog";
 
@@ -79,6 +84,19 @@ function DailySignedValue({
   );
 }
 
+function dailyPageRows<S extends DifferenceState>(
+  data: DailyDetailBootstrap,
+  pageData: DailyDetailPage | undefined,
+  state: S,
+  page: number,
+): DailyDetailBootstrap["views"][S] {
+  if (page === 0) return data.views[state];
+  if (!pageData || pageData.state !== state) {
+    return [] as unknown as DailyDetailBootstrap["views"][S];
+  }
+  return pageData.items as DailyDetailBootstrap["views"][S];
+}
+
 function DailyDrawer({
   site,
   date,
@@ -90,40 +108,42 @@ function DailyDrawer({
 }) {
   const admin = useAdminStore();
   const [page, setPage] = useState(0);
-  const [stockView, setStockView] = useState<DailyStockView>("positive");
+  const [stockView, setStockView] = useState<"positive" | "zero">("positive");
   const [selectedState, setSelectedState] =
     useState<DifferenceState>("Coincide");
-  const query = useAdminQuery("daily_detail", {
+  const query = useAdminQuery("daily_detail_bootstrap", {
     site_id: site,
     origin_date: date,
+    stock_class: stockView,
   });
   const data = query.data;
+  const pageQuery = useAdminQuery(
+    "daily_detail_page",
+    {
+      site_id: site,
+      origin_date: date,
+      stock_class: stockView,
+      state: selectedState,
+      page,
+    },
+    { enabled: page > 0 && !!data },
+  );
+  const pageData = page > 0 ? pageQuery.data : undefined;
   const siteName = adminSiteLabel(
     admin.bootstrap?.allowed_sites.find((item) => item.id === site)?.nombre ??
       site,
   );
-  const stockItems =
-    data?.items.filter((item) =>
-      (item.stock_class ?? (item.physical === 0 ? "zero" : "positive")) ===
-      stockView,
-    ) ?? [];
-  const stateCounts: Record<DifferenceState, number> = {
-    Coincide: stockItems.filter((item) => item.estado === "Coincide").length,
-    Recontar: stockItems.filter((item) => item.estado === "Recontar").length,
-    Confirmada: stockItems.filter((item) => item.estado === "Confirmada").length,
-    Inconsistente: stockItems.filter(
-      (item) => item.estado === "Inconsistente",
-    ).length,
-  };
-  const filteredItems = stockItems.filter(
-    (item) => item.estado === selectedState,
-  );
-  const paginated = paginateAdminRows(
-    filteredItems,
-    page,
-    DAILY_DETAIL_PAGE_SIZE,
-  );
-  const selectStockView = (next: DailyStockView) => {
+  const stateCounts: Record<DifferenceState, number> = data
+    ? data.counts[stockView]
+    : {
+        Coincide: 0,
+        Recontar: 0,
+        Confirmada: 0,
+        Inconsistente: 0,
+      };
+  const total = stateCounts[selectedState];
+  const pageCount = Math.max(1, Math.ceil(total / DAILY_DETAIL_PAGE_SIZE));
+  const selectStockView = (next: "positive" | "zero") => {
     setStockView(next);
     setPage(0);
   };
@@ -143,12 +163,12 @@ function DailyDrawer({
         data ? (
           <div className="admin-dialog__footer-navigation admin-dashboard-daily__footer">
             <span className="admin-dialog__footer-summary">
-              {filteredItems.length} {filteredItems.length === 1 ? "conteo" : "conteos"}
+              {total} {total === 1 ? "conteo" : "conteos"}
             </span>
             <AdminPagination
-              total={filteredItems.length}
-              currentPage={paginated.currentPage}
-              pageCount={paginated.pageCount}
+              total={total}
+              currentPage={page}
+              pageCount={pageCount}
               pageSize={DAILY_DETAIL_PAGE_SIZE}
               onPageChange={setPage}
               ariaLabel="Paginación del detalle diario"
@@ -232,7 +252,9 @@ function DailyDrawer({
             </div>
           </div>
 
-          {filteredItems.length ? (
+          {page > 0 && !pageData ? (
+            <QueryState {...pageQuery} variant="compact" />
+          ) : total > 0 ? (
             <div
               id="admin-dashboard-daily-state-panel"
               role="tabpanel"
@@ -267,51 +289,55 @@ function DailyDrawer({
                   </tr>
                 </thead>
                 <tbody>
-                  {paginated.rows.map((row) => (
-                    <tr key={row.case_id}>
-                      <th scope="row">{row.grupo}</th>
-                      {selectedState === "Coincide" && (
+                  {selectedState === "Coincide" &&
+                    dailyPageRows(data, pageData, "Coincide", page).map((row) => (
+                      <tr key={row.case_id}>
+                        <th scope="row">{row.grupo}</th>
+                        <td className="admin-table-number">
+                          <Value value={row.stock} />
+                        </td>
+                      </tr>
+                    ))}
+                  {selectedState === "Recontar" &&
+                    dailyPageRows(data, pageData, "Recontar", page).map((row) => (
+                      <tr key={row.case_id}>
+                        <th scope="row">{row.grupo}</th>
                         <td className="admin-table-number">
                           <Value value={row.physical} />
                         </td>
-                      )}
-                      {selectedState === "Recontar" && (
-                        <>
-                          <td className="admin-table-number">
-                            <Value value={row.physical} />
-                          </td>
-                          <td className="admin-table-number">
-                            <DailySignedValue value={row.difference} />
-                          </td>
-                        </>
-                      )}
-                      {selectedState === "Confirmada" && (
-                        <>
-                          <td className="admin-table-number">
-                            <DailySignedValue value={row.difference} />
-                          </td>
-                          <td className="admin-table-number">
-                            <DailySignedValue value={row.value} money />
-                          </td>
-                        </>
-                      )}
-                      {selectedState === "Inconsistente" && (
-                        <>
-                          <td className="admin-table-number">
-                            <Value value={row.theoretical} />
-                          </td>
-                          <td className="admin-table-number">
-                            <span className="admin-difference-flow">
-                              {/* TODO Fase 8.2B: sustituir el signo invertido por initial_difference autoritativo. */}
-                              <DailySignedValue value={-row.difference} />
-                              <span aria-hidden="true">→</span>
-                              <DailySignedValue value={row.difference} />
-                            </span>
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  ))}
+                        <td className="admin-table-number">
+                          <DailySignedValue value={row.difference} />
+                        </td>
+                      </tr>
+                    ))}
+                  {selectedState === "Confirmada" &&
+                    dailyPageRows(data, pageData, "Confirmada", page).map((row) => (
+                      <tr key={row.case_id}>
+                        <th scope="row">{row.grupo}</th>
+                        <td className="admin-table-number">
+                          <DailySignedValue value={row.difference} />
+                        </td>
+                        <td className="admin-table-number">
+                          <DailySignedValue value={row.valued_difference} money />
+                        </td>
+                      </tr>
+                    ))}
+                  {selectedState === "Inconsistente" &&
+                    dailyPageRows(data, pageData, "Inconsistente", page).map((row) => (
+                      <tr key={row.case_id}>
+                        <th scope="row">{row.grupo}</th>
+                        <td className="admin-table-number">
+                          <Value value={row.theoretical} />
+                        </td>
+                        <td className="admin-table-number">
+                          <span className="admin-difference-flow">
+                            <DailySignedValue value={row.initial_difference} />
+                            <span aria-hidden="true">→</span>
+                            <DailySignedValue value={row.found_difference} />
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
