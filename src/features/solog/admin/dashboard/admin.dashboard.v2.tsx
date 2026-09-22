@@ -117,18 +117,6 @@ function DailyDrawer({
     stock_class: stockView,
   });
   const data = query.data;
-  const pageQuery = useAdminQuery(
-    "daily_detail_page",
-    {
-      site_id: site,
-      origin_date: date,
-      stock_class: stockView,
-      state: selectedState,
-      page,
-    },
-    { enabled: page > 0 && !!data },
-  );
-  const pageData = page > 0 ? pageQuery.data : undefined;
   const siteName = adminSiteLabel(
     admin.bootstrap?.allowed_sites.find((item) => item.id === site)?.nombre ??
       site,
@@ -143,6 +131,19 @@ function DailyDrawer({
       };
   const total = stateCounts[selectedState];
   const pageCount = Math.max(1, Math.ceil(total / DAILY_DETAIL_PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageQuery = useAdminQuery(
+    "daily_detail_page",
+    {
+      site_id: site,
+      origin_date: date,
+      stock_class: stockView,
+      state: selectedState,
+      page: currentPage,
+    },
+    { enabled: currentPage > 0 && !!data },
+  );
+  const pageData = currentPage > 0 ? pageQuery.data : undefined;
   const selectStockView = (next: DailyStockView) => {
     setStockView(next);
     setPage(0);
@@ -167,7 +168,7 @@ function DailyDrawer({
             </span>
             <AdminPagination
               total={total}
-              currentPage={page}
+              currentPage={currentPage}
               pageCount={pageCount}
               pageSize={DAILY_DETAIL_PAGE_SIZE}
               onPageChange={setPage}
@@ -252,7 +253,7 @@ function DailyDrawer({
             </div>
           </div>
 
-          {page > 0 && !pageData ? (
+          {currentPage > 0 && !pageData ? (
             <QueryState {...pageQuery} variant="compact" />
           ) : total > 0 ? (
             <div
@@ -290,7 +291,7 @@ function DailyDrawer({
                 </thead>
                 <tbody>
                   {selectedState === "Coincide" &&
-                    dailyPageRows(data, pageData, "Coincide", page).map((row) => (
+                    dailyPageRows(data, pageData, "Coincide", currentPage).map((row) => (
                       <tr key={row.case_id}>
                         <th scope="row">{row.grupo}</th>
                         <td className="admin-table-number">
@@ -299,7 +300,7 @@ function DailyDrawer({
                       </tr>
                     ))}
                   {selectedState === "Recontar" &&
-                    dailyPageRows(data, pageData, "Recontar", page).map((row) => (
+                    dailyPageRows(data, pageData, "Recontar", currentPage).map((row) => (
                       <tr key={row.case_id}>
                         <th scope="row">{row.grupo}</th>
                         <td className="admin-table-number">
@@ -311,7 +312,7 @@ function DailyDrawer({
                       </tr>
                     ))}
                   {selectedState === "Confirmada" &&
-                    dailyPageRows(data, pageData, "Confirmada", page).map((row) => (
+                    dailyPageRows(data, pageData, "Confirmada", currentPage).map((row) => (
                       <tr key={row.case_id}>
                         <th scope="row">{row.grupo}</th>
                         <td className="admin-table-number">
@@ -323,7 +324,7 @@ function DailyDrawer({
                       </tr>
                     ))}
                   {selectedState === "Inconsistente" &&
-                    dailyPageRows(data, pageData, "Inconsistente", page).map((row) => (
+                    dailyPageRows(data, pageData, "Inconsistente", currentPage).map((row) => (
                       <tr key={row.case_id}>
                         <th scope="row">{row.grupo}</th>
                         <td className="admin-table-number">
