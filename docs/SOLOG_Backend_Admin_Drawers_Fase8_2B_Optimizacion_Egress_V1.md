@@ -1,7 +1,7 @@
 # SOLOG — Backend Admin Drawers — Fase 8.2B — Optimización de Egress V1
 
 **Proyecto:** SOLOG  
-**Estado:** CONGELADO / IMPLEMENTACIÓN EN CURSO — FASES 1–3 COMPLETADAS  
+**Estado:** CONGELADO / IMPLEMENTACIÓN EN CURSO — FASES 1–4 COMPLETADAS  
 **Fecha:** 2026-09-21  
 **Clasificación:** Nivel C — backend / contratos / lógica de consulta  
 **Rama:** `admin-work`
@@ -777,12 +777,221 @@ La RPC pública mantiene su ACL previa:
 
 Los Advisors posteriores no identificaron un hallazgo nuevo específico de estas funciones. Permanecen hallazgos preexistentes del proyecto sobre RLS sin policy en tablas internas, vistas `SECURITY DEFINER`, funciones públicas históricas, FKs/índices y políticas existentes.
 
-# 15. Estado
+# 15. Fase 4 — Validación backend global
+
+**Estado:** COMPLETADA / VALIDADA.
+
+Durante esta fase no se rediseñó el contrato. Se detectaron dos desviaciones técnicas menores respecto de la fuente congelada y se corrigieron:
+
+1. `origin_date` aceptaba formatos que PostgreSQL podía convertir a `date`, aunque el contrato exige `YYYY-MM-DD` estricto.
+2. la implementación interna clasificaba cualquier físico distinto de cero como `positive`; el contrato exige exactamente `stock_fisico > 0`.
+
+Corrección desplegada:
+
+`20260921235613_solog_admin_drawers_8_2b_validation_guards_v1.sql`
+
+Resultado:
+
+- `YYYY-MM-DD` estricto;
+- formatos como `2026-9-18`, `09/18/2026` y `today` son rechazados;
+- `positive` usa exclusivamente `stock_fisico > 0`;
+- `zero` usa exclusivamente `stock_fisico = 0`;
+- datos actuales con físico negativo: **0 filas**.
+
+## 15.1. Autorización y superficie pública
+
+Validado:
+
+- Admin → acceso correcto;
+- Moderador → acceso correcto;
+- Cajero → `SOLOG_ADMIN_ROLE_REQUIRED`;
+- no autenticado → `SOLOG_AUTH_REQUIRED`;
+- `anon` no tiene EXECUTE sobre `rpc_solog_operational_v2`;
+- los tres helpers internos no son ejecutables por `anon` ni `authenticated`;
+- la RPC pública conserva la autorización previa y despacha internamente después de validar usuario/rol.
+
+Errores de payload validados:
+
+```text
+stock_class inválido       → SOLOG_INVALID_STOCK_CLASS
+state inválido             → SOLOG_INVALID_DIFFERENCE_STATE
+page negativa              → SOLOG_INVALID_PAGE_SIZE
+fecha inválida/no ISO      → SOLOG_INVALID_DATE_RANGE
+period inválido            → SOLOG_INVALID_CHRONOLOGY_PERIOD
+group inválido             → SOLOG_INVALID_GROUP
+site inválida              → SOLOG_SITE_FORBIDDEN
+```
+
+## 15.2. Detalle diario — validación exhaustiva con datos existentes
+
+Cobertura observada:
+
+```text
+scopes sede/día revisados            4
+celdas de counts revisadas          32
+mismatches de counts                 0
+filas esperadas en páginas 0       215
+mismatches página 0                  0
+filas paginadas totales            773
+filas recibidas totales            773
+mismatches de paginación             0
+físicos negativos                    0
+```
+
+También se compararon las métricas de las 773 filas contra `conteo_detalle`:
+
+```text
+Coincide mismatches         0
+Recontar mismatches         0
+Confirmada mismatches       0
+Inconsistente mismatches    0
+```
+
+Los counts, orden y paginación son autoritativos y no presentan gaps ni duplicados en el dataset actual.
+
+## 15.3. Cronología — validación exhaustiva con datos existentes
+
+Se comparó la lectura compacta contra `solog_control_chronology_v10` en las quincenas actual y anterior:
+
+```text
+pares site/group/period revisados    485
+eventos legacy                       783
+eventos compactos                    783
+mismatches de cantidad                 0
+mismatches de métricas                 0
+violaciones orden reciente→antiguo     0
+mismatches latest_unit_price           0
+mismatches diferencia inicial          0
+```
+
+La comparación por estado verificó:
+
+- Coincide → `stock`;
+- Recontar/Recontado → físico + diferencia;
+- Confirmada → diferencia + valorizado;
+- Inconsistente → teórico + diferencia inicial + encontrada.
+
+El dataset actual no contiene un grupo con más de un precio histórico distinto dentro de las dos quincenas revisadas. Por ello no existe un caso real de cambio de precio para prueba end-to-end. Aun así:
+
+- `latest_unit_price` coincidió con el precio histórico del evento más reciente en los 485 responses;
+- `valued_difference` se comparó contra el contrato legacy y no presentó mismatches;
+- la función continúa usando `precio`, `unidades_por_paquete` y `precio_paquete` históricos aunque ya no los transmita al frontend.
+
+No existen actualmente casos de la quincena anterior resueltos mediante reconteo/snapshot ya dentro de la quincena actual.
+
+## 15.4. Incidencias
+
+`rpc_solog_admin_incidents_v2` no fue modificado.
+
+Hash de definición posterior:
+
+`0862ba78980dbedf1d1d04b61e71dcd9`
+
+Coincide con el baseline previo a 8.2B.
+
+Validación de `detail_sites`:
+
+```text
+familias revisadas          115
+respuestas con nº sedes incorrecto  0
+mismatches de agregación             0
+```
+
+Se confirma que no existe motivo técnico para crear un endpoint adicional de repeticiones.
+
+## 15.5. Revisiones y compatibilidad
+
+En la muestra de control:
+
+```text
+operational authority       198
+daily bootstrap revision    198
+daily page revision         198
+chronology revision         198
+```
+
+Las lecturas legacy siguen operativas:
+
+- `daily_detail`;
+- `control_chronology`;
+- `detail_sites`;
+- `detail`.
+
+No se rompió compatibilidad.
+
+## 15.6. Egress observado
+
+Medición agregada sobre los datos disponibles:
+
+### Detalle diario — 4 scopes sede/día
+
+```text
+legacy total                     264 798 bytes
+bootstrap positivo total          21 077 bytes
+bootstrap ambos stocks total      26 486 bytes
+
+reducción si se abre positivo        ~92.0 %
+reducción aun cargando ambos stocks  ~90.0 %
+```
+
+Las páginas 2+ siguen siendo bajo demanda y no están incluidas en esos bootstrap.
+
+### Cronología — 485 responses
+
+```text
+legacy total       450 684 bytes
+compacto total     310 425 bytes
+reducción global      ~31.1 %
+```
+
+La reducción agregada es menor que la muestra de 6 eventos porque una gran parte de las cronologías actuales contiene pocos eventos y el envelope fijo pesa proporcionalmente más.
+
+## 15.7. Rendimiento
+
+`EXPLAIN (ANALYZE, BUFFERS)` sobre muestras representativas arrojó ejecuciones de función inferiores a 10 ms:
+
+```text
+daily bootstrap    ~9.0 ms
+daily page         ~7.2 ms
+chronology         ~9.2 ms
+```
+
+Son observaciones puntuales, no un SLA.
+
+No apareció evidencia que justifique índices nuevos.
+
+## 15.8. Advisors
+
+Después de las correcciones los Advisors mantienen los mismos grupos de hallazgos preexistentes.
+
+Security:
+
+```text
+rls_enabled_no_policy                      25
+security_definer_view                       2
+extension_in_public                         1
+anon_security_definer_function_executable  15
+authenticated_security_definer_function_executable 37
+auth_leaked_password_protection             1
+```
+
+Performance:
+
+```text
+unindexed_foreign_keys       7
+auth_rls_initplan            1
+unused_index                46
+multiple_permissive_policies 16
+```
+
+No se identificó un finding nuevo atribuible a las funciones de 8.2B.
+
+# 16. Estado
 
 - Fase 1 — ✅ completada.
 - Fase 2 — ✅ completada.
 - Fase 3 — ✅ completada.
-- Fase 4 — pendiente.
+- Fase 4 — ✅ completada.
 - Fase 5 — pendiente.
 - Fase 6 — pendiente.
 - Fase 7 — pendiente.
@@ -791,4 +1000,4 @@ No se han realizado todavía cambios TypeScript ni frontend para consumir las le
 
 La siguiente fase es:
 
-**Fase 4 — Validación backend global.**
+**Fase 5 — congelación del contrato desplegado.**
