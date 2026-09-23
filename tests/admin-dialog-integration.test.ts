@@ -29,7 +29,7 @@ describe('AdminDialog integración anidada', () => {
       'src/features/solog/admin/admin.valuation-dialog.tsx',
     )
 
-    expect(catalog).toContain('onClick={() => setValuation(true)}')
+    expect(catalog).toMatch(/onClick=\{\(\) => \{[\s\S]*?setValuationError\(""\);[\s\S]*?setValuation\(true\);[\s\S]*?\}\}/)
     expect(catalog).toContain('<ValuationDialog')
     expect(catalog).toContain('onClose={() => setValuation(false)}')
     expect(valuation).toContain('<AdminDialog')

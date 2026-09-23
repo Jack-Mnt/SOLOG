@@ -42,7 +42,8 @@ describe('Catálogo V4: estructura principal', () => {
 
   test('resolución de precio diferencia resolve/prepare y muestra equivalencias o conflictos de grupo', async () => {
     const ui = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
-    expect(ui).toContain('flow === "resolve" ? "resolve_price" : "prepare_price"')
+    expect(ui).toContain('? store.mutation("resolve_price", payload)')
+    expect(ui).toContain(': store.mutation("prepare_price", payload)')
     expect(ui).toContain('options.equivalent_proposals.length + 1')
     expect(ui).toContain('options.conflicting_proposals.length > 0')
     expect(ui).toMatch(/propuestas de\s+precio equivalentes del grupo/)
