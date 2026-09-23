@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 const source = (path: string) => Bun.file(path).text()
 
 test('Fase 3 pagina Urgentes y Emergentes de forma independiente a 25', async () => {
-  const page = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+  const page = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
 
   expect(page).toContain('key={`${status}:urgent`}')
   expect(page).toContain('key={`${status}:emerging`}')
@@ -16,7 +16,7 @@ test('Fase 3 pagina Urgentes y Emergentes de forma independiente a 25', async ()
 })
 
 test('Fase 3 mantiene el total de cada sección y no añade clases visuales nuevas', async () => {
-  const page = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+  const page = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
 
   expect(page).toContain('<span>{rows.length}</span>')
   expect(page).toContain('<AdminPagination')

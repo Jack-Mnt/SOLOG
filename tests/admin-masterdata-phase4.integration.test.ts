@@ -238,7 +238,7 @@ test('Fase 4: superficies activas no conservan caminos de lectura sustituidos', 
     Bun.file('src/features/solog/admin/productos/admin.product-setup.dialog.tsx').text(),
     Bun.file('src/features/solog/admin/grupos/admin.grupos.v2.tsx').text(),
     Bun.file('src/features/solog/admin/grupos/admin.grupos.store.ts').text(),
-    Bun.file('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx').text(),
+    Bun.file('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx').text(),
   ])
   const active = files.join('\n')
   for (const legacy of ['products', 'reference']) expect(active).not.toMatch(new RegExp(`useCatalogQuery\\(\\s*["']${legacy}["']`))

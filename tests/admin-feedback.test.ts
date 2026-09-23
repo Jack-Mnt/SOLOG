@@ -82,7 +82,7 @@ describe('Admin feedback fases 2 y 3', () => {
   test('Catálogo y Productos comparten presenter sin UUID ni replay visible', async () => {
     const [feedback, catalog, products, setup] = await Promise.all([
       Bun.file('src/features/solog/admin/catalogo/admin.catalogo.feedback.tsx').text(),
-      Bun.file('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx').text(),
+      Bun.file('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx').text(),
       Bun.file('src/features/solog/admin/productos/admin.productos.v1.tsx').text(),
       Bun.file('src/features/solog/admin/productos/admin.product-setup.dialog.tsx').text(),
     ])
@@ -104,7 +104,7 @@ describe('Admin feedback fases 2 y 3', () => {
       'src/features/solog/admin/catalogo/admin.catalogo.feedback.utils.ts',
     ).text()
     const catalog = await Bun.file(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     ).text()
 
     expect(feedbackUtils).toContain("if (store.intent()) return ''")

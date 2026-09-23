@@ -33,7 +33,7 @@ test('ReadNotice elimina Cargando aislado y conserva error contextual', async ()
 })
 
 test('dialogs, drawers y sublecturas usan variante compacta', async () => {
-  const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+  const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
   const control = await source('src/features/solog/admin/control/admin.control.v2.tsx')
   const dashboard = await source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx')
   const categories = await source('src/features/solog/admin/grupos/admin.categories.dialog.tsx')
@@ -52,7 +52,7 @@ test('dialogs, drawers y sublecturas usan variante compacta', async () => {
 })
 
 test('Catálogo no duplica loader entre status y proposals', async () => {
-  const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+  const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
 
   expect(catalog).toContain('if (status.error) return <QueryState {...status} variant="compact" />')
   expect(catalog).toContain('return null;')
