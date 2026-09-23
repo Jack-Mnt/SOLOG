@@ -4,7 +4,7 @@ const source = (path: string) => Bun.file(path).text()
 
 describe('Admin table normalization — Phase 3 Catálogo + Productos', () => {
   test('Catálogo usa main table en propuestas y conserva su tabla auxiliar interna fuera del alcance', async () => {
-    const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+    const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
 
     expect(catalog).toContain('className="admin-main-table admin-catalog__table"')
     expect(catalog).toContain('className="admin-auxiliary-table admin-catalog__table"')
@@ -16,7 +16,7 @@ describe('Admin table normalization — Phase 3 Catálogo + Productos', () => {
   })
 
   test('Catálogo normaliza identidad y acción sin perder lectura accesible de Cambio', async () => {
-    const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx')
+    const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
 
     expect(catalog).toContain('admin-table-cell-stack')
     expect(catalog).toContain('admin-table-cell-primary')
@@ -44,7 +44,7 @@ describe('Admin table normalization — Phase 3 Catálogo + Productos', () => {
 
   test('la composición funcional de ambas tablas permanece congelada', async () => {
     const [catalog, products] = await Promise.all([
-      source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx'),
+      source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx'),
       source('src/features/solog/admin/productos/admin.productos.v1.tsx'),
     ])
 

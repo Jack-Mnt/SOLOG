@@ -8,7 +8,7 @@ describe('Admin table normalization — Phase 5 auxiliary migration + local clea
       'src/features/solog/admin/admin.css',
       'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
       'src/features/solog/admin/control/admin.control.v2.tsx',
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
       'src/features/solog/admin/productos/admin.productos.v1.tsx',
       'src/features/solog/admin/grupos/admin.grupos.members-dialog.tsx',
       'src/features/solog/admin/grupos/admin.grupos.v2.tsx',
@@ -22,7 +22,7 @@ describe('Admin table normalization — Phase 5 auxiliary migration + local clea
   test('las tablas auxiliares conocidas usan la familia explícita', async () => {
     const [dashboard, catalog, groupsDialog, incidents, control] = await Promise.all([
       source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx'),
-      source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx'),
+      source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx'),
       source('src/features/solog/admin/grupos/admin.grupos.members-dialog.tsx'),
       source('src/features/solog/admin/incidencias/admin.incidencias.v2.tsx'),
       source('src/features/solog/admin/control/admin.control.v2.tsx'),

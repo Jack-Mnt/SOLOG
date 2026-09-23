@@ -5,7 +5,7 @@ const source = (path: string) => Bun.file(path).text()
 const adminTableFiles = [
   'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
   'src/features/solog/admin/control/admin.control.v2.tsx',
-  'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+  'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
   'src/features/solog/admin/productos/admin.productos.v1.tsx',
   'src/features/solog/admin/grupos/admin.grupos.v2.tsx',
   'src/features/solog/admin/grupos/admin.grupos.members-dialog.tsx',

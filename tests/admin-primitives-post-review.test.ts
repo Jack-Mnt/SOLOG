@@ -27,7 +27,7 @@ describe('Delta post-revisión: primitives compartidas Admin', () => {
   test('StateView usa la primitive común de Catálogo también en Incidencias', async () => {
     const [css, catalog, incidents] = await Promise.all([
       source('src/features/solog/admin/admin.css'),
-      source('src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx'),
+      source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx'),
       source('src/features/solog/admin/incidencias/admin.incidencias.v2.tsx'),
     ])
 
