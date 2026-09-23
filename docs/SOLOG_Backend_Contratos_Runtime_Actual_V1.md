@@ -847,40 +847,30 @@ No se requiere paginación ni polling.
 
 # 12. Catálogo
 
-Contrato específico vigente:
+Único contrato técnico vigente:
 
 ```text
-SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md
-SOLOG_Backend_Catalogo_Valorizado_Mascaras_Delta_V1.md
+SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md
 ```
 
-Contrato vigente para el ciclo incidencias comerciales ↔ propuestas:
-
-```text
-SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md
-```
-
-RPC activa del frontend:
+RPC consumidas por el frontend:
 
 ```sql
 public.rpc_solog_admin_catalog_read_v4(...)
 public.rpc_solog_admin_catalog_v4(...)
 ```
 
-V4 incorpora aprobación atómica, origen autoritativo, ignorado recuperable y descartado backend-only.
+Contrato:
 
-Compatibilidad temporal backend:
-
-```sql
-public.rpc_solog_admin_catalog_read_v3(...)
-public.rpc_solog_admin_catalog_v3(...)
+```text
+contract_version = 4
 ```
 
-El frontend Admin ya no consume V3.
+V4 define la aprobación atómica, origen autoritativo, Ignorar/Reactivar para automáticas, Descartar para administrativas, resolución grupal de precios, valorizado y publicación.
 
-`contract_version = 3`.
+Las superficies V3 que aún puedan existir físicamente en Supabase son legacy pendiente de una limpieza backend independiente. No son una alternativa soportada ni un contrato vigente del frontend.
 
-Este runtime consolidado no redefine sus payloads.
+Este runtime consolidado no redefine los payloads de V4.
 
 ---
 

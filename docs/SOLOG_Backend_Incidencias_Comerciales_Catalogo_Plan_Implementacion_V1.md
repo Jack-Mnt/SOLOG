@@ -4,7 +4,7 @@
 **Fecha de congelación:** 2026-09-21  
 **Rama:** `admin-work`  
 **Clasificación:** Nivel C — backend / integración + frontend  
-**Fuente contractual:** `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`
+**Fuente contractual vigente:** `SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md`
 
 ---
 
@@ -65,8 +65,9 @@
 - consumir V4;
 - `Aprobar` en tabla;
 - resolver antes de aprobar;
-- Ignorar/Reactivar;
-- Volver a pendiente/Descartar;
+- Ignorar/Reactivar para automáticas;
+- Volver a pendiente;
+- Descartar para administrativas;
 - sin UI de Descartados.
 
 ## Fase 8 — Frontend Productos
@@ -89,8 +90,8 @@ más pruebas backend del contrato.
 
 ## Fase 10 — Smoke humano y cierre documental
 - automáticas simples/complejas;
-- ignore/reactivate;
-- withdraw/discard;
+- ignore/reactivate automáticas;
+- withdraw;
 - administrativa discard → reproponer;
 - publicación;
 - cierre documental.
@@ -269,16 +270,14 @@ Helper SQL único para incidencia comercial → candidato/fingerprint.
 Archivos principales:
 
 ```text
-src/features/solog/admin/catalogo/admin.catalogo.v3.ts
+src/features/solog/admin/catalogo/admin.catalogo.v4.ts
 src/features/solog/admin/catalogo/admin.catalogo.store.ts
-src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx
+src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx
 src/features/solog/admin/productos/admin.productos.v1.tsx
 src/features/solog/admin/productos/admin.product-setup.dialog.tsx
 ```
 
-V4 debe tener tipos/validadores propios o una separación explícita equivalente; no se debe presentar semántica V4 bajo nombres V3.
-
-Tests V3 continúan como protección de compatibilidad y se agregan tests V4.
+V4 mantiene tipos/validadores propios. El frontend, contrato TypeScript y tests V3 fueron retirados después del corte final para evitar ambigüedad documental y de compilación.
 
 ## 3.8. CSS
 
@@ -627,16 +626,17 @@ IconButton
 
 Un posible ajuste local de `min-width` queda condicionado al smoke visual de Fase 10.
 
-## 4.10. Compatibilidad después del corte
+## 4.10. Estado después del corte
 
 ```text
-Frontend activo → Catálogo V4
-Backend V4      → activo
-Backend V3      → compatibilidad temporal
-Frontend V3     → fuera de la ruta activa
+Frontend activo          → Catálogo V4
+Contrato TypeScript      → V4
+Tests frontend Catálogo  → V4
+Frontend V3              → retirado
+Backend V3               → legacy pendiente de limpieza backend separada
 ```
 
-Las pruebas contractuales puras de V3 se conservan. Store, integración y estructura del frontend activo pasan a pruebas V4.
+No se mantiene un contrato frontend V3 alternativo.
 
 # 5. Estado
 
@@ -650,19 +650,19 @@ Fase 5   COMPLETADA
 Fase 6   COMPLETADA
 Fase 7   COMPLETADA
 Fase 8   COMPLETADA
-Fase 9   REVALIDACIÓN PENDIENTE — CAMBIOS POST-SMOKE
-Fase 10  RE-SMOKE PENDIENTE
+Fase 9   REVALIDACIÓN PENDIENTE — LIMPIEZA FRONTEND/DOCS
+Fase 10  RE-SMOKE APROBADO
 ```
 
 
 ---
 
-# 6. Delta post-smoke de Fase 10
+# 6. Correcciones post-smoke de Fase 10
 
-Fuente congelada:
+Las decisiones post-smoke fueron absorbidas en el contrato único:
 
 ```text
-docs/SOLOG_Catalogo_V4_Delta_Smoke_Fase10_V1.md
+docs/SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md
 ```
 
 Implementado:
@@ -699,5 +699,5 @@ Estado:
 Implementación delta → COMPLETADA
 Validación backend   → COMPLETADA
 Validación local     → REEJECUTAR bun test/lint/build
-Re-smoke humano      → PENDIENTE
+Re-smoke humano      → APROBADO
 ```

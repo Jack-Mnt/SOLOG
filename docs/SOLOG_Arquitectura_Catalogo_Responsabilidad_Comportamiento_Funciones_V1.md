@@ -5,13 +5,16 @@
 **Módulo:** Admin > Catálogo  
 **Clasificación:** Nivel C — Arquitectura / lógica / backend / integración  
 **Fecha de congelación:** 2026-09-10  
-**Fuente primaria del módulo Catálogo:** este documento.
+**Fuente primaria funcional/arquitectónica:** este documento.  
+**Contrato técnico vigente:** `SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md`.
 
 ---
 
 ## 1. Prevalencia y fuentes relacionadas
 
-Este documento es la **fuente primaria para el comportamiento funcional, responsabilidades y funciones del módulo Admin > Catálogo de SOLOG**.
+Este documento es la **fuente primaria para responsabilidades y arquitectura funcional del módulo Admin > Catálogo de SOLOG**.
+
+Para estados de propuesta, origen, transiciones, RPC, valorizado, resolución de precio y publicación, prevalece `SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md`.
 
 Ante contradicciones sobre este módulo, prevalece sobre:
 
