@@ -22,14 +22,15 @@ test('Fase 2 pagina solo la tabla principal de Incidencias', async () => {
   expect(page).toMatch(/page_size:\s*100/)
 })
 
-test('Fase 2 pagina Dashboard DailyDrawer después de los filtros locales de Fase 8', async () => {
+test('Fase 2 pagina Dashboard DailyDrawer con bootstrap y páginas remotas de Fase 8.2B', async () => {
   const page = await source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx')
 
-  expect(page).toMatch(/useAdminQuery\(["']daily_detail["'],\s*\{\s*site_id:\s*site,\s*origin_date:\s*date/)
+  expect(page).toContain('useAdminQuery("daily_detail_bootstrap"')
+  expect(page).toContain('"daily_detail_page"')
   expect(page).toContain('DAILY_DETAIL_PAGE_SIZE = 25')
-  expect(page).toMatch(/paginateAdminRows\(\s*filteredItems,\s*page,\s*DAILY_DETAIL_PAGE_SIZE,?\s*\)/)
-  expect(page).toContain('paginated.rows.map')
-  expect(page).toContain('total={filteredItems.length}')
+  expect(page).not.toContain('paginateAdminRows')
+  expect(page).toContain('const total = stateCounts[selectedState]')
+  expect(page).toContain('currentPage={currentPage}')
   expect(page).toContain('pageSize={DAILY_DETAIL_PAGE_SIZE}')
   expect(page).toContain('ariaLabel="Paginación del detalle diario"')
 })
