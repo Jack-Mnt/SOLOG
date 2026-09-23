@@ -54,7 +54,7 @@ describe('AdminDialog Fase 4 — confirmaciones', () => {
     expect(products).toContain('className="admin-dialog-context"')
     expect(products).toContain('<AdminNotice tone="info">')
     expect(store).toContain("status: 'aprobado'")
-    expect(store).toContain("tipo: 'reincorporar_producto'")
+    expect(store).toContain("proposal.tipo === 'reincorporar_producto'")
   })
 
   test('notice informativo de confirmación usa tipografía compacta sin alterar notices globales', async () => {
