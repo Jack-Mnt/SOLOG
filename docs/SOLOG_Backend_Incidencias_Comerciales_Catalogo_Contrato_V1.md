@@ -28,10 +28,11 @@ Su propósito es resolver de forma autoritativa:
 
 Dentro de esta frontera específica, prevalece:
 
-1. `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md` — autoridad del motor comercial ↔ propuestas.
-2. `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` — autoridad general de Catálogo, staging, preview y publicación.
-3. `SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md` — autoridad de las incidencias operativas visibles en Admin > Incidencias.
-4. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — runtime compartido consolidado.
+1. `SOLOG_Catalogo_V4_Delta_Smoke_Fase10_V1.md` — autoridad más reciente para las correcciones post-smoke que redefine.
+2. `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md` — autoridad del motor comercial ↔ propuestas en lo no reemplazado por el delta.
+3. `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` — autoridad general de Catálogo, staging, preview y publicación.
+4. `SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md` — autoridad de las incidencias operativas visibles en Admin > Incidencias.
+5. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — runtime compartido consolidado.
 
 Hasta que este contrato sea implementado y validado, el runtime desplegado continúa siendo el descrito por los contratos actuales. Este documento congela el **estado objetivo** y no debe interpretarse como evidencia de despliegue.
 

@@ -650,6 +650,54 @@ Fase 5   COMPLETADA
 Fase 6   COMPLETADA
 Fase 7   COMPLETADA
 Fase 8   COMPLETADA
-Fase 9   PENDIENTE
-Fase 10  PENDIENTE
+Fase 9   REVALIDACIÓN PENDIENTE — CAMBIOS POST-SMOKE
+Fase 10  RE-SMOKE PENDIENTE
+```
+
+
+---
+
+# 6. Delta post-smoke de Fase 10
+
+Fuente congelada:
+
+```text
+docs/SOLOG_Catalogo_V4_Delta_Smoke_Fase10_V1.md
+```
+
+Implementado:
+
+- propuestas automáticas aprobadas pueden ignorarse;
+- propuestas automáticas no pueden descartarse;
+- valorizado de grupos existentes se aplica inmediatamente al resolver/preparar precio;
+- presets recalculan sugerido con el nuevo precio unitario;
+- `Aplicar` en valorizado completa la resolución/preparación;
+- `update_group_price` absorbe propuestas equivalentes del mismo grupo;
+- objetivos distintos bloquean la resolución grupal;
+- publicación confirmada domina el feedback;
+- cero cambios aprobados se muestra como estado informativo.
+
+Validación backend ejecutada con transacciones + rollback:
+
+```text
+Antioqueño 750ml:
+3 propuestas equivalentes → 3 aprobadas
+valorizado x6 / S/183 → aplicado inmediatamente
+staging de las 3 → package_action=keep
+
+discard automática → SOLOG_CATALOG_AUTOMATIC_DISCARD_FORBIDDEN
+ignore automática aprobada → ignorado + evidencia suprimida
+
+conflicto sintético 30.5 vs 31
+→ SOLOG_GROUP_PRICE_PROPOSAL_CONFLICT
+→ resolución grupal bloqueada
+```
+
+Estado:
+
+```text
+Implementación delta → COMPLETADA
+Validación backend   → COMPLETADA
+Validación local     → REEJECUTAR bun test/lint/build
+Re-smoke humano      → PENDIENTE
 ```
