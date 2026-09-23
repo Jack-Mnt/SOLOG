@@ -1,7 +1,7 @@
 # SOLOG — Backend Admin Drawers — Fase 8.2B — Optimización de Egress V1
 
 **Proyecto:** SOLOG  
-**Estado:** IMPLEMENTACIÓN COMPLETA — FASES 1–6 COMPLETADAS / FASE 7 PENDIENTE
+**Estado:** BLOQUE CERRADO — FASES 1–7 COMPLETADAS / 8.2B VALIDADA
 **Fecha:** 2026-09-21  
 **Clasificación:** Nivel C — backend / contratos / lógica de consulta  
 **Rama:** `admin-work`
@@ -1323,7 +1323,7 @@ Los hashes son una referencia de baseline del despliegue, no una API contractual
 
 # 17. Fase 6 — TypeScript + frontend
 
-**Estado:** IMPLEMENTADA / PENDIENTE VALIDACIÓN FORMAL DE FASE 7.
+**Estado:** COMPLETADA / VALIDADA EN FASE 7.
 
 No fue necesario modificar backend ni CSS.
 
@@ -1484,20 +1484,108 @@ No se modificó:
 - exports;
 - contratos legacy.
 
-La validación completa de suite, lint, build, `git diff --check` y smoke humano pertenece a Fase 7.
+La validación completa de suite, lint, build, `git diff --check` y smoke humano se ejecutó posteriormente en Fase 7.
 
-# 18. Estado
+# 18. Fase 7 — Validación global y cierre
+
+**Estado:** COMPLETADA / VALIDADA / CERRADA.
+
+La validación final se realizó sobre la integración frontend ya conectada al backend desplegado y congelado. No se introdujo funcionalidad nueva ni se modificó el contrato backend.
+
+## 18.1. Validación técnica
+
+Resultado reportado:
+
+```text
+bun test --reporter=dot   PASS
+bun run lint              PASS
+bun run build             PASS
+git diff --check          PASS
+```
+
+No se reportaron regresiones técnicas atribuibles a 8.2B.
+
+## 18.2. Smoke humano
+
+Validaciones aprobadas:
+
+- Detalle diario;
+- Cronología por producto;
+- Repeticiones de incidencias;
+- composición visual de Drawers;
+- responsive;
+- comportamiento ya congelado de 8.2A.
+
+Detalle diario validó el consumo de datos autoritativos por estado, paginación y diferencias de Inconsistente sin reconstrucción frontend.
+
+Cronología validó la composición por estado, carga de quincenas y uso de las métricas compactas del nuevo contrato.
+
+Incidencias permaneció sin regresiones y continúa usando `detail_sites`.
+
+## 18.3. Validación de Network y caché
+
+Se observó en Network el consumo real de las acciones optimizadas.
+
+Detalle diario:
+
+```json
+{
+  "p_action": "daily_detail_bootstrap",
+  "p_payload": {
+    "site_id": "<site_id>",
+    "origin_date": "2026-09-18",
+    "stock_class": "positive"
+  }
+}
+```
+
+Cronología:
+
+```json
+{
+  "p_action": "control_chronology_view",
+  "p_payload": {
+    "site_id": "<site_id>",
+    "group_id": "<group_id>",
+    "period": "previous_biweekly"
+  }
+}
+```
+
+También se verificó que, una vez cargado el mismo scope, volver a consultarlo no genera nuevas peticiones mientras la entrada permanece válida en caché.
+
+Esto confirma en frontend el comportamiento congelado de:
+
+- bootstrap por `site_id + origin_date + stock_class`;
+- páginas por `site_id + origin_date + stock_class + state + page`;
+- cronología por `site_id + group_id + period`;
+- reutilización de consultas ya cacheadas.
+
+## 18.4. Cierre
+
+No se detectó incompatibilidad que requiera reabrir backend, contratos o composición UI.
+
+Fase 8.2B queda cerrada con:
+
+- backend desplegado y congelado;
+- frontend integrado;
+- contratos TypeScript alineados;
+- caché integrada en `AdminStore`;
+- placeholders temporales retirados;
+- suite técnica aprobada;
+- smoke humano aprobado;
+- consumo de actions optimizados observado en Network.
+
+# 19. Estado final
 
 - Fase 1 — ✅ completada.
 - Fase 2 — ✅ completada.
 - Fase 3 — ✅ completada.
 - Fase 4 — ✅ completada.
 - Fase 5 — ✅ completada.
-- Fase 6 — ✅ implementada.
-- Fase 7 — pendiente.
+- Fase 6 — ✅ completada.
+- Fase 7 — ✅ completada.
 
-**Backend permanece congelado. Frontend ya consume el contrato optimizado.**
+**Fase 8.2B — CERRADA.**
 
-La siguiente fase es:
-
-**Fase 7 — validación global y cierre de 8.2B.**
+El backend y sus contratos permanecen congelados. Cualquier cambio posterior debe tratarse como un delta explícito y no reinterpretar esta fuente salvo incompatibilidad demostrable.
