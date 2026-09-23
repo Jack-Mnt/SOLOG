@@ -87,7 +87,7 @@ describe('AdminDialog Fase 5 — formularios y tareas', () => {
     )
     expect(setup).toContain('<dt>Precio</dt>')
     expect(setup).toContain(
-      'La configuración quedará preparada y se aplicará al publicar el Catálogo.',
+      'La configuración preparada se aplicará al publicar el Catálogo.',
     )
     expect(setup).not.toContain('staging')
     expect(setup).toContain('Guardar configuración')
