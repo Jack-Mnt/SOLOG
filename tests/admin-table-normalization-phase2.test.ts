@@ -40,7 +40,7 @@ describe('Admin table normalization — Phase 2 Dashboard + Control', () => {
 
     expect(control).not.toContain('admin-control-chronology__table')
     expect(control).toContain('className="admin-control-chronology__timeline"')
-    expect(control).toContain('useAdminQuery("control_chronology"')
+    expect(control).toContain('useAdminQuery("control_chronology_view"')
   })
 
   test('Dashboard preserva matriz centrada y normaliza thead sin perder primera columna sticky', async () => {
