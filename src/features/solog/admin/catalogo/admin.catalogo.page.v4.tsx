@@ -29,6 +29,7 @@ import { CatalogMutationNotice } from "./admin.catalogo.feedback";
 import { catalogMutationError } from "./admin.catalogo.feedback.utils";
 import {
   catalogProposalChange,
+  type CatalogMutations,
   type CatalogProposal,
   type CatalogProposalStatus,
   type CatalogReads,
@@ -1138,51 +1139,62 @@ function PriceResolutionContent({
       return;
     }
 
-    const base = {
-      propuesta_fingerprint: fingerprint,
-      resolution,
-    };
+    type PriceMutationInput = Omit<
+      CatalogMutations["resolve_price"],
+      "operation_id" | "expected_catalog_revision" | "expected_groups_revision"
+    >;
 
-    const payload =
-      resolution === "separate_sku"
-        ? nextPackageAction === "set"
+    let payload: PriceMutationInput;
+
+    if (resolution === "separate_sku") {
+      payload =
+        nextPackageAction === "set"
           ? {
-              ...base,
-              resolution: "separate_sku" as const,
-              package_action: "set" as const,
+              propuesta_fingerprint: fingerprint,
+              resolution: "separate_sku",
+              package_action: "set",
               ...nextValuation!,
             }
           : {
-              ...base,
-              resolution: "separate_sku" as const,
+              propuesta_fingerprint: fingerprint,
+              resolution: "separate_sku",
               package_action:
                 nextPackageAction === "clear"
-                  ? ("clear" as const)
-                  : ("not_applicable" as const),
-            }
-        : nextPackageAction === "set"
+                  ? "clear"
+                  : "not_applicable",
+            };
+    } else {
+      const groupedResolution: "update_group_price" | "keep_structure" =
+        resolution;
+      payload =
+        nextPackageAction === "set"
           ? {
-              ...base,
-              package_action: "set" as const,
+              propuesta_fingerprint: fingerprint,
+              resolution: groupedResolution,
+              package_action: "set",
               ...nextValuation!,
             }
           : nextPackageAction === "update"
             ? {
-                ...base,
-                package_action: "update" as const,
+                propuesta_fingerprint: fingerprint,
+                resolution: groupedResolution,
+                package_action: "update",
                 precio_paquete: nextValuation!.precio_paquete,
               }
             : {
-                ...base,
+                propuesta_fingerprint: fingerprint,
+                resolution: groupedResolution,
                 package_action:
-                  nextPackageAction === "clear"
-                    ? ("clear" as const)
-                    : ("keep" as const),
+                  nextPackageAction === "clear" ? "clear" : "keep",
               };
+    }
 
     reportError("");
-    void store
-      .mutation(flow === "resolve" ? "resolve_price" : "prepare_price", payload)
+    const request =
+      flow === "resolve"
+        ? store.mutation("resolve_price", payload)
+        : store.mutation("prepare_price", payload);
+    void request
       .then(onComplete)
       .catch((reason: unknown) =>
         reportError(store.intent() ? "" : priceErrorMessage(reason)),

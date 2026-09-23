@@ -45,8 +45,8 @@ describe('Catálogo V4: estructura principal', () => {
     expect(ui).toContain('flow === "resolve" ? "resolve_price" : "prepare_price"')
     expect(ui).toContain('options.equivalent_proposals.length + 1')
     expect(ui).toContain('options.conflicting_proposals.length > 0')
-    expect(ui).toContain('propuestas de precio equivalentes del grupo')
-    expect(ui).toContain('propuestas de precio incompatibles')
+    expect(ui).toMatch(/propuestas de\s+precio equivalentes del grupo/)
+    expect(ui).toMatch(/propuestas de precio incompatibles/)
   })
 
   test('publicación prioriza éxito y trata cero aprobadas como estado informativo', async () => {

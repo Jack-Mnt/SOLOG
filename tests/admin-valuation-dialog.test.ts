@@ -14,14 +14,14 @@ describe('Configuración de valorizado compartida', () => {
     expect(validateValuationDecision({ enabled: true, unitsPerPackage: 2.5, packagePrice: 3 })).toBe(false)
     expect(validateValuationDecision({ enabled: true, unitsPerPackage: 6, packagePrice: 0 })).toBe(false)
   })
-  test('mantiene la sugerencia en el campo sin sustituir un precio manual', async () => {
+  test('recalcula la sugerencia cuando cambian las unidades', async () => {
     expect(suggestedPackagePrice(12, 3.5)).toBe(42)
     const source = await Bun.file('src/features/solog/admin/admin.valuation-dialog.tsx').text()
-    expect(source).toContain('if (!priceEdited) setPackagePrice')
-    expect(source).toContain('setPriceEdited(true)')
+    expect(source).toContain('setPackagePrice(money(suggestedPackagePrice(value, unitPrice)))')
+    expect(source).toContain('setPackagePrice(money(suggestedPackagePrice(parsed, unitPrice)))')
+    expect(source).not.toContain('priceEdited')
     expect(source).toContain('step="0.1"')
     expect(source).not.toContain('Referencia sugerida')
-    expect(source).not.toContain('No reemplaza un precio ingresado manualmente')
   })
   test('permanece desacoplado de RPC y stores', async () => {
     const source = await Bun.file('src/features/solog/admin/admin.valuation-dialog.tsx').text()

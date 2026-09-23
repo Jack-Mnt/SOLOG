@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { CatalogStore, type CatalogMutateTransport, type CatalogPublishTransport, type CatalogReadTransport } from '../src/features/solog/admin/catalogo/admin.catalogo.store'
-import type { CatalogMutationAction } from '../src/features/solog/admin/catalogo/admin.catalogo.v3'
+import type { CatalogMutationAction } from '../src/features/solog/admin/catalogo/admin.catalogo.v4'
 import { GroupsStore, type GroupsMutateTransport } from '../src/features/solog/admin/grupos/admin.grupos.store'
 import type { GroupsMutationAction } from '../src/features/solog/admin/grupos/admin.grupos.v1'
 import { MasterDataStore, type MasterDataMutateTransport, type MasterDataReadTransport, type MasterDataRevisionCoordinator } from '../src/features/solog/admin/masterdata/admin.masterdata.store'
@@ -48,7 +48,7 @@ describe('Fase 4: integración transversal Admin Master Data', () => {
     const mutate = (async (action) => {
       actions.push(action)
       catalogRevision++
-      return { contract_version: 3 as const, generated_at: now, replay: false, result: {}, revisions: { groups: 3, catalog: catalogRevision } }
+      return { contract_version: 4 as const, generated_at: now, replay: false, result: {}, revisions: { groups: 3, catalog: catalogRevision } }
     }) as CatalogMutateTransport
     const read = (async () => { throw new Error('La prueba no debe leer Catálogo.') }) as CatalogReadTransport
     const store = new CatalogStore('admin-test', () => bootstrapFixture(), () => {}, read, mutate, undefined, harness.master)
@@ -66,7 +66,7 @@ describe('Fase 4: integración transversal Admin Master Data', () => {
     const harness = masterHarness()
     await harness.master.ensureLoaded()
     let revision = 10
-    const mutate = (async () => ({ contract_version: 3 as const, generated_at: now, replay: false, result: {}, revisions: { groups: 3, catalog: ++revision } })) as CatalogMutateTransport
+    const mutate = (async () => ({ contract_version: 4 as const, generated_at: now, replay: false, result: {}, revisions: { groups: 3, catalog: ++revision } })) as CatalogMutateTransport
     const store = new CatalogStore('admin-test', () => bootstrapFixture(), () => {}, undefined, mutate, undefined, harness.master)
     await store.mutation('propose_product_state', { c_interno: 100, action: 'exclude' })
     await store.mutation('prepare_product', { propuesta_fingerprint: fingerprint, mode: 'new_unit', categoria_id: 'cat-a', marca: null })
@@ -78,7 +78,7 @@ describe('Fase 4: integración transversal Admin Master Data', () => {
     expect(store.productSetupPrepared(fingerprint)).toBe(false)
   })
 
-  test('proposal_action mantiene Productos y setup_required coherentes sin bootstrap', async () => {
+  test('resolución V4 mantiene Productos y setup_required coherentes sin bootstrap', async () => {
     const harness = masterHarness()
     await harness.master.ensureLoaded()
     let catalogRevision = 10
@@ -90,6 +90,7 @@ describe('Fase 4: integración transversal Admin Master Data', () => {
       c_interno: tipo === 'agregar_producto' ? 101 : 100,
       tipo,
       estado,
+      origen: 'automatico' as const,
       seccion: tipo === 'agregar_producto' ? 'urgente' as const : 'emergente' as const,
       datos: {},
       producto: tipo === 'agregar_producto' ? 'Nuevo' : 'Producto',
@@ -100,7 +101,7 @@ describe('Fase 4: integración transversal Admin Master Data', () => {
       catalogo_actual: { producto: tipo === 'agregar_producto' ? null : 'Producto', c_barras: null, precio: 2, marca: null, estado: tipo === 'agregar_producto' ? null : 'Único' as const, categoria: null, grupo: null },
       stale: false,
       publicable: estado === 'aprobado',
-      block_reason: estado === 'aprobado' && tipo === 'agregar_producto' ? 'configuracion_requerida' : null,
+      block_reason: null,
       setup: null,
       price_resolution: null,
       aprobado_at: estado === 'aprobado' ? now : null,
@@ -114,7 +115,7 @@ describe('Fase 4: integración transversal Admin Master Data', () => {
       const tipo = requestedFingerprint === setupFingerprint ? 'agregar_producto' as const : 'excluir_producto' as const
       const row = proposal(requestedFingerprint, tipo, estado)
       return {
-        contract_version: 3 as const,
+        contract_version: 4 as const,
         generated_at: now,
         revisions: { groups: 3, catalog: catalogRevision },
         estado,
@@ -124,12 +125,18 @@ describe('Fase 4: integración transversal Admin Master Data', () => {
         counts: { pendiente: estado === 'pendiente' ? 1 : 0, aprobado: estado === 'aprobado' ? 1 : 0, ignorado: 0, incorporado: 0 },
       }
     }) as CatalogReadTransport
-    const mutate = (async () => ({ contract_version: 3 as const, generated_at: now, replay: false, result: {}, revisions: { groups: 3, catalog: ++catalogRevision } })) as CatalogMutateTransport
+    const mutate = (async () => ({ contract_version: 4 as const, generated_at: now, replay: false, result: {}, revisions: { groups: 3, catalog: ++catalogRevision } })) as CatalogMutateTransport
     const store = new CatalogStore('admin-test', () => bootstrapFixture(), () => {}, read, mutate, undefined, harness.master)
 
     await store.load('proposals', { estado: 'pendiente' })
-    await store.mutation('proposal_action', { propuesta_fingerprint: setupFingerprint, action: 'approve' })
-    expect(store.confirmedSetupRequired().map(item => item.propuesta_fingerprint)).toContain(setupFingerprint)
+    await store.mutation('resolve_product', {
+      propuesta_fingerprint: setupFingerprint,
+      mode: 'new_unit',
+      categoria_id: 'cat-a',
+      marca: null,
+    })
+    expect(store.productSetupPrepared(setupFingerprint)).toBe(true)
+    expect(store.confirmedSetupRequired().map(item => item.propuesta_fingerprint)).not.toContain(setupFingerprint)
     expect(harness.reads()).toBe(1)
 
     await store.load('proposals', { estado: 'aprobado' })
