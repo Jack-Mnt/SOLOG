@@ -5,7 +5,7 @@ const source = (path: string) => Bun.file(path).text()
 describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
   test('Detalle de propuesta prioriza el cambio y humaniza estados de publicación', async () => {
     const ui = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
 
     expect(ui).toContain('function ProposalDetailChange')
@@ -22,7 +22,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
   test('Configurar producto recibe el precio propuesto y nunca usa cero silencioso', async () => {
     const ui = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
 
     expect(ui).toContain(
@@ -41,7 +41,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
   test('Resolver precio usa selección binaria explícita y auto keep_structure', async () => {
     const ui = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
     const primitive = await source(
       'src/features/solog/admin/admin.primitives.tsx',
@@ -63,7 +63,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
   test('Resolver precio usa jerarquía compacta y valorizado sin caja adicional', async () => {
     const ui = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
     const css = await source('src/features/solog/admin/admin.css')
 
@@ -74,7 +74,9 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
     expect(ui).toContain('admin-catalog__valuation-section')
     expect(ui).toContain('admin-catalog__valuation-actions')
     expect(ui).toContain('Configurar')
-    expect(ui).toContain('Los cambios se aplicarán al publicar el Catálogo.')
+    expect(ui).toContain(
+      'El precio se aplicará al publicar; el valorizado del grupo se actualiza al confirmar esta resolución.',
+    )
     expect(ui).not.toContain('admin-catalog__valuation-decision')
     expect(ui).not.toContain('Configurar valorizado')
     expect(css).toContain('.admin-catalog__price-summary')
@@ -87,7 +89,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
   test('Resolver precio restaura prepared_resolution y bloquea guardado sin cambios', async () => {
     const ui = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
 
     expect(ui).toContain('query.data.prepared_resolution')
@@ -102,9 +104,9 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
     expect(ui).not.toContain('Existe staging preparado')
   })
 
-  test('Valorizado nested aplica solo al draft del padre con CTA contextual', async () => {
+  test('Valorizado nested aplica la resolución con CTA contextual', async () => {
     const ui = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
     const valuation = await source(
       'src/features/solog/admin/admin.valuation-dialog.tsx',
@@ -112,11 +114,11 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
     expect(ui).toContain('confirmLabel="Aplicar"')
     expect(ui).toContain(
-      'Esta configuración se aplicará al guardar la resolución y publicar el Catálogo.',
+      'El valorizado se aplicará inmediatamente al grupo al confirmar.',
     )
     expect(ui).toContain('onConfirm={chooseValuation}')
-    expect(ui).toMatch(
-      /const chooseValuation = \(decision: ValuationDecision\)[\s\S]*?setValuation\(false\)/,
+    expect(ui).toContain(
+      'executeResolution(nextPackageAction, nextValuation, setValuationError)',
     )
     expect(valuation).toContain("confirmLabel = 'Guardar valorizado'")
     expect(valuation).toContain("{pending ? 'Guardando…' : confirmLabel}")
@@ -124,7 +126,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
   test('Publicar catálogo muestra resumen operativo y conflictos estructurados', async () => {
     const ui = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
     const css = await source('src/features/solog/admin/admin.css')
 
@@ -146,7 +148,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
   test('Moderador no recibe CTA imposible y publicación completada queda solo en cierre', async () => {
     const ui = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
 
     expect(ui).toContain('const completed = receipt.result?.completion_recorded === true;')
@@ -165,7 +167,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
   test('mantiene nesting de dos y tres niveles sin traps locales', async () => {
     const ui = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
 
     expect(ui).toContain('<ProductSetupDialog')

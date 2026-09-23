@@ -42,7 +42,8 @@ describe('Catálogo V4: valorizado y resolución de precio', () => {
   test('la superficie comparte el modal entre resolución atómica y edición posterior', async () => {
     const source = await Bun.file('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx').text()
     expect(source).toContain('ValuationDialog')
-    expect(source).toContain('flow === "resolve" ? "resolve_price" : "prepare_price"')
+    expect(source).toContain('? store.mutation("resolve_price", payload)')
+    expect(source).toContain(': store.mutation("prepare_price", payload)')
     expect(source).toContain('confirmLabel="Aplicar"')
     expect(source).toContain('El valorizado se aplicará inmediatamente al grupo al confirmar.')
     expect(source).toContain('El precio se aplicará al publicar; el valorizado del grupo se actualiza al confirmar esta resolución.')

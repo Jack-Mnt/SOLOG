@@ -7,7 +7,7 @@ async function source(path: string) {
 describe('AdminDialog integración anidada', () => {
   test('Catálogo conserva detalle → configuración de producto y detalle → resolución de precio', async () => {
     const catalog = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
     const setup = await source(
       'src/features/solog/admin/productos/admin.product-setup.dialog.tsx',
@@ -23,7 +23,7 @@ describe('AdminDialog integración anidada', () => {
 
   test('resolución de precio conserva el tercer nivel hacia ValuationDialog', async () => {
     const catalog = await source(
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
     const valuation = await source(
       'src/features/solog/admin/admin.valuation-dialog.tsx',
@@ -37,7 +37,7 @@ describe('AdminDialog integración anidada', () => {
 
   test('los consumidores anidados no implementan un trap o Escape paralelo', async () => {
     const paths = [
-      'src/features/solog/admin/catalogo/admin.catalogo.page.v3.tsx',
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
       'src/features/solog/admin/productos/admin.product-setup.dialog.tsx',
       'src/features/solog/admin/admin.valuation-dialog.tsx',
     ]

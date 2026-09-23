@@ -1139,10 +1139,13 @@ function PriceResolutionContent({
       return;
     }
 
-    type PriceMutationInput = Omit<
-      CatalogMutations["resolve_price"],
-      "operation_id" | "expected_catalog_revision" | "expected_groups_revision"
-    >;
+    type MutationInput<T> = T extends unknown
+      ? Omit<
+          T,
+          "operation_id" | "expected_catalog_revision" | "expected_groups_revision"
+        >
+      : never;
+    type PriceMutationInput = MutationInput<CatalogMutations["resolve_price"]>;
 
     let payload: PriceMutationInput;
 
