@@ -1,6 +1,6 @@
 # SOLOG — Incidencias comerciales ↔ Catálogo — Plan de implementación V1
 
-**Estado:** CONGELADO / APROBADO  
+**Estado:** CERRADO / IMPLEMENTADO / VALIDADO  
 **Fecha de congelación:** 2026-09-21  
 **Rama:** `admin-work`  
 **Clasificación:** Nivel C — backend / integración + frontend  
@@ -77,7 +77,10 @@
 - reincorporación resuelta en el mismo flujo;
 - reproponer después de descarte.
 
-## Fase 9 — Validación técnica global
+## Fase 9 — Validación técnica final post-correcciones
+**Estado:** APROBADA
+
+Validación ejecutada sobre el estado final del bloque, incluyendo las correcciones surgidas del smoke:
 
 ```powershell
 bun test --reporter=dot
@@ -86,15 +89,41 @@ bun run build
 git diff --check
 ```
 
-más pruebas backend del contrato.
+Resultado:
 
-## Fase 10 — Smoke humano y cierre documental
-- automáticas simples/complejas;
-- ignore/reactivate automáticas;
-- withdraw;
-- administrativa discard → reproponer;
-- publicación;
-- cierre documental.
+```text
+tests            → APROBADOS
+lint             → APROBADO
+build            → APROBADO
+git diff --check → APROBADO
+```
+
+La validación final también confirmó que tests, tipos TypeScript y contrato V4 quedaron alineados después de retirar las expectativas legacy de V3.
+
+## Fase 10 — Smoke, delta post-smoke, re-smoke y cierre
+**Estado:** APROBADA / CERRADA
+
+Secuencia ejecutada:
+
+```text
+smoke inicial
+→ detección de desviaciones
+→ congelación del delta post-smoke
+→ correcciones
+→ revalidación técnica
+→ re-smoke
+→ aprobación final
+```
+
+El re-smoke confirmó:
+
+- valorizado inmediato y presets xN;
+- Ignorar/Reactivar para automáticas;
+- Descartar para administrativas;
+- resolución conjunta de propuestas equivalentes de precio;
+- bloqueo de objetivos incompatibles;
+- feedback de publicación sin notices contradictorias;
+- persistencia correcta después de recargar.
 
 ---
 
@@ -641,7 +670,7 @@ No se mantiene un contrato frontend V3 alternativo.
 # 5. Estado
 
 ```text
-Plan     CONGELADO / APROBADO
+Plan     CERRADO / IMPLEMENTADO / VALIDADO
 Fase 1   COMPLETADA
 Fase 2   COMPLETADA
 Fase 3   COMPLETADA
@@ -650,8 +679,8 @@ Fase 5   COMPLETADA
 Fase 6   COMPLETADA
 Fase 7   COMPLETADA
 Fase 8   COMPLETADA
-Fase 9   REVALIDACIÓN PENDIENTE — LIMPIEZA FRONTEND/DOCS
-Fase 10  RE-SMOKE APROBADO
+Fase 9   APROBADA
+Fase 10  APROBADA / CERRADA
 ```
 
 
@@ -698,6 +727,34 @@ Estado:
 ```text
 Implementación delta → COMPLETADA
 Validación backend   → COMPLETADA
-Validación local     → REEJECUTAR bun test/lint/build
-Re-smoke humano      → APROBADO
+Validación técnica  → APROBADA
+Re-smoke humano     → APROBADO
+Cierre del bloque   → COMPLETADO
 ```
+
+
+---
+
+# 7. Cierre definitivo del bloque
+
+El bloque Incidencias comerciales ↔ Catálogo V4 queda **CERRADO**.
+
+Criterios de salida cumplidos:
+
+```text
+Backend V4 desplegado                 ✅
+Frontend V4 activo                    ✅
+Contrato V4 consolidado               ✅
+Validación backend                    ✅
+Validación técnica final              ✅
+Smoke inicial                         ✅
+Delta post-smoke implementado         ✅
+Re-smoke humano                       ✅
+Documentación alineada                ✅
+```
+
+No quedan correcciones funcionales ni técnicas pendientes dentro de este scope.
+
+Las superficies backend V3 que aún existan físicamente son legacy y su eventual limpieza pertenece a un bloque backend independiente. No forman parte del cierre de esta implementación.
+
+El flujo general del Admin puede retomarse desde el punto previo a la Fase 12 global.

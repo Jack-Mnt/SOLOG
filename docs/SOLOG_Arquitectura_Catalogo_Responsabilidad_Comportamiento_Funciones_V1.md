@@ -1,10 +1,11 @@
 # SOLOG — Catálogo: responsabilidad, comportamiento y funciones V1
 
-**Estado:** CONGELADO  
+**Estado:** CONGELADO / ALINEADO A CATÁLOGO V4 VALIDADO  
 **Proyecto:** SOLOG  
 **Módulo:** Admin > Catálogo  
 **Clasificación:** Nivel C — Arquitectura / lógica / backend / integración  
 **Fecha de congelación:** 2026-09-10  
+**Última alineación V4:** 2026-09-22  
 **Fuente primaria funcional/arquitectónica:** este documento.  
 **Contrato técnico vigente:** `SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md`.
 
@@ -170,32 +171,51 @@ Desde esta vista se podrá:
 
 # 5. Ciclo de vida de propuestas
 
-Los estados funcionales son:
+Estados persistentes autoritativos:
 
 ```text
 Pendiente
 Aprobado
 Ignorado
+Descartado
 Incorporado
 ```
 
-Flujo normal:
+Superficie ordinaria del frontend:
 
 ```text
-Pendiente
-   ├── Aprobar  → Aprobado → Publicar → Incorporado
-   └── Ignorar  → Ignorado
+Pendientes
+Aprobados
+Ignorados
+Publicados
+```
+
+`Descartado` es backend-only.
+
+Flujos por origen:
+
+```text
+AUTOMÁTICA
+Pendiente → Aprobar/Resolver | Ignorar
+Aprobado  → Volver a pendiente | Ignorar
+Ignorado  → Reactivar → Pendiente
+Descartar → PROHIBIDO
+
+ADMINISTRATIVA
+Aprobado → Volver a pendiente | Descartar
+Ignorar/Reactivar → PROHIBIDO
 ```
 
 Reglas:
 
 1. **Aprobar no publica.**
-2. `Aprobado` significa que la decisión fue aceptada y está disponible para una próxima publicación.
-3. `Incorporado` significa que el cambio ya fue aplicado en una versión publicada.
-4. Una propuesta aprobada puede retirar su aprobación mientras todavía no haya sido publicada.
-5. Retirar una aprobación debe eliminar también cualquier resolución o configuración pendiente dependiente de esa propuesta.
-6. Una propuesta ignorada continúa siendo una decisión histórica aunque desaparezca la incidencia que la originó.
-7. Un cambio incorporado debe seguir visible históricamente aunque la incidencia original sea eliminada o archivada.
+2. Las propuestas complejas se resuelven y aprueban atómicamente.
+3. `Aprobado` significa que la decisión fue aceptada y está disponible para una próxima publicación.
+4. `Incorporado` significa que el cambio ya fue aplicado en una versión publicada.
+5. `Descartado` es terminal, backend-only y queda reservado a propuestas administrativas.
+6. Retirar una aprobación elimina el staging dependiente, pero no revierte valorizado de grupo ya aplicado inmediatamente.
+7. Ignorar una automática suprime su evidencia exacta; Reactivar revoca esa supresión y devuelve la propuesta a Pendiente.
+8. Un cambio incorporado conserva su historia aunque la incidencia original sea eliminada o archivada.
 
 ---
 
@@ -638,17 +658,20 @@ Flujo general:
 
 ```text
 Cambio de precio
-→ Aprobar
-→ comprobar impacto de grupo
-→ resolver si existe incompatibilidad
-→ resolver precio xN si aplica
+→ resolver impacto de grupo
+→ resolver valorizado si aplica
+→ aprobar atómicamente
 → Listo para publicar
 → Publicar
 ```
 
-Un cambio de precio no modifica inmediatamente el maestro.
+El **precio unitario comercial** continúa en staging hasta publicación.
 
-Todas sus resoluciones dependientes permanecen en staging hasta publicar.
+Excepción operativa:
+
+> Para un grupo existente, `unidades_por_paquete` y `precio_paquete` pueden aplicarse inmediatamente al confirmar la resolución de precio, dentro de la misma transacción.
+
+Esta excepción no adelanta el precio comercial publicado; únicamente actualiza la configuración operativa de valorizado del grupo.
 
 ---
 
@@ -665,49 +688,75 @@ Separar SKU como Único
 
 Catálogo actúa como **orquestador de la resolución**, no como propietario general de Grupos.
 
-La resolución:
+## Actualizar todo el grupo
 
-- se prepara;
-- se valida en preview;
-- no modifica inmediatamente el maestro ni Grupos;
-- se aplica atómicamente con la publicación.
+El cambio comercial de precio permanece en staging hasta publicación.
 
-Si se retira la aprobación del cambio de precio antes de publicar, la resolución preparada asociada deja de tener efecto.
+Si existen propuestas automáticas pendientes del mismo grupo:
+
+```text
+mismo precio objetivo
+→ se resuelven/aprueban juntas
+
+precio objetivo distinto
+→ SOLOG_GROUP_PRICE_PROPOSAL_CONFLICT
+→ actualización grupal bloqueada
+```
+
+No se absorben automáticamente propuestas ignoradas, incorporadas ni administrativas.
+
+El valorizado de un grupo ya existente puede actualizarse inmediatamente durante esta resolución.
+
+## Separar SKU como Único
+
+La separación es individual.
+
+El nuevo grupo todavía no existe, por lo que su estructura y valorizado permanecen en staging hasta publicación.
+
+Retirar la aprobación elimina la resolución comercial preparada, pero no revierte automáticamente un valorizado de grupo existente que ya fue aplicado.
 
 ---
 
-# 22. `Actualizar precio xN`
+# 22. Valorizado `xN` asociado al cambio de precio
 
 Se mantiene en Catálogo **exclusivamente como operación complementaria de `Cambiar precio`**.
 
-Motivo:
+`precio_paquete`:
 
-`precio_paquete` participa directamente en la valorización de diferencias y puede quedar desactualizado si cambia el precio unitario.
+- no es una propuesta independiente;
+- no forma parte del artefacto compartido hacia ConeXion;
+- es una dependencia operativa interna de valorización.
 
-No es:
-
-- una propuesta independiente de Catálogo;
-- un dato del catálogo compartido;
-- un campo enviado a ConeXion.
-
-Es una dependencia operativa interna vinculada al cambio de precio.
-
-Si el grupo tiene configuración `xN`, la resolución debe exigir una decisión explícita:
+Para grupos existentes se permite:
 
 ```text
-Precio x12 actual: S/ 55
-
-○ Mantener S/ 55
-○ Actualizar a: [ S/ ____ ]
+Conservar valorizado
+Configurar valorizado
+Eliminar valorizado
 ```
 
-No se recalcula proporcionalmente de forma automática.
+Al seleccionar o cambiar unidades:
 
-Si se elige actualizar, el nuevo `precio_paquete` queda en staging y se aplica en la misma transacción que la publicación.
+```text
+precio sugerido = unidades × nuevo precio unitario
+```
 
-Si se retira la aprobación del precio, también se descarta el cambio xN pendiente.
+Los presets `x6/x10/x12/x20` recalculan siempre ese sugerido. Un precio editado manualmente se conserva hasta que vuelvan a cambiarse las unidades.
 
-Al separar un SKU como Único, el grupo original conserva su `precio_paquete`; el nuevo grupo unitario no hereda automáticamente esa configuración.
+Cuando se confirma la resolución sobre un grupo existente:
+
+- `keep` conserva la configuración;
+- `set` actualiza unidades + precio por paquete inmediatamente;
+- `update` actualiza el precio por paquete inmediatamente;
+- `clear` elimina la configuración inmediatamente.
+
+La operación es transaccional con `resolve_price/prepare_price`.
+
+Después de aplicar el valorizado, el staging de publicación se normaliza para que la publicación no sobrescriba el master data con una copia antigua.
+
+Si posteriormente se retira la aprobación, el valorizado ya aplicado **no se revierte automáticamente**.
+
+Al separar un SKU como Único, el futuro grupo todavía no existe; su valorizado permanece en staging y se materializa durante la publicación.
 
 ---
 
@@ -803,11 +852,7 @@ La implementación física de esta bandera/estado puede variar, pero el comporta
 
 # 26. Publicación y staging
 
-La regla central es:
-
-> Toda modificación que cambie el catálogo compartido o una dependencia estructural requerida por esa publicación se prepara primero y se aplica atómicamente al publicar.
-
-Por tanto no modifican inmediatamente el maestro:
+La regla central se mantiene para todo cambio que modifica el catálogo compartido o su estructura publicada:
 
 ```text
 configuración de SKU nuevo
@@ -816,23 +861,34 @@ reincorporación
 eliminación
 cambio de nombre
 cambio de barcode
-cambio de precio
-resolución de precio de grupo
-precio xN asociado
+cambio de precio comercial
+resolución estructural de precio de grupo
+separación de SKU
 ```
 
-Flujo:
+Estos cambios siguen el flujo:
 
 ```text
 Propuesta
-→ decisión
-→ staging/resoluciones
+→ decisión/resolución
+→ staging
 → preview
 → publicación
 → commit atómico
 ```
 
-Esto evita que SOLOG opere con un maestro adelantado respecto a la versión todavía activa de ConeXion.
+Excepción explícita:
+
+> El valorizado `unidades_por_paquete/precio_paquete` de un **grupo existente** puede aplicarse inmediatamente al resolver/preparar un cambio de precio.
+
+Esa actualización:
+
+- es transaccional con la resolución;
+- no modifica todavía el precio comercial publicado;
+- no se revierte automáticamente mediante `withdraw`;
+- no debe ser sobrescrita después por staging antiguo.
+
+Para un grupo futuro creado mediante `separate_sku`, el valorizado continúa en staging hasta publicación.
 
 ---
 
@@ -1144,8 +1200,8 @@ La implementación backend deberá resolver como mínimo:
 5. Tipos formales `excluir_producto` y `reincorporar_producto`.
 6. Staging de configuración de nuevo SKU.
 7. Staging de exclusión/reincorporación/eliminación.
-8. Staging reversible de resoluciones de precio.
-9. Staging de `precio_paquete` asociado a cambio de precio.
+8. Staging reversible de la resolución comercial/estructural de precio.
+9. Aplicación transaccional inmediata de `unidades_por_paquete/precio_paquete` en grupos existentes y staging únicamente cuando el grupo futuro todavía no existe.
 10. Detección de propuestas aprobadas obsoletas.
 11. Preview coherente con todos los cambios anteriores.
 12. Commit atómico de catálogo + cambios estructurales requeridos.
@@ -1197,11 +1253,14 @@ Antes de declarar el backend listo para frontend deben comprobarse, como mínimo
 - configurar producto nuevo no modifica el maestro antes de publicar;
 - exclusión/reincorporación no modifican el maestro antes de publicar;
 - retirar aprobación elimina resoluciones dependientes;
-- `Actualizar precio de todo el grupo` permanece en staging hasta publicación;
+- `Actualizar precio de todo el grupo` mantiene el precio comercial en staging hasta publicación;
+- propuestas equivalentes del mismo grupo y mismo objetivo se resuelven juntas;
+- objetivos incompatibles bloquean la actualización grupal;
 - `Separar SKU como Único` permanece en staging hasta publicación;
-- `Actualizar precio xN` permanece en staging hasta publicación;
-- el commit aplica todos los cambios dependientes atómicamente;
-- un fallo de publicación no deja maestro/grupos/paquetes parcialmente modificados;
+- valorizado de grupo existente se aplica transaccionalmente durante la resolución y no queda pendiente de publicación;
+- valorizado de un grupo futuro por separación permanece en staging hasta publicación;
+- el commit de publicación aplica atómicamente los cambios comerciales/estructurales todavía pendientes;
+- un fallo de resolución no deja valorizado parcialmente modificado y un fallo de publicación no deja cambios comerciales/estructurales parciales;
 - nuevo/reincorporado sin stock fresco no se vuelve operable para Cajero;
 - snapshot posterior válido vuelve operable el grupo;
 - sesiones ya abiertas conservan su snapshot/precio/paquete/composición congelados;
@@ -1219,15 +1278,16 @@ Quedan congelados:
 - propósito del módulo;
 - responsabilidad frente a ConeXion, Grupos y Motor;
 - separación `Propuestas / Productos`;
-- estados `Pendiente / Aprobado / Ignorado / Incorporado`;
+- estados `Pendiente / Aprobado / Ignorado / Incorporado` y `Descartado` backend-only;
 - clasificación `Urgentes / Emergentes`;
 - tipos funcionales de propuesta;
 - onboarding de productos nuevos;
 - administración de exclusión/reincorporación;
 - conservación opcional de `marca`;
 - resolución de precio desde Catálogo;
-- conservación de `Actualizar precio xN` exclusivamente para `Cambiar precio`;
-- staging hasta publicación;
+- conservación del valorizado xN exclusivamente como dependencia de `Cambiar precio`;
+- aplicación inmediata del valorizado para grupos existentes;
+- staging hasta publicación para cambios comerciales/estructurales y para valorizado de grupos futuros;
 - publicación atómica;
 - comportamiento ante grupos sin stock fresco;
 - preservación de sesiones históricas/abiertas;

@@ -1,6 +1,6 @@
 # SOLOG — Catálogo V4 — Contrato técnico V1
 
-**Estado:** VIGENTE / IMPLEMENTADO  
+**Estado:** VIGENTE / IMPLEMENTADO / VALIDADO  
 **Proyecto:** SOLOG  
 **Módulo:** Admin > Catálogo / Admin > Productos  
 **Clasificación:** Nivel C — backend / lógica / integración + frontend  
@@ -696,23 +696,15 @@ Este contrato no autoriza esa limpieza backend en la pasada actual.
 
 # 23. Validación y estado actual
 
-Smoke funcional:
+Estado final:
 
 ```text
-Fase 10 / re-smoke → APROBADO
+Fase 9  / validación técnica final → APROBADA
+Fase 10 / re-smoke humano          → APROBADO
+Bloque Catálogo V4                 → CERRADO
 ```
 
-Se validó humanamente:
-
-- resolución atómica;
-- valorizado inmediato;
-- presets de xN;
-- Ignorar/Reactivar automáticas;
-- Descartar administrativas;
-- publicación sin notices contradictorias;
-- resolución grupal de propuestas equivalentes.
-
-La validación técnica debe volver a ejecutarse después de la limpieza frontend/documental:
+Validación técnica final ejecutada:
 
 ```powershell
 bun test --reporter=dot
@@ -721,4 +713,30 @@ bun run build
 git diff --check
 ```
 
-El bloque se cierra únicamente cuando esa revalidación pase sin errores.
+Resultado:
+
+```text
+tests            ✅
+lint             ✅
+build            ✅
+git diff --check ✅
+```
+
+El smoke inicial detectó desviaciones en valorizado, transición por origen, feedback de publicación y resolución grupal de precios. Esas desviaciones fueron corregidas, absorbidas en este contrato y verificadas nuevamente mediante re-smoke.
+
+Se validó humanamente:
+
+- resolución atómica;
+- valorizado inmediato;
+- presets de xN y precio sugerido;
+- Ignorar/Reactivar automáticas;
+- imposibilidad de descartar automáticas;
+- Descartar administrativas;
+- resolución conjunta de propuestas equivalentes;
+- bloqueo de precios objetivo incompatibles;
+- publicación sin notices contradictorias;
+- estado informativo cuando no existen cambios aprobados.
+
+No quedan requisitos de validación pendientes dentro de este bloque.
+
+Las superficies backend V3 que todavía existan físicamente continúan fuera del contrato vigente y su limpieza corresponde a un bloque independiente.
