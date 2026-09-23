@@ -177,7 +177,7 @@ Productos es una **vista administrativa del universo actual de SKU**, no una nue
 
 Debe poder mostrar todos los SKU necesarios para administración, incluyendo excluidos.
 
-Mantiene las acciones de ciclo de vida que ya pertenecen a Catálogo, delegándolas a los contratos de Catálogo V3 cuando corresponda.
+Mantiene las acciones de ciclo de vida que ya pertenecen a Catálogo, delegándolas al contrato vigente `SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md` cuando corresponda.
 
 No crea una vía alternativa para:
 

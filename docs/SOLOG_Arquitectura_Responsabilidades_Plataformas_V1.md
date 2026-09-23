@@ -520,7 +520,7 @@ Esta V1 dejó deliberadamente fuera el detalle de:
 Esos puntos **ya no están pendientes de definición** para el bloque actual. Se concretaron posteriormente, principalmente en:
 
 - `SOLOG_Arquitectura_Catalogo_Responsabilidad_Comportamiento_Funciones_V1.md`;
-- `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md`;
+- `SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md`;
 - `SOLOG_Arquitectura_Grupos_Responsabilidad_Comportamiento_Funciones_V1.md`;
 - `SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`;
 - `SOLOG_Arquitectura_Admin_MasterData_Cache_Rutas_V1.md`;

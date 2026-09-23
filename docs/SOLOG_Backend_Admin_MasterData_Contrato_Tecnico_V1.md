@@ -22,14 +22,13 @@ Este documento es la **fuente primaria técnica** para el nuevo master data comp
 
 No reemplaza las mutaciones específicas de:
 
-- Catálogo V3;
+- Catálogo V4;
 - Grupos V1;
 - Incidencias V2.
 
 Sí reemplaza, para las nuevas lecturas compartidas, la necesidad de consumir como fuente principal:
 
-- `rpc_solog_admin_catalog_read_v3('products')`;
-- `rpc_solog_admin_catalog_read_v3('reference')`;
+- lecturas directas de Catálogo para `products` / `reference` cuando el mismo dato ya está disponible en el bootstrap compartido;
 - `rpc_solog_admin_groups_read_v1('reference')`;
 - `rpc_solog_admin_groups_read_v1('groups')`;
 - `rpc_solog_admin_groups_read_v1('group_detail')`;
@@ -37,7 +36,7 @@ Sí reemplaza, para las nuevas lecturas compartidas, la necesidad de consumir co
 
 cuando el dato requerido ya esté incluido o sea derivable desde el bootstrap compartido.
 
-Las superficies anteriores permanecen desplegadas por compatibilidad hasta una limpieza posterior.
+Las superficies redundantes que aún existan pueden permanecer físicamente hasta una limpieza backend posterior, pero no constituyen un contrato alternativo para el frontend.
 
 ---
 
@@ -416,7 +415,7 @@ precio
 block_reason
 ```
 
-La configuración real continúa realizándose mediante Catálogo V3.
+La configuración real continúa realizándose mediante Catálogo V4.
 
 Master Data no crea una nueva mutación para onboarding.
 

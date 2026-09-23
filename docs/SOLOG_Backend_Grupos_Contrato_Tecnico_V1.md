@@ -17,11 +17,11 @@ Este documento congela el **contrato técnico desplegado** para implementar esa 
 Para Grupos V1, este archivo es la fuente primaria técnica.  
 Los contratos legacy de `rpc_solog_admin_master_v2`, `group_change_save`, `update_package_price` y la pestaña administrativa `Productos` quedan como **compatibilidad transitoria** hasta la migración frontend y no definen el nuevo diseño.
 
-El delta:
+La integración vigente con Catálogo —incluidos valorizado y máscaras operativas— se rige por:
 
-`SOLOG_Backend_Catalogo_Valorizado_Mascaras_Delta_V1.md`
+`SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md`
 
-prevalece únicamente sobre los puntos de Catálogo V3 que modifica expresamente. El resto de `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md` continúa vigente.
+Grupos V1 continúa siendo autoridad de sus propias mutaciones y estructura; Catálogo V4 solo coordina los cambios que forman parte de su flujo de resolución/publicación.
 
 ---
 
@@ -563,9 +563,9 @@ Grupos puede editar la máscara sin modificar `catalogo.producto`.
 
 La normalización de una nueva unidad de conteo usa inicialmente el nombre comercial, pero después el administrador puede sustituirlo por una máscara.
 
-Catálogo V3 fue ajustado para preservar esta separación; ver:
+Catálogo V4 preserva esta separación; ver:
 
-`SOLOG_Backend_Catalogo_Valorizado_Mascaras_Delta_V1.md`
+`SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md`
 
 ---
 
