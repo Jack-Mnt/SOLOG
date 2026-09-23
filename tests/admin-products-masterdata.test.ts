@@ -63,7 +63,7 @@ describe('Admin Productos con Master Data', () => {
     const setup = await source('src/features/solog/admin/productos/admin.product-setup.dialog.tsx')
     expect(setup).toContain("flow === 'resolve' ? 'resolve_product' : 'prepare_product'")
     expect(setup).toContain("flow === 'propose_reincorporation'")
-    expect(setup).toMatch(/store\.mutation\(\s*['"]propose_product_state['"]/
+    expect(setup).toMatch(/store\.mutation\(\s*['"]propose_product_state['"]/)
     expect(setup).toMatch(/masterData\.snapshot\?\.groups\.filter\(\(group\) => group\.precio === target\.precio\)/)
     expect(setup).toContain('masterData.snapshot.categories.map')
     expect(setup).not.toMatch(/["']reference["']/)
