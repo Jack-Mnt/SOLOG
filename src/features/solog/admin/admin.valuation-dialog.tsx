@@ -46,7 +46,6 @@ export function ValuationDialog({
     initial.unitsPerPackage !== null &&
       !valuationPresets.includes(initial.unitsPerPackage as typeof valuationPresets[number]),
   )
-  const [priceEdited, setPriceEdited] = useState(initial.packagePrice !== null)
   const [localError, setLocalError] = useState('')
 
   const parsedUnits = Number(units)
@@ -61,7 +60,7 @@ export function ValuationDialog({
     setUnits(String(value))
     setCustomUnits(false)
     setLocalError('')
-    if (!priceEdited) setPackagePrice(money(suggestedPackagePrice(value, unitPrice)))
+    setPackagePrice(money(suggestedPackagePrice(value, unitPrice)))
   }
 
   const setOtherUnits = (value: string) => {
@@ -69,7 +68,7 @@ export function ValuationDialog({
     setCustomUnits(true)
     setLocalError('')
     const parsed = Number(value)
-    if (!priceEdited && Number.isInteger(parsed) && parsed > 1) {
+    if (Number.isInteger(parsed) && parsed > 1) {
       setPackagePrice(money(suggestedPackagePrice(parsed, unitPrice)))
     }
   }
@@ -215,7 +214,6 @@ export function ValuationDialog({
               value={packagePrice}
               onChange={(event) => {
                 setPackagePrice(event.target.value)
-                setPriceEdited(true)
                 setLocalError('')
               }}
             />

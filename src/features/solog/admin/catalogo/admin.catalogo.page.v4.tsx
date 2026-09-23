@@ -727,15 +727,27 @@ function ProposalDetail({
                   <Undo2 size={16} aria-hidden="true" />
                   Volver a pendiente
                 </button>
-                <button
-                  type="button"
-                  className="button button--danger"
-                  disabled={!!intent}
-                  onClick={() => setDiscard(true)}
-                >
-                  <CircleOff size={16} aria-hidden="true" />
-                  Descartar
-                </button>
+                {proposal.origen === "automatico" ? (
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    disabled={!!intent}
+                    onClick={() => run("ignore")}
+                  >
+                    <EyeOff size={16} aria-hidden="true" />
+                    Ignorar propuesta
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="button button--danger"
+                    disabled={!!intent}
+                    onClick={() => setDiscard(true)}
+                  >
+                    <CircleOff size={16} aria-hidden="true" />
+                    Descartar
+                  </button>
+                )}
                 {canSetup && (
                   <button
                     type="button"
@@ -1028,6 +1040,7 @@ function PriceResolutionContent({
     useState<PreparedValuation | null>(initialPreparedValuation);
   const [valuation, setValuation] = useState(false);
   const [error, setError] = useState("");
+  const [valuationError, setValuationError] = useState("");
 
   const currentValuation =
     options.grupo.unidades_por_paquete && options.grupo.precio_paquete
@@ -1037,6 +1050,13 @@ function PriceResolutionContent({
     (member) => member.c_interno === options.c_interno,
   );
   const canKeep = resolution !== "separate_sku";
+  const groupConflict =
+    resolution === "update_group_price" &&
+    options.conflicting_proposals.length > 0;
+  const groupResolutionCount =
+    resolution === "update_group_price"
+      ? options.equivalent_proposals.length + 1
+      : 1;
 
   const selectResolution = (value: PriceResolution) => {
     setResolution(value);
@@ -1047,23 +1067,7 @@ function PriceResolutionContent({
     );
     setPreparedValuation(null);
     setError("");
-  };
-
-  const chooseValuation = (decision: ValuationDecision) => {
-    if (decision.enabled) {
-      setPreparedValuation({
-        unidades_por_paquete: decision.unitsPerPackage!,
-        precio_paquete: decision.packagePrice!,
-      });
-      setPackageAction("set");
-    } else {
-      setPreparedValuation(null);
-      setPackageAction(
-        resolution === "separate_sku" ? "not_applicable" : "clear",
-      );
-    }
-    setError("");
-    setValuation(false);
+    setValuationError("");
   };
 
   const currentComparable = JSON.stringify({
@@ -1096,98 +1100,134 @@ function PriceResolutionContent({
   const valid =
     !!resolution &&
     !!packageAction &&
+    !groupConflict &&
     ((packageAction !== "set" && packageAction !== "update") ||
       preparedValuation !== null);
   const hasChanges =
     preparedComparable === null || currentComparable !== preparedComparable;
 
-  const submit = () => {
+  const executeResolution = (
+    nextPackageAction: Exclude<PackageAction, "">,
+    nextValuation: PreparedValuation | null,
+    reportError: (message: string) => void,
+  ) => {
     if (!resolution) {
-      setError("Selecciona una resolución de precio.");
+      reportError("Selecciona una resolución de precio.");
       return;
     }
     const expectedState = flow === "resolve" ? "pendiente" : "aprobado";
     if (options.change_state !== expectedState) {
-      setError(
+      reportError(
         flow === "resolve"
           ? "La propuesta ya no está pendiente. Actualiza la bandeja."
           : "La propuesta ya no está aprobada. Actualiza la bandeja.",
       );
       return;
     }
+    if (resolution === "update_group_price" && options.conflicting_proposals.length) {
+      reportError(
+        "El grupo contiene propuestas de precio incompatibles. Revisa las diferencias antes de actualizar todo el grupo.",
+      );
+      return;
+    }
+    if (
+      (nextPackageAction === "set" || nextPackageAction === "update") &&
+      !nextValuation
+    ) {
+      reportError("Configura un valorizado válido antes de guardar.");
+      return;
+    }
+
+    const base = {
+      propuesta_fingerprint: fingerprint,
+      resolution,
+    };
+
+    const payload =
+      resolution === "separate_sku"
+        ? nextPackageAction === "set"
+          ? {
+              ...base,
+              resolution: "separate_sku" as const,
+              package_action: "set" as const,
+              ...nextValuation!,
+            }
+          : {
+              ...base,
+              resolution: "separate_sku" as const,
+              package_action:
+                nextPackageAction === "clear"
+                  ? ("clear" as const)
+                  : ("not_applicable" as const),
+            }
+        : nextPackageAction === "set"
+          ? {
+              ...base,
+              package_action: "set" as const,
+              ...nextValuation!,
+            }
+          : nextPackageAction === "update"
+            ? {
+                ...base,
+                package_action: "update" as const,
+                precio_paquete: nextValuation!.precio_paquete,
+              }
+            : {
+                ...base,
+                package_action:
+                  nextPackageAction === "clear"
+                    ? ("clear" as const)
+                    : ("keep" as const),
+              };
+
+    reportError("");
+    void store
+      .mutation(flow === "resolve" ? "resolve_price" : "prepare_price", payload)
+      .then(onComplete)
+      .catch((reason: unknown) =>
+        reportError(store.intent() ? "" : priceErrorMessage(reason)),
+      );
+  };
+
+  const chooseValuation = (decision: ValuationDecision) => {
+    const nextValuation = decision.enabled
+      ? {
+          unidades_por_paquete: decision.unitsPerPackage!,
+          precio_paquete: decision.packagePrice!,
+        }
+      : null;
+    const nextPackageAction: Exclude<PackageAction, ""> = decision.enabled
+      ? "set"
+      : resolution === "separate_sku"
+        ? "not_applicable"
+        : "clear";
+
+    setPreparedValuation(nextValuation);
+    setPackageAction(nextPackageAction);
+    setError("");
+    setValuationError("");
+    executeResolution(nextPackageAction, nextValuation, setValuationError);
+  };
+
+  const submit = () => {
     if (!packageAction) {
       setError("Decide explícitamente el valorizado antes de guardar.");
       return;
     }
-    if (
-      (packageAction === "set" || packageAction === "update") &&
-      !preparedValuation
-    ) {
-      setError("Configura un valorizado válido antes de guardar.");
-      return;
-    }
-
-    setError("");
-    const done = () => onComplete();
-    const failed = (reason: unknown) =>
-      setError(store.intent() ? "" : priceErrorMessage(reason));
-
-    if (resolution === "separate_sku") {
-      const payload =
-        packageAction === "set"
-          ? {
-              propuesta_fingerprint: fingerprint,
-              resolution: "separate_sku" as const,
-              package_action: "set" as const,
-              ...preparedValuation!,
-            }
-          : {
-              propuesta_fingerprint: fingerprint,
-              resolution: "separate_sku" as const,
-              package_action:
-                packageAction === "clear"
-                  ? ("clear" as const)
-                  : ("not_applicable" as const),
-            };
-      void store.mutation(flow === "resolve" ? "resolve_price" : "prepare_price", payload).then(done).catch(failed);
-      return;
-    }
-
-    const payload =
-      packageAction === "set"
-        ? {
-            propuesta_fingerprint: fingerprint,
-            resolution,
-            package_action: "set" as const,
-            ...preparedValuation!,
-          }
-        : packageAction === "update"
-          ? {
-              propuesta_fingerprint: fingerprint,
-              resolution,
-              package_action: "update" as const,
-              precio_paquete: preparedValuation!.precio_paquete,
-            }
-          : {
-              propuesta_fingerprint: fingerprint,
-              resolution,
-              package_action:
-                packageAction === "clear"
-                  ? ("clear" as const)
-                  : ("keep" as const),
-            };
-
-    void store.mutation(flow === "resolve" ? "resolve_price" : "prepare_price", payload).then(done).catch(failed);
+    executeResolution(packageAction, preparedValuation, setError);
   };
 
   const retry = () => {
     setError("");
+    setValuationError("");
     void store
       .retryMutation()
       .then(onComplete)
-      .catch((reason: unknown) =>
-        setError(store.intent() ? "" : priceErrorMessage(reason)),
-      );
+      .catch((reason: unknown) => {
+        const message = store.intent() ? "" : priceErrorMessage(reason);
+        if (valuation) setValuationError(message);
+        else setError(message);
+      });
   };
 
   const valuationInitial =
@@ -1225,16 +1265,21 @@ function PriceResolutionContent({
               className="button"
               disabled={
                 !!intent ||
-                options.change_state !== (flow === "resolve" ? "pendiente" : "aprobado") ||
+                options.change_state !==
+                  (flow === "resolve" ? "pendiente" : "aprobado") ||
                 !valid ||
                 (flow === "prepare" && !hasChanges)
               }
               onClick={submit}
             >
+              {flow === "resolve" ? (
+                <Check size={16} aria-hidden="true" />
+              ) : (
+                <Save size={16} aria-hidden="true" />
+              )}
               {flow === "resolve"
-                ? <Check size={16} aria-hidden="true" />
-                : <Save size={16} aria-hidden="true" />}
-              {flow === "resolve" ? "Resolver y aprobar" : "Guardar resolución"}
+                ? "Resolver y aprobar"
+                : "Guardar resolución"}
             </button>
           </>
         }
@@ -1278,7 +1323,9 @@ function PriceResolutionContent({
                     <tr key={member.c_interno}>
                       <td>{member.c_interno}</td>
                       <th scope="row">{member.producto}</th>
-                      <td><Value value={member.precio} money /></td>
+                      <td>
+                        <Value value={member.precio} money />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1307,16 +1354,38 @@ function PriceResolutionContent({
             />
           )}
 
+          {resolution === "update_group_price" &&
+            options.equivalent_proposals.length > 0 &&
+            !groupConflict && (
+              <AdminNotice tone="info">
+                Esta decisión resolverá {groupResolutionCount} propuestas de
+                precio equivalentes del grupo.
+              </AdminNotice>
+            )}
+
+          {groupConflict && (
+            <AdminNotice tone="error">
+              El grupo contiene propuestas de precio incompatibles:{" "}
+              {options.conflicting_proposals
+                .map(
+                  (item) =>
+                    `${item.producto} → S/ ${item.nuevo_precio.toFixed(2)}`,
+                )
+                .join(" · ")}
+              . Separa el producto o resuelve primero el conflicto.
+            </AdminNotice>
+          )}
+
           {resolution && (
             <section className="admin-catalog__dialog-section admin-catalog__valuation-section">
-              <h3>Valorizado al publicar</h3>
+              <h3>Valorizado</h3>
               <div className="admin-catalog__valuation-actions">
                 {canKeep && (
                   <button
                     type="button"
                     className="button button--secondary"
                     aria-pressed={packageAction === "keep"}
-                    disabled={!!intent}
+                    disabled={!!intent || groupConflict}
                     onClick={() => {
                       setPackageAction("keep");
                       setPreparedValuation(null);
@@ -1338,8 +1407,11 @@ function PriceResolutionContent({
                     packageAction === "update" ||
                     packageAction === "clear"
                   }
-                  disabled={!!intent}
-                  onClick={() => setValuation(true)}
+                  disabled={!!intent || groupConflict}
+                  onClick={() => {
+                    setValuationError("");
+                    setValuation(true);
+                  }}
                 >
                   <RefreshCw size={16} aria-hidden="true" />
                   Configurar
@@ -1369,25 +1441,30 @@ function PriceResolutionContent({
               {(packageAction === "clear" ||
                 packageAction === "not_applicable") && (
                 <p className="admin-dialog-help">
-                  El producto quedará sin valorizado por paquete al publicar.
+                  {resolution === "separate_sku"
+                    ? "El nuevo grupo quedará sin valorizado al publicar."
+                    : "El grupo quedará sin valorizado al confirmar esta resolución."}
                 </p>
               )}
 
               {(packageAction === "set" || packageAction === "update") &&
                 preparedValuation && (
                   <p className="admin-dialog-help">
-                    Se aplicará x{preparedValuation.unidades_por_paquete} · S/{" "}
-                    {preparedValuation.precio_paquete.toFixed(2)} al publicar.
+                    {resolution === "separate_sku"
+                      ? `Se aplicará x${preparedValuation.unidades_por_paquete} · S/ ${preparedValuation.precio_paquete.toFixed(2)} al nuevo grupo al publicar.`
+                      : `Se aplicará x${preparedValuation.unidades_por_paquete} · S/ ${preparedValuation.precio_paquete.toFixed(2)} al confirmar esta resolución.`}
                   </p>
                 )}
             </section>
           )}
 
           <AdminNotice tone="info">
-            Los cambios se aplicarán al publicar el Catálogo.
+            {resolution === "separate_sku"
+              ? "El precio y el nuevo grupo se aplicarán al publicar el Catálogo."
+              : "El precio se aplicará al publicar; el valorizado del grupo se actualiza al confirmar esta resolución."}
           </AdminNotice>
 
-          {intent && <CatalogMutationNotice onRetry={retry} />}
+          {intent && !valuation && <CatalogMutationNotice onRetry={retry} />}
           {error && <AdminNotice tone="error">{error}</AdminNotice>}
         </div>
       </AdminDialog>
@@ -1396,9 +1473,15 @@ function PriceResolutionContent({
         <ValuationDialog
           unitPrice={options.nuevo_precio}
           initial={valuationInitial}
-          description="Esta configuración se aplicará al guardar la resolución y publicar el Catálogo."
+          description={
+            resolution === "separate_sku"
+              ? "El valorizado se guardará para el nuevo grupo y se aplicará al publicar."
+              : "El valorizado se aplicará inmediatamente al grupo al confirmar."
+          }
           confirmLabel="Aplicar"
           pending={!!intent?.pending}
+          error={valuationError}
+          onRetry={retry}
           onClose={() => setValuation(false)}
           onConfirm={chooseValuation}
         />
@@ -1406,7 +1489,6 @@ function PriceResolutionContent({
     </>
   );
 }
-
 function PublicationDialog({ onClose }: { onClose: () => void }) {
   const store = useCatalogStore();
   const query = useCatalogQuery("publication_preview", {});
@@ -1415,6 +1497,8 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
   const receipt = store.publication;
   const completed = receipt.result?.completion_recorded === true;
   const recoverable = !!receipt.operationId && !completed;
+  const noApprovedChanges =
+    preview?.ok === false && preview.codigo === "NO_APPROVED_CATALOG_CHANGES";
 
   const closeDialog = () => {
     if (completed) store.acknowledgeCompletedPublication();
@@ -1486,7 +1570,11 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
       footer={footer}
     >
       <div className="admin-dialog-task">
-        {!preview ? (
+        {completed && receipt.result ? (
+          <AdminNotice tone="success">
+            Catálogo publicado · versión {receipt.result.version}.
+          </AdminNotice>
+        ) : !preview ? (
           <QueryState {...query} variant="compact" />
         ) : preview.ok ? (
           <>
@@ -1504,7 +1592,9 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
               </div>
               <div>
                 <dt>SKU</dt>
-                <dd>{preview.sku_actuales} → {preview.sku_resultantes}</dd>
+                <dd>
+                  {preview.sku_actuales} → {preview.sku_resultantes}
+                </dd>
               </div>
             </dl>
 
@@ -1522,6 +1612,10 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
               </dl>
             </section>
           </>
+        ) : noApprovedChanges ? (
+          <AdminNotice tone="info">
+            No hay cambios aprobados para publicar.
+          </AdminNotice>
         ) : (
           <>
             <AdminNotice
@@ -1597,21 +1691,21 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
           </>
         )}
 
-        {!admin && (
+        {!completed && !admin && (
           <AdminNotice tone="info">
             Puedes revisar esta publicación, pero solo un administrador puede
             publicarla.
           </AdminNotice>
         )}
 
-        {recoverable && !receipt.error && !receipt.result && (
+        {!completed && recoverable && !receipt.error && !receipt.result && (
           <AdminNotice tone="info">
             No se pudo confirmar el resultado de la publicación. Recuperar
             reutilizará la misma operación sin duplicar los cambios.
           </AdminNotice>
         )}
 
-        {receipt.error && (
+        {!completed && receipt.error && (
           <AdminNotice tone="error">
             {recoverable
               ? "No se pudo confirmar el resultado de la publicación. Usa Recuperar publicación para reutilizar la misma operación."
@@ -1619,22 +1713,18 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
           </AdminNotice>
         )}
 
-        {receipt.result &&
-          (receipt.result.completion_recorded ? (
-            <AdminNotice tone="success">
-              Catálogo publicado · versión {receipt.result.version}.
-            </AdminNotice>
-          ) : (
+        {!completed &&
+          receipt.result &&
+          !receipt.result.completion_recorded && (
             <AdminNotice tone="info">
               La nueva versión fue publicada, pero falta confirmar el cierre de
               la operación. Usa Recuperar publicación.
             </AdminNotice>
-          ))}
+          )}
       </div>
     </AdminDialog>
   );
 }
-
 export function AdminCatalogV4() {
   const [publishing, setPublishing] = useState(false);
   const store = useCatalogStore();
