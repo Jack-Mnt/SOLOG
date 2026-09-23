@@ -14,7 +14,7 @@ function readFixture(action: CatalogReadAction, payload: Record<string, unknown>
   if (action === 'reference') return { ...envelope(), categories: [{ id: 'category-1', nombre: 'Categoría', orden: 1 }], groups: [{ id: 'group-1', nombre: 'Grupo', categoria_id: 'category-1', categoria: 'Categoría', precio: 2, unidades_por_paquete: 6, precio_paquete: 10 }] }
   if (action === 'proposals') { const estado = (payload.estado ?? 'pendiente') as 'pendiente' | 'aprobado' | 'ignorado' | 'incorporado'; return { ...envelope(), estado, rows: [proposal(estado)], total: 1, complete: true as const, counts: { pendiente: estado === 'pendiente' ? 1 : 0, aprobado: estado === 'aprobado' ? 1 : 0, ignorado: estado === 'ignorado' ? 1 : 0, incorporado: estado === 'incorporado' ? 1 : 0 } } }
   if (action === 'products') return { ...envelope(), rows: [], total: 0, complete: true as const, setup_required: [] }
-  if (action === 'price_options') return { ...envelope(), propuesta_fingerprint: payload.propuesta_fingerprint, change_id: 'change-1', change_state: 'pendiente', grupo: { id: 'group-1', nombre: 'Grupo', precio: 2, unidades_por_paquete: 6, precio_paquete: 10 }, c_interno: 100, nuevo_precio: 3, members: [{ c_interno: 100, producto: 'Producto', precio: 2 }], options: ['update_group_price', 'separate_sku'], package_decision_required: true, prepared_resolution: null }
+  if (action === 'price_options') return { ...envelope(), propuesta_fingerprint: payload.propuesta_fingerprint, change_id: 'change-1', change_state: 'pendiente', grupo: { id: 'group-1', nombre: 'Grupo', precio: 2, unidades_por_paquete: 6, precio_paquete: 10 }, c_interno: 100, nuevo_precio: 3, members: [{ c_interno: 100, producto: 'Producto', precio: 2 }], options: ['update_group_price', 'separate_sku'], package_decision_required: true, prepared_resolution: null, equivalent_proposals: [{ propuesta_fingerprint: 'b'.repeat(64), c_interno: 101, producto: 'Producto B', nuevo_precio: 3 }], conflicting_proposals: [] }
   return { ...envelope(), preview: { ok: true, codigo: 'CATALOG_PREVIEW_READY', version_actual: 6, version_nueva: 7, schema_version: 2, sku_actuales: 1, sku_resultantes: 1, cambios_total: 1, cambios: { agregar_producto: 1, eliminar_producto: 0, excluir_producto: 0, reincorporar_producto: 0, nombre: 0, precio: 0, codigo: 0 }, change_ids: ['change-1'], conflictos: [], errores: [] } }
 }
 
@@ -64,6 +64,24 @@ describe('Catálogo V4 integración frontend', () => {
     await store.load('status', {})
     await store.mutation('prepare_price', { propuesta_fingerprint: fingerprint, resolution: 'update_group_price', package_action: 'keep' })
     expect(calls.filter(call => call.channel === 'mutation').map(call => call.action)).toEqual(['resolve_price', 'prepare_price'])
+  })
+
+  test('valorizado de grupo existente viaja dentro de resolve_price', async () => {
+    const { store, calls } = harness()
+    await store.load('status', {})
+    await store.mutation('resolve_price', {
+      propuesta_fingerprint: fingerprint,
+      resolution: 'update_group_price',
+      package_action: 'set',
+      unidades_por_paquete: 6,
+      precio_paquete: 18,
+    })
+    expect(calls.find(call => call.action === 'resolve_price')?.payload).toMatchObject({
+      resolution: 'update_group_price',
+      package_action: 'set',
+      unidades_por_paquete: 6,
+      precio_paquete: 18,
+    })
   })
 
   test('moderador consulta y prepara pero no publica', async () => {

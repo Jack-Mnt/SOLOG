@@ -46,7 +46,7 @@ function fixture(action: CatalogReadAction) {
   if (action === 'reference') return { ...envelope(), categories: [{ id: 'category-1', nombre: 'Categoría', orden: 1 }], groups: [group] }
   if (action === 'proposals') return { ...envelope(), estado: 'aprobado', rows: [proposal], total: 1, complete: true, counts: { pendiente: 0, aprobado: 1, ignorado: 0, incorporado: 0 } }
   if (action === 'products') return { ...envelope(), rows: [], total: 0, complete: true, setup_required: [] }
-  if (action === 'price_options') return { ...envelope(), propuesta_fingerprint: proposal.propuesta_fingerprint, change_id: 'change-1', change_state: 'aprobado', grupo: group, c_interno: 100, nuevo_precio: 3, members: [], options: ['update_group_price'], package_decision_required: true, prepared_resolution: null }
+  if (action === 'price_options') return { ...envelope(), propuesta_fingerprint: proposal.propuesta_fingerprint, change_id: 'change-1', change_state: 'aprobado', grupo: group, c_interno: 100, nuevo_precio: 3, members: [], options: ['update_group_price'], package_decision_required: true, prepared_resolution: null, equivalent_proposals: [{ propuesta_fingerprint: 'b'.repeat(64), c_interno: 101, producto: 'Producto B', nuevo_precio: 3 }], conflicting_proposals: [] }
   return { ...envelope(), preview: { ok: true, codigo: 'CATALOG_PREVIEW_READY', version_actual: 6, version_nueva: 7, schema_version: 2, sku_actuales: 1, sku_resultantes: 1, cambios_total: 1, cambios: { agregar_producto: 0, eliminar_producto: 0, excluir_producto: 0, reincorporar_producto: 0, nombre: 0, precio: 1, codigo: 0 }, change_ids: ['change-1'], conflictos: [], errores: [] } }
 }
 
@@ -82,6 +82,12 @@ describe('Catálogo V4 contrato frontend', () => {
       expect(() => validateCatalogMutationPayload(action, payload)).not.toThrow()
     }
     expect(() => validateCatalogMutationPayload('propose_product_state', { ...base, c_interno: 100, action: 'reincorporate' })).toThrow(CatalogContractError)
+  })
+
+  test('price_options exige propuestas relacionadas tipadas', () => {
+    const response = fixture('price_options')
+    expect(validateCatalogRead('price_options', response)).toBe(response)
+    expect(() => validateCatalogRead('price_options', { ...response, conflicting_proposals: [{ c_interno: 2 }] })).toThrow(CatalogContractError)
   })
 
   test('mutación exige envelope V4', () => {

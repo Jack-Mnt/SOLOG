@@ -29,20 +29,31 @@ describe('Catálogo V4: estructura principal', () => {
     expect(ui).toMatch(/store\s*\.\s*mutation\(\s*["']proposal_action["']/)
   })
 
-  test('Ignorados se reactivan y Aprobados pueden volver o descartarse', async () => {
+  test('Ignorados se reactivan y Aprobados distinguen origen automático de administrativo', async () => {
     const ui = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
     expect(ui).toMatch(/run\(\s*["']reactivate["']\s*\)/)
     expect(ui).toMatch(/run\(\s*["']withdraw["']\s*\)/)
+    expect(ui).toContain('proposal.origen === "automatico"')
+    expect(ui).toContain('onClick={() => run("ignore")}')
     expect(ui).toMatch(/run\(\s*["']discard["']\s*\)/)
     expect(ui).toContain('Volver a pendiente')
     expect(ui).toContain('Descartar propuesta')
-    expect(ui).toContain('Esta acción es terminal')
   })
 
-  test('resolución de precio diferencia resolve_price de prepare_price', async () => {
+  test('resolución de precio diferencia resolve/prepare y muestra equivalencias o conflictos de grupo', async () => {
     const ui = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
     expect(ui).toContain('flow === "resolve" ? "resolve_price" : "prepare_price"')
-    expect(ui).toContain('flow === "resolve" ? "Resolver y aprobar" : "Guardar resolución"')
+    expect(ui).toContain('options.equivalent_proposals.length + 1')
+    expect(ui).toContain('options.conflicting_proposals.length > 0')
+    expect(ui).toContain('propuestas de precio equivalentes del grupo')
+    expect(ui).toContain('propuestas de precio incompatibles')
+  })
+
+  test('publicación prioriza éxito y trata cero aprobadas como estado informativo', async () => {
+    const ui = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
+    expect(ui).toContain('completed && receipt.result')
+    expect(ui).toContain('preview.codigo === "NO_APPROVED_CATALOG_CHANGES"')
+    expect(ui).toContain('No hay cambios aprobados para publicar.')
   })
 
   test('Productos configura reincorporación antes de aprobar', async () => {
