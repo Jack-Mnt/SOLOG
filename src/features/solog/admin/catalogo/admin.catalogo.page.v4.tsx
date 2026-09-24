@@ -77,6 +77,15 @@ const proposalStatusLabels: Record<CatalogProposalStatus, string> = {
   ignorado: "Ignorada",
   incorporado: "Publicada",
 };
+const proposalStatusTones: Record<
+  CatalogProposalStatus,
+  "warning" | "success" | "info"
+> = {
+  pendiente: "warning",
+  aprobado: "success",
+  ignorado: "info",
+  incorporado: "success",
+};
 const resolutionSwitchOptions = [
   { value: "update_group_price", label: "Actualizar grupo" },
   { value: "separate_sku", label: "Separar producto" },
@@ -525,38 +534,56 @@ function ProposalRow({
 function ProposalDetailChange({ proposal }: { proposal: CatalogProposal }) {
   const change = catalogProposalChange(proposal);
   return (
-    <section className="admin-catalog__dialog-section">
+    <section className="admin-catalog__dialog-section admin-catalog__proposal-change-section">
       <h3>Cambio propuesto</h3>
-      <dl className="admin-dialog-context">
+      <div
+        className={`admin-catalog__proposal-change-card${change.kind === "action" ? " admin-catalog__proposal-change-card--single" : ""}`}
+      >
         {change.kind === "price" ? (
           <>
-            <div>
-              <dt>Precio actual</dt>
-              <dd><Value value={change.previous} money /></dd>
+            <div className="admin-catalog__proposal-change-item">
+              <span>Precio actual</span>
+              <strong><Value value={change.previous} money /></strong>
             </div>
-            <div>
-              <dt>Precio nuevo</dt>
-              <dd><Value value={change.next} money /></dd>
+            <span
+              className="admin-catalog__proposal-change-arrow"
+              aria-hidden="true"
+            >
+              →
+            </span>
+            <div className="admin-catalog__proposal-change-item">
+              <span>Precio nuevo</span>
+              <strong><Value value={change.next} money /></strong>
             </div>
           </>
         ) : change.kind === "text" ? (
           <>
-            <div>
-              <dt>{proposal.tipo === "nombre" ? "Nombre actual" : "Código actual"}</dt>
-              <dd>{change.previous ?? "—"}</dd>
+            <div className="admin-catalog__proposal-change-item">
+              <span>
+                {proposal.tipo === "nombre" ? "Nombre actual" : "Código actual"}
+              </span>
+              <strong>{change.previous ?? "—"}</strong>
             </div>
-            <div>
-              <dt>{proposal.tipo === "nombre" ? "Nombre nuevo" : "Código nuevo"}</dt>
-              <dd>{change.next ?? "—"}</dd>
+            <span
+              className="admin-catalog__proposal-change-arrow"
+              aria-hidden="true"
+            >
+              →
+            </span>
+            <div className="admin-catalog__proposal-change-item">
+              <span>
+                {proposal.tipo === "nombre" ? "Nombre nuevo" : "Código nuevo"}
+              </span>
+              <strong>{change.next ?? "—"}</strong>
             </div>
           </>
         ) : (
-          <div>
-            <dt>Acción</dt>
-            <dd>{change.label}</dd>
+          <div className="admin-catalog__proposal-change-item">
+            <span>Acción</span>
+            <strong>{change.label}</strong>
           </div>
         )}
-      </dl>
+      </div>
     </section>
   );
 }
@@ -646,7 +673,7 @@ function ProposalDetail({
           proposal.catalogo_actual.producto ??
           `Propuesta ${proposal.c_interno}`
         }
-        description={`${proposalLabels[proposal.tipo]} · ${proposalStatusLabels[proposal.estado]}`}
+        description={`C. interno ${proposal.c_interno}`}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
         format="drawer"
@@ -777,16 +804,23 @@ function ProposalDetail({
           </>
         }
       >
-        <div className="admin-dialog-task">
+        <div className="admin-catalog__proposal-detail">
+          <div className="admin-catalog__proposal-detail-state">
+            <span className="admin-attribute-badge">
+              {proposalLabels[proposal.tipo]}
+            </span>
+            <span
+              className={`admin-status-badge admin-status-badge--${proposalStatusTones[proposal.estado]}`}
+            >
+              {proposalStatusLabels[proposal.estado]}
+            </span>
+          </div>
+
           <ProposalDetailChange proposal={proposal} />
 
           <section className="admin-catalog__dialog-section">
-            <h3>Contexto</h3>
+            <h3>Evidencia</h3>
             <dl className="admin-catalog__proposal-summary">
-              <div>
-                <dt>C. interno</dt>
-                <dd>{proposal.c_interno}</dd>
-              </div>
               <div>
                 <dt>Origen</dt>
                 <dd>{proposalOrigin(proposal)}</dd>
