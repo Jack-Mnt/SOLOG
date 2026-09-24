@@ -566,6 +566,7 @@ function ProposalStateNotice({ proposal }: { proposal: CatalogProposal }) {
     );
   }
 
+  const blockMessage = proposalBlockMessage(proposal.block_reason);
   if (blockMessage) {
     return <AdminNotice tone="error">{blockMessage}</AdminNotice>;
   }
