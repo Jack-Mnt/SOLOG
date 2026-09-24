@@ -649,7 +649,7 @@ function ProposalDetail({
         description={`${proposalLabels[proposal.tipo]} · ${proposalStatusLabels[proposal.estado]}`}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
-        variant="wide"
+        size="wide"
         footer={
           <>
             <button
@@ -933,7 +933,7 @@ function PriceResolutionDialog({
         title="Resolver precio"
         onClose={onClose}
         closeDisabled={!!intent?.pending}
-        variant="wide"
+        size="wide"
       >
         <QueryState {...query} variant="compact" />
       </AdminDialog>
@@ -1264,7 +1264,7 @@ function PriceResolutionContent({
         description={`${targetMember?.producto ?? options.grupo.nombre} · C. interno ${options.c_interno}`}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
-        variant="wide"
+        size="wide"
         footer={
           <>
             <button
@@ -1581,7 +1581,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
       description="Revisa los cambios antes de publicar una nueva versión."
       onClose={closeDialog}
       closeDisabled={!!receipt.pending}
-      variant="wide"
+      size="wide"
       footer={footer}
     >
       <div className="admin-dialog-task">
