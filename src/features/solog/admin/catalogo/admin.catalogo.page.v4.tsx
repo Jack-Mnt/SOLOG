@@ -447,7 +447,7 @@ function ProposalSection({
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={5}>No hay propuestas {title.toLowerCase()}.</td>
+                <td colSpan={4}>No hay propuestas {title.toLowerCase()}.</td>
               </tr>
             )}
           </tbody>
