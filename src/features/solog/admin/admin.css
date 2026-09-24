@@ -1559,6 +1559,7 @@
 
 .admin-catalog__proposal-change-heading > h3 {
   margin: 0;
+  font-size: 0.9rem;
 }
 
 .admin-catalog__proposal-change-heading .admin-status-badge {
