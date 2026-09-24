@@ -202,7 +202,9 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
     expect(ui).toContain('const completed = receipt.result?.completion_recorded === true;')
     expect(ui).toContain('const recoverable = !!receipt.operationId && !completed;')
-    expect(ui).toContain('const footer = completed || !admin ? (')
+    expect(ui).toMatch(
+      /const footer\s*=\s*completed\s*\|\|\s*!admin\s*\?\s*\(/,
+    )
     expect(ui).toContain(
       'Puedes revisar esta publicación, pero solo un administrador puede',
     )
