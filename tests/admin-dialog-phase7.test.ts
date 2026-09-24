@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 const source = (path: string) => Bun.file(path).text()
 
 describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
-  test('Detalle de propuesta usa jerarquía vertical de Drawer y humaniza estados de publicación', async () => {
+  test('Detalle de propuesta usa estado estable, cambio vertical y evidencia compacta', async () => {
     const ui = await source(
       'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
@@ -13,27 +13,56 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
       ui.indexOf('function PriceResolutionDialog'),
     )
 
+    expect(ui).toContain('function ProposalStateNotice')
     expect(ui).toContain('function ProposalDetailChange')
+    expect(ui).toContain('className="admin-catalog__proposal-change-heading"')
     expect(ui).toContain('<h3>Cambio propuesto</h3>')
-    expect(ui).toContain('proposalStatusLabels')
-    expect(ui).toContain('proposalStatusTones')
+    expect(ui).toContain('admin-status-badge--${proposalStatusTones[proposal.estado]}')
     expect(detail).toContain('description={`C. interno ${proposal.c_interno}`}')
-    expect(detail).toContain('className="admin-catalog__proposal-detail-state"')
-    expect(detail).toContain('className="admin-attribute-badge"')
-    expect(detail).toContain('admin-status-badge--${proposalStatusTones[proposal.estado]}')
+    expect(detail).not.toContain('className="admin-catalog__proposal-detail-state"')
+    expect(detail).not.toContain('className="admin-attribute-badge"')
+
+    expect(ui).toContain(
+      'Revisa la propuesta y apruébala para incluirla en la próxima publicación, o ignórala si no requiere acción.',
+    )
+    expect(ui).toContain(
+      'Revisa la propuesta y apruébala para incluirla en la próxima publicación.',
+    )
+    expect(ui).toContain('Esta propuesta ya fue incorporada al Catálogo.')
+    expect(ui).toContain('La propuesta está lista para publicación.')
+    expect(ui).toContain(
+      'Esta evidencia está suprimida. Reactívala para volver a evaluarla.',
+    )
+
+    expect(ui).toContain('admin-catalog__proposal-change-card')
+    expect(ui).toContain('admin-catalog__proposal-change-arrow')
+    expect(ui).toContain('>↓</span>')
+    expect(css).toMatch(
+      /\.admin-catalog__proposal-change-card \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/,
+    )
+    expect(css).not.toContain('.admin-catalog__proposal-change-card--single')
+
     expect(detail).toContain('<h3>Evidencia</h3>')
     expect(detail).not.toContain('<h3>Contexto</h3>')
     expect(detail).not.toContain('<dt>C. interno</dt>')
-    expect(ui).toContain('admin-catalog__proposal-change-card')
-    expect(ui).toContain('admin-catalog__proposal-change-arrow')
+    expect(detail).not.toContain('<dt>Sedes</dt>')
+    expect(detail).not.toContain('<dt>Primera evidencia</dt>')
+    expect(detail).not.toContain('<dt>Última evidencia</dt>')
+    expect(detail).toContain('proposal.origen === "automatico"')
+    expect(detail).toContain(': "Administrativo"')
+    expect(detail).toContain('<dt>Apariciones</dt>')
+    expect(detail).toContain('<dt>Periodo detectado</dt>')
+    expect(detail).toContain('className="admin-catalog__proposal-period-values"')
+    expect(detail).toContain('dateTime={proposal.first_seen_at}')
+    expect(detail).toContain('dateTime={proposal.last_seen_at}')
+
     expect(css).toContain('.admin-catalog__proposal-detail')
-    expect(css).toContain('.admin-catalog__proposal-change-card')
+    expect(css).toContain('.admin-catalog__proposal-period')
+    expect(css).toContain('.admin-catalog__proposal-period-values')
     expect(css).toContain('gap: 24px')
     expect(ui).toContain('blockReasonLabels')
     expect(ui).toContain('configuracion_requerida:')
     expect(ui).toContain('resolucion_precio_requerida:')
-    expect(ui).toContain('<AdminNotice tone="warning">')
-    expect(ui).toContain('<AdminNotice tone="success">')
     expect(ui).not.toContain('<dt>Sección</dt>')
     expect(ui).not.toContain('No publicable:')
   })
