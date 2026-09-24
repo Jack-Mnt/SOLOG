@@ -799,35 +799,47 @@ La normalización de botones, copy y eliminación de `Cerrar` redundante sigue r
 
 ### 9.4D — Refinamiento visual de Detalle de propuesta
 
-**Estado:** PRIMERA PASADA IMPLEMENTADA / PENDIENTE VALIDACIÓN VISUAL.
+**Estado:** SEGUNDA PASADA IMPLEMENTADA / PENDIENTE VALIDACIÓN TÉCNICA Y VISUAL.
 
-Este refinamiento posterior no reabre la lógica funcional de Fase 7 ni modifica el contrato Drawer ya validado. Aprovecha el formato vertical de 720 px para mejorar jerarquía y lectura.
+Este refinamiento posterior no reabre la lógica funcional de Fase 7 ni modifica el contrato Drawer ya validado. Aprovecha el formato vertical de 720 px para mejorar jerarquía, estabilidad visual y lectura responsive.
 
-Primera pasada implementada:
+La segunda pasada reemplaza la composición visual de la primera donde exista contradicción.
+
+Decisiones implementadas:
 
 - Header:
   - título = producto;
-  - descripción = `C. interno {código}`;
-  - tipo y estado dejan de competir con la identidad principal.
-- Inicio del Body:
-  - badge de tipo de propuesta;
-  - badge semántico de estado.
+  - descripción = `C. interno {código}`.
+- El badge de Tipo se elimina del Drawer:
+  - el tipo ya se entiende por el contenido de `Cambio propuesto`;
+  - solo se mantiene el badge de Estado.
+- Todo Drawer muestra una superficie de estado inmediatamente después del Header:
+  - stale → warning de evidencia más reciente;
+  - pendiente automática → instrucción de revisar/aprobar o ignorar;
+  - pendiente administrativa → instrucción de revisar/aprobar;
+  - aprobada publicable → lista para publicación;
+  - aprobada bloqueada → motivo concreto del bloqueo;
+  - aprobada sin estado publicable definitivo → notice informativo;
+  - ignorada → evidencia suprimida/reactivable;
+  - publicada → propuesta ya incorporada al Catálogo.
 - `Cambio propuesto`:
-  - pasa a una superficie visual dominante;
-  - actual → nuevo se presenta con jerarquía propia;
-  - cambios de estado usan una variante de una sola columna.
-- `Contexto` pasa a denominarse `Evidencia`.
-- `C. interno` se elimina de Evidencia porque ya pertenece al Header.
-- Evidencia conserva:
-  - Origen;
-  - Sedes;
-  - Apariciones;
-  - Primera evidencia;
-  - Última evidencia.
-- El Body adopta ritmo vertical de 24 px entre bloques principales.
-- En Mobile, el cambio actual → nuevo se apila verticalmente.
-- Notices permanecen después de Cambio + Evidencia.
-- Footer, acciones, copy de botones y lógica permanecen sin cambios; continúan reservados para 9.6.
+  - heading + badge de Estado en la misma línea;
+  - actual → nuevo usa una composición **siempre vertical**;
+  - precio, nombre y código comparten la misma estructura;
+  - nombres largos pueden envolver sin competir por dos columnas;
+  - cambios de acción simple conservan una sola celda, sin flecha artificial.
+- `Evidencia`:
+  - fusiona Origen + Sedes;
+  - automática → `Origen` muestra las sedes que generaron la evidencia;
+  - administrativa → `Origen = Administrativo`;
+  - `Apariciones` solo se muestra para propuestas automáticas;
+  - `Primera evidencia` y `Última evidencia` se sustituyen por `Periodo detectado`;
+  - `Periodo detectado` solo se muestra para propuestas automáticas;
+  - el periodo presenta inicio → fin en Desktop/Tablet y se apila de forma segura en Mobile.
+- `C. interno` permanece únicamente en Header.
+- El Body mantiene ritmo vertical de 24 px entre bloques principales.
+- Los errores/feedback operativos de mutations permanecen cerca de la zona operativa y no sustituyen el notice de estado.
+- Footer, acciones y copy de botones permanecen sin cambios; continúan reservados para 9.6.
 - Sin cambios backend, contratos, mutations, nesting, foco o geometría de 720 px.
 
 Validación requerida para cerrar este refinamiento:
@@ -837,8 +849,12 @@ Validación requerida para cerrar este refinamiento:
 - build;
 - `git diff --check`;
 - smoke visual Desktop/Tablet/Mobile;
-- verificar propuestas de precio, nombre/código y cambios de estado;
+- verificar propuestas de precio;
+- verificar propuestas de nombre/código con textos largos;
+- verificar cambios de acción simple;
+- verificar origen automático y administrativo;
 - verificar estados pendiente/aprobada/ignorada/publicada;
+- confirmar periodo detectado en automática y ausencia del periodo en administrativa;
 - confirmar que Footer y nesting no presentan regresiones.
 
 ## 9.5 — Kinds
