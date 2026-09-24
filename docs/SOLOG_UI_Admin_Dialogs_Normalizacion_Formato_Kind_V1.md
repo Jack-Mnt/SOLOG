@@ -763,7 +763,7 @@ La validación técnica de 9.3 fue reportada por el usuario como completada con 
 
 ## 9.4 — Formato Drawer
 
-**Estado:** IMPLEMENTADA / PENDIENTE VALIDACIÓN TÉCNICA Y VISUAL.
+**Estado:** CERRADA / VALIDADA TÉCNICA Y VISUALMENTE.
 
 Inventario implementado:
 
@@ -781,15 +781,19 @@ Implementación de Detalle de propuesta:
 - sin cambios CSS adicionales: reutiliza la geometría Drawer ya validada;
 - cobertura dirigida actualizada para exigir los cuatro Drawers y sus anchos.
 
-Queda pendiente antes del cierre de 9.4:
+Validación reportada por el usuario como completada con éxito:
 
 - suite completa;
 - lint;
 - build;
 - `git diff --check`;
-- smoke visual en 1440 / 1024 / 768 / 767 / 430;
-- nesting de dos y tres niveles;
-- foco, scroll, transición y Footer del nuevo Drawer.
+- validación visual;
+- responsive;
+- nesting;
+- foco;
+- scroll;
+- transición;
+- Footer del nuevo Drawer.
 
 La normalización de botones, copy y eliminación de `Cerrar` redundante sigue reservada para 9.6.
 
