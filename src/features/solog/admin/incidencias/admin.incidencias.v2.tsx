@@ -186,7 +186,7 @@ function FamilyDetail({
     <AdminDialog
       title={`Repeticiones · ${typeLabels[family.tipo]}`}
       onClose={onClose}
-      variant="drawer"
+      format="drawer"
       drawerMaxWidth={520}
       footer={footer}
     >
