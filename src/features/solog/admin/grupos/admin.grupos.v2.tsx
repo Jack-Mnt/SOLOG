@@ -104,7 +104,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       description="Crea un grupo de conteo con dos o más SKU del mismo precio."
       onClose={onClose}
       closeDisabled={!!intent?.pending}
-      variant="wide"
+      size="wide"
       footer={
         <>
           <button
