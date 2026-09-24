@@ -237,7 +237,7 @@ export function GroupMembersDialog({
         description={`${group.categoryName} · ${group.memberCount} SKU · ${group.derivedType} · S/ ${group.precio.toFixed(2)}`}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
-        variant="wide"
+        size="wide"
         footer={
           <>
             <button
