@@ -371,7 +371,7 @@ function GroupDetail({
       title={`Cronología por producto · ${siteName}`}
       description="Horas de Lima"
       onClose={close}
-      variant="drawer"
+      format="drawer"
       drawerMaxWidth={560}
       footer={
         <div className="admin-control-chronology__footer-toggle">
