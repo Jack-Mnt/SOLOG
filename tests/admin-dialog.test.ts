@@ -68,7 +68,7 @@ describe('AdminDialog stack', () => {
     expect(source).toContain('event.defaultPrevented')
     expect(source).toContain('!isTop')
     expect(source).toContain('event.stopImmediatePropagation()')
-    expect(source).toContain("inert={!isTop || (variant === 'drawer' && !drawerOpen)}")
+    expect(source).toContain("inert={!isTop || (isDrawer && !drawerOpen)}")
     expect(source).toContain('requestClose()')
     expect(source).toMatch(
       /isTop\s*&&\s*event\.target\s*===\s*event\.currentTarget\s*&&\s*!closeDisabled/,
@@ -100,17 +100,18 @@ describe('AdminDialog stack', () => {
     expect(lock.count()).toBe(0)
   })
 
-  test('AdminDialog conserva Footer por defecto y permite omitirlo con null', async () => {
+  test('AdminDialog omite Footer cuando no recibe acciones explícitas', async () => {
     const source = await Bun.file(
       'src/features/solog/admin/admin.dialog.tsx',
     ).text()
 
     expect(source).toContain("adminDialogScrollLock.lock(document.body)")
-    expect(source).toContain('const resolvedFooter = footer === undefined ? (')
-    expect(source).toContain('resolvedFooter !== null && resolvedFooter !== false')
-    expect(source).toContain('<footer className="admin-dialog__footer">{resolvedFooter}</footer>')
-    expect(source).toContain('button button--secondary')
-    expect(source).toContain('Cerrar')
+    expect(source).toContain('const hasFooter =')
+    expect(source).toContain('footer !== undefined && footer !== null && footer !== false')
+    expect(source).toContain('<footer className="admin-dialog__footer">{footer}</footer>')
+    expect(source).not.toContain('const resolvedFooter')
+    expect(source).not.toContain('button button--secondary')
+    expect(source).toContain('aria-label="Cerrar"')
     expect(source).toContain('onClick={requestClose}')
   })
 
@@ -144,7 +145,7 @@ describe('AdminDialog stack', () => {
     expect(source).toContain('returnFocusRef.current === null')
     expect(focus).toContain('lifecycleRef.current !== lifecycle')
     expect(source).toContain('tabIndex={-1}')
-    expect(source).toContain("(variant === 'drawer' && !drawerOpen)")
+    expect(source).toContain("(isDrawer && !drawerOpen)")
     expect(focus).toContain('button:not([disabled])')
     expect(focus).toContain("event.shiftKey")
     expect(focus).toContain("root.focus({ preventScroll: true })")
