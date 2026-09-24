@@ -799,7 +799,7 @@ La normalización de botones, copy y eliminación de `Cerrar` redundante sigue r
 
 ### 9.4D — Refinamiento visual de Detalle de propuesta
 
-**Estado:** SEGUNDA PASADA IMPLEMENTADA / PENDIENTE VALIDACIÓN TÉCNICA Y VISUAL.
+**Estado:** CERRADA / VALIDADA TÉCNICA Y VISUALMENTE.
 
 Este refinamiento posterior no reabre la lógica funcional de Fase 7 ni modifica el contrato Drawer ya validado. Aprovecha el formato vertical de 720 px para mejorar jerarquía, estabilidad visual y lectura responsive.
 
@@ -842,20 +842,22 @@ Decisiones implementadas:
 - Footer, acciones y copy de botones permanecen sin cambios; continúan reservados para 9.6.
 - Sin cambios backend, contratos, mutations, nesting, foco o geometría de 720 px.
 
-Validación requerida para cerrar este refinamiento:
+Validación de cierre reportada por el usuario como completada con éxito:
 
 - suite;
 - lint;
 - build;
 - `git diff --check`;
 - smoke visual Desktop/Tablet/Mobile;
-- verificar propuestas de precio;
-- verificar propuestas de nombre/código con textos largos;
-- verificar cambios de acción simple;
-- verificar origen automático y administrativo;
-- verificar estados pendiente/aprobada/ignorada/publicada;
-- confirmar periodo detectado en automática y ausencia del periodo en administrativa;
-- confirmar que Footer y nesting no presentan regresiones.
+- propuestas de precio;
+- propuestas de nombre/código con textos largos;
+- cambios de acción simple;
+- origen automático y administrativo;
+- estados pendiente/aprobada/ignorada/publicada;
+- periodo detectado en automática y ausencia del periodo en administrativa;
+- Footer y nesting sin regresiones.
+
+Los ajustes visuales adicionales realizados durante el smoke quedan aceptados como parte del baseline autoritativo de 9.4, siempre que no contradigan los contratos congelados de formato, nesting, foco o backend. No deben reinterpretarse en 9.5 salvo incompatibilidad concreta demostrada.
 
 ## 9.5 — Kinds
 
