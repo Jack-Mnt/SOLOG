@@ -17,8 +17,8 @@ describe("Admin table normalization — Phase 3 Catálogo + Productos", () => {
     expect(catalog).toContain('<th scope="col">Tipo</th>');
     expect(catalog).toContain('<th scope="col">Producto</th>');
     expect(catalog).toContain('<th scope="col">Cambio</th>');
-    expect(catalog).toContain(
-      'className="admin-table-action-cell">Acción</th>',
+    expect(catalog).toMatch(
+      /<th\s+scope="col"\s+className="admin-table-action-cell">\s*Acción\s*<\/th>/,
     );
   });
 
