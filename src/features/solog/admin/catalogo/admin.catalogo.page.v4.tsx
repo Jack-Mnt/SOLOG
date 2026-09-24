@@ -36,10 +36,20 @@ import {
 } from "./admin.catalogo.v4";
 import { adminTimestamp } from "../admin.v2.format";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminBinarySwitch, AdminNotice, AdminPagination, IconButton } from "../admin.primitives";
+import {
+  AdminBinarySwitch,
+  AdminNotice,
+  AdminPagination,
+  IconButton,
+} from "../admin.primitives";
 import { paginateAdminRows } from "../admin.pagination";
 
-type ProposalAction = "approve" | "ignore" | "reactivate" | "withdraw" | "discard";
+type ProposalAction =
+  | "approve"
+  | "ignore"
+  | "reactivate"
+  | "withdraw"
+  | "discard";
 type ProposalSection = "urgent" | "emerging";
 type PriceResolution = "update_group_price" | "separate_sku" | "keep_structure";
 
@@ -91,7 +101,13 @@ const resolutionSwitchOptions = [
   { value: "separate_sku", label: "Separar producto" },
 ] as const;
 
-type PackageAction = "keep" | "clear" | "not_applicable" | "set" | "update" | "";
+type PackageAction =
+  | "keep"
+  | "clear"
+  | "not_applicable"
+  | "set"
+  | "update"
+  | "";
 type PreparedValuation = {
   unidades_por_paquete: number;
   precio_paquete: number;
@@ -102,22 +118,17 @@ const blockReasonLabels: Record<string, string> = {
     "Existe evidencia más reciente. Revisa la propuesta antes de publicar.",
   configuracion_requerida:
     "El producto requiere configuración antes de publicar.",
-  producto_con_stock:
-    "El producto no puede eliminarse mientras tenga stock.",
-  producto_no_encontrado:
-    "El producto ya no está disponible en el Catálogo.",
-  producto_excluido:
-    "El producto está excluido del Catálogo.",
-  grupo_no_disponible:
-    "El grupo actual ya no está disponible.",
+  producto_con_stock: "El producto no puede eliminarse mientras tenga stock.",
+  producto_no_encontrado: "El producto ya no está disponible en el Catálogo.",
+  producto_excluido: "El producto está excluido del Catálogo.",
+  grupo_no_disponible: "El grupo actual ya no está disponible.",
   resolucion_precio_desactualizada:
     "La resolución de precio preparada quedó desactualizada. Vuelve a resolver el cambio.",
   resolucion_precio_requerida:
     "Debes resolver el cambio de precio antes de publicar.",
   decision_precio_paquete_requerida:
     "Debes definir el valorizado por paquete antes de publicar.",
-  precio_paquete_invalido:
-    "El precio por paquete preparado no es válido.",
+  precio_paquete_invalido: "El precio por paquete preparado no es válido.",
 };
 
 function proposalBlockMessage(reason: string | null) {
@@ -138,10 +149,6 @@ function proposalSetupPrice(proposal: CatalogProposal): number | null {
   if (proposal.tipo === "agregar_producto") return proposed;
   if (proposal.tipo === "reincorporar_producto") return current ?? proposed;
   return current ?? proposed;
-}
-
-function proposalOrigin(proposal: CatalogProposal) {
-  return proposal.origen === "automatico" ? "Automático" : "Administrativo";
 }
 
 function preparedText(
@@ -240,19 +247,36 @@ function ProposalsSurface() {
     void store
       .mutation(
         "proposal_action",
-        { propuesta_fingerprint: proposal.propuesta_fingerprint, action: "approve" },
+        {
+          propuesta_fingerprint: proposal.propuesta_fingerprint,
+          action: "approve",
+        },
         { proposal },
       )
       .catch((reason: unknown) =>
-        setError(catalogMutationError(store, reason, "No se pudo aprobar la propuesta.")),
+        setError(
+          catalogMutationError(
+            store,
+            reason,
+            "No se pudo aprobar la propuesta.",
+          ),
+        ),
       );
   };
 
   const retry = () => {
     setError("");
-    void store.retryMutation().catch((reason: unknown) =>
-      setError(catalogMutationError(store, reason, "No se pudo confirmar la aprobación.")),
-    );
+    void store
+      .retryMutation()
+      .catch((reason: unknown) =>
+        setError(
+          catalogMutationError(
+            store,
+            reason,
+            "No se pudo confirmar la aprobación.",
+          ),
+        ),
+      );
   };
 
   const setupPrice = approval ? proposalSetupPrice(approval) : null;
@@ -406,8 +430,9 @@ function ProposalSection({
               <th scope="col">Tipo</th>
               <th scope="col">Producto</th>
               <th scope="col">Cambio</th>
-              <th scope="col">Origen</th>
-              <th scope="col" className="admin-table-action-cell">Acción</th>
+              <th scope="col" className="admin-table-action-cell">
+                Acción
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -487,7 +512,6 @@ function ProposalRow({
   pending: boolean;
 }) {
   const product = proposal.producto ?? proposal.catalogo_actual.producto ?? "—";
-  const origin = proposalOrigin(proposal);
   return (
     <tr>
       <td>{proposalLabels[proposal.tipo]}</td>
@@ -501,9 +525,6 @@ function ProposalRow({
       </th>
       <td className="admin-catalog__change">
         <ProposalChange proposal={proposal} />
-      </td>
-      <td>
-        <span className="admin-attribute-badge">{origin}</span>
       </td>
       <td className="admin-table-action-cell">
         <div className="admin-table-actions">
@@ -544,8 +565,8 @@ function ProposalStateNotice({ proposal }: { proposal: CatalogProposal }) {
     return (
       <AdminNotice tone="info">
         {proposal.origen === "automatico"
-          ? "Revisa la propuesta y apruébala para incluirla en la próxima publicación, o ignórala si no requiere acción."
-          : "Revisa la propuesta y apruébala para incluirla en la próxima publicación."}
+          ? "Aprueba la propuesta para incluirla en la próxima publicación, o ignórala si no requiere acción."
+          : "Aprueba la propuesta para incluirla en la próxima publicación."}
       </AdminNotice>
     );
   }
@@ -600,7 +621,9 @@ function ProposalDetailChange({ proposal }: { proposal: CatalogProposal }) {
           <>
             <div className="admin-catalog__proposal-change-item">
               <span>Precio actual</span>
-              <strong><Value value={change.previous} money /></strong>
+              <strong>
+                <Value value={change.previous} money />
+              </strong>
             </div>
             <span
               className="admin-catalog__proposal-change-arrow"
@@ -610,7 +633,9 @@ function ProposalDetailChange({ proposal }: { proposal: CatalogProposal }) {
             </span>
             <div className="admin-catalog__proposal-change-item">
               <span>Precio nuevo</span>
-              <strong><Value value={change.next} money /></strong>
+              <strong>
+                <Value value={change.next} money />
+              </strong>
             </div>
           </>
         ) : change.kind === "text" ? (
@@ -715,10 +740,8 @@ function ProposalDetail({
               : "agregar_producto",
         }
       : null;
-  const blockMessage = proposalBlockMessage(proposal.block_reason);
   const complexPending =
-    proposal.estado === "pendiente" &&
-    (canSetup || proposal.tipo === "precio");
+    proposal.estado === "pendiente" && (canSetup || proposal.tipo === "precio");
 
   return (
     <>
@@ -789,17 +812,18 @@ function ProposalDetail({
                 )}
               </>
             )}
-            {proposal.estado === "ignorado" && proposal.origen === "automatico" && (
-              <button
-                type="button"
-                className="button"
-                disabled={!!intent}
-                onClick={() => run("reactivate")}
-              >
-                <RotateCcw size={16} aria-hidden="true" />
-                Reactivar
-              </button>
-            )}
+            {proposal.estado === "ignorado" &&
+              proposal.origen === "automatico" && (
+                <button
+                  type="button"
+                  className="button"
+                  disabled={!!intent}
+                  onClick={() => run("reactivate")}
+                >
+                  <RotateCcw size={16} aria-hidden="true" />
+                  Reactivar
+                </button>
+              )}
             {proposal.estado === "aprobado" && (
               <>
                 <button
@@ -906,12 +930,14 @@ function ProposalDetail({
             </dl>
           </section>
 
-          {canSetup && !setupTarget && (proposal.estado === "aprobado" || complexPending) && (
-            <AdminNotice tone="error">
-              La propuesta no contiene un precio válido para configurar el
-              producto.
-            </AdminNotice>
-          )}
+          {canSetup &&
+            !setupTarget &&
+            (proposal.estado === "aprobado" || complexPending) && (
+              <AdminNotice tone="error">
+                La propuesta no contiene un precio válido para configurar el
+                producto.
+              </AdminNotice>
+            )}
 
           {intent && !setup && !price && !discard && (
             <CatalogMutationNotice onRetry={retry} />
@@ -967,7 +993,8 @@ function ProposalDetail({
           }
         >
           <AdminNotice tone="warning">
-            El historial se conservará en backend, pero esta instancia no podrá reactivarse.
+            El historial se conservará en backend, pero esta instancia no podrá
+            reactivarse.
           </AdminNotice>
         </AdminDialog>
       )}
@@ -1098,8 +1125,9 @@ function PriceResolutionContent({
         }
       : null;
 
-  const [resolution, setResolution] =
-    useState<PriceResolution | "">(initialResolution);
+  const [resolution, setResolution] = useState<PriceResolution | "">(
+    initialResolution,
+  );
   const [packageAction, setPackageAction] =
     useState<PackageAction>(initialPackageAction);
   const [preparedValuation, setPreparedValuation] =
@@ -1141,11 +1169,11 @@ function PriceResolutionContent({
     package_action: packageAction,
     unidades_por_paquete:
       packageAction === "set" || packageAction === "update"
-        ? preparedValuation?.unidades_por_paquete ?? null
+        ? (preparedValuation?.unidades_por_paquete ?? null)
         : null,
     precio_paquete:
       packageAction === "set" || packageAction === "update"
-        ? preparedValuation?.precio_paquete ?? null
+        ? (preparedValuation?.precio_paquete ?? null)
         : null,
   });
   const preparedComparable = prepared
@@ -1154,11 +1182,11 @@ function PriceResolutionContent({
         package_action: preparedPackageAction,
         unidades_por_paquete:
           preparedPackageAction === "set" || preparedPackageAction === "update"
-            ? initialPreparedValuation?.unidades_por_paquete ?? null
+            ? (initialPreparedValuation?.unidades_por_paquete ?? null)
             : null,
         precio_paquete:
           preparedPackageAction === "set" || preparedPackageAction === "update"
-            ? initialPreparedValuation?.precio_paquete ?? null
+            ? (initialPreparedValuation?.precio_paquete ?? null)
             : null,
       })
     : null;
@@ -1190,7 +1218,10 @@ function PriceResolutionContent({
       );
       return;
     }
-    if (resolution === "update_group_price" && options.conflicting_proposals.length) {
+    if (
+      resolution === "update_group_price" &&
+      options.conflicting_proposals.length
+    ) {
       reportError(
         "El grupo contiene propuestas de precio incompatibles. Revisa las diferencias antes de actualizar todo el grupo.",
       );
@@ -1207,7 +1238,9 @@ function PriceResolutionContent({
     type MutationInput<T> = T extends unknown
       ? Omit<
           T,
-          "operation_id" | "expected_catalog_revision" | "expected_groups_revision"
+          | "operation_id"
+          | "expected_catalog_revision"
+          | "expected_groups_revision"
         >
       : never;
     type PriceMutationInput = MutationInput<CatalogMutations["resolve_price"]>;
@@ -1227,9 +1260,7 @@ function PriceResolutionContent({
               propuesta_fingerprint: fingerprint,
               resolution: "separate_sku",
               package_action:
-                nextPackageAction === "clear"
-                  ? "clear"
-                  : "not_applicable",
+                nextPackageAction === "clear" ? "clear" : "not_applicable",
             };
     } else {
       const groupedResolution: "update_group_price" | "keep_structure" =
@@ -1311,8 +1342,7 @@ function PriceResolutionContent({
   };
 
   const valuationInitial =
-    (packageAction === "set" || packageAction === "update") &&
-    preparedValuation
+    (packageAction === "set" || packageAction === "update") && preparedValuation
       ? {
           unitsPerPackage: preparedValuation.unidades_por_paquete,
           packagePrice: preparedValuation.precio_paquete,
@@ -1357,9 +1387,7 @@ function PriceResolutionContent({
               ) : (
                 <Save size={16} aria-hidden="true" />
               )}
-              {flow === "resolve"
-                ? "Resolver y aprobar"
-                : "Guardar resolución"}
+              {flow === "resolve" ? "Resolver y aprobar" : "Guardar resolución"}
             </button>
           </>
         }
@@ -1589,17 +1617,8 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
     void store.publish().catch(() => {});
   };
 
-  const footer = completed || !admin ? (
-    <button
-      type="button"
-      className="button button--secondary"
-      disabled={!!receipt.pending}
-      onClick={closeDialog}
-    >
-      Cerrar
-    </button>
-  ) : recoverable ? (
-    <>
+  const footer =
+    completed || !admin ? (
       <button
         type="button"
         className="button button--secondary"
@@ -1608,37 +1627,47 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
       >
         Cerrar
       </button>
-      <button
-        type="button"
-        className="button"
-        disabled={!!receipt.pending}
-        onClick={publish}
-      >
-        <RotateCcw size={16} aria-hidden="true" />
-        {receipt.pending ? "Confirmando…" : "Recuperar publicación"}
-      </button>
-    </>
-  ) : (
-    <>
-      <button
-        type="button"
-        className="button button--secondary"
-        disabled={!!receipt.pending}
-        onClick={closeDialog}
-      >
-        Cancelar
-      </button>
-      <button
-        type="button"
-        className="button"
-        disabled={!!receipt.pending || !preview?.ok}
-        onClick={publish}
-      >
-        <Upload size={16} aria-hidden="true" />
-        {receipt.pending ? "Publicando…" : "Publicar catálogo"}
-      </button>
-    </>
-  );
+    ) : recoverable ? (
+      <>
+        <button
+          type="button"
+          className="button button--secondary"
+          disabled={!!receipt.pending}
+          onClick={closeDialog}
+        >
+          Cerrar
+        </button>
+        <button
+          type="button"
+          className="button"
+          disabled={!!receipt.pending}
+          onClick={publish}
+        >
+          <RotateCcw size={16} aria-hidden="true" />
+          {receipt.pending ? "Confirmando…" : "Recuperar publicación"}
+        </button>
+      </>
+    ) : (
+      <>
+        <button
+          type="button"
+          className="button button--secondary"
+          disabled={!!receipt.pending}
+          onClick={closeDialog}
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          className="button"
+          disabled={!!receipt.pending || !preview?.ok}
+          onClick={publish}
+        >
+          <Upload size={16} aria-hidden="true" />
+          {receipt.pending ? "Publicando…" : "Publicar catálogo"}
+        </button>
+      </>
+    );
 
   return (
     <AdminDialog
