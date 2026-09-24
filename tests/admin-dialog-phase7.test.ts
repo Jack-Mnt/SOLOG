@@ -23,10 +23,10 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
     expect(detail).not.toContain('className="admin-attribute-badge"')
 
     expect(ui).toContain(
-      'Revisa la propuesta y apruébala para incluirla en la próxima publicación, o ignórala si no requiere acción.',
+      'Aprueba la propuesta para incluirla en la próxima publicación, o ignórala si no requiere acción.',
     )
     expect(ui).toContain(
-      'Revisa la propuesta y apruébala para incluirla en la próxima publicación.',
+      'Aprueba la propuesta para incluirla en la próxima publicación.',
     )
     expect(ui).toContain('Esta propuesta ya fue incorporada al Catálogo.')
     expect(ui).toContain('La propuesta está lista para publicación.')
@@ -65,6 +65,8 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
     expect(ui).toContain('resolucion_precio_requerida:')
     expect(ui).not.toContain('<dt>Sección</dt>')
     expect(ui).not.toContain('No publicable:')
+    expect(ui).toContain('<td colSpan={4}>No hay propuestas {title.toLowerCase()}.</td>')
+    expect(ui).not.toContain('<td colSpan={5}>No hay propuestas {title.toLowerCase()}.</td>')
   })
 
   test('Configurar producto recibe el precio propuesto y nunca usa cero silencioso', async () => {
