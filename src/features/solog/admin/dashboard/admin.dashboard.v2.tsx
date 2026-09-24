@@ -158,7 +158,7 @@ function DailyDrawer({
       title={`Detalle diario · ${siteName}`}
       description={`${dashboardDate(date)} · Estado vigente de los conteos de esta fecha.`}
       onClose={close}
-      variant="drawer"
+      format="drawer"
       drawerMaxWidth={620}
       footer={
         data ? (
