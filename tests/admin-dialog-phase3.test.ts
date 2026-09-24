@@ -47,17 +47,17 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
     )
 
     expect(control).toMatch(
-      /title=\{`Cronología por producto · \$\{siteName\}`\}[\s\S]*?variant="drawer"/,
+      /title=\{`Cronología por producto · \$\{siteName\}`\}[\s\S]*?format="drawer"/,
     )
     expect(control).toContain('className="admin-control-chronology"')
     expect(control).not.toContain('actualButton')
     expect(control).not.toContain("closest('[role=\"dialog\"]')")
 
     expect(incidents).toMatch(
-      /title=\{`Repeticiones · \$\{typeLabels\[family\.tipo\]\}`\}[\s\S]*?variant="drawer"/,
+      /title=\{`Repeticiones · \$\{typeLabels\[family\.tipo\]\}`\}[\s\S]*?format="drawer"/,
     )
     expect(dashboard).toMatch(
-      /title=\{`Detalle diario · \$\{siteName\}`\}[\s\S]*?variant="drawer"/,
+      /title=\{`Detalle diario · \$\{siteName\}`\}[\s\S]*?format="drawer"/,
     )
   })
 
@@ -84,7 +84,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
       'src/features/solog/admin/productos/admin.product-setup.dialog.tsx',
     )
 
-    expect(setup).not.toContain('variant="wide"')
+    expect(setup).not.toContain('size="wide"')
     expect(setup).toContain('id="admin-product-setup-form"')
     expect(setup).toContain('form="admin-product-setup-form"')
     expect(setup).toContain('type="submit"')
