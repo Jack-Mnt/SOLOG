@@ -157,7 +157,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
         description="Crea, renombra y define el orden operativo de las categorías."
         onClose={requestClose}
         closeDisabled={!!intent?.pending}
-        variant="wide"
+        size="wide"
         footer={
           <>
             <button
