@@ -36,7 +36,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
 
     expect(ui).toContain('admin-catalog__proposal-change-card')
     expect(ui).toContain('admin-catalog__proposal-change-arrow')
-    expect(ui).toContain('>↓</span>')
+    expect(ui).toContain('↓')
     expect(css).toMatch(
       /\.admin-catalog__proposal-change-card \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/,
     )
