@@ -4,7 +4,7 @@
 Nivel B — limpieza backend dirigida y acotada.
 
 ## Estado
-Decisión aprobada para implementación.
+Bloque implementado y cerrado.
 
 ## Fuente primaria
 Este documento es la fuente primaria de este bloque independiente de limpieza backend.
@@ -56,3 +56,35 @@ La limpieza frontend será independiente y deberá retirar primero consumidores/
 - Master V2 residual;
 - Groups Read V1 residual;
 - tipos/validadores/branches legacy de Control.
+
+
+## Evidencia de ejecución
+
+### Preflight inmediato
+- Las cuatro funciones existían antes del cambio.
+- Callers SQL detectados: 0.
+- Triggers asociados: 0.
+- Cron asociado: 0.
+- Referencias en Edge Functions desplegadas: 0.
+- No se detectaron llamadas PostgREST a las RPC públicas Catálogo V3 en la ventana de 24 h revisada.
+
+### Migración aplicada
+Migración Supabase:
+`remove_safe_admin_legacy_functions`
+
+Se ejecutaron únicamente los cuatro `DROP FUNCTION` aprobados, sin `CASCADE`.
+
+### Validación posterior
+- Las cuatro funciones eliminadas ya no existen.
+- `public.rpc_solog_admin_catalog_read_v4` y `public.rpc_solog_admin_catalog_v4`: vigentes.
+- `inventario.solog_admin_catalog_read_v4` y `inventario.solog_admin_catalog_mutate_v4`: vigentes.
+- `public.rpc_solog_admin_incidents_v2`: vigente.
+- `public.rpc_solog_admin_groups_read_v1` y `public.rpc_solog_admin_groups_v1`: vigentes.
+- `public.rpc_solog_admin_masterdata_read_v1` y `public.rpc_solog_admin_masterdata_v1`: vigentes.
+- `public.rpc_solog_operational_v2`: vigente.
+- RPC principales de ConeXion verificadas: vigentes.
+- Referencias residuales en cuerpos de funciones SQL hacia los cuatro objetos eliminados: 0.
+- Advisors Supabase ejecutados; no se identificó un hallazgo nuevo atribuible a esta eliminación. Los avisos preexistentes quedan fuera de alcance.
+
+## Cierre
+Este bloque backend queda cerrado. Cualquier limpieza adicional de Master V2, Groups Read V1 o acciones legacy de Control requiere primero retirar sus residuos frontend/contrato y volver a comprobar consumidores antes de modificar Supabase.
