@@ -31,7 +31,7 @@ describe('AdminDialog Fase 6 — gestión wide', () => {
     )
 
     expect(groups).toContain('title="Crear grupo"')
-    expect(groups).toContain('variant="wide"')
+    expect(groups).toContain('size="wide"')
     expect(groups).toContain('className="admin-group-create__fields"')
     expect(groups).toContain('<h3>Integrantes</h3>')
     expect(groups).toContain(
