@@ -531,14 +531,70 @@ function ProposalRow({
   );
 }
 
+function ProposalStateNotice({ proposal }: { proposal: CatalogProposal }) {
+  if (proposal.stale) {
+    return (
+      <AdminNotice tone="warning">
+        Existe evidencia más reciente. Revisa la propuesta antes de publicar.
+      </AdminNotice>
+    );
+  }
+
+  if (proposal.estado === "pendiente") {
+    return (
+      <AdminNotice tone="info">
+        {proposal.origen === "automatico"
+          ? "Revisa la propuesta y apruébala para incluirla en la próxima publicación, o ignórala si no requiere acción."
+          : "Revisa la propuesta y apruébala para incluirla en la próxima publicación."}
+      </AdminNotice>
+    );
+  }
+
+  if (proposal.estado === "ignorado") {
+    return (
+      <AdminNotice tone="info">
+        Esta evidencia está suprimida. Reactívala para volver a evaluarla.
+      </AdminNotice>
+    );
+  }
+
+  if (proposal.estado === "incorporado") {
+    return (
+      <AdminNotice tone="success">
+        Esta propuesta ya fue incorporada al Catálogo.
+      </AdminNotice>
+    );
+  }
+
+  if (blockMessage) {
+    return <AdminNotice tone="error">{blockMessage}</AdminNotice>;
+  }
+
+  return proposal.publicable ? (
+    <AdminNotice tone="success">
+      La propuesta está lista para publicación.
+    </AdminNotice>
+  ) : (
+    <AdminNotice tone="info">
+      La propuesta está aprobada; el estado de publicación aún no está
+      disponible.
+    </AdminNotice>
+  );
+}
+
 function ProposalDetailChange({ proposal }: { proposal: CatalogProposal }) {
   const change = catalogProposalChange(proposal);
   return (
     <section className="admin-catalog__dialog-section admin-catalog__proposal-change-section">
-      <h3>Cambio propuesto</h3>
-      <div
-        className={`admin-catalog__proposal-change-card${change.kind === "label" ? " admin-catalog__proposal-change-card--single" : ""}`}
-      >
+      <div className="admin-catalog__proposal-change-heading">
+        <h3>Cambio propuesto</h3>
+        <span
+          className={`admin-status-badge admin-status-badge--${proposalStatusTones[proposal.estado]}`}
+        >
+          {proposalStatusLabels[proposal.estado]}
+        </span>
+      </div>
+      <div className="admin-catalog__proposal-change-card">
         {change.kind === "price" ? (
           <>
             <div className="admin-catalog__proposal-change-item">
@@ -549,7 +605,7 @@ function ProposalDetailChange({ proposal }: { proposal: CatalogProposal }) {
               className="admin-catalog__proposal-change-arrow"
               aria-hidden="true"
             >
-              →
+              ↓
             </span>
             <div className="admin-catalog__proposal-change-item">
               <span>Precio nuevo</span>
@@ -568,7 +624,7 @@ function ProposalDetailChange({ proposal }: { proposal: CatalogProposal }) {
               className="admin-catalog__proposal-change-arrow"
               aria-hidden="true"
             >
-              →
+              ↓
             </span>
             <div className="admin-catalog__proposal-change-item">
               <span>
@@ -638,8 +694,6 @@ function ProposalDetail({
       );
   };
 
-  const blocked =
-    proposal.estado === "aprobado" && proposal.block_reason !== null;
   const canSetup =
     proposal.tipo === "agregar_producto" ||
     proposal.tipo === "reincorporar_producto";
@@ -805,16 +859,7 @@ function ProposalDetail({
         }
       >
         <div className="admin-catalog__proposal-detail">
-          <div className="admin-catalog__proposal-detail-state">
-            <span className="admin-attribute-badge">
-              {proposalLabels[proposal.tipo]}
-            </span>
-            <span
-              className={`admin-status-badge admin-status-badge--${proposalStatusTones[proposal.estado]}`}
-            >
-              {proposalStatusLabels[proposal.estado]}
-            </span>
-          </div>
+          <ProposalStateNotice proposal={proposal} />
 
           <ProposalDetailChange proposal={proposal} />
 
@@ -823,58 +868,42 @@ function ProposalDetail({
             <dl className="admin-catalog__proposal-summary">
               <div>
                 <dt>Origen</dt>
-                <dd>{proposalOrigin(proposal)}</dd>
-              </div>
-              <div>
-                <dt>Sedes</dt>
                 <dd>
-                  {proposal.sedes.length
-                    ? proposal.sedes.map((site) => site.nombre).join(", ")
-                    : "Sin sedes asociadas"}
+                  {proposal.origen === "automatico"
+                    ? proposal.sedes.length
+                      ? proposal.sedes.map((site) => site.nombre).join(", ")
+                      : "Sin sedes asociadas"
+                    : "Administrativo"}
                 </dd>
               </div>
-              <div>
-                <dt>Apariciones</dt>
-                <dd>{proposal.occurrence_count}</dd>
-              </div>
-              <div>
-                <dt>Primera evidencia</dt>
-                <dd>{adminTimestamp(proposal.first_seen_at)}</dd>
-              </div>
-              <div>
-                <dt>Última evidencia</dt>
-                <dd>{adminTimestamp(proposal.last_seen_at)}</dd>
-              </div>
+
+              {proposal.origen === "automatico" && (
+                <>
+                  <div>
+                    <dt>Apariciones</dt>
+                    <dd>{proposal.occurrence_count}</dd>
+                  </div>
+                  <div className="admin-catalog__proposal-period">
+                    <dt>Periodo detectado</dt>
+                    <dd className="admin-catalog__proposal-period-values">
+                      <time dateTime={proposal.first_seen_at}>
+                        {adminTimestamp(proposal.first_seen_at)}
+                      </time>
+                      <span
+                        className="admin-catalog__proposal-period-arrow"
+                        aria-hidden="true"
+                      >
+                        →
+                      </span>
+                      <time dateTime={proposal.last_seen_at}>
+                        {adminTimestamp(proposal.last_seen_at)}
+                      </time>
+                    </dd>
+                  </div>
+                </>
+              )}
             </dl>
           </section>
-
-          {proposal.stale && (
-            <AdminNotice tone="warning">
-              Existe evidencia más reciente. Revisa la propuesta antes de
-              publicar.
-            </AdminNotice>
-          )}
-
-          {proposal.estado === "aprobado" &&
-            !proposal.stale &&
-            (blocked && blockMessage ? (
-              <AdminNotice tone="error">{blockMessage}</AdminNotice>
-            ) : proposal.publicable ? (
-              <AdminNotice tone="success">
-                La propuesta está lista para publicación.
-              </AdminNotice>
-            ) : (
-              <AdminNotice tone="info">
-                La propuesta está aprobada; el estado de publicación aún no está
-                disponible.
-              </AdminNotice>
-            ))}
-
-          {proposal.estado === "ignorado" && (
-            <AdminNotice tone="info">
-              Esta evidencia está suprimida. Reactívala para volver a evaluarla.
-            </AdminNotice>
-          )}
 
           {canSetup && !setupTarget && (proposal.estado === "aprobado" || complexPending) && (
             <AdminNotice tone="error">
