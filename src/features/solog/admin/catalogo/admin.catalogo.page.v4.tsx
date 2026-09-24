@@ -537,7 +537,7 @@ function ProposalDetailChange({ proposal }: { proposal: CatalogProposal }) {
     <section className="admin-catalog__dialog-section admin-catalog__proposal-change-section">
       <h3>Cambio propuesto</h3>
       <div
-        className={`admin-catalog__proposal-change-card${change.kind === "action" ? " admin-catalog__proposal-change-card--single" : ""}`}
+        className={`admin-catalog__proposal-change-card${change.kind === "label" ? " admin-catalog__proposal-change-card--single" : ""}`}
       >
         {change.kind === "price" ? (
           <>
