@@ -732,13 +732,34 @@ El §9 de `SOLOG_UI_Admin_Dialogs_Modals_Drawers_Plan_V1.md` queda reemplazado p
 
 ## 9.3 — Foundation AdminDialog
 
-Objetivo:
+**Estado:** IMPLEMENTADA / PENDIENTE VALIDACIÓN TÉCNICA FORMAL.
 
-- migrar la primitive a `format + size + kind`;
-- retirar generación automática de `Cerrar`;
-- mantener exactamente foco/stack/Escape/backdrop/scroll lock;
-- preparar ownership estructural de clases;
-- no migrar todavía comportamiento funcional de consumidores fuera de lo mínimo necesario.
+Implementado:
+
+- `AdminDialogVariant` retirado de la primitive;
+- nueva API `format + size + kind`;
+- unión TypeScript que impide combinar Drawer con `size`, `kind` o geometría de Dialog;
+- `drawerMaxWidth` reservado a `format="drawer"`;
+- consumidores existentes migrados mecánicamente:
+  - `variant="wide"` → `size="wide"`;
+  - `variant="drawer"` → `format="drawer"`;
+- `kind` preparado como clase estructural propiedad de `AdminDialog`;
+- Footer pasa a ser estrictamente explícito;
+- retirada la generación automática del botón `Cerrar`;
+- la X del Header permanece como cierre común;
+- lifecycle Drawer, transición, reduced-motion, focus, stack, Escape, backdrop, inert y scroll lock preservados;
+- anchos de Drawers existentes preservados;
+- CSS estructural existente conservado para evitar cambios visuales prematuros;
+- añadida cobertura dirigida de Fase 9.3.
+
+No se ha migrado todavía:
+
+- Detalle de propuesta a Drawer — corresponde a 9.4;
+- `kind="confirmation"`, `task` y `management` en consumidores — corresponde a 9.5;
+- Buttons/IconButtons/Footer — corresponde a 9.6;
+- consolidación visual — corresponde a 9.7.
+
+La validación completa de suite, lint, build y `git diff --check` continúa pendiente antes de cerrar 9.3.
 
 ## 9.4 — Formato Drawer
 
