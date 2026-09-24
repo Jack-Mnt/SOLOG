@@ -1549,27 +1549,31 @@
   gap: 24px;
 }
 
-.admin-catalog__proposal-detail-state {
+.admin-catalog__proposal-change-heading {
+  min-width: 0;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-catalog__proposal-change-heading > h3 {
+  margin: 0;
+}
+
+.admin-catalog__proposal-change-heading .admin-status-badge {
+  flex: 0 0 auto;
 }
 
 .admin-catalog__proposal-change-card {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   padding: 16px;
   border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
   border-radius: 12px;
   background: var(--color-primary-subtle);
-}
-
-.admin-catalog__proposal-change-card--single {
-  grid-template-columns: minmax(0, 1fr);
 }
 
 .admin-catalog__proposal-change-item {
@@ -1593,6 +1597,7 @@
 }
 
 .admin-catalog__proposal-change-arrow {
+  justify-self: center;
   color: var(--color-primary);
   font-size: 1.25rem;
   font-weight: 700;
@@ -1602,7 +1607,7 @@
 .admin-catalog__proposal-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
+  gap: 12px 24px;
   margin: 0 0 16px;
 }
 .admin-catalog__proposal-summary div {
@@ -1616,6 +1621,38 @@
   margin: 2px 0 0;
   font-size: 0.88rem;
   overflow-wrap: anywhere;
+}
+
+.admin-catalog__proposal-period {
+  grid-column: 1 / -1;
+}
+
+.admin-catalog__proposal-period-values {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: max-content minmax(48px, 1fr) max-content;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-catalog__proposal-period-values time {
+  white-space: nowrap;
+}
+
+.admin-catalog__proposal-period-arrow {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.admin-catalog__proposal-period-arrow::before {
+  content: "";
+  min-width: 0;
+  flex: 1 1 auto;
+  border-top: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
 }
 
 .admin-catalog__dialog-section {
@@ -1732,18 +1769,18 @@
     grid-template-columns: 1fr;
   }
 
-  .admin-catalog__proposal-change-card {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+  .admin-catalog__proposal-period-values {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
-  .admin-catalog__proposal-change-arrow {
-    justify-self: start;
+  .admin-catalog__proposal-period-arrow {
+    width: fit-content;
     transform: rotate(90deg);
   }
 
-  .admin-catalog__proposal-change-card--single .admin-catalog__proposal-change-arrow {
-    transform: none;
+  .admin-catalog__proposal-period-arrow::before {
+    display: none;
   }
 
   .admin-catalog__price-summary {
