@@ -219,11 +219,11 @@ Se conserva el contrato ya validado:
 | Incidencias · Repeticiones | `drawer` | 520 px |
 | Control · Cronología | `drawer` | 560 px |
 | Dashboard · Detalle diario | `drawer` | 620 px |
-| Catálogo · Detalle de propuesta | `drawer` | pendiente de validación visual en 9.4 |
+| Catálogo · Detalle de propuesta | `drawer` | 720 px |
 
 Los anchos 520/560/620 px permanecen congelados por sus fuentes previas.
 
-El ancho de Detalle de propuesta **no se congela en 9.2**. Debe probarse visualmente en 9.4 dentro del máximo global de 960 px.
+El ancho de Detalle de propuesta queda congelado en **720 px** por decisión aprobada al iniciar la implementación de 9.4. Respeta el máximo global de 960 px y deja 48 px de contexto a 768 px de viewport.
 
 ## 5.4. Delta — Detalle de propuesta
 
@@ -732,7 +732,7 @@ El §9 de `SOLOG_UI_Admin_Dialogs_Modals_Drawers_Plan_V1.md` queda reemplazado p
 
 ## 9.3 — Foundation AdminDialog
 
-**Estado:** IMPLEMENTADA / PENDIENTE VALIDACIÓN TÉCNICA FORMAL.
+**Estado:** CERRADA / VALIDADA TÉCNICAMENTE.
 
 Implementado:
 
@@ -759,24 +759,39 @@ No se ha migrado todavía:
 - Buttons/IconButtons/Footer — corresponde a 9.6;
 - consolidación visual — corresponde a 9.7.
 
-La validación completa de suite, lint, build y `git diff --check` continúa pendiente antes de cerrar 9.3.
+La validación técnica de 9.3 fue reportada por el usuario como completada con éxito: suite, lint, build y `git diff --check`. La fase queda cerrada.
 
 ## 9.4 — Formato Drawer
 
-Migrar y revisar juntos:
+**Estado:** IMPLEMENTADA / PENDIENTE VALIDACIÓN TÉCNICA Y VISUAL.
 
-1. Repeticiones;
-2. Cronología;
-3. Detalle diario;
-4. Detalle de propuesta.
+Inventario implementado:
 
-Incluye:
+1. Repeticiones — `format="drawer"`, 520 px;
+2. Cronología — `format="drawer"`, 560 px;
+3. Detalle diario — `format="drawer"`, 620 px;
+4. Detalle de propuesta — `format="drawer"`, 720 px.
 
-- delta `wide → drawer` de Detalle de propuesta;
-- ancho visual final de Detalle de propuesta;
-- Footer/navegación;
-- nesting;
-- responsive.
+Implementación de Detalle de propuesta:
+
+- reemplazado `size="wide"` por `format="drawer"`;
+- fijado `drawerMaxWidth={720}`;
+- Body, Footer, lógica funcional, estados, notices y nesting preservados;
+- sin cambios backend ni de contratos;
+- sin cambios CSS adicionales: reutiliza la geometría Drawer ya validada;
+- cobertura dirigida actualizada para exigir los cuatro Drawers y sus anchos.
+
+Queda pendiente antes del cierre de 9.4:
+
+- suite completa;
+- lint;
+- build;
+- `git diff --check`;
+- smoke visual en 1440 / 1024 / 768 / 767 / 430;
+- nesting de dos y tres niveles;
+- foco, scroll, transición y Footer del nuevo Drawer.
+
+La normalización de botones, copy y eliminación de `Cerrar` redundante sigue reservada para 9.6.
 
 ## 9.5 — Kinds
 
@@ -915,6 +930,6 @@ acción compacta/contextual
 especialmente apto para abrir Confirmation
 ```
 
-Detalle de propuesta queda aprobado como Drawer; su ancho exacto se resolverá mediante validación visual en Fase 9.4.
+Detalle de propuesta queda aprobado como Drawer de 720 px; la validación visual de 9.4 confirmará que la geometría congelada no introduce desviaciones.
 
 > **Fase 9.2 — Contrato de normalización: COMPLETADA Y CONGELADA.**
