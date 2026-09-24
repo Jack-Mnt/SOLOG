@@ -797,6 +797,50 @@ Validación reportada por el usuario como completada con éxito:
 
 La normalización de botones, copy y eliminación de `Cerrar` redundante sigue reservada para 9.6.
 
+### 9.4D — Refinamiento visual de Detalle de propuesta
+
+**Estado:** PRIMERA PASADA IMPLEMENTADA / PENDIENTE VALIDACIÓN VISUAL.
+
+Este refinamiento posterior no reabre la lógica funcional de Fase 7 ni modifica el contrato Drawer ya validado. Aprovecha el formato vertical de 720 px para mejorar jerarquía y lectura.
+
+Primera pasada implementada:
+
+- Header:
+  - título = producto;
+  - descripción = `C. interno {código}`;
+  - tipo y estado dejan de competir con la identidad principal.
+- Inicio del Body:
+  - badge de tipo de propuesta;
+  - badge semántico de estado.
+- `Cambio propuesto`:
+  - pasa a una superficie visual dominante;
+  - actual → nuevo se presenta con jerarquía propia;
+  - cambios de estado usan una variante de una sola columna.
+- `Contexto` pasa a denominarse `Evidencia`.
+- `C. interno` se elimina de Evidencia porque ya pertenece al Header.
+- Evidencia conserva:
+  - Origen;
+  - Sedes;
+  - Apariciones;
+  - Primera evidencia;
+  - Última evidencia.
+- El Body adopta ritmo vertical de 24 px entre bloques principales.
+- En Mobile, el cambio actual → nuevo se apila verticalmente.
+- Notices permanecen después de Cambio + Evidencia.
+- Footer, acciones, copy de botones y lógica permanecen sin cambios; continúan reservados para 9.6.
+- Sin cambios backend, contratos, mutations, nesting, foco o geometría de 720 px.
+
+Validación requerida para cerrar este refinamiento:
+
+- suite;
+- lint;
+- build;
+- `git diff --check`;
+- smoke visual Desktop/Tablet/Mobile;
+- verificar propuestas de precio, nombre/código y cambios de estado;
+- verificar estados pendiente/aprobada/ignorada/publicada;
+- confirmar que Footer y nesting no presentan regresiones.
+
 ## 9.5 — Kinds
 
 ### 9.5A — Confirmation
