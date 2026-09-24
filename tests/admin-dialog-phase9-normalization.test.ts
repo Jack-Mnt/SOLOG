@@ -80,7 +80,7 @@ describe('AdminDialog Fase 9.3 — foundation format / size / kind', () => {
     expect(dialog).toContain('aria-label="Cerrar"')
   })
 
-  test('los tres drawers existentes migran a format sin cambiar anchos', async () => {
+  test('los cuatro drawers usan format y conservan sus anchos congelados', async () => {
     const control = await source(
       'src/features/solog/admin/control/admin.control.v2.tsx',
     )
@@ -90,6 +90,9 @@ describe('AdminDialog Fase 9.3 — foundation format / size / kind', () => {
     const incidents = await source(
       'src/features/solog/admin/incidencias/admin.incidencias.v2.tsx',
     )
+    const catalog = await source(
+      'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
+    )
 
     expect(control).toContain('format="drawer"')
     expect(control).toContain('drawerMaxWidth={560}')
@@ -97,5 +100,13 @@ describe('AdminDialog Fase 9.3 — foundation format / size / kind', () => {
     expect(dashboard).toContain('drawerMaxWidth={620}')
     expect(incidents).toContain('format="drawer"')
     expect(incidents).toContain('drawerMaxWidth={520}')
+
+    const proposalDetail = catalog.slice(
+      catalog.indexOf('function ProposalDetail({'),
+      catalog.indexOf('function PriceResolutionDialog'),
+    )
+    expect(proposalDetail).toContain('format="drawer"')
+    expect(proposalDetail).toContain('drawerMaxWidth={720}')
+    expect(proposalDetail).not.toContain('size="wide"')
   })
 })
