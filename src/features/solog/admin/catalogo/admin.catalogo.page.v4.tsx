@@ -649,7 +649,8 @@ function ProposalDetail({
         description={`${proposalLabels[proposal.tipo]} · ${proposalStatusLabels[proposal.estado]}`}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
-        size="wide"
+        format="drawer"
+        drawerMaxWidth={720}
         footer={
           <>
             <button
