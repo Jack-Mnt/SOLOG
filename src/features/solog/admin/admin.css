@@ -990,6 +990,15 @@
   padding: 0 0 0 24px;
   list-style: none;
 }
+.admin-control-chronology__timeline::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 6px;
+  width: 1px;
+  background: var(--color-border-strong);
+}
 
 .admin-control-chronology__event {
   min-width: 0;
@@ -1015,6 +1024,31 @@
   padding: 6px 8px;
   border-bottom: 1px solid var(--color-border);
   border-radius: 8px;
+}
+.admin-control-chronology__event > article::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -23px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
+  transform: translateY(-50%);
+}
+.admin-control-chronology__event > article[data-tone="success"]::before {
+  background: var(--color-success);
+}
+.admin-control-chronology__event > article[data-tone="warning"]::before {
+  background: var(--color-warning);
+}
+.admin-control-chronology__event > article[data-tone="danger"]::before {
+  background: var(--color-danger);
+}
+.admin-control-chronology__event > article[data-tone="info"]::before {
+  background: var(--color-info);
 }
 
 .admin-control-chronology__event > article.is-latest {
