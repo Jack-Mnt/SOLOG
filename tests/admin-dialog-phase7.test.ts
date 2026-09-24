@@ -3,14 +3,32 @@ import { describe, expect, test } from 'bun:test'
 const source = (path: string) => Bun.file(path).text()
 
 describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
-  test('Detalle de propuesta prioriza el cambio y humaniza estados de publicación', async () => {
+  test('Detalle de propuesta usa jerarquía vertical de Drawer y humaniza estados de publicación', async () => {
     const ui = await source(
       'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
+    )
+    const css = await source('src/features/solog/admin/admin.css')
+    const detail = ui.slice(
+      ui.indexOf('function ProposalDetail({'),
+      ui.indexOf('function PriceResolutionDialog'),
     )
 
     expect(ui).toContain('function ProposalDetailChange')
     expect(ui).toContain('<h3>Cambio propuesto</h3>')
     expect(ui).toContain('proposalStatusLabels')
+    expect(ui).toContain('proposalStatusTones')
+    expect(detail).toContain('description={`C. interno ${proposal.c_interno}`}')
+    expect(detail).toContain('className="admin-catalog__proposal-detail-state"')
+    expect(detail).toContain('className="admin-attribute-badge"')
+    expect(detail).toContain('admin-status-badge--${proposalStatusTones[proposal.estado]}')
+    expect(detail).toContain('<h3>Evidencia</h3>')
+    expect(detail).not.toContain('<h3>Contexto</h3>')
+    expect(detail).not.toContain('<dt>C. interno</dt>')
+    expect(ui).toContain('admin-catalog__proposal-change-card')
+    expect(ui).toContain('admin-catalog__proposal-change-arrow')
+    expect(css).toContain('.admin-catalog__proposal-detail')
+    expect(css).toContain('.admin-catalog__proposal-change-card')
+    expect(css).toContain('gap: 24px')
     expect(ui).toContain('blockReasonLabels')
     expect(ui).toContain('configuracion_requerida:')
     expect(ui).toContain('resolucion_precio_requerida:')
