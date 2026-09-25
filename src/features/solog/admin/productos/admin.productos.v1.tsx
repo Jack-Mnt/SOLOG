@@ -93,6 +93,7 @@ function ProductStateProposal({
       description={description}
       onClose={onClose}
       closeDisabled={!!intent?.pending}
+      kind="confirmation"
       footer={
         <>
           <button
@@ -119,7 +120,6 @@ function ProductStateProposal({
         </>
       }
     >
-      <div className="admin-dialog-confirmation">
         <AdminNotice tone="info">
           {action === "exclude"
             ? "Esta acción aprueba el cambio, pero el producto no cambiará hasta publicar el Catálogo."
@@ -145,7 +145,6 @@ function ProductStateProposal({
         </dl>
         {intent && <CatalogMutationNotice onRetry={retry} />}
         {error && <AdminNotice tone="error">{error}</AdminNotice>}
-      </div>
     </AdminDialog>
   );
 }

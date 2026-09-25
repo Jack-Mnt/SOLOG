@@ -206,6 +206,7 @@ export function AdminDevicesV2() {
           title={titles[confirmation.action]}
           onClose={() => setConfirmation(null)}
           closeDisabled={!!store.intent("devices")?.pending}
+          kind="confirmation"
           footer={
             <>
               <button
@@ -238,7 +239,6 @@ export function AdminDevicesV2() {
             </>
           }
         >
-          <div className="admin-dialog-confirmation">
             <AdminNotice tone="info">
               {confirmation.action === "revoke"
                 ? "El dispositivo perderá autorización. La sede quedará disponible para una nueva solicitud de acceso."
@@ -258,7 +258,6 @@ export function AdminDevicesV2() {
               showResult={false}
               onSuccess={() => setConfirmation(null)}
             />
-          </div>
         </AdminDialog>
       )}
     </>

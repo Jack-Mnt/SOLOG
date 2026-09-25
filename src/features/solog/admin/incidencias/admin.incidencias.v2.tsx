@@ -342,6 +342,7 @@ function IgnoreDialog({
       description={`${typeLabels[family.tipo]} · ${family.c_interno ?? family.c_interno_original ?? "Sin código"}`}
       onClose={onClose}
       closeDisabled={running}
+      kind="confirmation"
       footer={
         <>
           <button
@@ -364,7 +365,6 @@ function IgnoreDialog({
         </>
       }
     >
-      <div className="admin-dialog-confirmation">
         <p>Esta incidencia dejará de aparecer como pendiente durante el período indicado.</p>
         <dl className="admin-dialog-context">
           <div>
@@ -378,7 +378,6 @@ function IgnoreDialog({
         </dl>
         <p>Ignorar no resuelve ni elimina la incidencia.</p>
         {error && <AdminNotice tone="error">{error}</AdminNotice>}
-      </div>
     </AdminDialog>
   );
 }
@@ -428,6 +427,7 @@ function DeleteProposalDialog({
       description="El cambio quedará aprobado y listo para incluirse en la próxima publicación del Catálogo."
       onClose={onClose}
       closeDisabled={proposing}
+      kind="confirmation"
       footer={
         <>
           <button
@@ -450,7 +450,6 @@ function DeleteProposalDialog({
         </>
       }
     >
-      <div className="admin-dialog-confirmation">
         <AdminNotice tone="info">
           El producto no se eliminará hasta publicar el Catálogo.
         </AdminNotice>
@@ -473,7 +472,6 @@ function DeleteProposalDialog({
           </div>
         </dl>
         {error && <AdminNotice tone="error">{error}</AdminNotice>}
-      </div>
     </AdminDialog>
   );
 }

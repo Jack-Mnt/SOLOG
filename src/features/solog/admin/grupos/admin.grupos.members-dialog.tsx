@@ -332,6 +332,7 @@ export function GroupMembersDialog({
       {separating && (
         <AdminDialog
           title="Separar producto"
+          kind="confirmation"
           description="El producto dejará el grupo y quedará como Único."
           onClose={() => setSeparating(null)}
           closeDisabled={!!intent}
@@ -357,7 +358,6 @@ export function GroupMembersDialog({
             </>
           }
         >
-          <div className="admin-dialog-confirmation">
             <dl className="admin-dialog-context">
               <div>
                 <dt>Producto</dt>
@@ -379,7 +379,6 @@ export function GroupMembersDialog({
             </AdminNotice>
 
             {renderErrorNotice()}
-          </div>
         </AdminDialog>
       )}
     </>

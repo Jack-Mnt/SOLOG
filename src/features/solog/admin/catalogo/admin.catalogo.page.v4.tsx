@@ -967,6 +967,7 @@ function ProposalDetail({
       {discard && (
         <AdminDialog
           title="Descartar propuesta"
+          kind="confirmation"
           description="Esta acción es terminal y la propuesta dejará de aparecer en el flujo normal."
           onClose={() => setDiscard(false)}
           closeDisabled={!!intent?.pending}

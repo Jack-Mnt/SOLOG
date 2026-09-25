@@ -371,6 +371,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
       {discardConfirm && (
         <AdminDialog
           title="Descartar cambios de orden"
+          kind="confirmation"
           description="Hay cambios de orden sin guardar."
           onClose={() => setDiscardConfirm(false)}
           footer={
