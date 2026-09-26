@@ -62,6 +62,31 @@ Estas cifras son comparativas de JSON textual generado por PostgreSQL, no medici
 
 ---
 
+## Reconciliación posterior — 2026-09-26
+
+Este documento permanece **histórico y autoritativo para el diseño/shape de los contratos optimizados creados en 8.2B**, pero ya no es autoridad sobre la compatibilidad legacy que se preservó temporalmente durante esa fase.
+
+Las acciones optimizadas que continúan vigentes son:
+
+```text
+daily_detail_bootstrap
+daily_detail_page
+control_chronology_view
+detail_sites
+```
+
+La compatibilidad temporal documentada aquí fue retirada posteriormente:
+
+```text
+daily_detail
+control_chronology
+detail
+```
+
+Además, `control_page` y `control_detail` fueron retirados del wrapper operacional.
+
+Para determinar el runtime actual prevalece `SOLOG_Backend_Contratos_Runtime_Actual_V2.md`. Las mediciones comparativas contra contratos legacy de este archivo se conservan únicamente como evidencia histórica de la optimización.
+
 # 4. Detalle diario
 
 ## 4.1. Estrategia congelada
