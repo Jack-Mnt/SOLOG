@@ -1,6 +1,6 @@
 # SOLOG — Refactor Admin: Limpieza de contratos legacy V1
 
-**Estado:** Congelado — fuente primaria aprobada
+**Estado:** FASES 1–4 CERRADAS · FASE 5 RECONCILIACIÓN DOCUMENTAL COMPLETADA · CIERRE GLOBAL PENDIENTE
 **Fecha:** 26 de septiembre de 2026
 **Clasificación:** Nivel B — limpieza estructural frontend con cleanup backend dependiente
 **Proyecto:** SOLOG
@@ -30,6 +30,33 @@ La limpieza se ejecutará primero en frontend, se validará y desplegará, y sol
 ## 2. Fuente primaria y precedencia
 
 Este archivo es la **fuente primaria para la retirada de compatibilidad legacy cubierta por este bloque**.
+
+## Estado de ejecución — 2026-09-26
+
+Completado y validado:
+
+```text
+Fase 1A  Cleanup Management + Groups
+Fase 1B  Cleanup Operational + Incidencias + Dispositivos + harnesses
+Fase 2   Revisión global frontend + smoke humano
+Fase 3   Merge a master + deployment automático Cloudflare + smoke producción
+Fase 4   Cleanup backend + validación
+Fase 5   Reconciliación documental
+```
+
+Deployment backend aplicado:
+
+```text
+remove_solog_admin_legacy_contracts
+```
+
+La fuente consolidada actual resultante es:
+
+```text
+SOLOG_Backend_Contratos_Runtime_Actual_V2.md
+```
+
+Queda pendiente únicamente la revisión global final proporcional y el cierre explícito del bloque.
 
 Cuando exista contradicción dentro de este alcance, prevalece sobre descripciones anteriores que todavía presenten como vigentes los contratos aquí marcados para retiro.
 
