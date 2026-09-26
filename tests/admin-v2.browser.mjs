@@ -36,17 +36,17 @@ export async function runAdminV2Browser() {
     if(action==='bootstrap'||action==='dashboard_cards')assert.deepEqual(p,{})
     if(action==='shift_grid')assert.deepEqual(Object.keys(p).sort(),['period','site_id'])
     if(action==='control_groups')assert.deepEqual(Object.keys(p).sort(),p.period==='custom'?['date_from','date_to','period','site_id']:['period','site_id'])
-    if(action==='control_chronology')assert.deepEqual(Object.keys(p).sort(),['group_id','period','site_id'])
-    assert.ok(!['control_page','control_detail'].includes(action),'No legacy Control calls')
+    if(action==='control_chronology_view')assert.deepEqual(Object.keys(p).sort(),['group_id','period','site_id'])
+    assert.ok(!['daily_detail','control_chronology','control_page','control_detail'].includes(action),'No legacy operational calls')
     if(action==='export')assert.deepEqual(Object.keys(p).sort(),['period','site_id'])
     if(denied)return fulfill({code:'P0001',message:'SOLOG_ADMIN_ROLE_REQUIRED'},400)
-    if(action==='control_chronology'&&p.period==='previous_biweekly'&&failPrevious){failPrevious=false;return fulfill({message:'Lectura de quincena fallida',code:'500'},500)}
+    if(action==='control_chronology_view'&&p.period==='previous_biweekly'&&failPrevious){failPrevious=false;return fulfill({message:'Lectura de quincena fallida',code:'500'},500)}
     const response=responseFixture(action,p)
-    if(action==='control_chronology') {
+    if(action==='control_chronology_view') {
       if(p.period==='previous_biweekly') response.chronology=[]
       else response.chronology.unshift(
-        {row_id:'single-match',case_id:'single-match',event_at:'2026-09-01T08:58:00Z',state:'Coincide',theoretical:10,physical:10,difference:0,valued_difference:0,valuation:{unit_price:42,units_per_package:null,package_price:null}},
-        {row_id:'single-pending',case_id:'single-pending',event_at:'2026-09-02T08:58:00Z',state:'Recontar',theoretical:10,physical:15,difference:5,valued_difference:210,valuation:{unit_price:42,units_per_package:null,package_price:null}},
+        {row_id:'single-match',event_at:'2026-09-01T08:58:00Z',state:'Coincide',stock:10},
+        {row_id:'single-pending',event_at:'2026-09-02T08:58:00Z',state:'Recontar',physical:15,difference:5},
       )
     }
     if(response.revisions.operational!==undefined)response.revisions.operational=revision
@@ -69,13 +69,13 @@ export async function runAdminV2Browser() {
     assert.equal(resources.some(u=>/admin\.control\.v2\.tsx|admin\.catalogo|admin\.grupos|admin\.incidencias|admin\.dispositivos|write-excel-file/.test(u)),false)
     await page.getByRole('button',{name:'Ver turnos de Sede A'}).click()
     await page.getByRole('button',{name:'Abrir día 2026-09-03'}).waitFor()
-    assert.equal(count('shift_grid'),1);assert.equal(count('daily_detail'),0)
+    assert.equal(count('shift_grid'),1);assert.equal(count('daily_detail_bootstrap'),0)
     assert.match(await page.locator('tr').filter({has:page.locator('th',{hasText:'Total'})}).innerText(),/30%/)
     await page.getByRole('button',{name:'Abrir día 2026-09-03'}).click()
     await page.getByRole('dialog').getByText('Grupo 0 · Confirmada').waitFor()
     await page.getByRole('button',{name:'Cerrar',exact:true}).click()
     await page.getByRole('button',{name:'Abrir día 2026-09-03'}).click()
-    assert.equal(count('daily_detail'),1)
+    assert.equal(count('daily_detail_bootstrap'),1)
     await page.getByRole('button',{name:'Cerrar',exact:true}).click()
     await page.getByLabel('Quincena de turnos').selectOption('previous_biweekly')
     await page.getByRole('button',{name:'Abrir día 2026-08-31'}).waitFor()
@@ -99,7 +99,7 @@ export async function runAdminV2Browser() {
     await page.getByRole('button',{name:'Control',exact:true}).click()
     const control=page.locator('.admin-control'), tableRows=control.locator('tbody tr')
     await page.getByText('Grupo 99',{exact:true}).waitFor()
-    assert.equal(count('control_groups'),1);assert.equal(count('control_chronology'),0)
+    assert.equal(count('control_groups'),1);assert.equal(count('control_chronology_view'),0)
     assert.equal(await tableRows.count(),100)
     assert.equal(await control.getByLabel('Estado',{exact:true}).count(),0)
     assert.equal(await control.getByRole('button',{name:'Aplicar filtros'}).count(),0)
@@ -167,20 +167,20 @@ export async function runAdminV2Browser() {
     assert.equal(await periods.getByRole('button',{name:'Actual',exact:true}).isVisible(),true)
     await dialog.getByRole('button',{name:'Reintentar',exact:true}).click()
     await dialog.getByText('No hay registros en esta quincena.',{exact:true}).waitFor()
-    assert.equal(calls.filter(c=>c.action==='control_chronology').at(-1).payload.period,'previous_biweekly')
-    const chronologyCalls=count('control_chronology')
+    assert.equal(calls.filter(c=>c.action==='control_chronology_view').at(-1).payload.period,'previous_biweekly')
+    const chronologyCalls=count('control_chronology_view')
     await periods.getByRole('button',{name:'Actual',exact:true}).click()
     await dialog.getByRole('columnheader',{name:'Fecha',exact:true}).waitFor()
     await periods.getByRole('button',{name:'Anterior',exact:true}).click()
     await dialog.getByText('No hay registros en esta quincena.',{exact:true}).waitFor()
     await periods.getByRole('button',{name:'Actual',exact:true}).click()
-    assert.equal(count('control_chronology'),chronologyCalls,'Both biweekly scopes cached')
+    assert.equal(count('control_chronology_view'),chronologyCalls,'Both biweekly scopes cached')
     assert.equal(await dialog.locator('tbody tr').count(),6)
-    assert.deepEqual(calls.find(c=>c.action==='control_chronology').payload,{site_id:'site-a',group_id:'group-0',period:'current_biweekly'})
+    assert.deepEqual(calls.find(c=>c.action==='control_chronology_view').payload,{site_id:'site-a',group_id:'group-0',period:'current_biweekly'})
     await page.getByRole('button',{name:'Cerrar',exact:true}).click()
     await page.getByRole('button',{name:'Ver cronología de Grupo 0',exact:true}).click()
     await dialog.getByRole('columnheader',{name:'Fecha',exact:true}).waitFor()
-    assert.equal(count('control_chronology'),3)
+    assert.equal(count('control_chronology_view'),3)
     await page.keyboard.press('Escape')
     assert.equal(await page.getByRole('dialog').count(),0)
     assert.equal(await page.getByRole('button',{name:'Ver cronología de Grupo 0',exact:true}).evaluate(node=>node===document.activeElement),true)
@@ -223,7 +223,7 @@ export async function runAdminV2Browser() {
     if(process.env.SOLOG_ADMIN_SCREENSHOT)await page.screenshot({path:process.env.SOLOG_ADMIN_SCREENSHOT,fullPage:false})
     denied=true;await page.reload();await page.getByRole('button',{name:'Reintentar',exact:true}).waitFor();assert.equal(await page.getByText('Grupo 99',{exact:true}).count(),0)
     assert.deepEqual(errors,[])
-    console.log(JSON.stringify({status:controlOnly?'PASS Control/Excel browser simulado':'PASS A1–A3 browser simulado',rpcCalls:calls.length,responseBytes:bytes,productionCalls:0,actions:Object.fromEntries(['bootstrap','dashboard_cards','shift_grid','daily_detail','control_groups','control_chronology','export'].map(a=>[a,count(a)]))}))
+    console.log(JSON.stringify({status:controlOnly?'PASS Control/Excel browser simulado':'PASS A1–A3 browser simulado',rpcCalls:calls.length,responseBytes:bytes,productionCalls:0,actions:Object.fromEntries(['bootstrap','dashboard_cards','shift_grid','daily_detail_bootstrap','daily_detail_page','control_groups','control_chronology_view','export'].map(a=>[a,count(a)]))}))
   } finally {await browser.close();await server.close()}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await runAdminV2Browser()
