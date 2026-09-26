@@ -23,11 +23,6 @@ export interface ShiftGrid extends Envelope {
   site_id: string; period: { key: Biweekly; from: string; to: string }
   data: { shifts: (Coverage & { shift: 'early' | 'day' | 'night'; calculated_at: string })[]; totals: Coverage[] }
 }
-export interface DailyDetail extends Envelope {
-  site_id: string; origin_date: string
-  summary: { pending_recount: number; confirmed: number; inconsistent: number }
-  items: { case_id: string; grupo_id: string; grupo: string; estado: DifferenceState; contado_at: string; recontado_at: string | null; theoretical: number; physical: number; stock_class?: 'positive' | 'zero'; difference: number; value: number | null; source: 'initial' | 'posterior' | 'recount' }[]
-}
 export type DailyStockClass = 'positive' | 'zero'
 export interface DailyBaseItem { case_id: string; grupo: string }
 export interface DailyCoincideItem extends DailyBaseItem { stock: number }
@@ -69,16 +64,6 @@ export interface ControlGroupsResponse extends Envelope {
 }
 export type ControlChronologyPeriod = Biweekly
 export interface ControlChronologyPayload { site_id: string; group_id: string; period: ControlChronologyPeriod }
-export interface ControlChronologyRow {
-  row_id: string; case_id: string; event_at: string; state: DifferenceState | 'Recontado'
-  theoretical: number; physical: number; difference: number; valued_difference: number
-  valuation: { unit_price: number; units_per_package: number | null; package_price: number | null }
-}
-export interface ControlChronologyResponse extends Envelope {
-  revisions: { operational: number }
-  site_id: string; group: { id: string; name: string; category: string | null }
-  period: { key: ControlChronologyPeriod; from: string; to: string }; chronology: ControlChronologyRow[]
-}
 export type ControlChronologyViewRow =
   | { row_id: string; event_at: string; state: 'Coincide'; stock: number }
   | { row_id: string; event_at: string; state: 'Recontar' | 'Recontado'; physical: number; difference: number }
@@ -90,15 +75,6 @@ export interface ControlChronologyViewResponse extends Envelope {
   group: { id: string; name: string; category: string | null; latest_unit_price: number | null }
   period: { key: ControlChronologyPeriod; from: string; to: string }
   chronology: ControlChronologyViewRow[]
-}
-export interface ControlPage extends Envelope {
-  site_id: string; period: { key: ControlPeriod; from: string; to: string }; summary: StateSummary
-  items: { case_id: string; grupo_id: string; grupo: string; categoria: string; contado_at: string; recontado_at: string | null; estado_diferencia: DifferenceState; diferencia: number; valor_diferencia: number | null }[]
-  page: number; page_size: number
-}
-export interface ControlDetail extends Envelope {
-  site_id: string; group_id: string
-  chronology: { case_id: string; contado_at: string; recontado_at: string | null; stock_teorico: number; stock_fisico: number; diferencia_inicial: number; stock_posterior: number | null; stock_teorico_reconteo: number | null; stock_reconteo: number | null; diferencia: number; estado_diferencia: DifferenceState; valor_diferencia: number | null }[]
 }
 interface ExportBase { case_id: string; grupo_id: string; grupo: string; categoria: string; fecha_origen: string }
 interface ExportResult extends ExportBase { estado: DifferenceState; teorico: number; fisico: number; diferencia: number; valorizado: number | null; source: 'initial' | 'posterior' | 'recount' }
@@ -113,17 +89,13 @@ export interface AdminPayloads {
   bootstrap: Record<string, never>
   dashboard_cards: Record<string, never>
   shift_grid: { site_id: string; period?: Biweekly }
-  daily_detail: { site_id: string; origin_date: string }
   daily_detail_bootstrap: { site_id: string; origin_date: string; stock_class: DailyStockClass }
   daily_detail_page: { site_id: string; origin_date: string; stock_class: DailyStockClass; state: DifferenceState; page: number }
   control_groups: ControlGroupsPayload
-  control_chronology: ControlChronologyPayload
   control_chronology_view: ControlChronologyPayload
-  control_page: { site_id: string; period: ControlPeriod; state: DifferenceState | null; search?: string; page: number; page_size: number; date_from?: string; date_to?: string }
-  control_detail: { site_id: string; group_id: string }
   export: { site_id: string; period: Biweekly }
 }
-export interface AdminResponses { bootstrap: AdminBootstrap; dashboard_cards: DashboardCards; shift_grid: ShiftGrid; daily_detail: DailyDetail; daily_detail_bootstrap: DailyDetailBootstrap; daily_detail_page: DailyDetailPage; control_groups: ControlGroupsResponse; control_chronology: ControlChronologyResponse; control_chronology_view: ControlChronologyViewResponse; control_page: ControlPage; control_detail: ControlDetail; export: ControlExport }
+export interface AdminResponses { bootstrap: AdminBootstrap; dashboard_cards: DashboardCards; shift_grid: ShiftGrid; daily_detail_bootstrap: DailyDetailBootstrap; daily_detail_page: DailyDetailPage; control_groups: ControlGroupsResponse; control_chronology_view: ControlChronologyViewResponse; export: ControlExport }
 export type AdminAction = keyof AdminPayloads
 
 type RecordValue = Record<string, unknown>
@@ -193,8 +165,8 @@ export function validateControlPayload(action: AdminAction, payload: unknown) {
     if (!valid) throw new Error(`Payload ${action} incompatible con contrato Admin.`)
     return
   }
-  if (action !== 'control_groups' && action !== 'control_chronology' && action !== 'control_chronology_view') return
-  const chronology = action === 'control_chronology' || action === 'control_chronology_view'
+  if (action !== 'control_groups' && action !== 'control_chronology_view') return
+  const chronology = action === 'control_chronology_view'
   let valid = record(payload) && strings(payload, ['site_id', 'period']) && !!payload.site_id
   if (valid && record(payload)) {
     const allowed = chronology ? ['site_id', 'group_id', 'period'] : payload.period === 'custom' ? ['site_id', 'period', 'date_from', 'date_to'] : ['site_id', 'period']
@@ -214,22 +186,15 @@ export function validateAdminResponse<A extends AdminAction>(action: A, value: u
     case 'bootstrap': valid = strings(value.identity, ['id', 'nombre', 'rol']) && record(value.identity) && ['admin', 'moderador'].includes(String(value.identity.rol)) && record(value.permissions) && typeof value.permissions.can_admin === 'boolean' && value.permissions.can_moderate === true && array(value.allowed_sites, r => strings(r, ['id', 'nombre']) && numbers(r, ['operational_revision', 'devices_revision', 'incidents_revision'])); break
     case 'dashboard_cards': valid = array(value.sites, r => strings(r, ['site_id', 'site']) && numbers(r, ['pending_recount', 'operational_revision']) && numbers(r.period_coverage, ['counted', 'total', 'percent']) && record(r.period_coverage) && typeof r.period_coverage.complete === 'boolean' && numbers(r.daily_coverage, ['counted_today', 'total', 'percent']) && (r.snapshot === null || strings(r.snapshot, ['id', 'capturado_at', 'confirmado_at']))); break
     case 'shift_grid': valid = strings(value, ['site_id']) && strings(value.period, ['key', 'from', 'to']) && record(value.data) && array(value.data.shifts, r => strings(r, ['date', 'calculated_at']) && ['early', 'day', 'night'].includes(String(r.shift)) && numbers(r, ['numerator', 'denominator', 'percentage'])) && array(value.data.totals, r => strings(r, ['date']) && numbers(r, ['numerator', 'denominator', 'percentage'])); break
-    case 'daily_detail': valid = strings(value, ['site_id', 'origin_date']) && numbers(value.summary, ['pending_recount', 'confirmed', 'inconsistent']) && rows(value.items); break
     case 'daily_detail_bootstrap': valid = strings(value, ['site_id', 'origin_date']) && dateOnly(value.origin_date) && dailyStockClass(value.stock_class) && value.page_size === 25 && record(value.counts) && countBlock(value.counts.positive) && countBlock(value.counts.zero) && dailyBootstrapViews(value.views, value.counts, value.stock_class); break
     case 'daily_detail_page': valid = strings(value, ['site_id', 'origin_date']) && dateOnly(value.origin_date) && dailyStockClass(value.stock_class) && state(value.state) && Number.isInteger(value.page) && Number(value.page) >= 0 && value.page_size === 25 && dailyRows(value.items, value.state as DifferenceState) && Array.isArray(value.items) && value.items.length <= 25 && unique(value.items, 'case_id'); break
     case 'control_groups': valid = strings(value, ['site_id']) && controlRange(value.period) && array(value.items, r => strings(r, ['case_id', 'group_id', 'group_name', 'category', 'origin_at']) && nullableTime(r.origin_at) && state(r.state) && numbers(r, ['difference', 'valued_difference'])) && unique(value.items, 'group_id') && unique(value.items, 'case_id'); break
-    case 'control_chronology': valid = strings(value, ['site_id']) && strings(value.group, ['id', 'name']) && record(value.group) && (value.group.category === null || typeof value.group.category === 'string') && controlRange(value.period, true) && array(value.chronology, r => strings(r, ['row_id', 'case_id', 'event_at']) && nullableTime(r.event_at) && (state(r.state) || r.state === 'Recontado') && numbers(r, ['theoretical', 'physical', 'difference', 'valued_difference']) && numbers(r.valuation, ['unit_price']) && record(r.valuation) && nullableNumbers(r.valuation, ['units_per_package', 'package_price'])) && unique(value.chronology, 'row_id'); break
     case 'control_chronology_view': valid = strings(value, ['site_id']) && strings(value.group, ['id', 'name']) && record(value.group) && (value.group.category === null || typeof value.group.category === 'string') && nullableNumbers(value.group, ['latest_unit_price']) && controlRange(value.period, true) && chronologyViewRows(value.chronology) && unique(value.chronology, 'row_id'); break
-    case 'control_page': valid = strings(value, ['site_id']) && strings(value.period, ['key', 'from', 'to']) && numbers(value.summary, ['total', 'coincide', 'pending_recount', 'confirmed', 'inconsistent']) && rows(value.items) && Number.isInteger(value.page) && Number(value.page) >= 0 && Number.isInteger(value.page_size) && Number(value.page_size) >= 1 && Number(value.page_size) <= 100; break
-    case 'control_detail': valid = strings(value, ['site_id', 'group_id']) && rows(value.chronology); break
     case 'export': valid = strings(value.site, ['id', 'nombre']) && strings(value.period, ['key', 'from', 'to']) && numbers(value.summary, ['total', 'coincide', 'pending_recount', 'confirmed', 'inconsistent']) && [value.adjustments, value.pending_recount, value.inconsistent, value.all].every(rows); break
   }
   if (valid) {
     const requiredRevisions = action === 'bootstrap' ? ['groups', 'catalog'] : action === 'dashboard_cards' ? ['groups'] : action === 'shift_grid' || action === 'export' ? ['operational', 'groups'] : ['operational']
     valid = numbers(value.revisions, requiredRevisions)
-    if (action === 'daily_detail') valid = valid && array(value.items, r => strings(r, ['case_id', 'grupo_id', 'grupo', 'contado_at']) && (r.stock_class === undefined || ['positive', 'zero'].includes(String(r.stock_class))) && state(r.estado) && source(r.source) && numbers(r, ['theoretical', 'physical', 'difference']) && nullableNumbers(r, ['value']) && nullableTime(r.recontado_at))
-    if (action === 'control_page') valid = valid && array(value.items, r => strings(r, ['case_id', 'grupo_id', 'grupo', 'categoria', 'contado_at']) && state(r.estado_diferencia) && numbers(r, ['diferencia']) && nullableNumbers(r, ['valor_diferencia']) && nullableTime(r.recontado_at)) && Array.isArray(value.items) && value.items.length <= Number(value.page_size)
-    if (action === 'control_detail') valid = valid && array(value.chronology, r => strings(r, ['case_id', 'contado_at']) && nullableTime(r.recontado_at) && state(r.estado_diferencia) && numbers(r, ['stock_teorico', 'stock_fisico', 'diferencia_inicial', 'diferencia']) && nullableNumbers(r, ['stock_posterior', 'stock_teorico_reconteo', 'stock_reconteo', 'valor_diferencia']))
     if (action === 'export') valid = valid && array(value.adjustments, exportResult) && array(value.all, r => exportResult(r) && nullableTime(r.recontado_at)) && array(value.pending_recount, r => exportBase(r) && numbers(r, ['teorico_conteo', 'fisico_conteo', 'diferencia']) && nullableNumbers(r, ['stock_posterior'])) && array(value.inconsistent, r => exportBase(r) && r.estado === 'Inconsistente' && numbers(r, ['teorico_conteo', 'fisico_conteo', 'diferencia_conteo']) && nullableNumbers(r, ['teorico_reconteo', 'fisico_reconteo', 'diferencia_reconteo']))
   }
   if (!valid) throw new Error(`Respuesta ${action} incompatible con contrato v2.`)
