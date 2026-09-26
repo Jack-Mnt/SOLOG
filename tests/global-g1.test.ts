@@ -65,16 +65,16 @@ test('G1 Admin bootstrap obsoleto no reemplaza identidad ni acceso', async () =>
 test('G1 error Admin invalidado no resucita ni elimina contexto nuevo', async () => {
   const delayed = deferred<unknown>(); let first = true
   const store = new AdminStore('admin-test', (async (a,p) => {
-    if (a === 'daily_detail' && first) { first = false; return delayed.promise }
+    if (a === 'daily_detail_bootstrap' && first) { first = false; return delayed.promise }
     return responseFixture(a,p)
   }) as typeof adminRpc)
   await store.load('bootstrap', {})
-  const payload = { site_id: 'site-a', origin_date: '2026-09-03' }
-  const old = store.load('daily_detail', payload)
-  store.retry('daily_detail', payload); const fresh = await store.load('daily_detail', payload)
+  const payload = { site_id: 'site-a', origin_date: '2026-09-03', stock_class: 'positive' as const }
+  const old = store.load('daily_detail_bootstrap', payload)
+  store.retry('daily_detail_bootstrap', payload); const fresh = await store.load('daily_detail_bootstrap', payload)
   delayed.reject(new ManagementError('SOLOG_SITE_FORBIDDEN'))
   await expect(old).rejects.toThrow('FORBIDDEN')
-  expect(store.bootstrap).not.toBeNull(); expect(store.peek('daily_detail', payload).data).toBe(fresh)
+  expect(store.bootstrap).not.toBeNull(); expect(store.peek('daily_detail_bootstrap', payload).data).toBe(fresh)
 })
 
 test('G1 error Management invalidado no revoca un acceso actualizado', async () => {
