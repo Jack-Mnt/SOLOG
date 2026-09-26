@@ -511,6 +511,7 @@
 }
 
 .admin-dialog__footer {
+  flex-wrap: wrap;
   justify-content: flex-end;
   border-top: 1px solid var(--color-border);
 }
@@ -522,6 +523,7 @@
 .admin-dialog__footer-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-left: auto;
 }
@@ -803,6 +805,33 @@
 
   .admin-dialog__footer .button {
     width: 100%;
+  }
+
+  .admin-dialog .admin-notice {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .admin-dialog .admin-notice__message {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .admin-dialog .admin-notice__action {
+    width: 100%;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-left: 0;
+  }
+
+  .admin-dialog .admin-notice__action .button {
+    width: 100%;
+  }
+
+  .admin-dialog .admin-notice__close {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .admin-dialog__footer-navigation .admin-pagination {
@@ -1630,7 +1659,7 @@
 }
 .admin-catalog__proposal-summary dd {
   margin: 2px 0 0;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
 
@@ -1693,7 +1722,7 @@
 }
 .admin-catalog__price-summary dd {
   margin: 2px 0 0;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   font-weight: 650;
   overflow-wrap: anywhere;
 }
@@ -2424,6 +2453,9 @@ sin alterar las cards de otros módulos. */
 .admin-v2-form > label {
   display: grid;
   gap: 0.4rem;
+}
+.admin-dialog .admin-v2-form > label {
+  gap: 4px;
 }
 .admin-v2-picker {
   display: grid;
