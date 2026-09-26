@@ -16,7 +16,7 @@ Fuente funcional/arquitectónica primaria:
 
 Fuente runtime compartida:
 
-`SOLOG_Backend_Contratos_Runtime_Actual_V1.md`
+`SOLOG_Backend_Contratos_Runtime_Actual_V2.md`
 
 Este documento es la **fuente primaria técnica** para el nuevo master data compartido de Admin.
 
@@ -36,7 +36,7 @@ Sí reemplaza, para las nuevas lecturas compartidas, la necesidad de consumir co
 
 cuando el dato requerido ya esté incluido o sea derivable desde el bootstrap compartido.
 
-Las superficies redundantes que aún existan pueden permanecer físicamente hasta una limpieza backend posterior, pero no constituyen un contrato alternativo para el frontend.
+Las superficies redundantes de Groups Read V1 y Master V2 fueron retiradas en el cleanup backend del 2026-09-26 y ya no constituyen compatibilidad runtime.
 
 ---
 
