@@ -36,13 +36,13 @@ test('incident period expiration is anchored to backend time and leaves devices 
   await store.load('summary',{});await store.load('list',{});expect(store.peek('summary',{}).expiresAt).toBe(2000)
   clock=2001;expect(store.peek('summary',{}).data).toBeUndefined();expect(store.peek('list',{}).data).toBeDefined();await store.load('summary',{});expect(calls).toBe(3)
 })
-test('mutation invalidates an older in-flight family detail without resurrecting it',async()=>{
+test('mutation invalidates an older in-flight family detail_sites without resurrecting it',async()=>{
   let release!: (r:unknown)=>void
-  const read=(async(a,p)=>a==='detail'?new Promise(r=>{release=r}):managementFixture(a,p)) as typeof managementRead
+  const read=(async(a,p)=>a==='detail_sites'?new Promise(r=>{release=r}):managementFixture(a,p)) as typeof managementRead
   const mutate=(async(a,p)=>mutationFixture(a,p)) as typeof managementMutate
   const store=new ManagementStore('admin-test',bootstrapFixture,()=>{},read,mutate)
-  const payload={family_key:'fp',page:0,page_size:100}, pending=store.load('detail',payload)
-  await store.mutation('ignore_30d',{family_key:'fp',scope:'global'},4);release(managementFixture('detail',payload));await expect(pending).rejects.toThrow('invalidada');expect(store.peek('detail',payload).data).toBeUndefined()
+  const payload={family_key:'a'.repeat(64)}, pending=store.load('detail_sites',payload)
+  await store.mutation('ignore_30d',{family_key:'a'.repeat(64),scope:'global'},4);release(managementFixture('detail_sites',payload));await expect(pending).rejects.toThrow('invalidada');expect(store.peek('detail_sites',payload).data).toBeUndefined()
 })
 test('different Auth users never share a management dataset',async()=>{
   const read=(async(a,p)=>managementFixture(a,p)) as typeof managementRead, auth=bootstrapFixture()
