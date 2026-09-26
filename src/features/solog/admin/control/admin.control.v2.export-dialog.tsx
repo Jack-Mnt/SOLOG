@@ -50,6 +50,7 @@ export function AdminExportDialog({ siteId, onClose }: { siteId: string; onClose
     description="Genera un archivo Excel con la información de la quincena seleccionada."
     onClose={onClose}
     closeDisabled={busy}
+    kind="task"
     footer={
       <>
         <button type="button" className="button button--secondary" disabled={busy} onClick={onClose}>
@@ -62,7 +63,6 @@ export function AdminExportDialog({ siteId, onClose }: { siteId: string; onClose
       </>
     }
   >
-    <div className="admin-dialog-task">
       <dl className="admin-dialog-context">
         <div>
           <dt>Sede</dt>
@@ -78,6 +78,5 @@ export function AdminExportDialog({ siteId, onClose }: { siteId: string; onClose
       />
       <p className="admin-dialog-help">Las fechas se calculan con horario de Lima.</p>
       {error && <AdminNotice tone="error">{error}</AdminNotice>}
-    </div>
   </AdminDialog>
 }

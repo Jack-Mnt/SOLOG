@@ -576,6 +576,11 @@
   overflow-wrap: anywhere;
 }
 
+.admin-dialog--kind-task .admin-dialog__body {
+  display: grid;
+  gap: 16px;
+}
+
 .admin-dialog-task {
   display: grid;
   gap: 16px;

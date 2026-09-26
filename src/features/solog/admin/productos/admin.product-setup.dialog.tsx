@@ -140,6 +140,7 @@ export function ProductSetupDialog({
     }
     onClose={onClose}
     closeDisabled={!!intent?.pending}
+    kind="task"
     footer={
       <>
         <button
@@ -164,7 +165,6 @@ export function ProductSetupDialog({
       </>
     }
   >
-    <div className="admin-dialog-task">
       <dl className="admin-dialog-context">
         <div>
           <dt>Producto</dt>
@@ -246,6 +246,5 @@ export function ProductSetupDialog({
 
       {intent && <CatalogMutationNotice onRetry={retry} />}
       {error && <AdminNotice tone="error">{error}</AdminNotice>}
-    </div>
   </AdminDialog>
 }

@@ -1026,6 +1026,7 @@ function PriceResolutionDialog({
         title="Resolver precio"
         onClose={onClose}
         closeDisabled={!!intent?.pending}
+        kind="task"
         size="wide"
       >
         <QueryState {...query} variant="compact" />
@@ -1360,6 +1361,7 @@ function PriceResolutionContent({
         description={`${targetMember?.producto ?? options.grupo.nombre} · C. interno ${options.c_interno}`}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
+        kind="task"
         size="wide"
         footer={
           <>
@@ -1393,7 +1395,6 @@ function PriceResolutionContent({
           </>
         }
       >
-        <div className="admin-dialog-task">
           <section className="admin-catalog__dialog-section">
             <h3>Resumen del cambio</h3>
             <dl className="admin-catalog__price-summary">
@@ -1575,7 +1576,6 @@ function PriceResolutionContent({
 
           {intent && !valuation && <CatalogMutationNotice onRetry={retry} />}
           {error && <AdminNotice tone="error">{error}</AdminNotice>}
-        </div>
       </AdminDialog>
 
       {valuation && (
@@ -1676,10 +1676,10 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
       description="Revisa los cambios antes de publicar una nueva versión."
       onClose={closeDialog}
       closeDisabled={!!receipt.pending}
+      kind="task"
       size="wide"
       footer={footer}
     >
-      <div className="admin-dialog-task">
         {completed && receipt.result ? (
           <AdminNotice tone="success">
             Catálogo publicado · versión {receipt.result.version}.
@@ -1831,7 +1831,6 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
               la operación. Usa Recuperar publicación.
             </AdminNotice>
           )}
-      </div>
     </AdminDialog>
   );
 }

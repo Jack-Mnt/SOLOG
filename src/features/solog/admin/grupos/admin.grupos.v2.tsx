@@ -104,6 +104,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       description="Crea un grupo de conteo con dos o más SKU del mismo precio."
       onClose={onClose}
       closeDisabled={!!intent?.pending}
+      kind="task"
       size="wide"
       footer={
         <>
@@ -261,6 +262,7 @@ function EditGroupDialog({
       description="Actualiza el nombre operativo o la categoría del grupo. Esto no modifica los nombres comerciales de sus SKU."
       onClose={onClose}
       closeDisabled={!!intent?.pending}
+      kind="task"
       footer={
         <>
           <button

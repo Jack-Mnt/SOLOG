@@ -122,6 +122,7 @@ export function ValuationDialog({
     description={description}
     onClose={onClose}
     closeDisabled={pending}
+    kind="task"
     footer={
       <>
         <button
@@ -144,7 +145,6 @@ export function ValuationDialog({
       </>
     }
   >
-    <div className="admin-dialog-task">
       <dl className="admin-dialog-context">
         <div>
           <dt>Precio unitario</dt>
@@ -226,6 +226,5 @@ export function ValuationDialog({
           {feedback}
         </AdminNotice>
       )}
-    </div>
   </AdminDialog>
 }
