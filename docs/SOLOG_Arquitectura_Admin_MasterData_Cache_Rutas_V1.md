@@ -9,6 +9,28 @@
 
 ---
 
+## Reconciliación posterior — 2026-09-26
+
+La arquitectura compartida de MasterData/caché/rutas permanece vigente, con estos deltas de runtime ya desplegados:
+
+```text
+Dashboard
+daily_detail → daily_detail_bootstrap + daily_detail_page
+
+Control
+control_chronology → control_chronology_view
+
+Incidencias
+detail → detail_sites
+
+Grupos
+Groups Read V1 → retirado; lecturas compartidas desde MasterData V1
+```
+
+Las superficies legacy ya no se conservan por compatibilidad. La regla histórica de “no retirar automáticamente RPC legacy” se considera satisfecha: se auditó consumo real, se desplegó el frontend limpio, se validó producción y luego se retiraron los contratos correspondientes.
+
+Para inventario exacto del runtime prevalece `SOLOG_Backend_Contratos_Runtime_Actual_V2.md`.
+
 ## 1. Propósito y prevalencia
 
 Este documento congela la nueva arquitectura administrativa para:
