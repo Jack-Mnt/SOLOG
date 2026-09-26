@@ -1,10 +1,10 @@
 # SOLOG — Refactor Admin: Limpieza de contratos legacy V1
 
-**Estado:** Congelado — fuente primaria aprobada  
-**Fecha:** 26 de septiembre de 2026  
-**Clasificación:** Nivel B — limpieza estructural frontend con cleanup backend dependiente  
-**Proyecto:** SOLOG  
-**Rama de trabajo:** `admin-work`  
+**Estado:** Congelado — fuente primaria aprobada
+**Fecha:** 26 de septiembre de 2026
+**Clasificación:** Nivel B — limpieza estructural frontend con cleanup backend dependiente
+**Proyecto:** SOLOG
+**Rama de trabajo:** `admin-work`
 **Baseline conocido al preflight:** `fd8cf42bee97ca5ce3b88dae5989e139b1f0920c`
 
 ---
