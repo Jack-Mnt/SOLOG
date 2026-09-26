@@ -9,6 +9,29 @@
 
 ---
 
+## Reconciliación posterior — 2026-09-26
+
+Este contrato continúa vigente para la lógica, estados y mutaciones de Admin > Incidencias, con un delta posterior en la lectura de detalle:
+
+```text
+detail_sites  → vigente y autoritativo
+detail        → retirado
+```
+
+La acción `detail` descrita en §9 fue una superficie V2 válida en el momento de congelar este contrato, pero fue sustituida por `detail_sites` durante la optimización de egress y eliminada del wrapper `rpc_solog_admin_incidents_v2` después del corte a producción.
+
+Las acciones runtime actuales son:
+
+```text
+summary
+detail_sites
+ignore_30d
+reactivate
+propose_delete
+```
+
+Todo el resto de este contrato permanece vigente salvo contradicción explícita con este delta. Para runtime consolidado prevalece `SOLOG_Backend_Contratos_Runtime_Actual_V2.md`.
+
 ## 1. Autoridad y precedencia
 
 Este documento es la **fuente primaria técnica vigente del módulo Admin > Incidencias**.
