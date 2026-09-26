@@ -107,6 +107,15 @@ describe('S10-B: contrato V9 sin retirar compatibilidades vigentes', () => {
     expect(management).toContain('rpc_solog_admin_' + '${domain(action)}_v2')
     expect(management).toMatch(/return\s+["' ]incidents["' ]/)
     expect(management).toContain("return 'devices'")
+    expect(management).not.toMatch(/\bdetail\s*:/)
+    expect(management).not.toMatch(/\breplace\s*:/)
+    const operational = source('src/features/solog/admin/admin.v2.ts')
+    for (const legacy of ['daily_detail', 'control_chronology', 'control_page', 'control_detail']) {
+      expect(operational).not.toMatch(new RegExp('\\b' + legacy + '\\b'))
+    }
+    const groups = source('src/features/solog/admin/grupos/admin.grupos.v1.ts')
+    expect(groups).not.toContain('rpc_solog_admin_groups_read_v1')
+    expect(groups).not.toContain('groupsRead')
     expect(source('src/features/solog/cajero/cajero.v3.api.ts')).toContain('rpc_solog_cashier_mutate_v3')
     expect(source('src/features/solog/detalles/detalles.v2.ts')).toContain('rpc_solog_details_v2')
   })
