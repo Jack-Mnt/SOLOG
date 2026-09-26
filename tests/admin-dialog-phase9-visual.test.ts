@@ -27,8 +27,9 @@ describe('AdminDialog Fase 9.7 — consolidación visual transversal', () => {
   test('Footer tolera wrapping sin alterar el contrato mobile existente', async () => {
     const css = await source('src/features/solog/admin/admin.css')
 
-    expect(cssBlock(css, '.admin-dialog__footer {'))
-      .toContain('flex-wrap: wrap')
+    expect(css).toContain(
+      '.admin-dialog__footer {\n  flex-wrap: wrap;',
+    )
     expect(cssBlock(css, '.admin-dialog__footer-actions {'))
       .toContain('flex-wrap: wrap')
     expect(css).toContain(
