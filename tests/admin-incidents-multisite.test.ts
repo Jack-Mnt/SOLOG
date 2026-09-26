@@ -280,9 +280,11 @@ describe("Incidencias multisede", () => {
     expect(source).toMatch(
       /useManagementQuery\(\s*"detail_sites",\s*\{\s*family_key:\s*family\.family_key,\s*\}\s*\)/,
     );
-    expect(source).toMatch(
-      /useManagementQuery\(\s*"detail",\s*\{\s*family_key:\s*family\.family_key,\s*page:\s*0,\s*page_size:\s*100,\s*\}/,
+    expect(source).not.toMatch(
+      /useManagementQuery\(\s*"detail"\s*,/,
     );
+    expect(source).not.toContain("legacyFallback");
+    expect(source).not.toContain("legacyQuery");
     expect(source).not.toContain('site={allActive ? undefined : siteId}');
     expect(source).not.toContain("detailFamily.sources[0]");
   });
