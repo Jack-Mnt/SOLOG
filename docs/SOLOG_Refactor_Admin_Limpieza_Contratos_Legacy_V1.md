@@ -68,7 +68,8 @@ Fuentes de referencia subordinadas:
 - `SOLOG_Arquitectura_Admin_MasterData_Cache_Rutas_V1.md`;
 - `SOLOG_Backend_Admin_MasterData_Contrato_Tecnico_V1.md`;
 - `SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`;
-- `SOLOG_Backend_Contratos_Runtime_Actual_V1.md`;
+- `SOLOG_Backend_Contratos_Runtime_Actual_V2.md` — runtime consolidado vigente;
+- `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — histórico/reemplazado;
 - `SOLOG_Backend_Admin_Drawers_Fase8_2B_Optimizacion_Egress_V1.md`;
 - `SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md`;
 - `SOLOG_UI_Admin_Dialogs_Fase4_Confirmaciones_V1.md`;
