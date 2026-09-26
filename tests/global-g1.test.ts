@@ -77,23 +77,23 @@ test('G1 error Admin invalidado no resucita ni elimina contexto nuevo', async ()
   expect(store.bootstrap).not.toBeNull(); expect(store.peek('daily_detail', payload).data).toBe(fresh)
 })
 
-test('G1 error maestro invalidado no revoca un acceso actualizado', async () => {
+test('G1 error Management invalidado no revoca un acceso actualizado', async () => {
   const delayed = deferred<unknown>(); let first = true, forbidden = false
   const store = new ManagementStore('admin-test', bootstrapFixture, (_, denied) => { forbidden ||= !!denied },
     (async (a,p) => { if (first) { first = false; return delayed.promise } return managementFixture(a,p) }) as typeof managementRead)
-  const old = store.load('status', {}); store.refresh()
-  const fresh = await store.load('status', {})
+  const old = store.load('summary', {}); store.refresh()
+  const fresh = await store.load('summary', {})
   delayed.reject(new ManagementError('SOLOG_ADMIN_ROLE_REQUIRED'))
   await expect(old).rejects.toThrow('ROLE')
-  expect(forbidden).toBe(false); expect(store.peek('status', {}).data).toBe(fresh)
+  expect(forbidden).toBe(false); expect(store.peek('summary', {}).data).toBe(fresh)
 })
 
 test('G1 resultado de mutación no cruza un cambio de acceso', async () => {
   const delayed = deferred<unknown>(); let payload = {}
   const store = new ManagementStore('admin-test', bootstrapFixture, () => {}, undefined,
     (async (_a,p) => { payload = p; return delayed.promise }) as typeof managementMutate)
-  const old = store.mutation('update_package_price', { grupo_id: 'g', precio_paquete: 12 }, 3)
-  store.resetAccess(); delayed.resolve(mutationFixture('update_package_price', payload))
+  const old = store.mutation('revoke', { device_id: 'site-a-device-0' }, 2, 'site-a')
+  store.resetAccess(); delayed.resolve(mutationFixture('revoke', payload))
   await expect(old).rejects.toThrow('cambio de acceso')
-  expect(store.results.size).toBe(0); expect(store.intent('master')).toBeUndefined()
+  expect(store.results.size).toBe(0); expect(store.intent('devices')).toBeUndefined()
 })
