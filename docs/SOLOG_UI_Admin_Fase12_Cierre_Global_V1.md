@@ -427,7 +427,7 @@ desviaciones globales abiertas       = 0
 
 
 ## 12.4 — Validación técnica y smoke de integración
-**Estado:** PENDIENTE
+**Estado:** COMPLETADA / VALIDADA TÉCNICA Y HUMANAMENTE
 
 Validación:
 
@@ -458,6 +458,41 @@ sobre:
 - ausencia de errores visuales/funcionales evidentes.
 
 No se repiten exhaustivamente los smokes ya aprobados de cada bloque.
+
+### Resultado ejecutado — 2026-09-26
+
+Validación reportada por el usuario:
+
+```text
+bun test --reporter=dot   ✅
+bun run lint              ✅
+bun run build             ✅
+git diff --check          ✅
+```
+
+Smoke de integración:
+
+```text
+Desktop   ✅
+Tablet    ✅
+Mobile    ✅
+```
+
+Cobertura del smoke:
+
+- navegación;
+- carga inicial;
+- SiteContext donde corresponde;
+- filtros y tablas;
+- paginación;
+- acciones principales;
+- responsive;
+- ausencia de errores visuales o funcionales evidentes.
+
+No se reportaron regresiones ni bloqueos.
+
+> **Fase 12.4 — CERRADA.**
+
 
 ## 12.5 — Cierre documental del Admin
 **Estado:** PENDIENTE
