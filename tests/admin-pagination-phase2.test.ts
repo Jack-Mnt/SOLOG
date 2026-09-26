@@ -19,7 +19,7 @@ test('Fase 2 pagina solo la tabla principal de Incidencias', async () => {
   expect(page).toContain('paginatedFamilies.rows.map')
   expect(page).toContain('total={families.length}')
   expect(page).toContain('JSON.stringify([type, state, siteId, allActive])')
-  expect(page).toMatch(/page_size:\s*100/)
+  expect(page).not.toMatch(/page_size:\s*100/)
 })
 
 test('Fase 2 pagina Dashboard DailyDrawer con bootstrap y páginas remotas de Fase 8.2B', async () => {

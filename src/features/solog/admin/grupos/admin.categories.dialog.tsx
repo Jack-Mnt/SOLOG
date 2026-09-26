@@ -192,6 +192,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
             variant="compact"
           />
         ) : (
+          <>
             <form
               className="admin-categories__create"
               onSubmit={(event) => void create(event)}
@@ -364,6 +365,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                 {error}
               </AdminNotice>
             )}
+          </>
         )}
       </AdminDialog>
 
