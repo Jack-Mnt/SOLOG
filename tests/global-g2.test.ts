@@ -77,28 +77,29 @@ test('G2 precio por paquete histórico no se reemplaza con catálogo vivo', () =
 })
 
 test('G2 dos admins: conflicto no es éxito; recarga y nueva intención con revisión vigente', async () => {
-  let revision = 3
+  let revision = 2
   const sent: Record<string, unknown>[] = []
   const mutate = (async (a,p) => {
     sent.push(p)
-    if (p.expected_groups_revision !== revision) throw new ManagementError('SOLOG_MASTERDATA_REVISION_CONFLICT')
+    if (p.expected_revision !== revision) throw new ManagementError('SOLOG_DEVICE_REVISION_CONFLICT')
     revision++
-    return mutationFixture(a,p,false,{ groups: revision, catalog: 5, incidents: 4, devices: 2 })
+    return mutationFixture(a,p,false,{ incidents: 4, incidents_global: 4, devices: revision })
   }) as typeof managementMutate
-  const read = (async (a,p) => managementFixture(a,p,{ groups: revision, catalog: 5, incidents: 4, devices: 2 })) as typeof managementRead
+  const read = (async (a,p) => managementFixture(a,p,{ incidents: 4, incidents_global: 4, devices: revision })) as typeof managementRead
   const a = new ManagementStore('admin-test',bootstrapFixture,()=>{},read,mutate)
   const b = new ManagementStore('admin-test',bootstrapFixture,()=>{},read,mutate)
-  await Promise.all([a.load('status',{}), b.load('status',{})])
-  const payload = { grupo_id: 'group-1', precio_paquete: 12 }
-  await a.mutation('update_package_price',payload,3)
-  await expect(b.mutation('update_package_price',payload,3)).rejects.toThrow('CONFLICT')
-  expect(b.results.size).toBe(0); expect(b.peek('status',{}).data).toBeUndefined()
-  const status = await b.load('status',{})
-  await b.mutation('update_package_price',payload,status.revisions.groups!)
+  await Promise.all([a.load('list',{site_id:'site-a'}), b.load('list',{site_id:'site-a'})])
+  const payload = { device_id: 'site-a-device-1' }
+  await a.mutation('authorize',payload,2,'site-a')
+  await expect(b.mutation('authorize',payload,2,'site-a')).rejects.toThrow('CONFLICT')
+  expect(b.results.size).toBe(0); expect(b.peek('list',{site_id:'site-a'}).data).toBeUndefined()
+  const list = await b.load('list',{site_id:'site-a'})
+  const current = list.devices.find(device => device.id === payload.device_id)!.revision
+  await b.mutation('authorize',payload,current,'site-a')
   expect(sent[1].operation_id).not.toBe(sent[2].operation_id)
 })
 
-test('G2 publicación/cambio maestro no altera una sesión Cajero congelada', async () => {
+test('G2 mutación administrativa no altera una sesión Cajero congelada', async () => {
   const bootstrap = parseCashierV3Bootstrap(cashierV3Bootstrap('session'))
   const cashier = new CashierV3Store('user-1','device',()=>{}, {
     bootstrap: async()=>bootstrap, mutate: async()=>{throw new Error('Sin escritura operativa')},
@@ -106,29 +107,28 @@ test('G2 publicación/cambio maestro no altera una sesión Cajero congelada', as
   await cashier.refresh(); const frozen = structuredClone(cashier.bootstrap)
   const admin = new ManagementStore('admin-test',bootstrapFixture,()=>{},undefined,
     (async(a,p)=>mutationFixture(a,p)) as typeof managementMutate)
-  await admin.mutation('update_package_price',{grupo_id:'group-1',precio_paquete:99},3)
+  await admin.mutation('ignore_30d',{family_key:'fp',scope:'global'},4)
   expect(cashier.bootstrap).toEqual(frozen)
   expect(cashier.bootstrap?.panel_state?.basis.groups_revision).toBe(7)
 })
 
 test('G2 familia estable: ignore/reactivate/propose mantienen scope y refrescan catálogo', async () => {
-  let revision = 4
+  let revision = 4, catalogRefreshes = 0
   const calls: string[] = []
   const store = new ManagementStore('admin-test',bootstrapFixture,()=>{},
-    (async(a,p)=>{calls.push(a);return managementFixture(a,p,{groups:3,catalog:6,incidents:revision,devices:2})}) as typeof managementRead,
-    (async(a,p)=>mutationFixture(a,p,false,{groups:3,catalog:6,incidents:++revision,devices:2})) as typeof managementMutate)
+    (async(a,p)=>{calls.push(a);return managementFixture(a,p,{incidents:revision,incidents_global:revision,devices:2})}) as typeof managementRead,
+    (async(a,p)=>mutationFixture(a,p,false,{incidents:++revision,incidents_global:revision,devices:2})) as typeof managementMutate,
+    undefined,
+    ()=>{ catalogRefreshes++ })
   const family = (await store.load('summary',{})).families[0]
-  await store.load('catalog_changes',{limit:50,offset:0})
   const ignored = await store.mutation('ignore_30d',{family_key:family.family_key,scope:'global'},4)
   expect(ignored).toMatchObject({ family_key:family.family_key,scope:'global',site_id:null,status:'suppressed',until:'2026-10-04T12:00:00Z' })
   const active = await store.mutation('reactivate',{family_key:family.family_key,scope:'global'},5)
   expect(active.status).toBe('active')
   const proposed = await store.mutation('propose_delete',{family_key:family.family_key,scope:'site',site_id:'site-a'},4,'site-a')
   expect(proposed).toMatchObject({family_key:family.family_key,scope:'site',site_id:'site-a',status:'deletion_proposed',cambio_catalogo_id:'change-delete'})
-  expect(store.peek('catalog_changes',{limit:50,offset:0}).data).toBeUndefined()
+  expect(catalogRefreshes).toBe(1)
   expect(calls).not.toContain('detail')
-  await store.load('catalog_changes',{limit:50,offset:0})
-  expect(calls.filter(a=>a==='catalog_changes')).toHaveLength(2)
 })
 
 test('G2 revocación Admin se refleja al refrescar Cajero y limpia borradores', async () => {
