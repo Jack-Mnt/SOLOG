@@ -53,7 +53,7 @@ const stateViews: Array<{ state: IncidentState; label: string }> = [
 function StateBadge({ state }: { state: IncidentState }) {
   return (
     <span
-      className={`admin-incidents__state admin-status-badge admin-status-badge--${state === "pendiente" ? "warning" : state === "resuelta" ? "success" : "info"} admin-incidents__state--${state}`}
+      className={`admin-status-badge admin-status-badge--${state === "pendiente" ? "warning" : state === "resuelta" ? "success" : "info"}`}
     >
       {stateLabels[state]}
     </span>

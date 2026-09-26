@@ -262,9 +262,7 @@ export function AdminProductsV1() {
       .filter((item) => !setupFingerprints.has(item.propuesta_fingerprint)),
   ];
   return (
-    <section className="admin-catalog admin-products">
-
-      <section className="admin-products__section">
+    <section className="admin-catalog">
         <form
           className="admin-toolbar admin-toolbar-surface"
           onSubmit={(event) => event.preventDefault()}
@@ -476,7 +474,6 @@ export function AdminProductsV1() {
           onPageChange={setPage}
           ariaLabel="Paginación de productos"
         />
-      </section>
       {selected && (
         <ProductStateProposal
           product={selected}

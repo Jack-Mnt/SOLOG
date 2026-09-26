@@ -230,11 +230,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
 
                 return (
                   <div
-                    className={
-                      isEditing
-                        ? 'admin-categories__row admin-categories__row--editing'
-                        : 'admin-categories__row'
-                    }
+                    className="admin-categories__row"
                     role="listitem"
                     key={category.id}
                   >

@@ -97,14 +97,6 @@ export function AdminDevicesV2() {
                       </span>
                       <header>
                         <h3>{adminSiteLabel(site.nombre)}</h3>
-                        <span
-                          className={
-                            "admin-device-badge " +
-                            (device
-                              ? "admin-device-badge--authorized"
-                              : "admin-device-badge--empty")
-                          }
-                        ></span>
                         {device ? (
                           <button
                             className="button button--secondary admin-device-revoke"
@@ -123,14 +115,12 @@ export function AdminDevicesV2() {
                         )}
                       </header>
                       {device ? (
-                        <>
-                          <div className="admin-device-card__person">
-                            <p>
-                              Último acceso ·{" "}
-                              {deviceAccessLabel(device.ultimo_acceso_at)}
-                            </p>
-                          </div>
-                        </>
+                        <div className="admin-device-card__person">
+                          <p>
+                            Último acceso ·{" "}
+                            {deviceAccessLabel(device.ultimo_acceso_at)}
+                          </p>
+                        </div>
                       ) : (
                         <p className="admin-device-card__empty">
                           No hay tablet autorizada.

@@ -293,7 +293,7 @@ function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
               <header>
                 <time dateTime={row.event_at}>{eventTime(row.event_at)}</time>
                 <span
-                  className={`admin-control__badge admin-status-badge admin-status-badge--${tone} admin-control__tone--${tone}`}
+                  className={`admin-control__badge admin-status-badge admin-status-badge--${tone}`}
                 >
                   {chronologyStateLabel(row)}
                 </span>
@@ -531,7 +531,7 @@ function ControlResults({
                     <td>{row.category}</td>
                     <td>
                       <span
-                        className={`admin-control__badge admin-status-badge admin-status-badge--${stateTone[row.state]} admin-control__tone--${stateTone[row.state]}`}
+                        className={`admin-control__badge admin-status-badge admin-status-badge--${stateTone[row.state]}`}
                       >
                         {row.state === "Recontar" ? "Por recontar" : row.state}
                       </span>

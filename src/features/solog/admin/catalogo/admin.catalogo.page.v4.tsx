@@ -608,7 +608,7 @@ function ProposalStateNotice({ proposal }: { proposal: CatalogProposal }) {
 function ProposalDetailChange({ proposal }: { proposal: CatalogProposal }) {
   const change = catalogProposalChange(proposal);
   return (
-    <section className="admin-catalog__dialog-section admin-catalog__proposal-change-section">
+    <section className="admin-catalog__dialog-section">
       <div className="admin-catalog__proposal-change-heading">
         <h3>Cambio propuesto</h3>
         <span
