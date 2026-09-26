@@ -163,6 +163,7 @@ function ProductSetupPendingDialog({
       title="Configuración pendiente"
       description="Completa la configuración necesaria antes de publicar los productos."
       onClose={onClose}
+      kind="management"
       footer={
         <button type="button" className="button button--secondary" onClick={onClose}>
           Cerrar

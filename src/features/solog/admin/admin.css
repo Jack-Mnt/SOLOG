@@ -581,7 +581,7 @@
   gap: 16px;
 }
 
-.admin-dialog-task {
+.admin-dialog--kind-management .admin-dialog__body {
   display: grid;
   gap: 16px;
 }

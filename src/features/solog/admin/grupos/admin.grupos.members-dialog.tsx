@@ -237,6 +237,7 @@ export function GroupMembersDialog({
         description={`${group.categoryName} · ${group.memberCount} SKU · ${group.derivedType} · S/ ${group.precio.toFixed(2)}`}
         onClose={onClose}
         closeDisabled={!!intent?.pending}
+        kind="management"
         size="wide"
         footer={
           <>
@@ -260,7 +261,6 @@ export function GroupMembersDialog({
           </>
         }
       >
-        <div className="admin-dialog-task">
           <section className="admin-groups-members__section">
             <h3>Integrantes actuales</h3>
             <div className="admin-auxiliary-table">
@@ -326,7 +326,6 @@ export function GroupMembersDialog({
           </section>
 
           {!separating && renderErrorNotice()}
-        </div>
       </AdminDialog>
 
       {separating && (

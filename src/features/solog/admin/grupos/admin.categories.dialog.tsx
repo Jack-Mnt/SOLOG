@@ -157,6 +157,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
         description="Crea, renombra y define el orden operativo de las categorías."
         onClose={requestClose}
         closeDisabled={!!intent?.pending}
+        kind="management"
         size="wide"
         footer={
           <>
@@ -191,7 +192,6 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
             variant="compact"
           />
         ) : (
-          <div className="admin-dialog-task">
             <form
               className="admin-categories__create"
               onSubmit={(event) => void create(event)}
@@ -364,7 +364,6 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                 {error}
               </AdminNotice>
             )}
-          </div>
         )}
       </AdminDialog>
 
