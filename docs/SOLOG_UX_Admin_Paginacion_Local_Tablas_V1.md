@@ -203,3 +203,49 @@ Por tanto:
 - no se modifica el Dashboard principal, la grilla quincenal, tarjetas, métricas, columnas ni composición visual del diálogo.
 
 Este delta reemplaza únicamente la exclusión previa de `DailyDrawer`. El resto del documento permanece vigente.
+
+## 13. Reconciliación posterior — Dashboard DailyDrawer optimizado
+
+**Fecha:** 2026-09-26  
+**Estado:** VIGENTE — REEMPLAZA ÚNICAMENTE EL CONTRATO DE PAGINACIÓN DEL DAILYDRAWER
+
+La regla histórica de este documento que definía para:
+
+```text
+Dashboard — detalle diario
+→ paginación local de 50 filas
+```
+
+quedó reemplazada por la optimización backend posterior consolidada en:
+
+```text
+SOLOG_Backend_Contratos_Runtime_Actual_V2.md
+```
+
+El runtime vigente del Drawer diario utiliza:
+
+```text
+daily_detail_bootstrap
+daily_detail_page
+page_size = 25
+```
+
+Por tanto, para **Dashboard DailyDrawer** la regla actual es:
+
+```text
+paginación backend de 25 filas por página
+```
+
+Este delta no modifica el resto del contrato de este documento.
+
+Permanecen vigentes:
+
+- Productos → 50 filas locales;
+- Control → 50 filas locales;
+- Grupos → 50 filas locales;
+- Incidencias → 50 filas locales;
+- Catálogo → 25 propuestas por sección;
+- filtrado, búsqueda, ordenamiento y contadores antes de paginar donde la paginación continúa siendo local.
+
+La referencia de 50 filas para Dashboard debe considerarse **histórica/reemplazada únicamente en esa superficie**.
+
