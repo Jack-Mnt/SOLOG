@@ -25,6 +25,35 @@ Grupos V1 continúa siendo autoridad de sus propias mutaciones y estructura; Cat
 
 ---
 
+## Reconciliación posterior — 2026-09-26
+
+Este documento conserva la definición original de Grupos V1, pero su **mitad de lectura quedó reemplazada** por MasterData V1 y posteriormente fue retirada del backend.
+
+Retirado:
+
+```text
+public.rpc_solog_admin_groups_read_v1
+inventario.solog_admin_groups_read_v1
+```
+
+También fueron retiradas las superficies transitorias Master V2 mencionadas en este contrato:
+
+```text
+public.rpc_solog_admin_master_read_v2
+public.rpc_solog_admin_master_v2
+```
+
+Permanece vigente la superficie de mutación:
+
+```text
+public.rpc_solog_admin_groups_v1
+inventario.solog_admin_groups_v1
+```
+
+y se conserva `inventario.solog_admin_catalog_v2` porque sigue siendo dependencia real de `inventario.solog_admin_groups_v1`.
+
+Para la lectura actual de Grupos prevalece `SOLOG_Backend_Admin_MasterData_Contrato_Tecnico_V1.md`; para el runtime consolidado prevalece `SOLOG_Backend_Contratos_Runtime_Actual_V2.md`.
+
 ## 2. Superficie pública congelada
 
 ### Lectura
