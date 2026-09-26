@@ -46,7 +46,7 @@ describe('Management V2 reads and cache', () => {
   })
   test('rejects mismatched family, site and stale revisions', async () => {
     const {store}=harness({read:(a,p)=>({...managementFixture(a,p),site_id:'site-b'})}); await expect(store.load('summary',{site_id:'site-a'})).rejects.toThrow('otra sede')
-    const stale=harness({read:(a,p)=>managementFixture(a,p,{incidents:3,incidents_global:3,devices:2})}); await expect(stale.store.load('summary',{})).rejects.toThrow('obsoleta')
+    const stale=harness({read:(a,p)=>managementFixture(a,p,{incidents:3,incidents_global:3,devices:2})}); await expect(stale.store.load('summary',{site_id:'site-a'})).rejects.toThrow('obsoleta')
     const family=harness({read:(a,p)=>({...managementFixture(a,p),family_key:'different'})}); await expect(family.store.load('detail',{family_key:'fp',page:0,page_size:100})).rejects.toThrow('familia')
   })
 })
