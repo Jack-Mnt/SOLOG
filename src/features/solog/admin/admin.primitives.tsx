@@ -207,7 +207,7 @@ export function AdminSort<T extends string>({ value, defaultValue, options, onCh
   >
     <IconButton
       ref={trigger}
-      className={active ? 'admin-sort__trigger admin-sort__trigger--active' : 'admin-sort__trigger'}
+      className={active ? 'admin-sort__trigger--active' : undefined}
       aria-label="Ordenar resultados"
       title={activeOption && active ? `Ordenar: ${activeOption.label}` : 'Ordenar'}
       aria-haspopup="menu"

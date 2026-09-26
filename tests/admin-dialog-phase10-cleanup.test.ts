@@ -57,6 +57,19 @@ describe('AdminDialog Fase 10 — cleanup estructural', () => {
     expect(devices).toContain('admin-device-card__person')
   })
 
+  test('10.3 retira la clase base huérfana de AdminSort y conserva el estado activo', async () => {
+    const primitives = await source(
+      'src/features/solog/admin/admin.primitives.tsx',
+    )
+
+    expect(primitives).not.toContain("'admin-sort__trigger'")
+    expect(primitives).toContain(
+      "className={active ? 'admin-sort__trigger--active' : undefined}",
+    )
+    expect(primitives).toContain('aria-label="Ordenar resultados"')
+    expect(primitives).toContain('aria-haspopup="menu"')
+  })
+
   test('conserva estructuras activas excluidas explícitamente del cleanup', async () => {
     const [css, app, theme] = await Promise.all([
       source('src/features/solog/admin/admin.css'),
