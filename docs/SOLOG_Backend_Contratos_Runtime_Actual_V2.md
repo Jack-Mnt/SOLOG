@@ -1,0 +1,1157 @@
+# SOLOG — Backend Contratos Runtime Actual V2
+
+**Estado:** CONGELADO / CONSOLIDADO DESDE RUNTIME  
+**Proyecto:** SOLOG  
+**Supabase:** `PuertoRicoOnline` (`fvtohxvcvsflzmftgfzs`)  
+**Fecha:** 2026-09-26  
+**Nivel:** C — contrato backend/frontend consolidado  
+**API base:** `contract_version = 2` para las superficies compartidas descritas aquí  
+**Fuente primaria para el runtime compartido:** este documento (V2)
+
+---
+
+## 1. Propósito
+
+Este documento consolida en una sola fuente el contrato backend/frontend que anteriormente estaba repartido entre:
+
+```text
+SOLOG_Backend_Contratos_Optimizacion_Global_V2.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V3.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V4.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V5.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V6.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V7.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V8.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V9.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V10.md
+```
+
+Este archivo se construyó contrastando:
+
+- el runtime desplegado en Supabase;
+- las funciones públicas actuales;
+- grants reales;
+- Edge Functions activas;
+- contratos específicos posteriores ya congelados;
+- el frontend actual del repositorio SOLOG.
+
+Una vez incorporado al repositorio, **V2–V10 pueden archivarse fuera del repositorio** sin perder la cadena contractual vigente.
+
+---
+
+# 2. Prevalencia documental
+
+Para runtime compartido:
+
+1. `SOLOG_Backend_Contratos_Runtime_Actual_V2.md` — fuente primaria consolidada.
+2. `SOLOG_Backend_Contratos_Runtime_Actual_V1.md` — reemplazado por V2; histórico para el estado anterior al cleanup legacy.
+3. Contratos específicos de módulo posteriores — prevalecen dentro de su dominio:
+   - `SOLOG_Backend_Catalogo_Contrato_Tecnico_V1.md`
+   - `SOLOG_Backend_Catalogo_Valorizado_Mascaras_Delta_V1.md`
+   - `SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md`
+   - `SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md`
+4. Contratos objetivo congelados todavía no desplegados:
+   - `SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md`
+5. Documentos funcionales congelados correspondientes.
+6. Contratos de optimización V2–V10 — históricos una vez archivados.
+
+Este documento **no reemplaza** los contratos específicos de Catálogo V3, Grupos V1 o Incidencias V2; los referencia como superficies vigentes independientes.
+
+Los contratos marcados como **objetivo / pendiente de implementación** no describen todavía el runtime desplegado. Se registran para impedir reinterpretaciones durante su implementación y solo pasan a formar parte del runtime actual después de despliegue y validación explícitos.
+
+---
+
+# 3. Principios globales del runtime
+
+## 3.1 Autenticación
+
+Las RPC públicas SOLOG usan:
+
+```text
+auth.uid()
+```
+
+como identidad autoritativa.
+
+Errores comunes:
+
+```text
+SOLOG_AUTH_REQUIRED
+SOLOG_USER_DISABLED
+SOLOG_ROLE_NOT_ALLOWED
+SOLOG_ADMIN_ROLE_REQUIRED
+SOLOG_OPERATIONAL_ROLE_REQUIRED
+```
+
+No se debe confiar en identidad, rol, sede ni timestamps enviados libremente por cliente cuando el backend ya posee autoridad.
+
+---
+
+## 3.2 Envelopes
+
+Las superficies compartidas V2 responden en general con:
+
+```json
+{
+  "contract_version": 2,
+  "generated_at": "...",
+  "...": "..."
+}
+```
+
+Las respuestas mutables pueden incluir además:
+
+```text
+replay
+revisions
+state
+result
+```
+
+El frontend debe rechazar envelopes incompatibles.
+
+---
+
+## 3.3 Revisiones
+
+Scopes vigentes:
+
+```text
+groups        global
+catalog       global
+categories    global
+operational   por sede
+devices       por sede
+incidents     global y/o por sede según contrato
+```
+
+Las revisiones se obtienen mediante:
+
+```text
+inventario.solog_revision_get(...)
+```
+
+y son autoritativas.
+
+Catálogo V3 y Grupos V1 utilizan además sus propias reglas contractuales específicas.
+
+---
+
+## 3.4 Idempotencia
+
+Las mutaciones críticas utilizan:
+
+```text
+operation_id UUID
+```
+
+y ledger backend mediante:
+
+```text
+inventario.solog_operation_begin(...)
+inventario.solog_operation_finish(...)
+```
+
+Regla general:
+
+```text
+mismo intento + mismo payload
+→ conservar operation_id
+
+nueva intención / payload reconstruido
+→ nuevo operation_id
+```
+
+Una respuesta `replay:true` representa una operación previamente confirmada por backend.
+
+---
+
+## 3.5 Bloqueos
+
+El master data de Catálogo/Grupos utiliza advisory transaction lock:
+
+```text
+(1397705807, 4702)
+```
+
+El error retryable vigente es:
+
+```text
+SOLOG_LOCK_CONFLICT_RETRYABLE
+```
+
+Un retry por lock/transporte conserva el mismo `operation_id` y payload exacto.
+
+---
+
+# 4. Enrutamiento
+
+RPC vigente:
+
+```sql
+public.rpc_solog_route_v2(
+  p_payload jsonb default '{}'
+)
+```
+
+Roles:
+
+```text
+cajero      → /cajero
+admin       → /admin
+moderador   → /admin
+```
+
+Respuesta:
+
+```json
+{
+  "contract_version": 2,
+  "generated_at": "...",
+  "identity": {
+    "id": "uuid",
+    "nombre": "...",
+    "rol": "..."
+  },
+  "route": "/admin"
+}
+```
+
+La portada `/` no necesita bootstrap operacional.
+
+---
+
+# 5. Bootstrap Admin
+
+RPC:
+
+```sql
+public.rpc_solog_admin_bootstrap_v2(
+  p_payload jsonb default '{}'
+)
+```
+
+Roles:
+
+```text
+admin
+moderador
+```
+
+Devuelve:
+
+```text
+identity
+permissions
+allowed_sites
+revisions.groups
+revisions.catalog
+```
+
+Por sede:
+
+```text
+id
+nombre
+operational_revision
+devices_revision
+incidents_revision
+```
+
+Este bootstrap debe mantenerse **ligero**.
+
+No debe absorber datasets pesados solo para ahorrar número de RPC.
+
+---
+
+# 6. Cajero
+
+## 6.1 Bootstrap
+
+RPC:
+
+```sql
+public.rpc_solog_cashier_bootstrap_v2(
+  p_payload jsonb default '{}'
+)
+```
+
+Rol:
+
+```text
+cajero
+```
+
+Payload puede incluir:
+
+```text
+device_token
+```
+
+Devuelve como mínimo:
+
+```text
+identity
+site
+device
+start_capability
+session_capability
+session_state
+panel_state
+revisions
+server_now
+```
+
+El backend:
+
+- valida usuario/sede/dispositivo;
+- identifica último snapshot confirmado;
+- determina expiración;
+- detecta sesión activa o recovery;
+- entrega panel pre-sesión o sesión congelada.
+
+---
+
+## 6.2 Sesión congelada
+
+Al iniciar conteo se congelan por sesión:
+
+```text
+snapshot_referencia_id
+version_catalogo
+groups_revision
+periodo_desde
+periodo_hasta
+grupos disponibles
+nombre/categoría/tipo
+precio
+valorizado
+SKU integrantes
+stock teórico
+estado operativo relevante
+```
+
+Cambios posteriores del master data no reinterpretan una sesión iniciada.
+
+---
+
+## 6.3 Mutaciones
+
+RPC:
+
+```sql
+public.rpc_solog_cashier_mutate_v2(
+  p_action text,
+  p_payload jsonb
+)
+```
+
+Acciones vigentes:
+
+```text
+start
+save_batch
+recount_save_batch
+finish
+```
+
+Acciones legacy retiradas:
+
+```text
+recount_start
+recount_save
+```
+
+---
+
+## 6.4 `save_batch`
+
+Reglas principales:
+
+- máximo 500 items;
+- `client_observation_id` UUID;
+- `grupo_id`;
+- `stock_fisico >= 0`;
+- `contado_at` dentro de la sesión y no futuro inválido;
+- grupo perteneciente a la sesión congelada;
+- no permite guardar dos veces el mismo grupo;
+- un grupo pendiente de reconteo no se guarda como conteo normal.
+
+Estado inicial:
+
+```text
+diferencia = físico - teórico
+
+0     → Coincide
+!= 0  → Recontar
+```
+
+El backend puede resolver automáticamente mediante snapshot posterior cuando corresponda.
+
+---
+
+## 6.5 `recount_save_batch`
+
+Reglas principales:
+
+- solo diferencias realmente pendientes de reconteo;
+- no permite reconteo en la misma sesión que originó el caso;
+- usa el snapshot teórico de la sesión de reconteo;
+- fija el snapshot de reconteo al guardar el batch.
+
+Resultado:
+
+```text
+dr = físico_reconteo - teórico_reconteo
+
+dr = 0
+→ Coincide
+
+mismo signo que diferencia inicial
+→ Confirmada
+→ conserva la diferencia de menor magnitud entre inicial y reconteo
+
+signo distinto / incompatibilidad
+→ Inconsistente
+```
+
+---
+
+## 6.6 Recovery
+
+Una sesión expirada mantiene una ventana de recuperación de entrega pendiente.
+
+Durante recovery:
+
+```text
+capture_allowed = false
+pending_delivery_allowed = true
+```
+
+Después del límite backend la sesión pasa a `expirado`.
+
+---
+
+## 6.7 Historial
+
+RPC:
+
+```sql
+public.rpc_solog_cashier_history_v2(
+  p_payload jsonb
+)
+```
+
+Se utiliza para historial reciente bajo demanda del Cajero.
+
+Zona operativa:
+
+```text
+America/Lima
+```
+
+---
+
+# 7. Detalles
+
+RPC:
+
+```sql
+public.rpc_solog_details_v2(
+  p_action text,
+  p_payload jsonb
+)
+```
+
+Superficie V2 vigente para el módulo de detalle/consulta.
+
+Acciones desplegadas:
+
+```text
+summary
+request_access
+history
+detail
+export
+```
+
+La UI debe mantener las lecturas bajo demanda y paginación/cursores según el contrato ya implementado.
+
+No debe acceder directamente a tablas privadas de `inventario`.
+
+---
+
+# 8. Dashboard y datos operativos Admin
+
+RPC:
+
+```sql
+public.rpc_solog_operational_v2(
+  p_action text,
+  p_payload jsonb
+)
+```
+
+Roles:
+
+```text
+admin
+moderador
+```
+
+Acciones activas usadas por el frontend:
+
+```text
+dashboard_cards
+shift_grid
+daily_detail_bootstrap
+daily_detail_page
+control_groups
+control_chronology_view
+```
+
+Acciones retiradas del runtime el 2026-09-26:
+
+```text
+daily_detail
+control_chronology
+control_page
+control_detail
+```
+
+No existen como compatibilidad soportada.
+
+---
+
+## 8.1 `dashboard_cards`
+
+Devuelve por sede:
+
+```text
+period_coverage
+daily_coverage
+pending_recount
+snapshot
+operational_revision
+```
+
+### Cobertura quincenal
+
+Usa estado operativo vigente.
+
+### Cobertura diaria
+
+Desde la migración:
+
+```text
+20260911155102_solog_dashboard_daily_coverage_frozen_universe_v1
+```
+
+usa el universo diario congelado de:
+
+```text
+solog_daily_coverage_base
+solog_daily_coverage_groups
+```
+
+y queda alineada con el total diario de `shift_grid`.
+
+### Datos live
+
+Se mantienen live:
+
+```text
+pending_recount
+último snapshot
+```
+
+---
+
+## 8.2 `shift_grid`
+
+Carga lazy por:
+
+```text
+sede
+período
+```
+
+Períodos:
+
+```text
+current_biweekly
+previous_biweekly
+```
+
+Usa:
+
+```text
+solog_daily_coverage_base
+solog_daily_coverage_groups
+solog_shift_coverage
+```
+
+Turnos históricos:
+
+```text
+early  → 00:00–07:30
+day    → 07:30–15:30
+night  → 15:30–24:00
+```
+
+Los denominadores diarios quedan congelados para evitar reinterpretación histórica si cambia Grupos.
+
+---
+
+## 8.3 Coverage durante rollout piloto
+
+Jobs existentes:
+
+```text
+solog_shift_early
+solog_shift_day
+solog_shift_night
+```
+
+Estado actual deliberado:
+
+```text
+active = false
+```
+
+Los cron permanecen desactivados mientras las sedes se incorporan progresivamente.
+
+Desde la migración:
+
+```text
+solog_pilot_daily_coverage_from_snapshot_and_cutervo_backfill
+```
+
+cada snapshot confirmado que pasa por `inventario.solog_evaluar_snapshot()` ejecuta, después de refrescar `estado_stock_grupo`:
+
+```text
+solog_ensure_daily_coverage_base(sede, fecha_operativa)
+```
+
+La operación es idempotente. Por tanto:
+
+```text
+primer snapshot confirmado de una sede/día
+→ refrescar estado_stock_grupo
+→ congelar universo diario de esa sede/día
+→ dashboard_cards puede calcular daily_coverage
+```
+
+Una sede sin snapshot confirmado no recibe universo diario vacío. Esto permite mantener los cron apagados durante el rollout y habilitar cobertura solo para sedes que realmente empiezan a operar.
+
+### Backfill piloto autorizado — Cutervo
+
+Para pruebas se reconstruyó deliberadamente el universo de:
+
+```text
+2026-09-18 → 485 grupos
+2026-09-19 → 485 grupos
+2026-09-20 → 485 grupos
+```
+
+usando la revisión de grupos vigente al momento del backfill. El 18 y 19 constituyen historia sintética autorizada; no representan una reconstrucción exacta de la revisión histórica original.
+
+También se recalcularon con ese universo los cortes ya finalizados:
+
+```text
+18 set. → early / day / night
+19 set. → early / day / night
+20 set. → early
+```
+
+Los cortes aún no finalizados del 20 no se precargaron.
+
+### Casuarinas / Casua
+
+El nombre canónico en base de datos es:
+
+```text
+Casuarinas
+```
+
+El Admin puede presentarlo visualmente como:
+
+```text
+Casua
+```
+
+mediante `adminSiteLabel()`.
+
+Casuarinas queda preparada por el mismo flujo general: su primer snapshot confirmado generará su universo diario real. No se crea cobertura con denominador cero antes de que empiece a operar.
+
+Cuando el rollout termine y se decida retomar cortes automáticos, los tres cron pueden reactivarse. `solog_ensure_daily_coverage_base()` sigue siendo compatible porque es idempotente.
+
+---
+
+## 8.4 Detalle diario optimizado
+
+El Drawer diario usa exclusivamente:
+
+```text
+daily_detail_bootstrap
+daily_detail_page
+```
+
+`daily_detail_bootstrap` entrega el resumen, conteos por tipo de stock/estado y la primera página necesaria.
+
+`daily_detail_page` resuelve páginas posteriores bajo demanda.
+
+La acción histórica `daily_detail` fue retirada del wrapper `rpc_solog_operational_v2` el 2026-09-26.
+
+Dashboard y Control conservan semánticas independientes.
+
+---
+
+# 9. Control — runtime vigente consolidado
+
+La implementación vigente usa:
+
+```text
+control_groups
+control_chronology_view
+```
+
+dentro de:
+
+```text
+rpc_solog_operational_v2
+```
+
+## 9.1 `control_groups`
+
+Carga el dataset requerido para una sede/período.
+
+La UI realiza localmente los filtros/orden/paginación visual aprobados donde corresponda.
+
+## 9.2 `control_chronology_view`
+
+Se solicita bajo demanda para un grupo y devuelve la proyección compacta autoritativa usada por el Drawer de cronología.
+
+La acción histórica `control_chronology` fue retirada el 2026-09-26.
+
+No descargar cronologías masivas al abrir Control.
+
+---
+
+## 9.3 Exportación
+
+RPC:
+
+```sql
+public.rpc_solog_control_export_v2(
+  p_payload jsonb
+)
+```
+
+Períodos soportados:
+
+```text
+current_biweekly
+previous_biweekly
+```
+
+Devuelve datasets normalizados para:
+
+```text
+summary
+adjustments
+pending_recount
+inconsistent
+all
+```
+
+La valorización y fuente final del caso se resuelven en backend.
+
+---
+
+# 10. Incidencias
+
+Contrato específico vigente:
+
+```text
+SOLOG_Backend_Incidencias_Contrato_Tecnico_V2.md
+```
+
+RPC pública:
+
+```sql
+public.rpc_solog_admin_incidents_v2(
+  p_action text,
+  p_payload jsonb
+)
+```
+
+Acciones vigentes:
+
+```text
+summary
+detail_sites
+ignore_30d
+reactivate
+propose_delete
+```
+
+`summary` se usa por ámbito; filtros Tipo/Estado se aplican en frontend.
+
+`detail_sites` es la única superficie autoritativa para el detalle por sedes y se solicita bajo demanda.
+
+La acción histórica `detail` fue retirada del wrapper el 2026-09-26.
+
+Incidencias no publica ni elimina productos directamente.
+
+Las seis incidencias comerciales continúan fuera de esta superficie. Su contrato objetivo de integración con Catálogo está congelado en:
+
+```text
+SOLOG_Backend_Incidencias_Comerciales_Catalogo_Contrato_V1.md
+```
+
+El motor comercial ↔ Catálogo V4 ya está implementado. Las seis familias comerciales siguen fuera de Admin > Incidencias; `propose_delete` continúa siendo la transición explícita desde `producto_ausente` hacia Catálogo.
+
+---
+
+# 11. Dispositivos
+
+RPC:
+
+```sql
+public.rpc_solog_admin_devices_v2(
+  p_action text,
+  p_payload jsonb
+)
+```
+
+Acciones vigentes:
+
+```text
+list
+authorize
+revoke
+reject
+```
+
+`replace` fue retirado del frontend y del backend el 2026-09-26.
+
+El reemplazo funcional de una tablet se realiza mediante el flujo explícito:
+
+```text
+revocar dispositivo autorizado
+→ sede disponible
+→ nueva solicitud
+→ autorizar nueva solicitud
+```
+
+La UI obtiene una lista pequeña y deriva localmente:
+
+```text
+tablet autorizada por sede
+solicitudes pendientes
+```
+
+No se requiere paginación ni polling.
+
+---
+
+# 12. Catálogo
+
+Único contrato técnico vigente:
+
+```text
+SOLOG_Catalogo_V4_Contrato_Tecnico_V1.md
+```
+
+RPC consumidas por el frontend:
+
+```sql
+public.rpc_solog_admin_catalog_read_v4(...)
+public.rpc_solog_admin_catalog_v4(...)
+```
+
+Contrato:
+
+```text
+contract_version = 4
+```
+
+V4 define la aprobación atómica, origen autoritativo, Ignorar/Reactivar para automáticas, Descartar para administrativas, resolución grupal de precios, valorizado y publicación.
+
+Las superficies V3 que aún puedan existir físicamente en Supabase son legacy pendiente de una limpieza backend independiente. No son una alternativa soportada ni un contrato vigente del frontend.
+
+Este runtime consolidado no redefine los payloads de V4.
+
+---
+
+# 13. Grupos
+
+Contrato específico vigente:
+
+```text
+SOLOG_Backend_Grupos_Contrato_Tecnico_V1.md
+```
+
+RPC de mutación vigente:
+
+```sql
+public.rpc_solog_admin_groups_v1(...)
+```
+
+`contract_version = 1`.
+
+Las lecturas compartidas de Grupos se obtienen desde MasterData V1:
+
+```sql
+public.rpc_solog_admin_masterdata_read_v1(...)
+```
+
+La superficie histórica:
+
+```sql
+public.rpc_solog_admin_groups_read_v1(...)
+inventario.solog_admin_groups_read_v1(...)
+```
+
+fue retirada el 2026-09-26.
+
+Este runtime consolidado no redefine las mutaciones de Grupos V1.
+
+---
+
+
+# 14. Master Data compartido Admin V1
+
+Contrato específico vigente:
+
+```text
+SOLOG_Backend_Admin_MasterData_Contrato_Tecnico_V1.md
+```
+
+Migraciones:
+
+```text
+20260911161324_solog_admin_shared_masterdata_v1
+20260911161430_solog_admin_shared_masterdata_v1_compact_payload
+```
+
+RPC:
+
+```sql
+public.rpc_solog_admin_masterdata_read_v1(...)
+public.rpc_solog_admin_masterdata_v1(...)
+```
+
+`contract_version = 1`.
+
+Lectura principal:
+
+```text
+bootstrap
+```
+
+Devuelve en una sola respuesta normalizada:
+
+```text
+categories
+groups
+products
+setup_required
+totals
+revisions.groups
+revisions.catalog
+revisions.categories
+```
+
+Baseline validado:
+
+```text
+24 categorías
+483 grupos
+980 productos
+347,722 bytes JSON sin compresión
+```
+
+Mutaciones de Categorías:
+
+```text
+category_create
+category_rename
+category_reorder
+```
+
+No existen en V1:
+
+```text
+delete
+activate/deactivate
+merge
+```
+
+Este contrato es la fuente técnica del master data utilizado por la caché compartida de Productos, Grupos, Categorías y referencias de Catálogo definida en `SOLOG_Arquitectura_Admin_MasterData_Cache_Rutas_V1.md`.
+
+---
+
+# 15. Master V2 — retirado
+
+Las superficies históricas:
+
+```sql
+public.rpc_solog_admin_master_read_v2(...)
+public.rpc_solog_admin_master_v2(...)
+```
+
+fueron retiradas del runtime el 2026-09-26 después de:
+
+- migrar el frontend a MasterData V1, Catálogo V4 y Grupos V1;
+- desplegar el frontend limpio en producción;
+- completar smoke de producción;
+- verificar ausencia de consumidores SQL, triggers, cron, Edge Functions y llamadas PostgREST observables.
+
+También se retiró la cadena interna que quedó huérfana exclusivamente por Master V2:
+
+```text
+inventario.solog_group_change_save_v2
+inventario.solog_group_change_save_immediate
+inventario.solog_normalize_group_v2
+```
+
+Se conserva `inventario.solog_admin_catalog_v2` porque continúa siendo dependencia real de `inventario.solog_admin_groups_v1`.
+
+# 16. Publicación Catálogo
+
+Edge Function activa:
+
+```text
+conexion-admin
+version = 6
+verify_jwt = true
+```
+
+Acción pública esperada:
+
+```json
+{
+  "action": "publish_catalog",
+  "operation_id": "uuid"
+}
+```
+
+Solo rol:
+
+```text
+admin
+```
+
+Backend interno de publicación:
+
+```sql
+rpc_solog_catalog_publication_v2
+rpc_solog_catalog_publication_artifact_v6
+```
+
+Estas RPC son `service_role` y no API cliente directa.
+
+La Edge:
+
+1. valida JWT y rol admin;
+2. inicia/reanuda operación;
+3. obtiene preview/artefacto estable;
+4. genera artefacto schema 2;
+5. publica en Storage;
+6. registra commit/finish;
+7. soporta replay/recuperación mediante el mismo `operation_id`.
+
+---
+
+# 17. Seguridad SQL
+
+Las RPC públicas de aplicación vigentes conceden `EXECUTE` a:
+
+```text
+authenticated
+service_role
+```
+
+y no a:
+
+```text
+anon
+PUBLIC
+```
+
+Las superficies internas sensibles de publicación son `service_role`.
+
+Las tablas privadas de `inventario` no deben exponerse como fuente directa del frontend.
+
+---
+
+# 18. Estrategia de lectura vigente por módulo
+
+```text
+Route
+→ una lectura mínima
+
+Admin bootstrap
+→ una lectura mínima
+
+Dashboard
+→ cards agregadas
+→ shift_grid lazy
+→ daily_detail_bootstrap + daily_detail_page lazy
+
+Control
+→ dataset por período
+→ control_chronology_view lazy
+
+Incidencias
+→ summary por ámbito
+→ detail_sites lazy
+
+Dispositivos
+→ list completa pequeña
+
+Catálogo
+→ propuestas lazy por estado
+→ preview bajo demanda
+→ publicación explícita
+
+Cajero
+→ bootstrap autoritativo
+→ mutaciones batch
+→ history bajo demanda
+```
+
+No consolidar módulos operativos distintos únicamente para reducir número de RPC.
+
+---
+
+# 19. Documentación reemplazada
+
+Una vez este documento esté incorporado como fuente vigente, pueden archivarse fuera del repositorio:
+
+```text
+SOLOG_Backend_Contratos_Optimizacion_Global_V2.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V3.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V4.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V5.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V6.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V7.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V8.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V9.md
+SOLOG_Backend_Contratos_Optimizacion_Global_V10.md
+```
+
+Los documentos específicos posteriores de Catálogo, Grupos e Incidencias permanecen en el repositorio.
+
+---
+
+# 20. Estado final
+
+Este documento consolida el runtime compartido actual después del cleanup legacy cerrado el 2026-09-26 y elimina la necesidad de reconstruir contratos ya retirados para saber qué está vigente.
+
+Cualquier cambio posterior debe documentarse como:
+
+- delta específico de módulo; o
+- nueva versión consolidada si modifica transversalmente el runtime.
