@@ -210,7 +210,7 @@ Cuando Fase 12 se retome después de ese bloque, 12.2 debe comenzar desde un nue
 - separar explícitamente cleanup frontend de cleanup backend.
 
 ## 12.2 — Auditoría ejecutable y cleanup seguro
-**Estado:** PENDIENTE
+**Estado:** COMPLETADA / VALIDADA POR AUDITORÍA
 
 Antes de modificar:
 
@@ -225,6 +225,84 @@ Antes de modificar:
 5. aprobar únicamente cambios sin efecto funcional.
 
 Implementar en pasadas pequeñas y revisables.
+
+### Resultado ejecutado — 2026-09-26
+
+**Baseline real 12.2:**
+
+```text
+70ca5849ee72a88ddf87c286ae8f8a3e2d0b340f
+```
+
+El baseline incorpora los bloques independientes cerrados después de 12.1, incluido el cleanup de contratos legacy y el cierre posterior de AdminDialog Fases 10/11. Esos cambios se toman como correctos y no se reinterpretan en 12.2.
+
+Inventario auditado:
+
+```text
+49 archivos TS/TSX/CSS bajo src/features/solog/admin
+48 archivos runtime TS/TSX
+1 hoja admin.css
+PaletteSwitcher externo como consumidor adicional de admin.css
+harnesses/tests Admin relevantes para hooks estructurales
+```
+
+Hallazgos:
+
+1. Los candidatos históricos de 12.1:
+
+```text
+admin-v2-data
+admin-v2-json
+admin-v2-kpis
+```
+
+ya no existen en `admin.css`; fueron absorbidos/eliminados por cleanup posterior.
+
+2. `admin-appearance*` no es CSS muerto. Su consumidor real es:
+
+```text
+src/features/theme/palette-switcher.tsx
+```
+
+y existe cobertura dirigida en los tests/harnesses de AdminDialog/Shell.
+
+3. Tokens detectados en runtime sin regla CSS propia como:
+
+```text
+admin-mobile-drawer
+admin-viewport
+admin-catalog-proposals-panel
+admin-dashboard-daily-state-panel
+admin-tablets-title
+admin-requests-title
+admin-create-group-form
+admin-edit-group-form
+admin-product-setup-form
+admin-incidents-state-panel
+```
+
+no constituyen clases visuales huérfanas: son IDs, data-hooks, referencias ARIA o hooks estructurales de tests. Se conservan.
+
+4. Las variantes CSS construidas dinámicamente (`admin-dialog--*`, `admin-status-badge--*`, diferencias, estados y secciones de Catálogo) tienen consumidores runtime y no deben eliminarse por no aparecer como string literal completo.
+
+5. `admin__percentage-action` sigue siendo una excepción vigente consumida por Dashboard y por sus reglas responsive.
+
+6. No se encontraron referencias runtime ni comentarios técnicos que reintroduzcan Master V2, Groups Read V1, `daily_detail`, `control_chronology`, `control_page`, `control_detail`, Incidencias `detail` o Dispositivos `replace`.
+
+7. No se detectó ningún selector, helper, import o componente cuya eliminación pueda demostrarse segura con evidencia suficiente adicional al cleanup ya ejecutado. Los candidatos dudosos se conservan conforme a la política de Fase 12.
+
+**Resultado de implementación:**
+
+```text
+cleanup adicional de runtime/CSS = 0
+cambios funcionales              = 0
+cambios backend                  = 0
+```
+
+La ausencia de borrados adicionales es intencional: 12.2 prioriza evidencia sobre volumen de cleanup.
+
+> **Fase 12.2 — CERRADA.**
+
 
 ## 12.3 — Revisión de integración global
 **Estado:** PENDIENTE
