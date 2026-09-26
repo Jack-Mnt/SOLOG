@@ -26,12 +26,9 @@ export class AdminStore {
       if (forbidden) { this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.management.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
       this.propagateGroupsInvalidation(revisions.groups)
     })
-    this.management = new ManagementStore(userId, () => this.live ? this.bootstrap : null, (revisions, forbidden) => {
+    this.management = new ManagementStore(userId, () => this.live ? this.bootstrap : null, (_revisions, forbidden) => {
       if (forbidden) { this.management.resetAccess(); this.catalog.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit(); return }
-      if (revisions.groups !== undefined) {
-        this.masterData.observeRevisions({ groups: revisions.groups })
-      }
-    }, undefined, undefined, undefined, undefined, () => this.catalog.refresh())
+    }, undefined, undefined, undefined, () => this.catalog.refresh())
     this.catalog = new CatalogStore(userId, () => this.live ? this.bootstrap : null, (_, forbidden) => {
       if (forbidden) { this.catalog.resetAccess(); this.management.resetAccess(); this.groupsV1.resetAccess(); this.masterData.resetAccess(); this.epoch++; this.entries.clear(); this.bootstrap = null; this.emit() }
     }, undefined, undefined, undefined, this.masterData)
@@ -55,7 +52,6 @@ export class AdminStore {
   private propagateGroupsInvalidation(revision: number) {
     if (revision <= this.propagatedGroupsRevision) return
     this.propagatedGroupsRevision = revision
-    this.management.observeGroups(revision)
     this.invalidate(undefined, true)
     this.emit()
   }

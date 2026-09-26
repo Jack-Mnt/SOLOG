@@ -1,4 +1,4 @@
-import { domain, managementRead, managementMutate, publishManagement, ManagementError, type Domain, type ReadAction, type ReadPayloads, type Reads, type Payload, type Mutations, type MutationAction, type MutationResult, type Revisions, type PublicationResult } from './admin.management.v2'
+import { domain, managementRead, managementMutate, ManagementError, type Domain, type ReadAction, type ReadPayloads, type Reads, type Payload, type Mutations, type MutationAction, type MutationResult, type Revisions } from './admin.management.v2'
 import type { AdminBootstrap } from './admin.v2'
 
 interface Entry { action: ReadAction; payload: Payload; data?: Reads[ReadAction]; error?: string; pending?: Promise<Reads[ReadAction]>; expiresAt?: number }
@@ -13,12 +13,7 @@ export class ManagementStore {
   private intents = new Map<Domain, Intent>()
   private resultOccurrences = new Map<Domain, number>()
   results = new Map<Domain, MutationResult>()
-  publication: { operationId?: string; pending?: Promise<PublicationResult>; result?: PublicationResult; error?: string } = {}
-  constructor(readonly userId: string, private auth: () => AdminBootstrap | null, private changed: (revisions: Revisions, forbidden?: boolean) => void, private read = managementRead, private mutateRpc = managementMutate, private publishRpc = publishManagement, private now = Date.now, private catalogProposalConfirmed: () => void = () => {}) {
-    // Only an operation receipt, never operational data or a catalog cache.
-    try { const id = sessionStorage.getItem(this.receiptKey()); if (id && /^[0-9a-f-]{36}$/i.test(id)) this.publication.operationId = id } catch { /* Memory retry remains available. */ }
-  }
-  private receiptKey() { return `solog:publication:v2:${this.userId}` }
+  constructor(readonly userId: string, private auth: () => AdminBootstrap | null, private changed: (revisions: Revisions, forbidden?: boolean) => void, private read = managementRead, private mutateRpc = managementMutate, private now = Date.now, private catalogProposalConfirmed: () => void = () => {}) {}
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => { this.listeners.delete(fn) } }
   snapshot = () => this.version
   private emit() { this.version++; this.listeners.forEach(fn => fn()) }
@@ -33,34 +28,31 @@ export class ManagementStore {
     const b = this.auth()
     if (!this.live || !b || b.identity.id !== this.userId) throw new Error('Contexto administrativo no disponible.')
     if (site && !b.allowed_sites.some(s => s.id === site)) throw new Error('Sede fuera del acceso administrativo.')
-    this.seed('groups', b.revisions.groups)
-    this.seed('catalog', b.revisions.catalog)
     b.allowed_sites.forEach(s => { this.seed('devices', s.devices_revision, s.id); this.seed('incidents', s.incidents_revision, s.id) })
     return b
   }
-  private seed(name: string, revision?: number, site?: string) {
+  private seed(name: Domain, revision?: number, site?: string) {
     if (revision === undefined || revision <= (this.floors.get(this.revKey(name, site)) ?? -1)) return
     this.floors.set(this.revKey(name, site), revision)
-    this.invalidate(e => name === 'groups' || name === 'catalog' ? domain(e.action) === 'master' : domain(e.action) === name && (!e.payload.site_id || e.payload.site_id === site))
+    this.invalidate(e => domain(e.action) === name && (!e.payload.site_id || e.payload.site_id === site))
   }
-  observeGroups(revision: number) { this.seed('groups', revision); this.emit() }
   private key(action: ReadAction, payload: Payload) { return JSON.stringify([this.userId, this.auth()?.identity.rol, action, Object.entries(payload).sort(([a], [b]) => a.localeCompare(b))]) }
   peek<A extends ReadAction>(action: A, payload: ReadPayloads[A]) { const e = this.entries.get(this.key(action, payload)); return { data: e?.expiresAt !== undefined && e.expiresAt <= this.now() ? undefined : e?.data as Reads[A] | undefined, error: e?.error, expiresAt: e?.expiresAt } }
   private invalidate(predicate: (e: Entry) => boolean) { for (const [key, e] of this.entries) if (predicate(e)) this.entries.delete(key) }
   refresh() { this.entries.clear(); this.emit() }
   resetAccess() {
     this.accessEpoch++; this.entries.clear(); this.intents.clear(); this.results.clear(); this.resultOccurrences.clear()
-    this.publication = { operationId: this.publication.operationId }; this.emit()
+    this.emit()
   }
   dispose() { this.live = false; this.entries.clear(); this.floors.clear(); this.intents.clear(); this.results.clear(); this.resultOccurrences.clear(); this.listeners.clear() }
-  private revKey(name: string, site?: string) { const revisionName = name === 'incidents_global' ? 'incidents' : name; return `${revisionName}:${name === 'groups' || name === 'catalog' || name === 'incidents_global' ? 'global' : site ?? 'global'}` }
+  private revKey(name: string, site?: string) { const revisionName = name === 'incidents_global' ? 'incidents' : name; return `${revisionName}:${name === 'incidents_global' ? 'global' : site ?? 'global'}` }
   private observe(revisions: Revisions, site?: string, preserveIncidentSummary = false) {
     for (const [name, rev] of Object.entries(revisions)) if (rev !== undefined && rev < (this.floors.get(this.revKey(name, site)) ?? -1)) throw new Error('Respuesta obsoleta: actualiza la fuente autoritativa.')
     for (const [name, rev] of Object.entries(revisions)) {
       const key = this.revKey(name, site)
       if (rev !== undefined && rev > (this.floors.get(key) ?? -1)) {
         this.floors.set(key, rev)
-        this.invalidate(e => name === 'groups' || name === 'catalog' ? domain(e.action) === 'master' : name === 'incidents_global' ? domain(e.action) === 'incidents' : domain(e.action) === name && (!site || !e.payload.site_id || e.payload.site_id === site) && !(preserveIncidentSummary && name === 'incidents' && e.action === 'summary' && e.payload.site_id === site))
+        this.invalidate(e => name === 'incidents_global' ? domain(e.action) === 'incidents' : domain(e.action) === name && (!site || !e.payload.site_id || e.payload.site_id === site) && !(preserveIncidentSummary && name === 'incidents' && e.action === 'summary' && e.payload.site_id === site))
       }
     }
     this.changed(revisions)
@@ -78,7 +70,6 @@ export class ManagementStore {
       this.access(site)
       if (this.entries.get(key) !== entry || this.key(action, payload) !== key) throw new Error('Consulta invalidada durante la carga.')
       if ('site_id' in result && result.site_id !== (site ?? null)) throw new Error('Respuesta de otra sede.')
-      if ('offset' in result && (result.offset !== (payload as Payload).offset || result.limit !== (payload as Payload).limit)) throw new Error('Página maestra incorrecta.')
       if (action === 'detail') {
         const r = result as Reads['detail'], p = payload as ReadPayloads['detail']
         if (r.family_key !== p.family_key || r.page !== p.page || r.page_size !== p.page_size) throw new Error('Detalle de otra familia/página.')
@@ -87,7 +78,6 @@ export class ManagementStore {
         const r = result as Reads['detail_sites'], p = payload as ReadPayloads['detail_sites']
         if (r.family_key !== p.family_key) throw new Error('Detalle por sede de otra familia.')
       }
-      if (action === 'price_mismatch_options' && (result as Reads['price_mismatch_options']).propuesta_fingerprint !== (payload as ReadPayloads['price_mismatch_options']).propuesta_fingerprint) throw new Error('Opciones de otra propuesta.')
       if (action === 'list') {
         const devices = (result as Reads['list']).devices
         devices.forEach(d => { this.access(d.site_id); if (site && site !== d.site_id) throw new Error('Dispositivo de otra sede.') })
@@ -118,7 +108,7 @@ export class ManagementStore {
     const d = domain(action)
     if (this.intents.has(d)) throw new Error('Hay una operación sin confirmar. Reinténtala antes de crear otra intención.')
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) throw new Error('Falta revisión autoritativa.')
-    const intent: Intent = { action, site, attempt: 0, payload: { ...payload, operation_id: crypto.randomUUID(), [d === 'master' ? 'expected_groups_revision' : 'expected_revision']: expectedRevision } }
+    const intent: Intent = { action, site, attempt: 0, payload: { ...payload, operation_id: crypto.randomUUID(), expected_revision: expectedRevision } }
     this.intents.set(d, intent)
     return this.execute(d, intent)
   }
@@ -188,10 +178,9 @@ export class ManagementStore {
       else if (intent.action === 'propose_delete') {
         this.patchDeletionProposed(result)
         this.invalidate(e => domain(e.action) === 'incidents' && e.action === 'detail' && e.payload.family_key === intent.payload.family_key)
-      } else if (!patchIncident) this.invalidate(e => d === 'master' ? domain(e.action) === 'master' : d === 'devices' ? domain(e.action) === 'devices' && (!e.payload.site_id || e.payload.site_id === intent.site) : domain(e.action) === 'incidents' && (!intent.site || !e.payload.site_id || e.payload.site_id === intent.site) && (e.action === 'summary' || e.payload.family_key === intent.payload.family_key))
+      } else if (!patchIncident) this.invalidate(e => d === 'devices' ? domain(e.action) === 'devices' && (!e.payload.site_id || e.payload.site_id === intent.site) : domain(e.action) === 'incidents' && (!intent.site || !e.payload.site_id || e.payload.site_id === intent.site) && (e.action === 'summary' || e.payload.family_key === intent.payload.family_key))
       if (intent.action === 'propose_delete') {
-        this.invalidate(e => domain(e.action) === 'master')
-        // Catálogo V3 is the next authority. Clear only its public cache after a confirmed or replayed proposal.
+        // Catálogo V4 is the next authority. Clear only its public cache after a confirmed or replayed proposal.
         this.catalogProposalConfirmed()
       }
       this.results.set(d, result); this.resultOccurrences.set(d, (this.resultOccurrences.get(d) ?? 0) + 1); this.intents.delete(d); this.emit(); return result
@@ -210,32 +199,5 @@ export class ManagementStore {
       throw error
     })
     intent.pending = request; this.emit(); return request
-  }
-  publish(): Promise<PublicationResult> {
-    if (this.access().identity.rol !== 'admin') return Promise.reject(new Error('Solo admin puede publicar.'))
-    if (this.publication.pending) return this.publication.pending
-    const accessEpoch = this.accessEpoch
-    const operationId = this.publication.operationId ?? crypto.randomUUID()
-    this.publication = { operationId }
-    try { sessionStorage.setItem(this.receiptKey(), operationId) } catch { /* Keep the same in-memory receipt. */ }
-    const request = this.publishRpc(operationId).then(result => {
-      this.access()
-      if (accessEpoch !== this.accessEpoch) throw new Error('Respuesta descartada por cambio de acceso.')
-      this.publication = { result }
-      try { sessionStorage.removeItem(this.receiptKey()) } catch { /* Non-fatal. */ }
-      this.invalidate(e => domain(e.action) === 'master'); this.changed({}); this.emit(); return result
-    }).catch((error: unknown) => {
-      if (this.live && accessEpoch === this.accessEpoch) {
-        this.authorizationError(error)
-        this.publication.pending = undefined; this.publication.error = error instanceof Error ? error.message : 'Publicación sin confirmar.'
-        if (error instanceof ManagementError && !error.uncertain) {
-          this.publication.operationId = undefined
-          try { sessionStorage.removeItem(this.receiptKey()) } catch { /* Non-fatal. */ }
-        }
-        this.invalidate(e => e.action === 'publication_preview' || e.action === 'status'); this.emit()
-      }
-      throw error
-    })
-    this.publication.pending = request; this.emit(); return request
   }
 }
