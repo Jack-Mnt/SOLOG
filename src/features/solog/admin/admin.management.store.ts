@@ -71,10 +71,6 @@ export class ManagementStore {
       this.access(site)
       if (this.entries.get(key) !== entry || this.key(action, payload) !== key) throw new Error('Consulta invalidada durante la carga.')
       if ('site_id' in result && result.site_id !== (site ?? null)) throw new Error('Respuesta de otra sede.')
-      if (action === 'detail') {
-        const r = result as Reads['detail'], p = payload as ReadPayloads['detail']
-        if (r.family_key !== p.family_key || r.page !== p.page || r.page_size !== p.page_size) throw new Error('Detalle de otra familia/página.')
-      }
       if (action === 'detail_sites') {
         const r = result as Reads['detail_sites'], p = payload as ReadPayloads['detail_sites']
         if (r.family_key !== p.family_key) throw new Error('Detalle por sede de otra familia.')
@@ -178,7 +174,6 @@ export class ManagementStore {
       else if (intent.action === 'reactivate' && patchIncident) this.patchReactivatedIncident(intent.site!, result)
       else if (intent.action === 'propose_delete') {
         this.patchDeletionProposed(result)
-        this.invalidate(e => domain(e.action) === 'incidents' && e.action === 'detail' && e.payload.family_key === intent.payload.family_key)
       } else if (!patchIncident) this.invalidate(e => d === 'devices' ? domain(e.action) === 'devices' && (!e.payload.site_id || e.payload.site_id === intent.site) : domain(e.action) === 'incidents' && (!intent.site || !e.payload.site_id || e.payload.site_id === intent.site) && (e.action === 'summary' || e.payload.family_key === intent.payload.family_key))
       if (intent.action === 'propose_delete') {
         // Catálogo V4 is the next authority. Clear only its public cache after a confirmed or replayed proposal.
