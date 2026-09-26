@@ -55,7 +55,7 @@ Para runtime compartido:
 5. Documentos funcionales congelados correspondientes.
 6. Contratos de optimización V2–V10 — históricos una vez archivados.
 
-Este documento **no reemplaza** los contratos específicos de Catálogo V3, Grupos V1 o Incidencias V2; los referencia como superficies vigentes independientes.
+Este documento **no reemplaza** los contratos específicos de Catálogo V4, Grupos V1 o Incidencias V2; los referencia como superficies vigentes independientes.
 
 Los contratos marcados como **objetivo / pendiente de implementación** no describen todavía el runtime desplegado. Se registran para impedir reinterpretaciones durante su implementación y solo pasan a formar parte del runtime actual después de despliegue y validación explícitos.
 
@@ -133,7 +133,7 @@ inventario.solog_revision_get(...)
 
 y son autoritativas.
 
-Catálogo V3 y Grupos V1 utilizan además sus propias reglas contractuales específicas.
+Catálogo V4 y Grupos V1 utilizan además sus propias reglas contractuales específicas.
 
 ---
 
