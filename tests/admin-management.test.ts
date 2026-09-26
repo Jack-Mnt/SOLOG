@@ -12,12 +12,12 @@ function harness(options: { mutate?: (a: MutationAction, p: Payload) => unknown;
   return { store, calls, changes, auth }
 }
 describe('Management V2 reads and cache', () => {
-  for (const action of ['summary','detail','detail_sites','list'] as ReadAction[]) test(action+' preserves its exact response', () => {
-    const p = action === 'detail' ? { page: 0, page_size: 100, family_key: 'a'.repeat(64) } : action === 'detail_sites' ? { family_key: 'a'.repeat(64) } : {}
+  for (const action of ['summary','detail_sites','list'] as ReadAction[]) test(action+' preserves its exact response', () => {
+    const p = action === 'detail_sites' ? { family_key: 'a'.repeat(64) } : {}
     const r = managementFixture(action,p); expect(validateRead(action,r)).toBe(r)
     expect(() => validateRead(action,{ ...r, contract_version: 1 })).toThrow()
   })
-  test('summary y detail exigen el contrato operativo V2 y la reactivación por scope', () => {
+  test('summary y detail_sites exigen el contrato operativo V2 y la reactivación por scope', () => {
     const summary = managementFixture('summary', {})
     expect(validateRead('summary', summary)).toBe(summary)
     expect(() => validateRead('summary', { ...summary, revisions: { incidents: summary.revisions.incidents } })).toThrow('Revisiones')
@@ -30,9 +30,9 @@ describe('Management V2 reads and cache', () => {
     expect(validateRead('summary', { ...summary, families: [ownScopeSuppression] }).families[0].reactivate_available).toBe(true)
     const resolved = { ...family, pending_cases: 0, suppressed_cases: 0, resolved_cases: 2, active_cases: 0, active: false, family_state: 'resuelta', resolved_at: now }
     expect(validateRead('summary', { ...summary, families: [resolved] }).families[0].family_state).toBe('resuelta')
-    const detail = managementFixture('detail', { family_key: family.family_key, page: 0, page_size: 100 })
-    expect(validateRead('detail', detail)).toBe(detail)
-    expect(() => validateRead('detail', { ...detail, items: [{ ...detail.items[0], estado: 'resuelta', active: true }] })).toThrow('Página')
+    const detail = managementFixture('detail_sites', { family_key: family.family_key })
+    expect(validateRead('detail_sites', detail)).toBe(detail)
+    expect(() => validateRead('detail_sites', { ...detail, family_key: 'bad' })).toThrow('Detalle')
   })
   test('deduplicates, caches and separates sites; blocks unauthorized site', async () => {
     const {store,calls}=harness(); await Promise.all([store.load('summary',{}),store.load('summary',{})]); await store.load('summary',{}); expect(calls.length).toBe(1)
@@ -47,14 +47,14 @@ describe('Management V2 reads and cache', () => {
   test('rejects mismatched family, site and stale revisions', async () => {
     const {store}=harness({read:(a,p)=>({...managementFixture(a,p),site_id:'site-b'})}); await expect(store.load('summary',{site_id:'site-a'})).rejects.toThrow('otra sede')
     const stale=harness({read:(a,p)=>managementFixture(a,p,{incidents:3,incidents_global:3,devices:2})}); await expect(stale.store.load('summary',{site_id:'site-a'})).rejects.toThrow('obsoleta')
-    const family=harness({read:(a,p)=>({...managementFixture(a,p),family_key:'different'})}); await expect(family.store.load('detail',{family_key:'fp',page:0,page_size:100})).rejects.toThrow('familia')
+    const family=harness({read:(a,p)=>({...managementFixture(a,p),family_key:'different'})}); await expect(family.store.load('detail_sites',{family_key:'a'.repeat(64)})).rejects.toThrow('familia')
   })
 })
 describe('Management V2 mutation intentions',()=>{
-  const payloads: Record<string,Mutations[MutationAction]> = {ignore_30d:{family_key:'fp',scope:'site',site_id:'site-a'},reactivate:{family_key:'fp',scope:'site',site_id:'site-a'},propose_delete:{family_key:'fp',scope:'site',site_id:'site-a'},authorize:{device_id:'site-a-device-1'},replace:{device_id:'site-a-device-1'},revoke:{device_id:'site-a-device-0'},reject:{device_id:'site-a-device-1'}}
+  const payloads: Record<string,Mutations[MutationAction]> = {ignore_30d:{family_key:'fp',scope:'site',site_id:'site-a'},reactivate:{family_key:'fp',scope:'site',site_id:'site-a'},propose_delete:{family_key:'fp',scope:'site',site_id:'site-a'},authorize:{device_id:'site-a-device-1'},revoke:{device_id:'site-a-device-0'},reject:{device_id:'site-a-device-1'}}
   for(const [action,payload] of Object.entries(payloads))test(action+' success and lost-response replay retain UUID/payload',async()=>{
     let attempts=0;const {store,calls}=harness({mutate:(a,p)=>{if(!attempts++)throw new Error('Network lost');return mutationFixture(a,p,true)}})
-    const d = ['authorize','replace','revoke','reject'].includes(action)?'devices':'incidents'
+    const d = ['authorize','revoke','reject'].includes(action)?'devices':'incidents'
     await expect(store.mutation(action as MutationAction,payload,3,'site-a')).rejects.toThrow('Network')
     await expect(store.mutation(action as MutationAction,payload,3,'site-a')).rejects.toThrow('sin confirmar')
     const result=await store.retryMutation(d);expect(result.replay).toBe(true);expect(calls[0].payload).toEqual(calls[1].payload);expect(calls[0].payload.operation_id).toMatch(/^[0-9a-f-]{36}$/);expect(store.intent(d)).toBeUndefined()
