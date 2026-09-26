@@ -3,7 +3,7 @@ import { createSologConfigurationError, normalizeSologError } from '../errors'
 export type Domain = 'incidents' | 'devices'
 export type Payload = Record<string, unknown>
 export interface ManagementEnvelope { contract_version: 2; generated_at: string }
-export interface Revisions { incidents?: number; incidents_global?: number; devices?: number }
+export interface Revisions { catalog?: number; incidents?: number; incidents_global?: number; devices?: number }
 export const incidentTypes = ['producto_ausente', 'codigo_interno_invalido', 'codigo_interno_duplicado', 'stock_invalido'] as const
 export const incidentStates = ['pendiente', 'suprimida', 'resuelta'] as const
 export type IncidentType = typeof incidentTypes[number]

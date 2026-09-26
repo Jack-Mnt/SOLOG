@@ -10,8 +10,8 @@ export function managementFixture(action, p = {}, revisions = { incidents: 4, in
     default: throw new Error('Unknown management read '+action)
   }
 }
-export function mutationFixture(action, p, replay = false, revisions = { incidents: 5, incidents_global: 5, devices: 3 }) {
+export function mutationFixture(action, p, replay = false, revisions = { catalog: 6, incidents: 5, incidents_global: 5, devices: 3 }) {
   if(['authorize','replace','revoke','reject'].includes(action)) return { ...envelope({ devices: revisions.devices }), action, site_id: p.device_id.startsWith('site-b') ? 'site-b' : 'site-a', replay, authorized_device: action === 'revoke' ? null : { id: p.device_id, estado: 'autorizado', autorizado_at: now, ultimo_acceso_at: null }, pending_devices: [] }
-  if(['ignore_30d','reactivate','propose_delete'].includes(action))return { ...envelope({ incidents: p.scope === 'global' ? (revisions.incidents_global ?? revisions.incidents) : revisions.incidents }), replay, family_key: p.family_key, scope: p.scope, site_id: p.site_id ?? null, status: action === 'ignore_30d' ? 'suppressed' : action === 'reactivate' ? 'active' : 'deletion_proposed', ...(action === 'ignore_30d' ? { until: '2026-10-04T12:00:00Z' } : {}), ...(action === 'propose_delete' ? { cambio_catalogo_id: 'change-delete' } : {}) }
+  if(['ignore_30d','reactivate','propose_delete'].includes(action))return { ...envelope({ incidents: p.scope === 'global' ? (revisions.incidents_global ?? revisions.incidents) : revisions.incidents, ...(action === 'propose_delete' ? { catalog: revisions.catalog } : {}) }), replay, family_key: p.family_key, scope: p.scope, site_id: p.site_id ?? null, status: action === 'ignore_30d' ? 'suppressed' : action === 'reactivate' ? 'active' : 'deletion_proposed', ...(action === 'ignore_30d' ? { until: '2026-10-04T12:00:00Z' } : {}), ...(action === 'propose_delete' ? { cambio_catalogo_id: 'change-delete' } : {}) }
   throw new Error('Unknown management mutation '+action)
 }

@@ -47,8 +47,9 @@ export class ManagementStore {
   dispose() { this.live = false; this.entries.clear(); this.floors.clear(); this.intents.clear(); this.results.clear(); this.resultOccurrences.clear(); this.listeners.clear() }
   private revKey(name: string, site?: string) { const revisionName = name === 'incidents_global' ? 'incidents' : name; return `${revisionName}:${name === 'incidents_global' ? 'global' : site ?? 'global'}` }
   private observe(revisions: Revisions, site?: string, preserveIncidentSummary = false) {
-    for (const [name, rev] of Object.entries(revisions)) if (rev !== undefined && rev < (this.floors.get(this.revKey(name, site)) ?? -1)) throw new Error('Respuesta obsoleta: actualiza la fuente autoritativa.')
-    for (const [name, rev] of Object.entries(revisions)) {
+    const scoped = Object.entries(revisions).filter(([name]) => name !== 'catalog')
+    for (const [name, rev] of scoped) if (rev !== undefined && rev < (this.floors.get(this.revKey(name, site)) ?? -1)) throw new Error('Respuesta obsoleta: actualiza la fuente autoritativa.')
+    for (const [name, rev] of scoped) {
       const key = this.revKey(name, site)
       if (rev !== undefined && rev > (this.floors.get(key) ?? -1)) {
         this.floors.set(key, rev)
