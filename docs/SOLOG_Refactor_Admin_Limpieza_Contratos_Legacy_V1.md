@@ -1,6 +1,6 @@
 # SOLOG — Refactor Admin: Limpieza de contratos legacy V1
 
-**Estado:** FASES 1–4 CERRADAS · FASE 5 RECONCILIACIÓN DOCUMENTAL COMPLETADA · CIERRE GLOBAL PENDIENTE
+**Estado:** CERRADO · IMPLEMENTADO · DESPLEGADO · VALIDADO
 **Fecha:** 26 de septiembre de 2026
 **Clasificación:** Nivel B — limpieza estructural frontend con cleanup backend dependiente
 **Proyecto:** SOLOG
@@ -56,7 +56,47 @@ La fuente consolidada actual resultante es:
 SOLOG_Backend_Contratos_Runtime_Actual_V2.md
 ```
 
-Queda pendiente únicamente la revisión global final proporcional y el cierre explícito del bloque.
+La revisión global final proporcional fue completada el 2026-09-26. No se detectaron bloqueos ni contradicciones residuales dentro del alcance aprobado.
+
+## Cierre global — 2026-09-26
+
+### Evidencia final
+
+Frontend:
+
+- contratos operacionales legacy ausentes de `admin.v2.*`;
+- Master V2 ausente de `admin.management.*`;
+- Groups Read V1 ausente de `admin.grupos.v1.ts`;
+- Incidencias usa `detail_sites` como detalle único;
+- Dispositivos conserva únicamente `authorize`, `revoke` y `reject` como mutaciones de administración.
+
+Backend:
+
+- contratos y helpers marcados para retiro ya no existen;
+- `rpc_solog_operational_v2`, `rpc_solog_admin_incidents_v2`, `rpc_solog_admin_devices_v2`, MasterData V1 y Groups V1 vigentes permanecen desplegados;
+- `inventario.solog_admin_catalog_v2` permanece porque sigue siendo dependencia de Groups V1;
+- los contratos optimizados `daily_detail_bootstrap`, `daily_detail_page`, `control_groups`, `control_chronology_view` y `detail_sites` permanecen vigentes.
+
+Producción:
+
+- frontend fusionado a `master`;
+- deployment automático de Cloudflare confirmado;
+- smoke de producción aprobado antes del cleanup backend.
+
+Documentación:
+
+- `SOLOG_Backend_Contratos_Runtime_Actual_V2.md` queda como fuente primaria consolidada del runtime compartido;
+- Runtime V1 queda histórico/reemplazado;
+- contratos específicos afectados contienen deltas de reconciliación;
+- documentos históricos conservan trazabilidad y no deben usarse para reinterpretar el runtime actual cuando contradigan Runtime V2.
+
+### Resultado
+
+El bloque de limpieza de contratos legacy queda **cerrado**.
+
+No quedan tareas pendientes dentro de este alcance.
+
+Cualquier cleanup adicional de contratos distintos a los enumerados aquí constituye un bloque independiente y requiere su propio preflight.
 
 Cuando exista contradicción dentro de este alcance, prevalece sobre descripciones anteriores que todavía presenten como vigentes los contratos aquí marcados para retiro.
 
