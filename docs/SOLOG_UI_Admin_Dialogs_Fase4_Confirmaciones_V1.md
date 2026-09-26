@@ -6,6 +6,36 @@
 **Fecha:** 2026-09-19  
 **Rama:** `admin-work`
 
+## Reconciliación posterior — 2026-09-26
+
+La decisión UX de esta fuente quedó alineada también con backend:
+
+```text
+replace → retirado
+```
+
+El wrapper `public.rpc_solog_admin_devices_v2` ya no acepta `replace`.
+
+Acciones runtime vigentes:
+
+```text
+list
+authorize
+revoke
+reject
+```
+
+El reemplazo funcional permanece como flujo explícito:
+
+```text
+revocar dispositivo actual
+→ sede disponible
+→ nueva solicitud
+→ autorizar
+```
+
+Para el inventario backend actual prevalece `SOLOG_Backend_Contratos_Runtime_Actual_V2.md`.
+
 ## 1. Fuentes relacionadas
 
 Este documento complementa:
