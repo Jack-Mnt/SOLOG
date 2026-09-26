@@ -305,11 +305,126 @@ La ausencia de borrados adicionales es intencional: 12.2 prioriza evidencia sobr
 
 
 ## 12.3 — Revisión de integración global
-**Estado:** PENDIENTE
+**Estado:** COMPLETADA / SIN DESVIACIONES ABIERTAS
 
 Verificar que las siete rutas respeten conjuntamente los contratos vigentes.
 
 No se busca uniformidad cosmética nueva. Solo regresiones o desviaciones reales.
+
+### Resultado ejecutado — 2026-09-26
+
+**Baseline revisado:**
+
+```text
+15e5085890ddc9dd30c8b265ce2337bbdbad3b62
+```
+
+Se revisó conjuntamente:
+
+```text
+Shell y navegación
+SiteContext
+responsive 1024/768
+tablas
+primitives
+paginación
+loading/error
+feedback de mutaciones
+Dashboard
+Control
+Incidencias
+Catálogo V4
+Productos
+Grupos
+Dispositivos
+```
+
+#### Shell / navegación
+
+- siete rutas Admin activas y lazy-loaded;
+- Sidebar conserva los grupos Operación / Inventario / Sistema;
+- Mobile mantiene Drawer con cierre por backdrop, Escape y cambio de ruta;
+- Tablet permanece colapsado sin control manual;
+- Desktop conserva expansión/colapso;
+- no se detectaron rutas legacy ni fallback funcional incorrecto dentro del conjunto `AdminRoute`.
+
+#### SiteContext
+
+- permanece como estado UI del `AdminStore`;
+- solo se expone en Header para Control e Incidencias;
+- conserva sede seleccionada entre módulos;
+- rechaza sedes fuera de `allowed_sites`;
+- Control consume `siteId` como scope de sus lecturas;
+- Incidencias combina el scope de sede con el modo aprobado `Todas las sedes`.
+
+#### Stores / coordinación
+
+- Dashboard y Control usan `AdminStore`;
+- Incidencias y Dispositivos comparten `ManagementStore`;
+- Productos y Grupos comparten MasterData V1;
+- Catálogo coordina floors de revisiones con MasterData;
+- mutaciones de Grupos invalidan y recargan MasterData;
+- publicación confirmada de Catálogo recarga MasterData;
+- `propose_delete` de Incidencias invalida Catálogo;
+- aislamiento por usuario, rol, sede y revisión permanece implementado.
+
+#### Responsive
+
+`admin.css` conserva únicamente los breakpoints generales:
+
+```text
+max-width: 1023px
+max-width: 767px
+prefers-reduced-motion: reduce
+```
+
+No reaparecieron breakpoints generales legacy.
+
+#### Tablas y paginación
+
+- Dashboard, Control, Catálogo, Productos, Grupos e Incidencias usan `admin-main-table` para sus tablas principales;
+- Dispositivos permanece correctamente fuera de la familia de tablas principales;
+- Control, Productos, Grupos e Incidencias conservan paginación local estándar de 50;
+- Catálogo conserva paginación independiente de 25 por sección;
+- Dashboard DailyDrawer usa el contrato optimizado posterior `daily_detail_bootstrap/page` y su paginación backend de 25; este contrato posterior reemplaza el delta histórico de paginación local del Drawer.
+
+#### Loading / error
+
+- bootstrap Admin usa `PanelLoader` global;
+- lecturas de página mantienen Shell y usan `PanelLoader` contenido mediante `QueryState` / `ReadNotice`;
+- sublecturas y Dialogs/Drawers usan variante compacta;
+- errores internos conservan retry contextual;
+- Catálogo no duplica loader entre status y propuestas.
+
+#### Feedback de mutaciones
+
+- Catálogo/Productos usan `CatalogMutationNotice`;
+- Incidencias y Dispositivos conservan una única superficie autoritativa de feedback;
+- retries mantienen la intención/operation_id cuando corresponde;
+- UUID/replay no se presentan como feedback normal;
+- Dispositivos conserva únicamente authorize/revoke/reject;
+- Incidencias conserva summary/detail_sites/ignore_30d/reactivate/propose_delete.
+
+#### Resultado
+
+No se identificaron:
+
+- regresiones funcionales;
+- contradicciones entre stores;
+- rutas desacopladas de su fuente de datos vigente;
+- reintroducción de contratos legacy;
+- desviaciones responsive;
+- desviaciones de tablas/paginación que requieran corrección;
+- cambios backend necesarios.
+
+```text
+cambios de implementación requeridos = 0
+cambios backend requeridos           = 0
+desviaciones globales abiertas       = 0
+```
+
+> **Fase 12.3 — CERRADA.**
+
 
 ## 12.4 — Validación técnica y smoke de integración
 **Estado:** PENDIENTE
