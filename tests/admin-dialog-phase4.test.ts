@@ -80,5 +80,9 @@ describe('AdminDialog Fase 4 — confirmaciones', () => {
       'La sede quedará disponible para una nueva solicitud de acceso.',
     )
     expect(devices).toContain('"button button--danger"')
+    expect(devices).toContain(
+      '{error && <AdminNotice tone="error">{error}</AdminNotice>}',
+    )
+    expect(devices).not.toContain('<p role="alert">{error}</p>')
   })
 })

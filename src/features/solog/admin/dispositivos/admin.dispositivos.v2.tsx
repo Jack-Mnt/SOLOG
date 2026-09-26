@@ -243,7 +243,7 @@ export function AdminDevicesV2() {
                 <dd>{adminSiteLabel(confirmation.device.site)}</dd>
               </div>
             </dl>
-            {error && <p role="alert">{error}</p>}
+            {error && <AdminNotice tone="error">{error}</AdminNotice>}
             <MutationNotice
               domain="devices"
               showResult={false}
