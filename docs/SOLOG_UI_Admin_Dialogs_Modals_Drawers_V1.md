@@ -1,14 +1,20 @@
 # SOLOG — UI Admin — Dialogs, Modals y Drawers — V1
 
 **Proyecto:** SOLOG  
-**Estado:** APROBADO Y CONGELADO  
+**Estado:** HISTÓRICO — REEMPLAZADO GLOBALMENTE POR V2  
 **Clasificación:** Nivel B — UI/UX frontend/Admin  
 **Fecha:** 2026-09-19  
 **Rama de trabajo:** `admin-work`
 
 ## 1. Propósito
 
-Este documento congela el contrato visual global para la normalización de Dialogs, Modals y Drawers del Admin de SOLOG.
+Este documento congeló el contrato visual global inicial para la normalización de Dialogs, Modals y Drawers del Admin de SOLOG.
+
+La fuente primaria global vigente al cierre del bloque es:
+
+`docs/SOLOG_UI_Admin_Dialogs_Modals_Drawers_V2.md`
+
+V1 se conserva únicamente como trazabilidad histórica de las decisiones iniciales.
 
 El objetivo es establecer una base común, estable y autoritativa antes de revisar individualmente la composición de cada consumidor.
 
@@ -16,7 +22,7 @@ Este contrato no congela todavía la composición interna específica de cada Di
 
 ## 2. Fuente primaria y precedencia
 
-Este documento es la **fuente primaria** para:
+Este documento fue la **fuente primaria inicial** para:
 
 - geometría de `AdminDialog`;
 - variantes `default`, `wide` y `drawer`;

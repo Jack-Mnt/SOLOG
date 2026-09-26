@@ -938,6 +938,12 @@ No se considera una subfase cerrada si la evidencia correspondiente no pudo comp
 
 # 19. Documentación vigente, reemplazada e histórica
 
+## Fuente global vigente tras Fase 12
+
+- `SOLOG_UI_Admin_Dialogs_Modals_Drawers_V2.md` — consolidación global final de formato, kinds, geometría, Footer, responsive, acciones, nesting e inventario runtime.
+
+Esta fuente de normalización V1 permanece autoritativa como trazabilidad de **Fase 9** y para decisiones específicas no contradichas por V2.
+
 ## Vigente / autoritativa para Fase 9
 
 - `SOLOG_UI_Admin_Dialogs_Normalizacion_Formato_Kind_V1.md` — fuente primaria de Fase 9.

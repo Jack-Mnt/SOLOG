@@ -203,7 +203,9 @@ No reabrir:
 
 ## 11. Fase 11 — Revisión global
 
-Auditoría transversal de los 19 consumidores:
+**Estado:** ✅ COMPLETADA.
+
+Auditoría transversal del inventario runtime final: **22 instancias de AdminDialog — 18 Dialogs con kind + 4 Drawers**:
 
 - Header;
 - Body;
@@ -230,6 +232,8 @@ Criterios de consistencia:
 - Footer conserva composición coherente entre estados.
 
 ## 12. Fase 12 — Validación, documentación y cierre
+
+**Estado:** EN VALIDACIÓN FINAL.
 
 Validación técnica:
 
@@ -260,11 +264,11 @@ Validar especialmente:
 - paginación;
 - pending/error/retry.
 
-Al cierre se actualizará:
+La consolidación final se documenta en:
 
-- `docs/SOLOG_UI_Admin_Dialogs_Modals_Drawers_V1.md`
+- `docs/SOLOG_UI_Admin_Dialogs_Modals_Drawers_V2.md`
 
-con composiciones definitivas, excepciones y estado final.
+como fuente primaria global vigente. V1 queda histórica y preserva la trazabilidad del contrato inicial.
 
 ## 13. Secuencia congelada
 
@@ -275,12 +279,12 @@ con composiciones definitivas, excepciones y estado final.
 4. Default — confirmaciones             ✅
 5. Default — formularios/tareas          ✅
 6. Wide — gestión                        ✅
-7. Catálogo + nesting
-8. Drawers
-9. Consolidación visual transversal
-10. Cleanup agresivo
-11. Revisión global
-12. Validación + documentación + cierre
+7. Catálogo + nesting                    ✅
+8. Drawers                               ✅
+9. Consolidación visual transversal      ✅
+10. Cleanup agresivo                     ✅
+11. Revisión global                      ✅
+12. Validación + documentación + cierre  ⏳
 ```
 
 > **Plan de Implementación V1: APROBADO Y CONGELADO.**
