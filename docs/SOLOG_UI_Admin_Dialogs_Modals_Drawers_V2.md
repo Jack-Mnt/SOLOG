@@ -2,12 +2,12 @@
 
 ## 1. Estado
 
-**Estado:** VIGENTE — Fase 12 en validación final.  
+**Estado:** VIGENTE — BLOQUE CERRADO.  
 **Clasificación:** contrato UI/UX frontend consolidado.  
 **Proyecto:** SOLOG.  
 **Rama de cierre:** `admin-work`.
 
-Esta V2 consolida el estado final implementado de Dialogs y Drawers del Admin después de las Fases 4–11.
+Esta V2 consolida el estado final implementado y validado de Dialogs y Drawers del Admin después de las Fases 4–12.
 
 Es la **fuente primaria global vigente** para geometría, formato, kinds, Footer, acciones, responsive, nesting y composición transversal de estas superficies.
 
@@ -508,4 +508,10 @@ Especialmente:
 - tablas/paginación;
 - pending/error/retry.
 
-Cuando esas validaciones sean aprobadas, esta V2 pasa de **Fase 12 en validación final** a **BLOQUE CERRADO**.
+Validación final aprobada:
+
+- validación técnica: ✅;
+- smoke humano: ✅;
+- documentación consolidada: ✅.
+
+> **Bloque Admin Dialogs/Drawers: CERRADO.**
