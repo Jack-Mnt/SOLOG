@@ -40,6 +40,29 @@ Las superficies redundantes que aún existan pueden permanecer físicamente hast
 
 ---
 
+## Reconciliación posterior — 2026-09-26
+
+Este contrato **permanece vigente** para MasterData V1.
+
+El cleanup legacy posterior retiró definitivamente:
+
+```text
+public.rpc_solog_admin_groups_read_v1
+inventario.solog_admin_groups_read_v1
+public.rpc_solog_admin_master_read_v2
+public.rpc_solog_admin_master_v2
+```
+
+Por tanto, las referencias de este documento a Groups Read V1 describen el estado de transición existente cuando se congeló V1 y **ya no representan compatibilidad runtime disponible**.
+
+Para runtime compartido actual prevalece:
+
+```text
+SOLOG_Backend_Contratos_Runtime_Actual_V2.md
+```
+
+La lectura compartida actual de Productos/Grupos/Categorías continúa siendo `bootstrap` de MasterData V1. Las mutaciones vigentes de Grupos siguen en su contrato específico.
+
 # 2. Migraciones desplegadas
 
 ```text
