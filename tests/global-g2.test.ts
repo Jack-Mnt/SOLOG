@@ -13,17 +13,17 @@ import { CashierV3Store } from '../src/features/solog/cajero/cajero.v3.store'
 import { parseCashierV3Bootstrap } from '../src/features/solog/cajero/cajero.v3.api'
 import { cashierV3Bootstrap } from './fixtures/cashier-v3.mjs'
 
-test('G2 mismo origen, estado vigente y valores en Dashboard/Control/ambos exports', () => {
+test('G2 mismo caso y valores autoritativos en detalle diario, Control y ambos exports', () => {
   const s = scenario()
-  const d = validateAdminResponse('daily_detail', s.daily).items[0]
-  const c = validateAdminResponse('control_page', s.control).items[0]
+  const d = validateAdminResponse('daily_detail_bootstrap', s.daily).views.Confirmada[0]
+  const c = validateAdminResponse('control_groups', s.control).items[0]
   const a = validateAdminResponse('export', s.admin).adjustments[0]
   const e = parseDetailsResponse('export', s.details).rows[0]
   expect([d.case_id,c.case_id,a.case_id,e.case_id]).toEqual(Array(4).fill('case-0'))
-  expect([d.contado_at,c.contado_at,a.fecha_origen,e.fecha_origen]).toEqual(Array(4).fill(origin))
-  expect([d.estado,c.estado_diferencia,a.estado,e.estado]).toEqual(Array(4).fill('Confirmada'))
-  expect([d.difference,c.diferencia,a.diferencia,e.diferencia]).toEqual([-2,-2,-2,-2])
-  expect([d.value,c.valor_diferencia,a.valorizado,e.valorizado]).toEqual([-7.5,-7.5,-7.5,-7.5])
+  expect([c.origin_at,a.fecha_origen,e.fecha_origen]).toEqual(Array(3).fill(origin))
+  expect([c.state,a.estado,e.estado]).toEqual(Array(3).fill('Confirmada'))
+  expect([d.difference,c.difference,a.diferencia,e.diferencia]).toEqual([-2,-2,-2,-2])
+  expect([d.valued_difference,c.valued_difference,a.valorizado,e.valorizado]).toEqual([-7.5,-7.5,-7.5,-7.5])
   expect(detailsDate(Date.parse(origin))).toBe('2026-09-15')
   expect(detailsDate(Date.parse(recounted))).toBe('2026-09-16')
   expect(s.admin.period).toEqual(s.details.period)
