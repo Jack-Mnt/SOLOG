@@ -104,7 +104,9 @@ describe('S10-B: contrato V9 sin retirar compatibilidades vigentes', () => {
     expect(source('src/features/solog/cajero/cajero.v3.context.tsx')).toContain('purgePersistedCajeroData()')
     const management = source('src/features/solog/admin/admin.management.v2.ts')
     for (const legacy of ['rpc_solog_admin_master_read_v2', 'rpc_solog_admin_master_v2', 'conexion-admin']) expect(management).not.toContain(legacy)
-    expect(management).toContain('rpc_solog_admin_' + '
+    expect(management).toContain('rpc_solog_admin_' + '${domain(action)}_v2')
+    expect(management).toMatch(/return\s+["' ]incidents["' ]/)
+    expect(management).toContain("return 'devices'")
     expect(source('src/features/solog/cajero/cajero.v3.api.ts')).toContain('rpc_solog_cashier_mutate_v3')
     expect(source('src/features/solog/detalles/detalles.v2.ts')).toContain('rpc_solog_details_v2')
   })
