@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, X } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { AdminBinarySwitch, AdminNotice } from '../admin.primitives'
 import { useAdminStore } from '../admin.v2.context'
@@ -54,6 +54,7 @@ export function AdminExportDialog({ siteId, onClose }: { siteId: string; onClose
     footer={
       <>
         <button type="button" className="button button--secondary" disabled={busy} onClick={onClose}>
+          <X size={16} aria-hidden="true" />
           Cancelar
         </button>
         <button type="button" className="button" disabled={busy} onClick={() => void download()}>

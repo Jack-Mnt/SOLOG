@@ -160,21 +160,12 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
         kind="management"
         size="wide"
         footer={
-          <>
-            <button
-              type="button"
-              className="button button--secondary"
-              disabled={!!intent?.pending}
-              onClick={requestClose}
-            >
-              Cerrar
-            </button>
+          hasCurrentOrderDraft ? (
             <button
               type="button"
               className="button"
               disabled={
                 !!intent ||
-                !hasCurrentOrderDraft ||
                 order.length !== masterData.snapshot?.categories.length
               }
               onClick={() => void saveOrder()}
@@ -182,7 +173,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
               <Save size={16} aria-hidden="true" />
               Guardar orden
             </button>
-          </>
+          ) : undefined
         }
       >
         {!masterData.snapshot || !masterData.derived ? (
@@ -382,6 +373,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                 className="button button--secondary"
                 onClick={() => setDiscardConfirm(false)}
               >
+                <Pencil size={16} aria-hidden="true" />
                 Continuar editando
               </button>
               <button
@@ -389,6 +381,7 @@ export function AdminCategoriesDialog({ onClose }: { onClose: () => void }) {
                 className="button button--danger"
                 onClick={discardAndClose}
               >
+                <X size={16} aria-hidden="true" />
                 Descartar y cerrar
               </button>
             </>

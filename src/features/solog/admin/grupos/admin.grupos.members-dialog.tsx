@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { MoveRight, RotateCcw, Unlink } from 'lucide-react'
+import { MoveRight, RotateCcw, Unlink, X } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { AdminNotice, IconButton } from '../admin.primitives'
 import type {
@@ -247,6 +247,7 @@ export function GroupMembersDialog({
               disabled={!!intent?.pending}
               onClick={onClose}
             >
+              <X size={16} aria-hidden="true" />
               Cancelar
             </button>
             <button
@@ -343,6 +344,7 @@ export function GroupMembersDialog({
                 disabled={!!intent}
                 onClick={() => setSeparating(null)}
               >
+                <X size={16} aria-hidden="true" />
                 Cancelar
               </button>
               <button

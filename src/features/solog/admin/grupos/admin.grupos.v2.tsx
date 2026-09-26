@@ -9,6 +9,7 @@ import {
   Save,
   Search,
   Tags,
+  X,
 } from "lucide-react";
 import { AdminDialog } from "../admin.dialog";
 import {
@@ -114,6 +115,7 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
             disabled={!!intent?.pending}
             onClick={onClose}
           >
+            <X size={16} aria-hidden="true" />
             Cancelar
           </button>
           <button
@@ -271,6 +273,7 @@ function EditGroupDialog({
             disabled={!!intent?.pending}
             onClick={onClose}
           >
+            <X size={16} aria-hidden="true" />
             Cancelar
           </button>
           <button

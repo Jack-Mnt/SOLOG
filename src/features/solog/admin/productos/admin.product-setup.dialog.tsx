@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Save } from 'lucide-react'
+import { Check, Save, X } from 'lucide-react'
 import { AdminDialog } from '../admin.dialog'
 import { AdminBinarySwitch, AdminNotice } from '../admin.primitives'
 import { QueryState, Value } from '../admin.v2.presentation'
@@ -149,6 +149,7 @@ export function ProductSetupDialog({
           disabled={!!intent?.pending}
           onClick={onClose}
         >
+          <X size={16} aria-hidden="true" />
           Cancelar
         </button>
         <button

@@ -5,6 +5,7 @@ import {
   RotateCcw,
   Search,
   Settings,
+  X,
 } from "lucide-react";
 import { AdminDialog } from "../admin.dialog";
 import { useMasterData } from "../masterdata/admin.masterdata.context";
@@ -102,6 +103,7 @@ function ProductStateProposal({
             disabled={!!intent?.pending}
             onClick={onClose}
           >
+            <X size={16} aria-hidden="true" />
             Cancelar
           </button>
           <button
@@ -113,7 +115,7 @@ function ProductStateProposal({
             {action === "exclude" ? (
               <CircleOff size={16} aria-hidden="true" />
             ) : (
-              <RotateCcw size={16} aria-hidden="true" />
+              <Settings size={16} aria-hidden="true" />
             )}
             {action === "exclude" ? "Aprobar exclusión" : "Configurar reincorporación"}
           </button>
@@ -164,11 +166,6 @@ function ProductSetupPendingDialog({
       description="Completa la configuración necesaria antes de publicar los productos."
       onClose={onClose}
       kind="management"
-      footer={
-        <button type="button" className="button button--secondary" onClick={onClose}>
-          Cerrar
-        </button>
-      }
     >
       <div className="admin-products__setup-list">
         {items.map((item) => (

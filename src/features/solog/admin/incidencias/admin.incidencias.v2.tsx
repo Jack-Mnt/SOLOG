@@ -4,6 +4,7 @@ import {
   CircleOff,
   Eye,
   RotateCcw,
+  X,
 } from "lucide-react";
 import { useAdminStore } from "../admin.v2.context";
 import { useManagement, useManagementQuery } from "../admin.management.context";
@@ -299,6 +300,7 @@ function IgnoreDialog({
             disabled={running}
             onClick={onClose}
           >
+            <X size={16} aria-hidden="true" />
             Cancelar
           </button>
           <button
@@ -307,7 +309,11 @@ function IgnoreDialog({
             disabled={running}
             onClick={ignore}
           >
-            <AlarmClockOff size={16} aria-hidden="true" />
+            {retryable ? (
+              <RotateCcw size={16} aria-hidden="true" />
+            ) : (
+              <AlarmClockOff size={16} aria-hidden="true" />
+            )}
             {running ? "Procesando…" : retryable ? "Reintentar" : "Ignorar 30 días"}
           </button>
         </>
@@ -384,6 +390,7 @@ function DeleteProposalDialog({
             disabled={proposing}
             onClick={onClose}
           >
+            <X size={16} aria-hidden="true" />
             Cancelar
           </button>
           <button
@@ -392,7 +399,11 @@ function DeleteProposalDialog({
             disabled={proposing}
             onClick={confirm}
           >
-            <CircleOff size={16} aria-hidden="true" />
+            {retryable ? (
+              <RotateCcw size={16} aria-hidden="true" />
+            ) : (
+              <CircleOff size={16} aria-hidden="true" />
+            )}
             {proposing ? "Procesando…" : retryable ? "Reintentar" : "Aprobar eliminación"}
           </button>
         </>

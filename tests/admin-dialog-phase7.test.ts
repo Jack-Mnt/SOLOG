@@ -195,7 +195,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
     expect(css).toContain('.admin-catalog__conflict')
   })
 
-  test('Moderador no recibe CTA imposible y publicación completada queda solo en cierre', async () => {
+  test('Moderador no recibe CTA imposible y publicación completada queda sin Footer', async () => {
     const ui = await source(
       'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
     )
@@ -203,7 +203,7 @@ describe('AdminDialog Fase 7 — Catálogo + nesting', () => {
     expect(ui).toContain('const completed = receipt.result?.completion_recorded === true;')
     expect(ui).toContain('const recoverable = !!receipt.operationId && !completed;')
     expect(ui).toMatch(
-      /const footer\s*=\s*completed\s*\|\|\s*!admin\s*\?\s*\(/,
+      /const footer\s*=\s*completed\s*\|\|\s*!admin\s*\?\s*undefined\s*:\s*recoverable/,
     )
     expect(ui).toContain(
       'Puedes revisar esta publicación, pero solo un administrador puede',

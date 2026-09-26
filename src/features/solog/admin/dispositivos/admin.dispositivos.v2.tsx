@@ -215,6 +215,7 @@ export function AdminDevicesV2() {
                 disabled={!!store.intent("devices")?.pending}
                 onClick={() => setConfirmation(null)}
               >
+                <X size={16} aria-hidden="true" />
                 Cancelar
               </button>
               <button

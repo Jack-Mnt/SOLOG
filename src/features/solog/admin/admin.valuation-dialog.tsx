@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, RotateCcw } from 'lucide-react'
+import { Check, RotateCcw, X } from 'lucide-react'
 import { AdminDialog } from './admin.dialog'
 import { AdminBinarySwitch, AdminNotice } from './admin.primitives'
 import { Value } from './admin.v2.presentation'
@@ -131,6 +131,7 @@ export function ValuationDialog({
           disabled={pending}
           onClick={onClose}
         >
+          <X size={16} aria-hidden="true" />
           Cancelar
         </button>
         <button

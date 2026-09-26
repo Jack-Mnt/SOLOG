@@ -13,6 +13,7 @@ import {
   Settings,
   Undo2,
   Upload,
+  X,
 } from "lucide-react";
 import { AdminDialog } from "../admin.dialog";
 import {
@@ -742,6 +743,10 @@ function ProposalDetail({
       : null;
   const complexPending =
     proposal.estado === "pendiente" && (canSetup || proposal.tipo === "precio");
+  const hasOperationalFooter =
+    proposal.estado === "pendiente" ||
+    (proposal.estado === "ignorado" && proposal.origen === "automatico") ||
+    proposal.estado === "aprobado";
 
   return (
     <>
@@ -757,15 +762,8 @@ function ProposalDetail({
         format="drawer"
         drawerMaxWidth={720}
         footer={
-          <>
-            <button
-              type="button"
-              className="button button--secondary"
-              disabled={!!intent?.pending}
-              onClick={onClose}
-            >
-              Cerrar
-            </button>
+          hasOperationalFooter ? (
+            <>
             {proposal.estado === "pendiente" && (
               <>
                 {proposal.origen === "automatico" && (
@@ -875,12 +873,13 @@ function ProposalDetail({
                     onClick={() => setPrice(true)}
                   >
                     <DollarSign size={16} aria-hidden="true" />
-                    Actualizar resolución de precio
+                    Actualizar resolución
                   </button>
                 )}
               </>
             )}
-          </>
+            </>
+          ) : undefined
         }
       >
         <div className="admin-catalog__proposal-detail">
@@ -979,6 +978,7 @@ function ProposalDetail({
                 disabled={!!intent?.pending}
                 onClick={() => setDiscard(false)}
               >
+                <X size={16} aria-hidden="true" />
                 Cancelar
               </button>
               <button
@@ -1371,6 +1371,7 @@ function PriceResolutionContent({
               disabled={!!intent?.pending}
               onClick={onClose}
             >
+              <X size={16} aria-hidden="true" />
               Cancelar
             </button>
             <button
@@ -1619,35 +1620,16 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
   };
 
   const footer =
-    completed || !admin ? (
+    completed || !admin ? undefined : recoverable ? (
       <button
         type="button"
-        className="button button--secondary"
+        className="button"
         disabled={!!receipt.pending}
-        onClick={closeDialog}
+        onClick={publish}
       >
-        Cerrar
+        <RotateCcw size={16} aria-hidden="true" />
+        {receipt.pending ? "Confirmando…" : "Recuperar publicación"}
       </button>
-    ) : recoverable ? (
-      <>
-        <button
-          type="button"
-          className="button button--secondary"
-          disabled={!!receipt.pending}
-          onClick={closeDialog}
-        >
-          Cerrar
-        </button>
-        <button
-          type="button"
-          className="button"
-          disabled={!!receipt.pending}
-          onClick={publish}
-        >
-          <RotateCcw size={16} aria-hidden="true" />
-          {receipt.pending ? "Confirmando…" : "Recuperar publicación"}
-        </button>
-      </>
     ) : (
       <>
         <button
@@ -1656,6 +1638,7 @@ function PublicationDialog({ onClose }: { onClose: () => void }) {
           disabled={!!receipt.pending}
           onClick={closeDialog}
         >
+          <X size={16} aria-hidden="true" />
           Cancelar
         </button>
         <button
