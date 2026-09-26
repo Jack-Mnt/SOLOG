@@ -1,12 +1,16 @@
 # SOLOG — Backend Contratos Runtime Actual V1
 
-**Estado:** CONGELADO / CONSOLIDADO DESDE RUNTIME  
+**Estado:** REEMPLAZADO / HISTÓRICO  
 **Proyecto:** SOLOG  
 **Supabase:** `PuertoRicoOnline` (`fvtohxvcvsflzmftgfzs`)  
 **Fecha:** 2026-09-11  
 **Nivel:** C — contrato backend/frontend consolidado  
 **API base:** `contract_version = 2` para las superficies compartidas descritas aquí  
-**Fuente primaria para el runtime compartido:** este documento
+**Fuente primaria actual:** `SOLOG_Backend_Contratos_Runtime_Actual_V2.md`
+
+> Reconciliación 2026-09-26: este V1 conserva el estado anterior al retiro de compatibilidad legacy. No usarlo para determinar contratos runtime actuales. Master V2, Groups Read V1, `daily_detail`, `control_chronology`, `control_page`, `control_detail`, Incidencias `detail` y Dispositivos `replace` fueron retirados posteriormente.
+
+**Fuente primaria histórica de este estado:** este documento
 
 ---
 
