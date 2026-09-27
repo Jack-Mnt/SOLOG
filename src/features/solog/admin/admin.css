@@ -543,7 +543,10 @@
   margin: 0;
 }
 
-.admin-dialog--kind-confirmation .admin-dialog__body > .admin-notice--info .admin-notice__message {
+.admin-dialog--kind-confirmation
+  .admin-dialog__body
+  > .admin-notice--info
+  .admin-notice__message {
   font-size: 0.8125rem;
 }
 
@@ -2153,6 +2156,7 @@ sin alterar las cards de otros módulos. */
 .admin-dashboard__detail > .admin-main-table td {
   min-width: 80px;
   padding: 8px;
+  height: 36px;
   text-align: center;
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
@@ -2341,14 +2345,13 @@ sin alterar las cards de otros módulos. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   white-space: nowrap;
 }
 
 .admin__percentage-action {
   min-width: 36px;
   height: 36px;
-  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2368,12 +2371,10 @@ sin alterar las cards de otros módulos. */
 /* Dashboard Total: el botón ocupa visual e interactivamente toda la celda
    sin alterar la geometría existente de la tabla. */
 .admin-dashboard__percentage-cell .admin__percentage-action {
-  width: calc(100% + 32px);
-  min-width: calc(100% + 32px);
+  width: calc(100% + 24px);
+  min-width: calc(100% + 24px);
   height: 48px;
-  min-height: 48px;
-  margin: -8px -16px;
-  border-radius: 0;
+  margin: -12px -8px;
 }
 
 .admin__percentage-action:hover:not(:disabled) {
