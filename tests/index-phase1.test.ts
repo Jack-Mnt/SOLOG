@@ -17,8 +17,8 @@ describe('Index Fase I1: frontera pública', () => {
     expect(app).not.toContain('supabase')
     expect(home).not.toContain('panelRoute')
     expect(home).not.toContain('Ir a mi panel')
-    expect(home.split('href="/login"').length - 1).toBe(3)
-    expect(home.split('Iniciar sesión').length - 1).toBe(3)
+    expect(home.split('href="/login"').length - 1).toBe(2)
+    expect(home.split('Iniciar sesión').length - 1).toBe(2)
   })
 
   test('el árbol protegido se carga solo fuera de la portada', async () => {
