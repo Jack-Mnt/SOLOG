@@ -1,202 +1,15 @@
-.form-hint {
-  margin: 5px 0 0;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-.text-button {
-  padding: 6px 8px;
-  border: 0;
-  border-radius: var(--radius-small);
-  color: var(--color-primary);
-  background: transparent;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.text-button:hover {
-  background: var(--color-primary-soft);
-}
 .form-error {
   margin: 0;
   color: var(--color-danger);
   line-height: 1.45;
 }
 
-.content-section {
-  margin-top: 28px;
-}
-
-.content-section h2,
-.section-heading p {
-  margin: 0;
-}
-
-.content-section h2 {
-  color: var(--color-text-primary);
-  font-size: 1.2rem;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-}
-
-.section-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 14px;
-}
-
-.section-heading p {
-  margin-top: 5px;
-  color: var(--color-text-secondary);
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-
-.section-title-row {
-  gap: 9px;
-}
-
-.section-icon {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 10px;
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.status-grid--four {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.status-item {
-  min-width: 0;
-  display: grid;
-  gap: 7px;
-  padding: 15px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-default);
-}
-
-.status-item span {
-  gap: 6px;
-  color: var(--color-text-secondary);
-  font-size: 0.76rem;
-  font-weight: 500;
-}
-
-.status-item strong {
-  overflow-wrap: anywhere;
-  color: var(--color-text-primary);
-  font-size: 1.12rem;
-  font-weight: 700;
-}
-
-.metric-with-icon {
-  gap: 6px;
-}
-
-.status-badge {
-  flex: 0 0 auto;
-  gap: 5px;
-  padding: 6px 9px;
-  border-radius: 999px;
-  color: var(--color-text-secondary);
-  background: var(--color-surface-secondary);
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
-.empty-state {
-  padding: 22px;
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-control);
-  color: var(--color-text-secondary);
-  background: var(--color-surface-secondary);
-  text-align: center;
-}
-
-.icon-spin {
-  animation: icon-spin 900ms linear infinite;
-}
-@keyframes icon-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Login y estados de dispositivo */
-.status-badge {
-  width: fit-content;
-  display: flex;
-  color: var(--color-warning);
-  background: var(--color-warning-soft);
-}
-
-/* Estados de conectividad heredados */
-.status {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px;
-  border-radius: var(--radius-control);
-  background: var(--color-surface-secondary);
-}
-
-.status strong,
-.status p {
-  display: block;
-  margin: 0;
-}
-.status p {
-  margin-top: 4px;
-  color: var(--color-text-secondary);
-  line-height: 1.45;
-}
-.status-dot {
-  width: 11px;
-  height: 11px;
-  flex: 0 0 auto;
-  margin-top: 5px;
-  border-radius: 50%;
-  background: var(--color-text-muted);
-}
-.status-dot--checking {
-  background: var(--color-warning);
-}
-.status-dot--connected {
-  background: var(--color-success);
-}
-.status-dot--error {
-  background: var(--color-danger);
-}
-
 @media (max-width: 760px) {
   .palette-switcher > svg {
     display: none;
   }
-  .section-heading {
-    align-items: flex-start;
-  }
 }
 
-@media (max-width: 480px) {
-  .status-grid {
-    grid-template-columns: 1fr;
-  }
-}
 /* Login SOLOG */
 .solog-login-shell {
   --solog-login-blue: var(--brand-blue);
@@ -207,7 +20,7 @@
   grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
   overflow-x: clip;
   color: var(--color-text-primary);
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .solog-login-brand {
@@ -355,7 +168,7 @@
 
 .solog-login-brand__copy h2 {
   margin: 0 0 10px;
-  color: #0b1733;
+  color: var(--color-text-primary);
   font-size: clamp(1.45rem, 2.6vw, 2.15rem);
   letter-spacing: -0.035em;
   line-height: 1.15;
@@ -389,7 +202,7 @@
   display: grid;
   place-items: center;
   padding: clamp(36px, 6vw, 76px);
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .solog-login-panel {
@@ -417,7 +230,7 @@
 
 .solog-login-heading h1 {
   margin: 0;
-  color: #0b1733;
+  color: var(--color-text-primary);
   font-size: clamp(2rem, 3.4vw, 2.65rem);
   letter-spacing: -0.045em;
   line-height: 1.08;
@@ -453,7 +266,7 @@
   align-items: center;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-control);
-  background: #ffffff;
+  background: var(--color-surface);
   transition:
     border-color var(--transition-fast),
     box-shadow var(--transition-fast);
@@ -524,7 +337,7 @@
   padding: 10px 18px;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
-  color: #ffffff;
+  color: var(--color-primary-contrast);
   background: linear-gradient(
     120deg,
     var(--solog-login-blue),
@@ -579,32 +392,6 @@
   color: var(--solog-login-blue);
 }
 
-.solog-login-recovery {
-  margin: 14px 0 0;
-  padding: 10px 12px;
-  border: 1px solid rgb(10 99 248 / 10%);
-  border-radius: 10px;
-  color: var(--color-text-secondary);
-  background: rgb(10 99 248 / 4%);
-  font-size: 0.72rem;
-  line-height: 1.5;
-}
-
-.solog-login-internal {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: 34px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.68rem;
-  line-height: 1.5;
-}
-
-.solog-login-internal span {
-  color: var(--solog-login-green);
-  font-size: 0.72rem;
-}
-
 .solog-login-shell a:focus-visible,
 .solog-login-shell button:focus-visible {
   outline: 3px solid rgb(10 99 248 / 22%);
@@ -650,7 +437,7 @@
   }
 
   .solog-login-mobile-copy strong {
-    color: #0b1733;
+    color: var(--color-text-primary);
     font-size: 0.82rem;
   }
 
@@ -690,9 +477,6 @@
     gap: 12px;
   }
 
-  .solog-login-internal {
-    margin-top: 28px;
-  }
 }
 
 @media (max-height: 700px) and (min-width: 821px) {
@@ -709,9 +493,6 @@
     margin-bottom: 24px;
   }
 
-  .solog-login-internal {
-    margin-top: 22px;
-  }
 }
 /* Home público SOLOG */
 .solog-home {
@@ -724,7 +505,7 @@
   background:
     radial-gradient(circle at 8% 10%, rgb(10 99 248 / 6%), transparent 30rem),
     radial-gradient(circle at 90% 18%, rgb(122 0 255 / 4%), transparent 32rem),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 48%, #ffffff 100%);
+    linear-gradient(180deg, var(--color-surface) 0%, #f8fafc 48%, var(--color-surface) 100%);
 }
 
 .solog-home-container {
@@ -771,7 +552,7 @@
   padding: 8px 12px;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
-  color: #ffffff;
+  color: var(--color-primary-contrast);
   background: linear-gradient(
     120deg,
     var(--solog-home-blue),
@@ -826,7 +607,7 @@
 .solog-home-hero h1 {
   max-width: 750px;
   margin: 0;
-  color: #0b1733;
+  color: var(--color-text-primary);
   font-size: clamp(3.25rem, 6.2vw, 5.35rem);
   font-weight: 760;
   letter-spacing: -0.055em;
@@ -896,7 +677,7 @@
 .solog-home-section-heading h2,
 .solog-home-operation h2 {
   margin: 0;
-  color: #0b1733;
+  color: var(--color-text-primary);
   font-size: clamp(1.65rem, 3vw, 2.3rem);
   letter-spacing: -0.035em;
   line-height: 1.16;
@@ -969,7 +750,7 @@
 
 .solog-home-capability h3 {
   margin: 8px 0;
-  color: #0b1733;
+  color: var(--color-text-primary);
   font-size: 1.05rem;
 }
 
@@ -993,7 +774,7 @@
   border: 1px solid rgb(10 99 248 / 10%);
   border-radius: var(--radius-panel);
   background:
-    linear-gradient(110deg, rgb(10 99 248 / 5%), rgb(16 185 129 / 3%)), #ffffff;
+    linear-gradient(110deg, rgb(10 99 248 / 5%), rgb(16 185 129 / 3%)), var(--color-surface);
 }
 
 .solog-home-operation__icon {
@@ -1014,7 +795,7 @@
 
 .solog-home-footer {
   color: var(--color-text-inverse);
-  background: #071126;
+  background: var(--color-dark-surface);
 }
 
 .solog-home-footer__inner {
@@ -1218,7 +999,7 @@
 }
 
 .solog-home-flow__pipe {
-  stroke: #ccd6e4;
+  stroke: var(--color-border-strong);
   stroke-width: 8;
 }
 
@@ -1409,7 +1190,7 @@
 }
 
 .solog-home-flow__brand-mark--supabase {
-  background: #ecfdf5;
+  background: var(--color-success-soft);
 }
 
 .solog-home-flow__core {
@@ -1421,7 +1202,7 @@
   place-items: center;
   border: 1px solid rgb(10 99 248 / 13%);
   border-radius: 24px;
-  background: #ffffff;
+  background: var(--color-surface);
   box-shadow: 0 18px 44px rgb(10 99 248 / 14%);
 }
 
