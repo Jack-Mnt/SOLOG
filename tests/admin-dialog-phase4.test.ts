@@ -59,8 +59,9 @@ describe('AdminDialog Fase 4 — confirmaciones', () => {
 
   test('notice informativo de confirmación usa tipografía compacta sin alterar notices globales', async () => {
     const css = await source('src/features/solog/admin/admin.css')
-    expect(css).toContain('.admin-dialog--kind-confirmation .admin-dialog__body > .admin-notice--info .admin-notice__message')
-    expect(css).toContain('font-size: 0.8125rem')
+    expect(css).toMatch(
+      /\.admin-dialog--kind-confirmation\s+\.admin-dialog__body\s*>\s*\.admin-notice--info\s+\.admin-notice__message\s*\{[\s\S]*?font-size:\s*0\.8125rem/,
+    )
   })
 
   test('Dispositivos no ofrece reemplazo ni muestra UUID en el Dialog', async () => {
