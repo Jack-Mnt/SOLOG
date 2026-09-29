@@ -1321,7 +1321,6 @@
   border-radius: 16px;
   background: rgb(255 255 255 / 84%);
   box-shadow: 0 18px 50px rgb(15 23 42 / 7%);
-  justify-content: space-evenly;
 }
 
 .solog-home-flow__canvas {
@@ -1513,22 +1512,20 @@
 }
 
 .solog-home-flow__utility-icon,
-.solog-home-flow__supabase-icon {
+.solog-home-flow__brand-mark {
   width: 80%;
   height: 80%;
-  display: grid;
-  place-items: center;
   border-radius: inherit;
 }
 
-.solog-home-flow__utility-icon--blue {
-  color: var(--solog-home-blue);
-  background: rgb(10 99 248 / 7%);
+.solog-home-flow__utility-icon {
+  display: grid;
+  place-items: center;
 }
 
-.solog-home-flow__utility-icon--green {
-  color: var(--solog-home-green);
-  background: rgb(16 185 129 / 8%);
+.solog-home-flow__brand-mark {
+  display: block;
+  object-fit: contain;
 }
 
 .solog-home-flow__utility-icon--violet {
@@ -1568,14 +1565,8 @@
   animation-delay: 1.4s;
 }
 
-.solog-home-flow__supabase-icon {
-  color: var(--solog-home-green);
+.solog-home-flow__brand-mark--supabase {
   background: #ecfdf5;
-}
-
-.solog-home-flow__supabase-mark {
-  width: 24px;
-  height: 24px;
 }
 
 .solog-home-flow__core {
@@ -1751,7 +1742,7 @@
     height: 56px;
   }
 
-  .solog-home-flow__core strong {
+  .solog-home-flow__wordmark {
     display: none;
   }
 
