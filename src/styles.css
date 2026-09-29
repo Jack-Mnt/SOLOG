@@ -795,7 +795,7 @@
 
 .solog-home-button--compact {
   min-height: 40px;
-  padding: 8px 14px;
+  padding: 8px 12px;
 }
 
 .solog-home a:focus-visible {
@@ -804,14 +804,14 @@
 }
 
 .solog-home-hero {
-  padding: clamp(72px, 8vw, 108px) 0 clamp(72px, 8vw, 104px);
+  padding: 72px 0;
 }
 
 .solog-home-hero__grid {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(480px, 1.1fr);
   align-items: center;
-  gap: 32px;
+  gap: 24px;
 }
 
 .solog-home-hero__content {
@@ -992,7 +992,7 @@
 }
 
 .solog-home-capabilities {
-  padding: 76px 0 84px;
+  padding: 72px 0;
   border-block: 1px solid rgb(220 227 236 / 70%);
   background: rgb(248 250 252 / 76%);
 }
@@ -1015,13 +1015,13 @@
 .solog-home-capabilities__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 24px;
 }
 
 .solog-home-capability {
   position: relative;
   min-width: 0;
-  padding: 26px;
+  padding: 24px;
   overflow: hidden;
   border: 1px solid rgb(220 227 236 / 86%);
   border-radius: var(--radius-panel);
@@ -1078,7 +1078,7 @@
 }
 
 .solog-home-capability h3 {
-  margin: 22px 0 9px;
+  margin: 8px 0;
   color: #0b1733;
   font-size: 1.05rem;
 }
@@ -1087,19 +1087,19 @@
 .solog-home-operation p {
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: 0.88rem;
-  line-height: 1.7;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
 .solog-home-operation {
-  padding: 72px 0 38px;
+  padding: 48px 0;
 }
 
 .solog-home-operation__panel {
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 28px 30px;
+  padding: 24px 32px;
   border: 1px solid rgb(10 99 248 / 10%);
   border-radius: var(--radius-panel);
   background:
@@ -1112,26 +1112,26 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 15px;
+  border-radius: 16px;
   color: var(--solog-home-blue);
   background: rgb(10 99 248 / 8%);
 }
 
 .solog-home-operation h2 {
   margin-bottom: 8px;
-  font-size: clamp(1.25rem, 2.3vw, 1.65rem);
+  font-size: 1.25rem;
 }
 
 .solog-home-final {
-  padding: 38px 0 78px;
+  padding: 48px 0;
 }
 
 .solog-home-final__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 28px;
-  padding: 32px 34px;
+  gap: 24px;
+  padding: 32px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
   background: #ffffff;
@@ -1139,7 +1139,7 @@
 }
 
 .solog-home-final .solog-home-eyebrow {
-  margin-bottom: 9px;
+  margin-bottom: 8px;
 }
 
 .solog-home-footer {
@@ -1148,17 +1148,17 @@
 }
 
 .solog-home-footer__inner {
-  min-height: 112px;
+  min-height: 100px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
 }
 
 .solog-home-footer__brand {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
 }
 
 .solog-home-footer__brand img {
@@ -1197,7 +1197,7 @@
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
   .solog-home-hero__grid {
     grid-template-columns: 1fr;
   }
@@ -1209,17 +1209,12 @@
   .solog-home-symbol {
     width: min(72vw, 410px);
   }
-
   .solog-home-capabilities__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .solog-home-capability:last-child {
-    grid-column: 1 / -1;
+    gap: 16px;
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 640px) {
   .solog-home-container {
     width: min(calc(100% - 32px), 1240px);
   }
@@ -1230,20 +1225,20 @@
   }
 
   .solog-home-brand img {
-    height: 28px;
+    height: 24px;
   }
 
   .solog-home-button--compact {
-    min-height: 38px;
+    min-height: 40px;
     padding-inline: 12px;
   }
 
   .solog-home-hero {
-    padding: 58px 0 64px;
+    padding: 48px 0;
   }
 
   .solog-home-hero h1 {
-    font-size: clamp(2.55rem, 13vw, 3.5rem);
+    font-size: 12vw;
   }
 
   .solog-home-hero__actions {
@@ -1256,19 +1251,11 @@
   }
 
   .solog-home-capabilities {
-    padding: 58px 0 64px;
+    padding: 48px 0;
   }
 
   .solog-home-capabilities__grid {
     grid-template-columns: 1fr;
-  }
-
-  .solog-home-capability:last-child {
-    grid-column: auto;
-  }
-
-  .solog-home-operation {
-    padding-top: 56px;
   }
 
   .solog-home-operation__panel {
@@ -1277,7 +1264,7 @@
   }
 
   .solog-home-final {
-    padding: 30px 0 60px;
+    padding: 24px 0;
   }
 
   .solog-home-final__inner {
@@ -1290,15 +1277,18 @@
     min-height: 0;
     grid-template-columns: 1fr;
     gap: 12px;
-    padding-block: 30px;
+    padding-block: 32px;
+  }
+  .solog-home-footer__brand {
+    justify-self: center;
   }
 
   .solog-home-footer p {
-    text-align: left;
+    text-align: center;
   }
 
   .solog-home-footer small {
-    justify-self: start;
+    justify-self: center;
   }
 }
 
@@ -1663,7 +1653,7 @@
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
   .solog-home-flow {
     width: min(100%, 760px);
     justify-self: center;
@@ -1684,7 +1674,7 @@
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 640px) {
   .solog-home-flow {
     width: 100%;
   }

@@ -163,19 +163,6 @@ export function PublicHomePage() {
             </div>
           </div>
         </section>
-
-        <section className="solog-home-final" aria-labelledby="final-cta-title">
-          <div className="solog-home-container solog-home-final__inner">
-            <div>
-              <p className="solog-home-eyebrow">SOLOG</p>
-              <h2 id="final-cta-title">Accede a tu espacio de trabajo</h2>
-            </div>
-            <HomeLink className="solog-home-button" href="/login">
-              <span>Iniciar sesión</span>
-              <ArrowRight aria-hidden="true" size={19} />
-            </HomeLink>
-          </div>
-        </section>
       </main>
 
       <footer className="solog-home-footer">
