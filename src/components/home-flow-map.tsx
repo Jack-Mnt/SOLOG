@@ -50,46 +50,46 @@ export function HomeFlowMap() {
             preserveAspectRatio="none"
             viewBox="0 0 300 400"
           >
-            <path className="solog-home-flow__pipe" d="M50 66.667H150" />
-            <path className="solog-home-flow__packet" d="M50 66.667H150" />
+            <path className="solog-home-flow__pipe" d="M50 50H150" />
+            <path className="solog-home-flow__packet" d="M50 50H150" />
 
-            <path className="solog-home-flow__pipe" d="M150 66.667V200" />
-            <path className="solog-home-flow__packet" d="M150 66.667V200" />
-
-            <path
-              className="solog-home-flow__pipe"
-              d="M150 200H86Q68 200 68 218V282Q68 300 50 300"
-            />
-            <path
-              className="solog-home-flow__packet solog-home-flow__packet--green"
-              d="M150 200H86Q68 200 68 218V282Q68 300 50 300"
-            />
+            <path className="solog-home-flow__pipe" d="M150 50V200" />
+            <path className="solog-home-flow__packet" d="M150 50V200" />
 
             <path
               className="solog-home-flow__pipe"
-              d="M50 300H108Q126 300 126 282V218Q126 200 144 200H150"
+              d="M150 188H50"
             />
             <path
               className="solog-home-flow__packet solog-home-flow__packet--green"
-              d="M50 300H108Q126 300 126 282V218Q126 200 144 200H150"
+              d="M150 188H50"
             />
 
-            <path className="solog-home-flow__pipe" d="M150 200H250V300" />
             <path
-              className="solog-home-flow__packet solog-home-flow__packet--violet"
-              d="M150 200H250V300"
+              className="solog-home-flow__pipe"
+              d="M50 212H150"
             />
-
-            <path className="solog-home-flow__pipe" d="M250 300V366.667" />
-            <path
-              className="solog-home-flow__packet solog-home-flow__packet--violet"
-              d="M250 300V366.667"
-            />
-
-            <path className="solog-home-flow__pipe" d="M250 366.667H150" />
             <path
               className="solog-home-flow__packet solog-home-flow__packet--green"
-              d="M250 366.667H150"
+              d="M50 212H150"
+            />
+
+            <path className="solog-home-flow__pipe" d="M150 200H250" />
+            <path
+              className="solog-home-flow__packet solog-home-flow__packet--violet"
+              d="M150 200H250"
+            />
+
+            <path className="solog-home-flow__pipe" d="M250 200V350" />
+            <path
+              className="solog-home-flow__packet solog-home-flow__packet--violet"
+              d="M250 200V350"
+            />
+
+            <path className="solog-home-flow__pipe" d="M250 350H150" />
+            <path
+              className="solog-home-flow__packet solog-home-flow__packet--green"
+              d="M250 350H150"
             />
           </svg>
 
