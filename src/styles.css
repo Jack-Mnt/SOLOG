@@ -1355,8 +1355,9 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows:
-    repeat(2, minmax(0, 2fr))
-    repeat(2, minmax(0, 1fr));
+    minmax(0, 1fr)
+    minmax(0, 2fr)
+    minmax(0, 1fr);
   align-items: center;
   justify-items: center;
 }
@@ -1425,22 +1426,22 @@
 
 .solog-home-flow__cell--cashier {
   grid-column: 1;
-  grid-row: 3;
+  grid-row: 2;
 }
 
 .solog-home-flow__cell--admin {
   grid-column: 3;
-  grid-row: 3;
+  grid-row: 2;
 }
 
 .solog-home-flow__cell--excel {
   grid-column: 2;
-  grid-row: 4;
+  grid-row: 3;
 }
 
 .solog-home-flow__cell--control {
   grid-column: 3;
-  grid-row: 4;
+  grid-row: 3;
 }
 
 .solog-home-flow__node {
