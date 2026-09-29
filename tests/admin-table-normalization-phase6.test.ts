@@ -60,7 +60,7 @@ describe('Admin table normalization — Phase 6 global review', () => {
     expect(css).toMatch(/\.admin-main-table tbody tr:hover\s*\{[\s\S]*?var\(--color-surface-secondary\)/)
     expect(css).toMatch(/\.admin-table-number\s*\{[\s\S]*?text-align:\s*right[\s\S]*?tabular-nums/)
     expect(css).toMatch(/\.admin-table-action-cell\s*\{[\s\S]*?text-align:\s*center/)
-    expect(css).toMatch(/\.admin-table-actions\s*\{[\s\S]*?gap:\s*6px/)
+    expect(css).toMatch(/\.admin-table-actions\s*\{[\s\S]*?gap:\s*4px/)
     expect(css).toContain('.admin-table-cell-stack')
     expect(css).toContain('.admin-table-cell-primary')
     expect(css).toContain('.admin-table-cell-secondary')
