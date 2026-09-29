@@ -71,10 +71,7 @@ export function PublicHomePage() {
           >
             <img alt="SOLOG" src="/Logo_SOLOG.png" />
           </a>
-          <HomeLink
-            className="solog-home-button solog-home-button--compact"
-            href="/login"
-          >
+          <HomeLink className="solog-home-button" href="/login">
             <LogIn aria-hidden="true" size={18} />
             <span>Iniciar sesión</span>
           </HomeLink>
@@ -104,7 +101,7 @@ export function PublicHomePage() {
               <div className="solog-home-hero__actions">
                 <HomeLink className="solog-home-button" href="/login">
                   <span>Iniciar sesión</span>
-                  <ArrowRight aria-hidden="true" size={19} />
+                  <ArrowRight aria-hidden="true" size={18} />
                 </HomeLink>
                 <small>Acceso restringido al personal autorizado.</small>
               </div>
