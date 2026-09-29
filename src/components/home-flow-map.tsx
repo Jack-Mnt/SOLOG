@@ -24,13 +24,7 @@ function SologMark({ className = "" }: { className?: string }) {
   return <img alt="" className={className} src="/isotipo.svg" />;
 }
 
-function IconMark({
-  icon: Icon,
-  tone,
-}: {
-  icon: LucideIcon;
-  tone: "violet";
-}) {
+function IconMark({ icon: Icon, tone }: { icon: LucideIcon; tone: "violet" }) {
   return (
     <span
       className={`solog-home-flow__utility-icon solog-home-flow__utility-icon--${tone}`}
@@ -56,19 +50,13 @@ export function HomeFlowMap() {
             <path className="solog-home-flow__pipe" d="M150 50V200" />
             <path className="solog-home-flow__packet" d="M150 50V200" />
 
-            <path
-              className="solog-home-flow__pipe"
-              d="M150 188H50"
-            />
+            <path className="solog-home-flow__pipe" d="M150 188H50" />
             <path
               className="solog-home-flow__packet solog-home-flow__packet--green"
               d="M150 188H50"
             />
 
-            <path
-              className="solog-home-flow__pipe"
-              d="M50 212H150"
-            />
+            <path className="solog-home-flow__pipe" d="M50 212H150" />
             <path
               className="solog-home-flow__packet solog-home-flow__packet--green"
               d="M50 212H150"
@@ -103,7 +91,7 @@ export function HomeFlowMap() {
                     src="/tumisoft128.png"
                   />
                 }
-                subtitle="Stock actualizado"
+                subtitle="Stock actual"
                 title="TumiSoft"
               />
             </div>
@@ -156,7 +144,7 @@ export function HomeFlowMap() {
                     <SologMark />
                   </span>
                 }
-                subtitle="Conteo físico"
+                subtitle="Conteos"
                 title="Cajero"
               />
             </div>
@@ -168,7 +156,7 @@ export function HomeFlowMap() {
                     <SologMark />
                   </span>
                 }
-                subtitle="Análisis y gestión"
+                subtitle="Análisis"
                 title="Admin"
               />
             </div>
