@@ -33,11 +33,11 @@
   overflow: hidden;
   border-right: 1px solid rgb(220 227 236 / 72%);
   background:
-    radial-gradient(circle at 26% 24%, rgb(10 99 248 / 5%), transparent 25rem),
-    radial-gradient(circle at 78% 54%, rgb(122 0 255 / 4%), transparent 24rem),
+    radial-gradient(circle at 26% 24%, color-mix(in srgb, var(--solog-login-blue) 5%, transparent), transparent 25rem),
+    radial-gradient(circle at 78% 54%, color-mix(in srgb, var(--solog-login-violet) 4%, transparent), transparent 24rem),
     radial-gradient(
       circle at 32% 90%,
-      rgb(16 185 129 / 2.5%),
+      color-mix(in srgb, var(--solog-login-green) 2.5%, transparent),
       transparent 20rem
     ),
     #f8fafc;
@@ -92,15 +92,15 @@
   height: 72%;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 36% 34%, rgb(10 99 248 / 12%), transparent 58%),
-    radial-gradient(circle at 68% 70%, rgb(122 0 255 / 8%), transparent 58%),
+    radial-gradient(circle at 36% 34%, color-mix(in srgb, var(--solog-login-blue) 12%, transparent), transparent 58%),
+    radial-gradient(circle at 68% 70%, color-mix(in srgb, var(--solog-login-violet) 8%, transparent), transparent 58%),
     rgb(255 255 255 / 76%);
   box-shadow: 0 26px 60px rgb(10 99 248 / 7%);
 }
 
 .solog-login-art__ring {
   z-index: -2;
-  border: 1px solid rgb(10 99 248 / 11%);
+  border: 1px solid color-mix(in srgb, var(--solog-login-blue) 11%, transparent);
   border-radius: 50%;
 }
 
@@ -112,13 +112,13 @@
 .solog-login-art__ring--inner {
   width: 79%;
   height: 79%;
-  border-color: rgb(122 0 255 / 9%);
+  border-color: color-mix(in srgb, var(--solog-login-violet) 9%, transparent);
 }
 
 .solog-login-art__ring::before {
   position: absolute;
   border: 1px solid transparent;
-  border-top-color: rgb(10 99 248 / 16%);
+  border-top-color: color-mix(in srgb, var(--solog-login-blue) 16%, transparent);
   border-radius: 50%;
   content: "";
   inset: 8%;
@@ -126,7 +126,7 @@
 }
 
 .solog-login-art__ring--inner::before {
-  border-top-color: rgb(16 185 129 / 17%);
+  border-top-color: color-mix(in srgb, var(--solog-login-green) 17%, transparent);
   transform: rotate(-46deg);
 }
 
@@ -141,14 +141,14 @@
 .solog-login-art__dot--blue {
   top: 15%;
   left: 20%;
-  color: rgb(10 99 248 / 7%);
+  color: color-mix(in srgb, var(--solog-login-blue) 7%, transparent);
   background: var(--solog-login-blue);
 }
 
 .solog-login-art__dot--violet {
   right: 10%;
   bottom: 31%;
-  color: rgb(122 0 255 / 6%);
+  color: color-mix(in srgb, var(--solog-login-violet) 6%, transparent);
   background: var(--solog-login-violet);
 }
 
@@ -157,7 +157,7 @@
   left: 29%;
   width: 7px;
   height: 7px;
-  color: rgb(16 185 129 / 6%);
+  color: color-mix(in srgb, var(--solog-login-green) 6%, transparent);
   background: var(--solog-login-green);
 }
 
@@ -323,7 +323,7 @@
 
 .solog-login-password-toggle:hover {
   color: var(--solog-login-blue);
-  background: rgb(10 99 248 / 6%);
+  background: color-mix(in srgb, var(--solog-login-blue) 6%, transparent);
 }
 
 .solog-login-submit {
@@ -394,7 +394,7 @@
 
 .solog-login-shell a:focus-visible,
 .solog-login-shell button:focus-visible {
-  outline: 3px solid rgb(10 99 248 / 22%);
+  outline: 3px solid color-mix(in srgb, var(--solog-login-blue) 22%, transparent);
   outline-offset: 3px;
 }
 
@@ -503,8 +503,8 @@
   overflow-x: clip;
   color: var(--color-text-primary);
   background:
-    radial-gradient(circle at 8% 10%, rgb(10 99 248 / 6%), transparent 30rem),
-    radial-gradient(circle at 90% 18%, rgb(122 0 255 / 4%), transparent 32rem),
+    radial-gradient(circle at 8% 10%, color-mix(in srgb, var(--solog-home-blue) 6%, transparent), transparent 30rem),
+    radial-gradient(circle at 90% 18%, color-mix(in srgb, var(--solog-home-violet) 4%, transparent), transparent 32rem),
     linear-gradient(180deg, var(--color-surface) 0%, #f8fafc 48%, var(--color-surface) 100%);
 }
 
@@ -575,7 +575,7 @@
 }
 
 .solog-home a:focus-visible {
-  outline: 3px solid rgb(10 99 248 / 24%);
+  outline: 3px solid color-mix(in srgb, var(--solog-home-blue) 24%, transparent);
   outline-offset: 3px;
 }
 
@@ -771,10 +771,10 @@
   align-items: center;
   gap: 20px;
   padding: 24px 32px;
-  border: 1px solid rgb(10 99 248 / 10%);
+  border: 1px solid color-mix(in srgb, var(--solog-home-blue) 10%, transparent);
   border-radius: var(--radius-panel);
   background:
-    linear-gradient(110deg, rgb(10 99 248 / 5%), rgb(16 185 129 / 3%)), var(--color-surface);
+    linear-gradient(110deg, color-mix(in srgb, var(--solog-home-blue) 5%, transparent), color-mix(in srgb, var(--solog-home-green) 3%, transparent)), var(--color-surface);
 }
 
 .solog-home-operation__icon {
@@ -785,7 +785,7 @@
   flex: 0 0 auto;
   border-radius: 16px;
   color: var(--solog-home-blue);
-  background: rgb(10 99 248 / 8%);
+  background: color-mix(in srgb, var(--solog-home-blue) 8%, transparent);
 }
 
 .solog-home-operation h2 {
@@ -955,8 +955,8 @@
   position: absolute;
   z-index: 0;
   background:
-    linear-gradient(rgb(10 99 248 / 3%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(10 99 248 / 3%) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--solog-home-blue) 3%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--solog-home-blue) 3%, transparent) 1px, transparent 1px);
   background-size: 30px 30px;
   content: "";
   inset: -24px;
@@ -1155,7 +1155,7 @@
 
 .solog-home-flow__utility-icon--violet {
   color: var(--solog-home-violet);
-  background: rgb(122 0 255 / 7%);
+  background: color-mix(in srgb, var(--solog-home-violet) 7%, transparent);
 }
 
 .solog-home-flow__product-mark {
@@ -1169,7 +1169,7 @@
 
 .solog-home-flow__node--supabase {
   overflow: visible;
-  border-color: rgb(16 185 129 / 18%);
+  border-color: color-mix(in srgb, var(--solog-home-green) 18%, transparent);
   box-shadow: 0 8px 24px rgb(16 185 129 / 24%);
 }
 
@@ -1177,7 +1177,7 @@
 .solog-home-flow__node--supabase::after {
   position: absolute;
   z-index: -1;
-  border: 1px solid rgb(16 185 129 / 18%);
+  border: 1px solid color-mix(in srgb, var(--solog-home-green) 18%, transparent);
   border-radius: 20px;
   content: "";
   inset: -8px;
@@ -1200,7 +1200,7 @@
   height: 118px;
   display: grid;
   place-items: center;
-  border: 1px solid rgb(10 99 248 / 13%);
+  border: 1px solid color-mix(in srgb, var(--solog-home-blue) 13%, transparent);
   border-radius: 24px;
   background: var(--color-surface);
   box-shadow: 0 18px 44px rgb(10 99 248 / 14%);
@@ -1209,7 +1209,7 @@
 .solog-home-flow__core::before,
 .solog-home-flow__core::after {
   position: absolute;
-  border: 1px solid rgb(10 99 248 / 10%);
+  border: 1px solid color-mix(in srgb, var(--solog-home-blue) 10%, transparent);
   content: "";
   pointer-events: none;
 }
@@ -1220,7 +1220,7 @@
 }
 
 .solog-home-flow__core::after {
-  border-color: rgb(122 0 255 / 8%);
+  border-color: color-mix(in srgb, var(--solog-home-violet) 8%, transparent);
   border-radius: 24px;
   inset: -21px;
 }
