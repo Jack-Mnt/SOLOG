@@ -52,8 +52,8 @@ describe('AdminDialog Fase 9.5 — kinds', () => {
     expect(css).toContain(
       '.admin-dialog--kind-confirmation .admin-dialog__body > p {',
     )
-    expect(css).toContain(
-      '.admin-dialog--kind-confirmation .admin-dialog__body > .admin-notice--info .admin-notice__message {',
+    expect(css).toMatch(
+      /\.admin-dialog--kind-confirmation\s+\.admin-dialog__body\s*>\s*\.admin-notice--info\s+\.admin-notice__message\s*\{/,
     )
   })
 
