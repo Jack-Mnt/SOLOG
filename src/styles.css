@@ -40,7 +40,7 @@
       color-mix(in srgb, var(--solog-login-green) 2.5%, transparent),
       transparent 20rem
     ),
-    #f8fafc;
+    var(--color-surface-secondary);
 }
 
 .solog-login-brand__logo,
@@ -76,7 +76,7 @@
   width: 54%;
   height: 54%;
   object-fit: contain;
-  filter: drop-shadow(0 20px 30px rgb(15 23 42 / 10%));
+  filter: drop-shadow(var(--shadow-elevated));
 }
 
 .solog-login-art__halo,
@@ -95,7 +95,7 @@
     radial-gradient(circle at 36% 34%, color-mix(in srgb, var(--solog-login-blue) 12%, transparent), transparent 58%),
     radial-gradient(circle at 68% 70%, color-mix(in srgb, var(--solog-login-violet) 8%, transparent), transparent 58%),
     rgb(255 255 255 / 76%);
-  box-shadow: 0 26px 60px rgb(10 99 248 / 7%);
+  box-shadow: var(--shadow-brand);
 }
 
 .solog-login-art__ring {
@@ -275,8 +275,8 @@
 .solog-login-control:focus-within {
   border-color: var(--solog-login-blue);
   box-shadow:
-    0 0 0 3px rgb(10 99 248 / 9%),
-    0 0 0 5px rgb(122 0 255 / 3%);
+    0 0 0 3px color-mix(in srgb, var(--solog-login-blue) 9%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--solog-login-violet) 3%, transparent);
 }
 
 .solog-login-control > svg {
@@ -343,7 +343,7 @@
     var(--solog-login-blue),
     color-mix(in srgb, var(--solog-login-blue) 74%, var(--solog-login-violet))
   );
-  box-shadow: 0 8px 20px rgb(10 99 248 / 15%);
+  box-shadow: var(--shadow-brand);
   font-size: 0.86rem;
   font-weight: 750;
   cursor: pointer;
@@ -354,7 +354,7 @@
 }
 
 .solog-login-submit:hover:not(:disabled) {
-  box-shadow: 0 11px 24px rgb(10 99 248 / 20%);
+  box-shadow: var(--shadow-brand);
   filter: saturate(1.04);
   transform: translateY(-1px);
 }
@@ -505,7 +505,7 @@
   background:
     radial-gradient(circle at 8% 10%, color-mix(in srgb, var(--solog-home-blue) 6%, transparent), transparent 30rem),
     radial-gradient(circle at 90% 18%, color-mix(in srgb, var(--solog-home-violet) 4%, transparent), transparent 32rem),
-    linear-gradient(180deg, var(--color-surface) 0%, #f8fafc 48%, var(--color-surface) 100%);
+    linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-secondary) 48%, var(--color-surface) 100%);
 }
 
 .solog-home-container {
@@ -558,7 +558,7 @@
     var(--solog-home-blue),
     color-mix(in srgb, var(--solog-home-blue) 72%, var(--solog-home-violet))
   );
-  box-shadow: 0 8px 20px rgb(10 99 248 / 16%);
+  box-shadow: var(--shadow-brand);
   font-size: 0.84rem;
   font-weight: 750;
   text-decoration: none;
@@ -569,7 +569,7 @@
 }
 
 .solog-home-button:hover {
-  box-shadow: 0 11px 24px rgb(10 99 248 / 21%);
+  box-shadow: var(--shadow-brand);
   filter: saturate(1.04);
   transform: translateY(-1px);
 }
@@ -697,7 +697,7 @@
   border: 1px solid rgb(220 227 236 / 86%);
   border-radius: var(--radius-panel);
   background: rgb(255 255 255 / 88%);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 3%);
+  box-shadow: var(--shadow-default);
   transition:
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
@@ -722,7 +722,7 @@
     var(--capability-accent) 24%,
     var(--color-border)
   );
-  box-shadow: 0 12px 28px rgb(15 23 42 / 6%);
+  box-shadow: var(--shadow-elevated);
   transform: translateY(-2px);
 }
 
@@ -942,7 +942,7 @@
   border: 1px solid rgb(220 227 236 / 88%);
   border-radius: 16px;
   background: rgb(255 255 255 / 84%);
-  box-shadow: 0 18px 50px rgb(15 23 42 / 7%);
+  box-shadow: var(--shadow-elevated);
 }
 
 .solog-home-flow__canvas {
@@ -1081,7 +1081,7 @@
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: rgb(255 255 255 / 96%);
-  box-shadow: 0 8px 22px rgb(15 23 42 / 12%);
+  box-shadow: var(--shadow-elevated);
 }
 
 .solog-home-flow__node--mini {
@@ -1098,7 +1098,7 @@
   flex: 0 0 36px;
   overflow: hidden;
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--color-surface-secondary);
 }
 
 .solog-home-flow__node--mini .solog-home-flow__node-icon {
@@ -1170,7 +1170,7 @@
 .solog-home-flow__node--supabase {
   overflow: visible;
   border-color: color-mix(in srgb, var(--solog-home-green) 18%, transparent);
-  box-shadow: 0 8px 24px rgb(16 185 129 / 24%);
+  box-shadow: var(--shadow-elevated);
 }
 
 .solog-home-flow__node--supabase::before,
@@ -1203,7 +1203,7 @@
   border: 1px solid color-mix(in srgb, var(--solog-home-blue) 13%, transparent);
   border-radius: 24px;
   background: var(--color-surface);
-  box-shadow: 0 18px 44px rgb(10 99 248 / 14%);
+  box-shadow: var(--shadow-brand);
 }
 
 .solog-home-flow__core::before,
