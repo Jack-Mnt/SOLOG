@@ -1,9 +1,4 @@
-import {
-  ChevronsRight,
-  FileSpreadsheet,
-  History,
-  type LucideIcon,
-} from "lucide-react";
+import { History, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 interface FlowNodeProps {
@@ -13,12 +8,7 @@ interface FlowNodeProps {
   title: string;
 }
 
-function FlowNode({
-  className = "",
-  icon,
-  subtitle,
-  title,
-}: FlowNodeProps) {
+function FlowNode({ className = "", icon, subtitle, title }: FlowNodeProps) {
   return (
     <article className={`solog-home-flow__node ${className}`}>
       <span className="solog-home-flow__node-icon">{icon}</span>
@@ -32,26 +22,6 @@ function FlowNode({
 
 function SologMark({ className = "" }: { className?: string }) {
   return <img alt="" className={className} src="/isotipo.svg" />;
-}
-
-function SupabaseMark() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="solog-home-flow__supabase-mark"
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="M13.2 2.2 4.9 13.5h6.7l-.8 8.3 8.3-11.3h-6.7l.8-8.3Z"
-        fill="currentColor"
-      />
-      <path
-        d="M12.4 10.5h6.7L10.8 21.8l.8-8.3H4.9l8.3-11.3-.8 8.3Z"
-        fill="currentColor"
-        opacity=".42"
-      />
-    </svg>
-  );
 }
 
 function IconMark({
@@ -130,10 +100,10 @@ export function HomeFlowMap() {
                   <img
                     alt=""
                     className="solog-home-flow__tumisoft-mark"
-                    src="/logo-tumisoft.png"
+                    src="/tumisoft128.png"
                   />
                 }
-                subtitle="Origen del Excel"
+                subtitle="Stock actualizado"
                 title="TumiSoft"
               />
             </div>
@@ -141,12 +111,13 @@ export function HomeFlowMap() {
             <div className="solog-home-flow__cell solog-home-flow__cell--conexion">
               <FlowNode
                 icon={
-                  <IconMark
-                    icon={ChevronsRight}
-                    tone="blue"
+                  <img
+                    alt=""
+                    className="solog-home-flow__supabase-icon"
+                    src="/ConeXion128.png"
                   />
                 }
-                subtitle="Carga y sincronización"
+                subtitle="Sincronización"
                 title="ConeXion"
               />
             </div>
@@ -155,11 +126,13 @@ export function HomeFlowMap() {
               <FlowNode
                 className="solog-home-flow__node--supabase"
                 icon={
-                  <span className="solog-home-flow__supabase-icon">
-                    <SupabaseMark />
-                  </span>
+                  <img
+                    alt=""
+                    className="solog-home-flow__supabase-icon"
+                    src="/supabase128.png"
+                  />
                 }
-                subtitle="Base de datos central"
+                subtitle="Base de datos"
                 title="Supabase"
               />
             </div>
@@ -167,7 +140,10 @@ export function HomeFlowMap() {
             <div className="solog-home-flow__cell solog-home-flow__cell--core">
               <div className="solog-home-flow__core">
                 <SologMark className="solog-home-flow__core-mark" />
-                <strong>NÚCLEO SOLOG</strong>
+                <img
+                  className="solog-home-flow__wordmark"
+                  src="/Wordmark128.png"
+                />
               </div>
             </div>
 
@@ -175,12 +151,12 @@ export function HomeFlowMap() {
               <FlowNode
                 className="solog-home-flow__node--cashier"
                 icon={
-                  <span className="solog-home-flow__product-mark solog-home-flow__product-mark--dark">
+                  <span className="solog-home-flow__product-mark">
                     <SologMark />
                   </span>
                 }
-                subtitle="Conteos físicos"
-                title="SOLOG Cajero"
+                subtitle="Conteo fisico"
+                title="Cajero"
               />
             </div>
 
@@ -192,14 +168,20 @@ export function HomeFlowMap() {
                   </span>
                 }
                 subtitle="Análisis y gestión"
-                title="SOLOG Admin"
+                title="Admin"
               />
             </div>
 
             <div className="solog-home-flow__cell solog-home-flow__cell--excel">
               <FlowNode
                 className="solog-home-flow__node--mini"
-                icon={<IconMark icon={FileSpreadsheet} tone="green" />}
+                icon={
+                  <img
+                    alt=""
+                    className="solog-home-flow__supabase-icon"
+                    src="/excel128.png"
+                  />
+                }
                 subtitle="Diferencias"
                 title="Excel"
               />
@@ -219,10 +201,10 @@ export function HomeFlowMap() {
 
       <figcaption className="solog-home-flow__caption">
         TumiSoft entrega el Excel a ConeXion. ConeXion sincroniza la información
-        con SOLOG; SOLOG Cajero registra conteos y devuelve información al núcleo,
-        mientras SOLOG Admin deriva el análisis hacia Control y la exportación de
-        diferencias a Excel. Supabase permanece como base de datos central fuera
-        del flujo lineal.
+        con SOLOG; SOLOG Cajero registra conteos y devuelve información al
+        núcleo, mientras SOLOG Admin deriva el análisis hacia Control y la
+        exportación de diferencias a Excel. Supabase permanece como base de
+        datos central fuera del flujo lineal.
       </figcaption>
     </figure>
   );
