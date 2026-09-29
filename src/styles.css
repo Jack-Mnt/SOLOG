@@ -813,9 +813,9 @@
 
 .solog-home-hero__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(380px, 0.92fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(480px, 1.1fr);
   align-items: center;
-  gap: clamp(48px, 7vw, 100px);
+  gap: clamp(32px, 4vw, 64px);
 }
 
 .solog-home-hero__content {
@@ -1304,5 +1304,485 @@
 
   .solog-home-footer small {
     justify-self: start;
+  }
+}
+
+
+/* Home público SOLOG — mapa de flujo */
+.solog-home-flow {
+  width: min(100%, 610px);
+  min-width: 0;
+  margin: 0;
+  justify-self: end;
+  animation: solog-home-reveal 640ms 80ms ease-out both;
+}
+
+.solog-home-flow__stage {
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 0.94;
+  padding: 24px;
+  overflow: hidden;
+  border: 1px solid rgb(220 227 236 / 88%);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 84%);
+  box-shadow: 0 18px 50px rgb(15 23 42 / 7%);
+}
+
+.solog-home-flow__canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.solog-home-flow__canvas::before {
+  position: absolute;
+  z-index: 0;
+  background:
+    linear-gradient(rgb(10 99 248 / 3%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(10 99 248 / 3%) 1px, transparent 1px);
+  background-size: 30px 30px;
+  content: "";
+  inset: -24px;
+  mask-image: linear-gradient(to bottom, black, transparent 95%);
+  pointer-events: none;
+}
+
+.solog-home-flow__grid,
+.solog-home-flow__pipes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.solog-home-flow__grid {
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+}
+
+.solog-home-flow__pipes {
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.solog-home-flow__pipe,
+.solog-home-flow__packet {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.solog-home-flow__pipe {
+  stroke: #ccd6e4;
+  stroke-width: 7;
+}
+
+.solog-home-flow__packet {
+  stroke: var(--solog-home-blue);
+  stroke-width: 3.8;
+  stroke-dasharray: 7 22;
+  animation: solog-home-flow-packet 2.8s linear infinite;
+}
+
+.solog-home-flow__packet--green {
+  stroke: var(--solog-home-green);
+}
+
+.solog-home-flow__packet--violet {
+  stroke: var(--solog-home-violet);
+}
+
+.solog-home-flow__cell {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+}
+
+.solog-home-flow__cell--tumisoft {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.solog-home-flow__cell--conexion {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.solog-home-flow__cell--supabase {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.solog-home-flow__cell--core {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.solog-home-flow__cell--cashier {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.solog-home-flow__cell--admin {
+  grid-column: 3;
+  grid-row: 3;
+}
+
+.solog-home-flow__cell--excel {
+  grid-column: 2;
+  grid-row: 4;
+}
+
+.solog-home-flow__cell--control {
+  grid-column: 3;
+  grid-row: 4;
+}
+
+.solog-home-flow__node {
+  position: relative;
+  z-index: 4;
+  width: min(100%, 168px);
+  min-width: 0;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 15px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 8px 22px rgb(15 23 42 / 8%);
+}
+
+.solog-home-flow__node--mini {
+  width: min(100%, 142px);
+  min-height: 46px;
+  padding: 8px 10px;
+}
+
+.solog-home-flow__node-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.solog-home-flow__node--mini .solog-home-flow__node-icon {
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+}
+
+.solog-home-flow__node-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.solog-home-flow__node-copy strong,
+.solog-home-flow__node-copy span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.solog-home-flow__node-copy strong {
+  color: #0b1733;
+  font-size: 0.76rem;
+}
+
+.solog-home-flow__node-copy span {
+  color: var(--color-text-secondary);
+  font-size: 0.62rem;
+}
+
+.solog-home-flow__tumisoft-mark {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.solog-home-flow__utility-icon,
+.solog-home-flow__product-mark,
+.solog-home-flow__supabase-icon {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+}
+
+.solog-home-flow__utility-icon--blue {
+  color: var(--solog-home-blue);
+  background: rgb(10 99 248 / 7%);
+}
+
+.solog-home-flow__utility-icon--green {
+  color: var(--solog-home-green);
+  background: rgb(16 185 129 / 8%);
+}
+
+.solog-home-flow__utility-icon--violet {
+  color: var(--solog-home-violet);
+  background: rgb(122 0 255 / 7%);
+}
+
+.solog-home-flow__product-mark {
+  padding: 5px;
+}
+
+.solog-home-flow__product-mark--dark {
+  background: #071126;
+}
+
+.solog-home-flow__product-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.solog-home-flow__node--supabase {
+  overflow: visible;
+  border-color: rgb(16 185 129 / 18%);
+  box-shadow: 0 10px 25px rgb(16 185 129 / 9%);
+}
+
+.solog-home-flow__node--supabase::before,
+.solog-home-flow__node--supabase::after {
+  position: absolute;
+  z-index: -1;
+  border: 1px solid rgb(16 185 129 / 18%);
+  border-radius: 20px;
+  content: "";
+  inset: -8px;
+  pointer-events: none;
+  animation: solog-home-flow-db-pulse 2.8s ease-out infinite;
+}
+
+.solog-home-flow__node--supabase::after {
+  animation-delay: 1.4s;
+}
+
+.solog-home-flow__supabase-icon {
+  color: var(--solog-home-green);
+  background: #ecfdf5;
+}
+
+.solog-home-flow__supabase-mark {
+  width: 23px;
+  height: 23px;
+}
+
+.solog-home-flow__core {
+  position: relative;
+  z-index: 5;
+  width: 118px;
+  height: 118px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(10 99 248 / 13%);
+  border-radius: 32px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgb(10 99 248 / 14%);
+}
+
+.solog-home-flow__core::before,
+.solog-home-flow__core::after {
+  position: absolute;
+  border: 1px solid rgb(10 99 248 / 10%);
+  content: "";
+  pointer-events: none;
+}
+
+.solog-home-flow__core::before {
+  border-radius: 38px;
+  inset: -11px;
+}
+
+.solog-home-flow__core::after {
+  border-color: rgb(122 0 255 / 8%);
+  border-radius: 44px;
+  inset: -21px;
+}
+
+.solog-home-flow__core-mark {
+  width: 70px;
+  height: 70px;
+  transform-origin: center;
+  animation: solog-home-flow-core-turn 3s ease-in-out infinite;
+}
+
+.solog-home-flow__core strong {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  color: #0b1733;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.solog-home-flow__caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  margin: -1px;
+}
+
+@keyframes solog-home-flow-packet {
+  to {
+    stroke-dashoffset: -58;
+  }
+}
+
+@keyframes solog-home-flow-core-turn {
+  0%,
+  33.333% {
+    transform: rotate(0deg);
+  }
+
+  50%,
+  83.333% {
+    transform: rotate(180deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes solog-home-flow-db-pulse {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.96);
+  }
+
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(1.14);
+  }
+}
+
+@media (max-width: 900px) {
+  .solog-home-flow {
+    width: min(100%, 760px);
+    justify-self: center;
+  }
+
+  .solog-home-flow__stage {
+    aspect-ratio: 1.18;
+  }
+
+  .solog-home-flow__node {
+    width: min(100%, 180px);
+  }
+
+  .solog-home-flow__node--mini {
+    width: min(100%, 150px);
+  }
+
+  .solog-home-flow__core {
+    width: 126px;
+    height: 126px;
+  }
+
+  .solog-home-flow__core-mark {
+    width: 74px;
+    height: 74px;
+  }
+}
+
+@media (max-width: 620px) {
+  .solog-home-flow {
+    width: 100%;
+  }
+
+  .solog-home-flow__stage {
+    aspect-ratio: 0.84;
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .solog-home-flow__canvas::before {
+    inset: -16px;
+  }
+
+  .solog-home-flow__cell {
+    padding: 4px;
+  }
+
+  .solog-home-flow__node,
+  .solog-home-flow__node--mini {
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+    justify-content: center;
+    padding: 0;
+    border-radius: 16px;
+  }
+
+  .solog-home-flow__node-icon,
+  .solog-home-flow__node--mini .solog-home-flow__node-icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+  }
+
+  .solog-home-flow__node-copy {
+    display: none;
+  }
+
+  .solog-home-flow__core {
+    width: 92px;
+    height: 92px;
+    border-radius: 27px;
+  }
+
+  .solog-home-flow__core::before {
+    border-radius: 33px;
+    inset: -8px;
+  }
+
+  .solog-home-flow__core::after {
+    border-radius: 39px;
+    inset: -16px;
+  }
+
+  .solog-home-flow__core-mark {
+    width: 54px;
+    height: 54px;
+  }
+
+  .solog-home-flow__core strong {
+    display: none;
+  }
+
+  .solog-home-flow__node--supabase::before,
+  .solog-home-flow__node--supabase::after {
+    border-radius: 18px;
+    inset: -6px;
   }
 }

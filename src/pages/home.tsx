@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
+import { HomeFlowMap } from "../components/home-flow-map";
 import { navigateTo } from "../lib/router";
 
 interface HomeLinkProps {
@@ -109,15 +110,7 @@ export function PublicHomePage() {
               </div>
             </div>
 
-            <div className="solog-home-symbol" aria-hidden="true">
-              <span className="solog-home-symbol__halo" />
-              <span className="solog-home-symbol__ring solog-home-symbol__ring--outer" />
-              <span className="solog-home-symbol__ring solog-home-symbol__ring--inner" />
-              <span className="solog-home-symbol__particle solog-home-symbol__particle--blue" />
-              <span className="solog-home-symbol__particle solog-home-symbol__particle--violet" />
-              <span className="solog-home-symbol__particle solog-home-symbol__particle--green" />
-              <img alt="" src="/isotipo.svg" />
-            </div>
+            <HomeFlowMap />
           </div>
         </section>
 
