@@ -29,7 +29,7 @@ function IconMark({
   tone,
 }: {
   icon: LucideIcon;
-  tone: "blue" | "green" | "violet";
+  tone: "violet";
 }) {
   return (
     <span
@@ -113,7 +113,7 @@ export function HomeFlowMap() {
                 icon={
                   <img
                     alt=""
-                    className="solog-home-flow__supabase-icon"
+                    className="solog-home-flow__brand-mark"
                     src="/ConeXion128.png"
                   />
                 }
@@ -128,7 +128,7 @@ export function HomeFlowMap() {
                 icon={
                   <img
                     alt=""
-                    className="solog-home-flow__supabase-icon"
+                    className="solog-home-flow__brand-mark solog-home-flow__brand-mark--supabase"
                     src="/supabase128.png"
                   />
                 }
@@ -141,6 +141,8 @@ export function HomeFlowMap() {
               <div className="solog-home-flow__core">
                 <SologMark className="solog-home-flow__core-mark" />
                 <img
+                  alt=""
+                  aria-hidden="true"
                   className="solog-home-flow__wordmark"
                   src="/Wordmark128.png"
                 />
@@ -149,13 +151,12 @@ export function HomeFlowMap() {
 
             <div className="solog-home-flow__cell solog-home-flow__cell--cashier">
               <FlowNode
-                className="solog-home-flow__node--cashier"
                 icon={
                   <span className="solog-home-flow__product-mark">
                     <SologMark />
                   </span>
                 }
-                subtitle="Conteo fisico"
+                subtitle="Conteo físico"
                 title="Cajero"
               />
             </div>
@@ -178,7 +179,7 @@ export function HomeFlowMap() {
                 icon={
                   <img
                     alt=""
-                    className="solog-home-flow__supabase-icon"
+                    className="solog-home-flow__brand-mark"
                     src="/excel128.png"
                   />
                 }
