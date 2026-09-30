@@ -4,12 +4,6 @@
   line-height: 1.45;
 }
 
-@media (max-width: 760px) {
-  .palette-switcher > svg {
-    display: none;
-  }
-}
-
 /* Login SOLOG */
 .solog-login-shell {
   --solog-login-blue: var(--brand-blue);
@@ -31,7 +25,7 @@
   gap: 24px;
   padding: clamp(34px, 5vw, 64px);
   overflow: hidden;
-  border-right: 1px solid rgb(220 227 236 / 72%);
+  border-right: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
   background:
     radial-gradient(circle at 26% 24%, color-mix(in srgb, var(--solog-login-blue) 5%, transparent), transparent 25rem),
     radial-gradient(circle at 78% 54%, color-mix(in srgb, var(--solog-login-violet) 4%, transparent), transparent 24rem),
@@ -94,7 +88,7 @@
   background:
     radial-gradient(circle at 36% 34%, color-mix(in srgb, var(--solog-login-blue) 12%, transparent), transparent 58%),
     radial-gradient(circle at 68% 70%, color-mix(in srgb, var(--solog-login-violet) 8%, transparent), transparent 58%),
-    rgb(255 255 255 / 76%);
+    color-mix(in srgb, var(--color-surface) 76%, transparent);
   box-shadow: var(--shadow-brand);
 }
 
@@ -419,7 +413,6 @@
   }
 
   .solog-login-access {
-    min-height: 100svh;
     padding: 36px 24px;
   }
 
@@ -517,8 +510,8 @@
   position: sticky;
   z-index: 20;
   top: 0;
-  border-bottom: 1px solid rgb(203 213 225 / 55%);
-  background: rgb(7 17 38 / 75%);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border-strong) 55%, transparent);
+  background: color-mix(in srgb, var(--color-dark-surface) 75%, transparent);
   backdrop-filter: blur(14px);
 }
 
@@ -665,8 +658,8 @@
 
 .solog-home-capabilities {
   padding: 64px 0;
-  border-block: 1px solid rgb(220 227 236 / 70%);
-  background: rgb(248 250 252 / 76%);
+  border-block: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface-secondary) 76%, transparent);
 }
 
 .solog-home-section-heading {
@@ -694,9 +687,9 @@
   min-width: 0;
   padding: 24px;
   overflow: hidden;
-  border: 1px solid rgb(220 227 236 / 86%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 86%, transparent);
   border-radius: var(--radius-panel);
-  background: rgb(255 255 255 / 88%);
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
   box-shadow: var(--shadow-default);
   transition:
     border-color var(--transition-fast),
@@ -825,7 +818,7 @@
 .solog-home-footer p,
 .solog-home-footer small {
   margin: 0;
-  color: rgb(248 250 252 / 68%);
+  color: color-mix(in srgb, var(--color-text-inverse) 68%, transparent);
   font-size: 0.8rem;
 }
 
@@ -871,7 +864,6 @@
   }
 
   .solog-home-header__inner {
-    min-height: 64px;
     gap: 12px;
   }
 
@@ -915,9 +907,6 @@
     justify-self: center;
   }
 
-  .solog-home-footer p {
-    text-align: center;
-  }
 
   .solog-home-footer small {
     justify-self: center;
@@ -939,9 +928,9 @@
   aspect-ratio: 1;
   padding: 12px;
   overflow: hidden;
-  border: 1px solid rgb(220 227 236 / 88%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
   border-radius: 16px;
-  background: rgb(255 255 255 / 84%);
+  background: color-mix(in srgb, var(--color-surface) 84%, transparent);
   box-shadow: var(--shadow-elevated);
 }
 
@@ -1080,7 +1069,7 @@
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: rgb(255 255 255 / 96%);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   box-shadow: var(--shadow-elevated);
 }
 
@@ -1313,7 +1302,6 @@
 
   .solog-home-flow__stage {
     aspect-ratio: 0.9;
-    padding: 12px;
     border-radius: 12px;
   }
 
@@ -1330,7 +1318,6 @@
     width: 48px;
     height: 48px;
     min-height: 48px;
-    justify-content: center;
     padding: 0;
     border-radius: 12px;
   }
@@ -1349,7 +1336,6 @@
   .solog-home-flow__core {
     width: 92px;
     height: 92px;
-    border-radius: 24px;
   }
 
   .solog-home-flow__core::before {
