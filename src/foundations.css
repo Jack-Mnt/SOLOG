@@ -169,8 +169,7 @@ select {
 strong,
 dd,
 table,
-input[inputmode="numeric"],
-.status-item {
+input[inputmode="numeric"] {
   font-variant-numeric: tabular-nums;
 }
 
