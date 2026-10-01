@@ -33,7 +33,7 @@ function PendingSend({ runtime }: { runtime: CashierV4Runtime }) {
 
 function CajeroV4Header({ runtime, onLogout }: { runtime: CashierV4Runtime; onLogout: () => Promise<void> }) {
   const { state } = useCashierV4(), b = state.bootstrap!
-  const now = useCajeroServerClock(runtime.store.serverOffsetMs)
+  const now = Math.max(useCajeroServerClock(runtime.store.serverOffsetMs), runtime.serverNow())
   const [stockOpen, setStockOpen] = useState(false)
   const stockRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -59,7 +59,7 @@ function CajeroV4Header({ runtime, onLogout }: { runtime: CashierV4Runtime; onLo
         <p>Vigente hasta {clock(stock?.snapshot_expira_at)}</p>
         {state.panel_state ? <p>Sesión hasta {clock(state.panel_state.session.expira_at)}</p> : null}
       </section> : null}</div>
-      <button aria-label="Cerrar sesión" className="cajero-header__logout" disabled={runtime.getSnapshot().busy} onClick={() => void onLogout()} type="button"><LogOut aria-hidden="true" size={21} /><span>Salir</span></button>
+      <button aria-label="Cerrar sesión" className="cajero-header__logout" disabled={runtime.getSnapshot().busy} onClick={() => void runtime.logoutSafe(onLogout).catch(() => {})} type="button"><LogOut aria-hidden="true" size={21} /><span>Salir</span></button>
     </div></div></header>
 }
 
@@ -67,6 +67,7 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
   const { state } = useCashierV4(), panel = state.panel_state
   const coverage = selectCashierV4Coverage(state), summary = selectCashierV4OperationalSummary(state)
   const busy = runtime.getSnapshot().busy
+  const preparedStart = runtime.getSnapshot().preparedStart
   const destination = summary ? cashierV4Destination(summary.next_action) : '/cajero'
   const start = async () => { try { navigateTo(await runtime.start()) } catch { /* Error exposed by runtime. */ } }
   return <section className="cajero-module cajero-home" aria-labelledby="cajero-inicio-title">
@@ -75,11 +76,12 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
       <div className="cajero-stock-card__status"><div><h2>{state.stock?.snapshot_id ? 'Inventario disponible' : 'No hay un inventario disponible'}</h2>
         {state.bootstrap?.start_capability.reason && !panel ? <p>{getCashierV4ErrorPolicy(new SologApiError(state.bootstrap.start_capability.reason as SologErrorCode)).message}</p> : null}</div></div>
       <div className="cajero-stock-card__actions">
-        {panel ? <><button className="button" disabled={!runtime.canCapture(panel.next_action) || destination === '/cajero'} type="button"
+        {panel && !preparedStart ? <><button className="button" disabled={!runtime.canCapture(panel.next_action) || destination === '/cajero'} type="button"
           onClick={() => navigateTo(destination)}><Play size={19} aria-hidden="true" /> Continuar conteo</button>
           <button className="button button--secondary" disabled={busy} onClick={() => void runtime.finish().catch(() => {})} type="button">Finalizar conteo</button></>
-          : <button className="button" disabled={busy || !state.bootstrap?.start_capability.allowed || runtime.pendingCount > 0 || Boolean(runtime.getSnapshot().error)}
-            onClick={() => void start()} type="button"><Play size={19} aria-hidden="true" />{busy ? 'Iniciando…' : 'Iniciar conteo'}</button>}
+          : <button className="button" disabled={busy || runtime.requiresRefresh || preparedStart?.prepared_start.status === 'conflict' ||
+            (!preparedStart && (!state.bootstrap?.start_capability.allowed || runtime.pendingCount > 0 || Boolean(runtime.getSnapshot().error)))}
+            onClick={() => void start()} type="button"><Play size={19} aria-hidden="true" />{busy ? 'Iniciando…' : preparedStart ? 'Reintentar inicio' : 'Iniciar conteo'}</button>}
       </div>
     </section>
     {coverage ? <article className="cajero-coverage-card" aria-label={coverage.label}>
@@ -204,7 +206,9 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
 export function CajeroV4({ runtime, route, onLogout }: { runtime: CashierV4Runtime; route: CashierV4Route; onLogout: () => Promise<void> }) {
   const { state } = useCashierV4()
   const local = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot, runtime.getSnapshot)
-  const now = useCajeroServerClock(runtime.store.serverOffsetMs)
+  // After contextual refresh, the last timer tick may predate the new server offset.
+  // Read current adjusted time as well; capability still controls every permission.
+  const now = Math.max(useCajeroServerClock(runtime.store.serverOffsetMs), runtime.serverNow())
   const access = getCashierV4RouteAccess(state, route, now)
   const allowed = access.allowed, redirect = access.allowed ? null : access.redirect
   useEffect(() => { if (redirect) replaceRoute(redirect) }, [redirect])
@@ -213,9 +217,11 @@ export function CajeroV4({ runtime, route, onLogout }: { runtime: CashierV4Runti
     !canCashierV4CaptureForSession(state, state.panel_state.session.id, now)
   return <div className="cajero-shell"><CajeroV4Header runtime={runtime} onLogout={onLogout} /><main className="cajero-main">
     {runtime.recoveryPending.length ? <div className="cajero-alert cajero-alert--warning" role="status"><AlertTriangle size={22} aria-hidden="true" /><p>Hay pendientes de una sesión anterior. Envíalos antes de registrar nuevas capturas. Se conservan en su sesión original.</p></div> : null}
-    {captureClosed ? <div className="cajero-alert cajero-alert--warning" role="status"><p>Esta sesión no permite nuevas capturas. Puedes consultar el estado actualizado del panel; los pendientes locales se conservan.</p></div> : null}
-    {policy ? <div className="cajero-alert cajero-alert--error" role="alert"><p>{policy.message}</p><button className="cajero-alert__dismiss" aria-label="Cerrar mensaje" onClick={runtime.clearError} type="button"><X size={18} /></button></div> : null}
-    <button className="button button--secondary" disabled={local.busy || state.loading} onClick={() => void runtime.refresh().catch(() => {})} type="button">Actualizar panel</button>
+    {captureClosed || (runtime.requiresRefresh && !policy) ? <div className="cajero-alert cajero-alert--warning" role="status"><p>Esta sesión requiere consultar el estado actualizado del panel; los pendientes locales se conservan.</p>
+      <button className="button button--secondary" disabled={local.busy || state.loading} onClick={() => void runtime.refresh().catch(() => {})} type="button">Actualizar</button></div> : null}
+    {policy ? <div className="cajero-alert cajero-alert--error" role="alert"><p>{policy.message}</p>
+      {policy.requiresRefresh || runtime.requiresRefresh ? <button className="button button--secondary" disabled={local.busy || state.loading} onClick={() => void runtime.refresh().catch(() => {})} type="button">Actualizar</button> : null}
+      <button className="cajero-alert__dismiss" aria-label="Cerrar mensaje" onClick={runtime.clearError} type="button"><X size={18} /></button></div> : null}
     {!allowed || route === '/cajero' ? <CajeroV4Inicio runtime={runtime} /> : route === '/cajero/historial' ? <CajeroHistorial session={{ serverOffsetMs: runtime.store.serverOffsetMs, cacheRevision: local.revision,
       getCachedHistory: runtime.getCachedHistory, loadHistory: runtime.loadHistory }} /> : <CajeroV4Work key={route} runtime={runtime} action={route === '/cajero/revisar' ? 'review' : route === '/cajero/conteo' ? 'coverage' : 'daily'} />}
   </main><nav className="cajero-nav" aria-label="Panel Cajero"><div className="cajero-nav__inner">{selectCashierV4BottomNavigation(state, now).map((item, i) => {

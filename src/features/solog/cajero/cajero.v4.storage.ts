@@ -5,6 +5,13 @@ import { parseCashierV4Mutation, validateCashierV4PanelDelta } from './cajero.v4
 // Separate from V3's buffer/recount namespaces and startup purge. No implicit migration or deletion.
 export const CASHIER_V4_STORAGE_PREFIX = 'solog.cashier-v4.session.v1:'
 export const CASHIER_V4_BATCH_LIMIT = 500
+export const CASHIER_V4_START_STORAGE_PREFIX = 'solog.cashier-v4.start.v1:'
+export type CashierV4StartIdentity = Pick<CashierV4DraftScope, 'usuario_id' | 'sede_id' | 'dispositivo_id'>
+export interface CashierV4PreparedStart {
+  version: 1
+  identity: CashierV4StartIdentity
+  prepared_start: { operation_id: string; status: 'ready' | 'uncertain' | 'in_progress' | 'conflict' }
+}
 export interface CashierV4DraftScope {
   usuario_id: string
   sede_id: string
@@ -65,6 +72,20 @@ function observation(value: unknown, normal: boolean) {
   if (item.metadata !== undefined) check(Object.values(object(item.metadata)).every(value => typeof value === 'string'))
 }
 function unique(values: unknown[]) { check(new Set(values).size === values.length) }
+
+export function cashierV4StartStorageKey(identity: CashierV4StartIdentity) {
+  for (const key of ['usuario_id', 'sede_id', 'dispositivo_id'] as const) uuid(identity[key])
+  return CASHIER_V4_START_STORAGE_PREFIX + [identity.usuario_id, identity.sede_id, identity.dispositivo_id].map(encodeURIComponent).join(':')
+}
+function validatePreparedStart(value: unknown): CashierV4PreparedStart {
+  const r = object(value), identity = object(r.identity), p = object(r.prepared_start)
+  check(r.version === 1 && Object.keys(r).sort().join(',') === 'identity,prepared_start,version')
+  check(Object.keys(identity).sort().join(',') === 'dispositivo_id,sede_id,usuario_id')
+  cashierV4StartStorageKey(identity as unknown as CashierV4StartIdentity)
+  check(Object.keys(p).sort().join(',') === 'operation_id,status')
+  uuid(p.operation_id); check(['ready', 'uncertain', 'in_progress', 'conflict'].includes(String(p.status)))
+  return value as CashierV4PreparedStart
+}
 
 export function validateCashierV4DraftScope(value: unknown): CashierV4DraftScope {
   const s = object(value)
@@ -141,6 +162,28 @@ export function validateCashierV4SessionDrafts(value: unknown): CashierV4Session
 // Storage is required. Browser consumers opt into localStorage; unavailable/quota errors are never swallowed.
 export class CashierV4DraftStorage {
   constructor(private readonly storage: Storage) {}
+  readStart(identity: CashierV4StartIdentity): CashierV4PreparedStart | null {
+    const key = cashierV4StartStorageKey(identity), raw = this.storage.getItem(key)
+    if (raw === null) return null
+    const record = validatePreparedStart(JSON.parse(raw))
+    check(cashierV4StartStorageKey(record.identity) === key)
+    return record
+  }
+  writeStart(record: CashierV4PreparedStart) {
+    validatePreparedStart(record)
+    const previous = this.readStart(record.identity)
+    if (previous) {
+      check(previous.prepared_start.operation_id === record.prepared_start.operation_id)
+      if (previous.prepared_start.status === 'conflict') check(record.prepared_start.status === 'conflict')
+    }
+    this.storage.setItem(cashierV4StartStorageKey(record.identity), JSON.stringify(record))
+  }
+  confirmStart(identity: CashierV4StartIdentity, operationId: string, response: CashierV4MutationResult) {
+    const parsed = parseCashierV4Mutation(response, 'start'), previous = this.readStart(identity)
+    check(previous?.prepared_start.operation_id === operationId && parsed.panel_state.session.usuario_id === identity.usuario_id &&
+      parsed.panel_state.session.sede_id === identity.sede_id)
+    this.storage.removeItem(cashierV4StartStorageKey(identity))
+  }
   read(scope: CashierV4DraftScope): CashierV4SessionDrafts {
     const raw = this.storage.getItem(cashierV4DraftStorageKey(scope))
     if (raw === null) return emptyCashierV4SessionDrafts(scope)

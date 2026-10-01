@@ -15,9 +15,10 @@ const user = { id: ids.user, email: 'cashier@example.test', role: 'authenticated
 const jwt = [{ alg: 'HS256', typ: 'JWT' }, { sub: user.id, aud: 'authenticated', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 }]
   .map(part => Buffer.from(JSON.stringify(part)).toString('base64url')).join('.') + '.test'
 
-async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false } = {}, run) {
+async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const calls = [], errors = []
+  let startAttempts = 0, finishAttempts = 0
   let b = cashierV4Bootstrap(initial, { next_action: initial === 'pre_session' ? 'coverage' : startAction, ronda: round })
   if (recovery) b = cashierV4Bootstrap('active_recovery', { next_action: 'coverage' })
   if (richCoverage) {
@@ -45,7 +46,7 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
     const reply = data => route.fulfill({ contentType: 'application/json', body: JSON.stringify(data) })
     if (url.pathname.includes('/auth/v1/token')) return reply({ access_token: jwt, refresh_token: 'test', expires_in: 3600, token_type: 'bearer', user })
     if (url.pathname.includes('/auth/v1/user')) return reply(user)
-    if (url.pathname.includes('/auth/v1/logout')) return reply({})
+    if (url.pathname.includes('/auth/v1/logout')) { calls.push({ rpc: 'auth_logout', body: {} }); return reply({}) }
     const rpc = url.pathname.split('/').at(-1), body = route.request().postDataJSON()
     calls.push({ rpc, body })
     if (rpc === 'rpc_solog_route_v2') return reply({ contract_version: 2, generated_at: b.server_now, identity: b.identity, route: '/cajero' })
@@ -60,13 +61,20 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
     assert.equal(rpc, 'rpc_solog_cashier_mutate_v4')
     const action = body.p_action, payload = body.p_payload
     if (action === 'start') {
+      startAttempts++
+      if (startRefreshError && startAttempts === 1) return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 'P0001', message: 'SOLOG_STOCK_EXPIRED', details: '', hint: '' }) })
       const result = cashierV4Mutation('start', { next_action: startAction, ronda: round })
       b = cashierV4Bootstrap('active', { next_action: startAction, ronda: round })
+      if (startTimeout && startAttempts === 1) return route.abort('timedout')
+      if (startTimeout && startAttempts > 1) result.replay = true
       return reply(result)
     }
     const result = cashierV4Mutation(action, { ronda: round })
     result.conteo_id = payload.conteo_id
-    if (action === 'finish') { b = cashierV4Bootstrap('pre_session', { next_action: 'coverage', ronda: round }); return reply(result) }
+    if (action === 'finish') {
+      if (finishFailure && ++finishAttempts === 1) return route.abort('timedout')
+      b = cashierV4Bootstrap('pre_session', { next_action: 'coverage', ronda: round }); return reply(result)
+    }
     const isRecovery = payload.conteo_id === ids.recovery
     const cap = isRecovery ? b.recovery_sessions[0].session_capability : b.panel_state.session_capability
     result.session_capability = cap
@@ -100,9 +108,13 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
     await page.getByLabel('Contraseña', { exact: true }).fill('test')
     await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
     await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    assert.equal(await page.getByRole('button', { name: 'Actualizar panel', exact: true }).count(), 0)
     await run(page, calls)
     assert.equal(calls.some(c => /cashier_(bootstrap|mutate)_v3/.test(c.rpc)), false)
     assert.deepEqual(errors, [])
+  } catch (error) {
+    console.error('SMOKE DIAGNOSTIC', calls.map(c => ({ rpc: c.rpc, action: c.body.p_action })), await page.locator('body').innerText())
+    throw error
   } finally { await context.close() }
 }
 async function capture(page, review = false, daily = false) {
@@ -119,6 +131,52 @@ async function capture(page, review = false, daily = false) {
 }
 const nav = page => page.getByRole('navigation', { name: 'Panel Cajero' })
 try {
+  await scenario({ startTimeout: true }, async (page, calls) => {
+    assert.equal(await page.getByRole('button', { name: 'Actualizar', exact: true }).count(), 0)
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()
+    await page.getByRole('button', { name: 'Reintentar inicio', exact: true }).waitFor()
+    await page.reload()
+    await page.getByRole('button', { name: 'Reintentar inicio', exact: true }).click()
+    await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
+    const starts = calls.filter(c => c.body.p_action === 'start')
+    assert.equal(starts.length, 2); assert.deepEqual(starts[1].body.p_payload, starts[0].body.p_payload)
+    assert.equal(await page.evaluate(() => Object.keys(localStorage).some(key => key.startsWith('solog.cashier-v4.start.v1:'))), false)
+    console.log('PASS start perdido → reload active → replay con mismo UUID/payload')
+  })
+  await scenario({ initial: 'active' }, async (page, calls) => {
+    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click()
+    await page.getByLabel('Correo electrónico').waitFor()
+    assert.deepEqual(calls.filter(c => c.body.p_action || c.rpc === 'auth_logout').map(c => c.body.p_action ?? c.rpc), ['finish', 'auth_logout'])
+    console.log('PASS active limpio → Salir → finish → auth logout')
+  })
+  await scenario({ initial: 'active' }, async (page, calls) => {
+    await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
+    await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor(); await capture(page)
+    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click()
+    await page.getByLabel('Correo electrónico').waitFor()
+    assert.deepEqual(calls.filter(c => c.body.p_action || c.rpc === 'auth_logout').map(c => c.body.p_action ?? c.rpc), ['save_batch', 'finish', 'auth_logout'])
+    console.log('PASS draft active → Salir → save → finish → auth logout')
+  })
+  await scenario({ initial: 'active', finishFailure: true }, async (page, calls) => {
+    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click()
+    await page.getByRole('alert').waitFor()
+    assert.equal(calls.some(c => c.rpc === 'auth_logout'), false)
+    assert.equal(await page.getByRole('heading', { name: 'Inicio', exact: true }).isVisible(), true)
+    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click()
+    await page.getByLabel('Correo electrónico').waitFor()
+    const finishes = calls.filter(c => c.body.p_action === 'finish'); assert.deepEqual(finishes[1].body.p_payload, finishes[0].body.p_payload)
+    console.log('PASS finish perdido conserva auth → segundo Salir conserva operación')
+  })
+  await scenario({ startRefreshError: true }, async page => {
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()
+    const update = page.getByRole('alert').getByRole('button', { name: 'Actualizar', exact: true })
+    await update.click()
+    await page.getByRole('button', { name: 'Reintentar inicio', exact: true }).waitFor()
+    assert.equal(await page.getByRole('button', { name: 'Actualizar', exact: true }).count(), 0)
+    await page.getByRole('button', { name: 'Reintentar inicio', exact: true }).click()
+    await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
+    console.log('PASS requiresRefresh → CTA contextual → bootstrap válido → retry')
+  })
   await scenario({}, async (page, calls) => {
     await page.getByText('Cobertura quincenal 1', { exact: true }).waitFor()
     assert.equal(await page.getByText('Stock 0', { exact: true }).count(), 0)
