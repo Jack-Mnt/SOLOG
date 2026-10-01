@@ -127,6 +127,44 @@ describe('13.5A logout seguro', () => {
     expect(h.order).toEqual([`save_batch:${ids.session}`]); expect(h.storage.read(h.scope).normal).toHaveLength(1)
     expect(h.storage.read(h.scope).prepared).not.toBeNull()
   })
+  test('residuo active fuera de queue no bloquea finish ni logout y se conserva como finished', async () => {
+    const h = logoutHarness('coverage')
+    h.runtime.capture('coverage', ids.coverage, 10, '10')
+    h.store.acceptBootstrap(cashierV4Bootstrap('active', { next_action: 'none' }))
+    h.runtime.hydrate()
+
+    await h.runtime.logoutSafe(h.logout)
+
+    expect(h.order).toEqual([`finish:${ids.session}`, 'auth-logout'])
+    const record = h.storage.read(h.scope)
+    expect(record.finished).toBe(true)
+    expect(record.normal).toHaveLength(1)
+    expect(record.normal[0].grupo_id).toBe(ids.coverage)
+    expect(cashierV4LocalPending(record)).toBe(0)
+  })
+  test('logout envía solo drafts active entregables, conserva residuos y luego finaliza', async () => {
+    const h = logoutHarness('coverage')
+    h.runtime.capture('coverage', ids.coverage, 10, '10')
+    const residualGroup = uuidFor(701), residualObservation = uuidFor(702)
+    const record = h.storage.read(h.scope)
+    record.normal.push({
+      ...record.normal[0],
+      client_observation_id: residualObservation,
+      grupo_id: residualGroup,
+    })
+    h.storage.write(record)
+    h.runtime.hydrate()
+
+    await h.runtime.logoutSafe(h.logout)
+
+    expect(h.order).toEqual([`save_batch:${ids.session}`, `finish:${ids.session}`, 'auth-logout'])
+    expect(h.requests).toHaveLength(0)
+    const finished = h.storage.read(h.scope)
+    expect(finished.finished).toBe(true)
+    expect(finished.normal.map(item => item.grupo_id)).toEqual([residualGroup])
+    expect(finished.normal[0].client_observation_id).toBe(residualObservation)
+    expect(cashierV4LocalPending(finished)).toBe(0)
+  })
   test('finish incierto impide logout y segundo Salir usa el mismo payload', async () => {
     const h = logoutHarness(); h.fail('finish')
     await expect(h.runtime.logoutSafe(h.logout)).rejects.toThrow('timeout')
