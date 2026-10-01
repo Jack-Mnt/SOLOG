@@ -1,11 +1,12 @@
 # SOLOG — Lógica Cajero — Turnos y Reconteos V1
 
-**Estado:** CONGELADO — APROBADO FUNCIONALMENTE / PENDIENTE DE IMPLEMENTACIÓN  
+**Estado:** REEMPLAZADO — HISTÓRICO  
 **Fecha:** 29 de septiembre de 2026  
 **Proyecto:** SOLOG  
 **Nivel:** C — lógica de Motor / Cajero / backend  
 **Rama de trabajo:** `admin-work`  
-**Fuente primaria para este alcance:** este documento
+**Reemplazado por:** `docs/SOLOG_Motor_Cajero_Cobertura_Turnos_Reconteos_V2.md`  
+**Uso actual:** referencia histórica; no utilizar como fuente de implementación.
 
 ---
 
