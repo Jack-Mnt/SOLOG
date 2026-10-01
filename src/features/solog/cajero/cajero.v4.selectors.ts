@@ -1,6 +1,10 @@
 import type { CashierV4NextAction, CashierV4Panel, CashierV4Round } from './cajero.v4'
 import type { CashierV4State } from './cajero.v4.store'
 
+export function getCashierV4DeliveryState(state: CashierV4State, conteoId: string) {
+  return state.delivery_state_by_session[conteoId] ?? null
+}
+
 const destinations = {
   review: '/cajero/revisar', coverage: '/cajero/conteo', daily: '/cajero/diario', none: '/cajero',
 } as const

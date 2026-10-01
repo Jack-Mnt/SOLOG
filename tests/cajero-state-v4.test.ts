@@ -52,12 +52,12 @@ describe('Cajero V4: reducer', () => {
     const state = bootstrap()
     const previous = structuredClone(state)
     const next = transition(state, 'coverage')
-    const delta = next.panel_deltas[ids.session]
+    const delta = next.delivery_state_by_session[ids.session]!
     expect(next.panel_state!.review_queue).toBe(delta.review_queue)
     expect(next.panel_state!.coverage_queue).toBe(delta.coverage_queue)
     expect(next.panel_state!.daily_queue).toBe(delta.daily_queue)
     expect(next.panel_state!.kpis).toBe(delta.kpis)
-    expect(next.panel_state!.session_capability).toBe(delta.session_capability)
+    expect(next.panel_state!.session_capability).toBe(next.session_capability!)
     expect(next.panel_state!.next_action).toBe(delta.next_action)
     expect(next.panel_state!.groups[0].accion).toBe('none')
     expect(next.panel_state!.groups[0].nombre).toBe(state.panel_state!.groups[0].nombre)
@@ -83,7 +83,7 @@ describe('Cajero V4: reducer', () => {
       const parsed = parseCashierV4Mutation(response, 'save_batch')
       expect(() => cashierV4Reducer(state, { type: 'mutation', response: parsed })).toThrow(SologApiError)
     }
-    expect(state.panel_deltas).toEqual({})
+    expect(state.delivery_state_by_session[ids.session]!.next_action).toBe('review')
   })
   test('active + N recovery coexisten; panel null conserva recoveries del bootstrap', () => {
     const value = cashierV4Bootstrap('active_recovery')
@@ -125,7 +125,8 @@ describe('Cajero V4: reducer', () => {
     const next = cashierV4Reducer(state, { type: 'mutation', response: parseCashierV4Mutation(response, 'save_batch') })
     expect(next.panel_state).toBe(state.panel_state)
     expect(next.session_capability).toBe(state.session_capability)
-    expect(next.panel_deltas[ids.recovery]).toEqual(response.panel_delta)
+    // No panel for this recovery was received: a delta cannot invent its frozen revision.
+    expect(next.delivery_state_by_session[ids.recovery]).toBeUndefined()
     expect(next.recovery_sessions[0].session_capability.mode).toBe('recovery')
     expect(next.revisions!.operational).toBe(10)
   })

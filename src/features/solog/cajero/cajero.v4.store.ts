@@ -10,7 +10,7 @@ export interface CashierV4State {
   // Last bootstrap envelope; selectors consume the current normalized fields below.
   bootstrap: CashierV4Bootstrap | null
   panel_state: CashierV4Panel | null
-  panel_deltas: Readonly<Record<string, CashierV4PanelDelta>>
+  delivery_state_by_session: Readonly<Partial<Record<string, CashierV4DeliveryState>>>
   session_capability: CashierV4SessionCapability | null
   recovery_sessions: CashierV4RecoverySession[]
   pre_session_summary: CashierV4PreSessionSummary | null
@@ -21,9 +21,32 @@ export interface CashierV4State {
   lastSynchronizedAt: string | null
 }
 
+// Frontend memory snapshot from backend responses; capability is deliberately separate.
+export interface CashierV4DeliveryState extends Pick<CashierV4Panel,
+  'review_queue' | 'coverage_queue' | 'daily_queue' | 'kpis' | 'next_action'> {
+  conteo_id: string
+  groups_revision: number
+}
+
+function deliveryStateFromPanel(panel: CashierV4Panel): CashierV4DeliveryState {
+  return {
+    conteo_id: panel.session.id, groups_revision: panel.basis.groups_revision,
+    review_queue: panel.review_queue, coverage_queue: panel.coverage_queue,
+    daily_queue: panel.daily_queue, kpis: panel.kpis, next_action: panel.next_action,
+  }
+}
+
+function deliveryStateFromDelta(previous: CashierV4DeliveryState, delta: CashierV4PanelDelta): CashierV4DeliveryState {
+  return {
+    conteo_id: previous.conteo_id, groups_revision: previous.groups_revision,
+    review_queue: delta.review_queue, coverage_queue: delta.coverage_queue,
+    daily_queue: delta.daily_queue, kpis: delta.kpis, next_action: delta.next_action,
+  }
+}
+
 export function createCashierV4State(): CashierV4State {
   return {
-    bootstrap: null, panel_state: null, panel_deltas: {}, session_capability: null,
+    bootstrap: null, panel_state: null, delivery_state_by_session: {}, session_capability: null,
     recovery_sessions: [], pre_session_summary: null, revisions: null, stock: null,
     loading: false, error: null, lastSynchronizedAt: null,
   }
@@ -81,9 +104,13 @@ export function cashierV4Reducer(state: CashierV4State, event: CashierV4Event): 
   if (event.type === 'error') return { ...state, loading: false, error: event.error }
   if (event.type === 'bootstrap') {
     const b = event.bootstrap
-    // A bootstrap is authoritative, including removal/revocation of recoveries.
+    // Bootstrap replaces current lifecycle/capabilities, but preserves older operational snapshots.
+    const deliveryStates = b.panel_state ? {
+      ...state.delivery_state_by_session,
+      [b.panel_state.session.id]: deliveryStateFromPanel(b.panel_state),
+    } : state.delivery_state_by_session
     return {
-      ...state, bootstrap: b, panel_state: b.panel_state, panel_deltas: {},
+      ...state, bootstrap: b, panel_state: b.panel_state, delivery_state_by_session: deliveryStates,
       session_capability: b.session_capability, recovery_sessions: b.recovery_sessions,
       pre_session_summary: b.pre_session_summary, revisions: b.revisions, stock: b.stock,
       loading: false, error: null, lastSynchronizedAt: b.generated_at,
@@ -113,6 +140,10 @@ export function cashierV4Reducer(state: CashierV4State, event: CashierV4Event): 
     }
     return {
       ...state, ...common, panel_state: response.panel_state, stock: response.stock,
+      delivery_state_by_session: {
+        ...state.delivery_state_by_session,
+        [response.conteo_id]: deliveryStateFromPanel(response.panel_state),
+      },
       session_capability: response.session_capability, pre_session_summary: null,
       recovery_sessions: recoveries,
     }
@@ -123,10 +154,10 @@ export function cashierV4Reducer(state: CashierV4State, event: CashierV4Event): 
   assertSessionWindow(matchesPanel ? state.panel_state!.session : recovery!, response.session_capability)
   if (recovery && response.session_capability.mode === 'active') invalid()
   if (response.action === 'finish') {
-    const deltas = { ...state.panel_deltas }
-    delete deltas[response.conteo_id]
+    const deliveryStates = { ...state.delivery_state_by_session }
+    delete deliveryStates[response.conteo_id]
     return {
-      ...state, ...common, panel_deltas: deltas,
+      ...state, ...common, delivery_state_by_session: deliveryStates,
       panel_state: matchesPanel ? null : state.panel_state,
       session_capability: matchesPanel ? {
         ...response.session_capability,
@@ -138,9 +169,14 @@ export function cashierV4Reducer(state: CashierV4State, event: CashierV4Event): 
     }
   }
   const delta = response.panel_delta
+  const previousDelivery = state.delivery_state_by_session[response.conteo_id]
   return {
     ...state, ...common,
-    panel_deltas: { ...state.panel_deltas, [response.conteo_id]: delta },
+    // A delta has no frozen revision. Without a prior panel snapshot it cannot create authority.
+    delivery_state_by_session: previousDelivery ? {
+      ...state.delivery_state_by_session,
+      [response.conteo_id]: deliveryStateFromDelta(previousDelivery, delta),
+    } : state.delivery_state_by_session,
     panel_state: matchesPanel ? applyPanelDelta(state.panel_state!, delta) : state.panel_state,
     session_capability: matchesPanel ? delta.session_capability : state.session_capability,
     recovery_sessions: state.recovery_sessions.map(session => session.id === response.conteo_id

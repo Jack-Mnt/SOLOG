@@ -1,6 +1,7 @@
 import type { CashierV4RecoverySession, CashierV4Session, CashierV4SessionCapability } from './cajero.v4'
 import type { CashierV4State } from './cajero.v4.store'
 import { getCashierV4ErrorPolicy } from './cajero.v4.errors'
+import { getCashierV4DeliveryState } from './cajero.v4.selectors'
 
 export function getCashierV4SessionByConteoId(state: CashierV4State, conteoId: string): CashierV4Session | CashierV4RecoverySession | null {
   if (state.panel_state?.session.id === conteoId) return state.panel_state.session
@@ -41,6 +42,20 @@ export function canCashierV4CaptureForSession(state: CashierV4State, conteoId: s
 export function canCashierV4DeliverPendingForSession(state: CashierV4State, conteoId: string, now: number): boolean {
   const authorized = state.bootstrap?.device.autorizado === true && !getCashierV4ErrorPolicy(state.error).sessionInvalid
   return cashierV4EffectiveCapability(getCashierV4SessionCapability(state, conteoId), authorized, now).pendingDeliveryAllowed
+}
+
+export function getCashierV4DeliveryPlanning(state: CashierV4State, conteoId: string, now: number) {
+  const deliveryState = getCashierV4DeliveryState(state, conteoId)
+  const capability = getCashierV4SessionCapability(state, conteoId)
+  const reason = !capability ? 'session_unavailable'
+    : !canCashierV4DeliverPendingForSession(state, conteoId, now) ? 'delivery_not_allowed'
+    : !deliveryState ? 'missing_delivery_state'
+    : null
+  return { canPlanDelivery: reason === null, reason, deliveryState, capability }
+}
+
+export function canPlanCashierV4Delivery(state: CashierV4State, conteoId: string, now: number): boolean {
+  return getCashierV4DeliveryPlanning(state, conteoId, now).canPlanDelivery
 }
 
 export function getCashierV4SessionScope(state: CashierV4State, conteoId: string) {
