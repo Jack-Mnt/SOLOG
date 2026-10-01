@@ -1,4 +1,5 @@
-import type { CashierV4NextAction, CashierV4Panel, CashierV4Round } from './cajero.v4'
+import { SologApiError } from '../errors'
+import type { CashierV4Group, CashierV4NextAction, CashierV4Panel, CashierV4Round } from './cajero.v4'
 import type { CashierV4State } from './cajero.v4.store'
 
 export function getCashierV4DeliveryState(state: CashierV4State, conteoId: string) {
@@ -44,17 +45,74 @@ export function selectCashierV4ReviewQueue(panel: CashierV4Panel | null) { retur
 export function selectCashierV4CoverageQueue(panel: CashierV4Panel | null) { return panel?.coverage_queue ?? [] }
 export function selectCashierV4DailyQueue(panel: CashierV4Panel | null) { return panel?.daily_queue ?? [] }
 
-function groupsInQueue(panel: CashierV4Panel | null, ids: string[]) {
-  const membership = new Set(ids)
-  return panel?.groups.filter(group => membership.has(group.grupo_id)) ?? []
+function groupsInQueue(panel: CashierV4Panel | null, ids: readonly string[]): CashierV4Group[] {
+  if (!panel) return []
+  const groupsById = new Map(panel.groups.map(group => [group.grupo_id, group]))
+  return ids.map(id => {
+    const group = groupsById.get(id)
+    if (!group) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+    return group
+  })
+}
+
+export function selectCashierV4ReviewEntries(panel: CashierV4Panel | null) {
+  const queue = selectCashierV4ReviewQueue(panel)
+  const groups = groupsInQueue(panel, queue.map(item => item.grupo_id))
+  return queue.map((queueItem, index) => ({ queueItem, group: groups[index] }))
 }
 
 export function selectCashierV4ReviewGroups(panel: CashierV4Panel | null) {
-  return groupsInQueue(panel, selectCashierV4ReviewQueue(panel).map(item => item.grupo_id))
+  return selectCashierV4ReviewEntries(panel).map(entry => entry.group)
 }
 export function selectCashierV4CoverageGroups(panel: CashierV4Panel | null) {
   return groupsInQueue(panel, selectCashierV4CoverageQueue(panel))
 }
 export function selectCashierV4DailyGroups(panel: CashierV4Panel | null) {
   return groupsInQueue(panel, selectCashierV4DailyQueue(panel))
+}
+
+export type CashierV4StockType = 'positive' | 'zero' | 'negative'
+
+// Presentation only: stock never chooses membership, capture permission or priority.
+export function cashierV4StockType(stockTeorico: number): CashierV4StockType {
+  if (!Number.isFinite(stockTeorico)) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
+  return stockTeorico > 0 ? 'positive' : stockTeorico === 0 ? 'zero' : 'negative'
+}
+
+function pendingByStockType(groups: readonly CashierV4Group[]) {
+  const pending: Record<CashierV4StockType, number> = { positive: 0, zero: 0, negative: 0 }
+  groups.forEach(group => { pending[cashierV4StockType(group.stock_teorico)]++ })
+  return pending
+}
+
+function pendingByCategory(groups: readonly CashierV4Group[]) {
+  const categories = new Map<string, { categoria_id: string; categoria: string; pending: number }>()
+  groups.forEach(group => {
+    const current = categories.get(group.categoria_id)
+    if (current) current.pending++
+    else categories.set(group.categoria_id, { categoria_id: group.categoria_id, categoria: group.categoria, pending: 1 })
+  })
+  // V4 has no category order field; keep the current Spanish alphabetical presentation.
+  return [...categories.values()].sort((a, b) => a.categoria.localeCompare(b.categoria, 'es') ||
+    a.categoria_id.localeCompare(b.categoria_id))
+}
+
+export function selectCashierV4CoveragePendingByStockType(panel: CashierV4Panel | null) {
+  return pendingByStockType(selectCashierV4CoverageGroups(panel))
+}
+export function selectCashierV4DailyPendingByStockType(panel: CashierV4Panel | null) {
+  return pendingByStockType(selectCashierV4DailyGroups(panel))
+}
+export function selectCashierV4CoveragePendingByCategory(panel: CashierV4Panel | null) {
+  return pendingByCategory(selectCashierV4CoverageGroups(panel))
+}
+export function selectCashierV4DailyPendingByCategory(panel: CashierV4Panel | null) {
+  return pendingByCategory(selectCashierV4DailyGroups(panel))
+}
+export function selectCashierV4ReviewPendingByCategory(panel: CashierV4Panel | null) {
+  return pendingByCategory(selectCashierV4ReviewGroups(panel))
+}
+
+export function selectCashierV4HistoryAvailable(state: CashierV4State): boolean {
+  return selectCashierV4OperationalSummary(state)?.kpis.coverage_pending === 0
 }
