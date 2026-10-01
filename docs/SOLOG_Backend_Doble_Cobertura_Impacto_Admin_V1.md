@@ -1,10 +1,13 @@
 # SOLOG — Backend — Doble cobertura — Impacto futuro en Admin V1
 
-**Estado:** NOTA DE IMPACTO — FUERA DEL BLOQUE ACTUAL / PENDIENTE DE RETOMAR  
-**Fecha:** 30 de septiembre de 2026  
+**Estado:** HISTÓRICO — REEMPLAZADO POR `SOLOG_Backend_Doble_Cobertura_Impacto_Admin_V2.md`  
+**Fecha original:** 30 de septiembre de 2026  
+**Reemplazado:** 1 de octubre de 2026  
 **Proyecto:** SOLOG  
-**Alcance:** handoff para futura adaptación de SOLOG Admin  
+**Alcance:** handoff histórico para futura adaptación de SOLOG Admin  
 **No es fuente primaria del bloque Cajero/Motor actual.**
+
+> Esta versión refleja el estado de preflight anterior a la limpieza destructiva. Para retomar Admin, usar la V2.
 
 ---
 
