@@ -1,2 +1,202 @@
-// Compatibilidad del comando histórico: la cobertura vigente vive en cajero-v3.browser.mjs.
-import './cajero-v3.browser.mjs'
+// Productive V4 smoke: real React/router/auth surfaces, mocked RPCs, external traffic blocked.
+import assert from 'node:assert/strict'
+import { pathToFileURL } from 'node:url'
+import { createServer } from 'vite'
+import { cashierV4Bootstrap, cashierV4Mutation, cashierV4Panel, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
+
+const { chromium } = await import(pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href)
+const server = await createServer({ server: { host: '127.0.0.1', port: 5210, strictPort: true }, define: {
+  'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('https://solog-cashier-v4.test'),
+  'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('test-only'),
+} })
+await server.listen()
+const browser = await chromium.launch({ headless: true, executablePath: process.env.SOLOG_TEST_BROWSER })
+const user = { id: ids.user, email: 'cashier@example.test', role: 'authenticated', app_metadata: {}, user_metadata: {}, aud: 'authenticated', created_at: '2026-10-01T00:00:00Z' }
+const jwt = [{ alg: 'HS256', typ: 'JWT' }, { sub: user.id, aud: 'authenticated', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 }]
+  .map(part => Buffer.from(JSON.stringify(part)).toString('base64url')).join('.') + '.test'
+
+async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false } = {}, run) {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
+  const calls = [], errors = []
+  let b = cashierV4Bootstrap(initial, { next_action: initial === 'pre_session' ? 'coverage' : startAction, ronda: round })
+  if (recovery) b = cashierV4Bootstrap('active_recovery', { next_action: 'coverage' })
+  if (richCoverage) {
+    const original = b.panel_state.groups.find(g => g.grupo_id === ids.coverage)
+    const added = [10, 0, -3].map((stock, index) => ({ ...original, grupo_id: `20000000-0000-4000-8000-00000000000${index + 1}`, nombre: `Grupo adicional ${index}`, stock_teorico: stock }))
+    b.panel_state.groups.push(...added)
+    b.panel_state.coverage_queue = [added[0].grupo_id, ids.coverage, added[1].grupo_id, added[2].grupo_id]
+    b.panel_state.kpis.coverage_total = 7; b.panel_state.kpis.coverage_pending = 5; b.panel_state.kpis.coverage_percent = 2 / 7 * 100; b.panel_state.kpis.coverage_queue_pending = 4
+  }
+  if (recovery) {
+    const scope = { usuario_id: ids.user, sede_id: ids.site, dispositivo_id: ids.device, conteo_id: ids.recovery, groups_revision: 6 }
+    const panelA = cashierV4Panel({ next_action: 'coverage' })
+    const delivery = { conteo_id: ids.recovery, groups_revision: 6, review_queue: [], coverage_queue: panelA.coverage_queue,
+      daily_queue: [], kpis: { ...panelA.kpis, daily_pending: 0 }, next_action: 'coverage' }
+    const observation = { kind: 'normal', scope, client_observation_id: ids.observation, grupo_id: ids.coverage,
+      stock_fisico: 10, contado_at: b.recovery_sessions[0].iniciado_at }
+    const key = 'solog.cashier-v4.session.v1:' + [scope.usuario_id, scope.sede_id, scope.dispositivo_id, scope.conteo_id, scope.groups_revision].join(':')
+    const record = { version: 1, scope, normal: [observation], recount: [], delivery_state: delivery, prepared: null, issue: null, finished: false }
+    await context.addInitScript(({ key, record }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(record)) }, { key, record })
+  }
+  await context.route('**/*', async route => {
+    const url = new URL(route.request().url())
+    if (url.hostname === '127.0.0.1') return route.continue()
+    if (url.hostname !== 'solog-cashier-v4.test') return route.abort()
+    const reply = data => route.fulfill({ contentType: 'application/json', body: JSON.stringify(data) })
+    if (url.pathname.includes('/auth/v1/token')) return reply({ access_token: jwt, refresh_token: 'test', expires_in: 3600, token_type: 'bearer', user })
+    if (url.pathname.includes('/auth/v1/user')) return reply(user)
+    if (url.pathname.includes('/auth/v1/logout')) return reply({})
+    const rpc = url.pathname.split('/').at(-1), body = route.request().postDataJSON()
+    calls.push({ rpc, body })
+    if (rpc === 'rpc_solog_route_v2') return reply({ contract_version: 2, generated_at: b.server_now, identity: b.identity, route: '/cajero' })
+    if (rpc === 'rpc_solog_cashier_bootstrap_v4') return reply(b)
+    if (rpc === 'rpc_solog_cashier_history_v2') return reply({ contract_version: 2, generated_at: b.server_now, period: body.p_payload.period,
+      date: round === 1 ? '2026-10-03' : '2026-10-10', revisions: b.revisions, items: [{
+        detalle_id: ids.detail, grupo_id: ids.coverage, grupo: 'Grupo histórico inválido', categoria: 'Abarrotes', stock_teorico: 1, stock_fisico: 2, diferencia: 1,
+        precio: 4, valor_diferencia: 4, estado_diferencia: 'Inválido', contado_at: b.server_now, recontado_at: null,
+        snapshot_referencia_id: null, primer_snapshot_posterior_id: null, snapshot_posterior_id: null, snapshot_reconteo_id: null,
+        stock_posterior: null, stock_teorico_reconteo: null, stock_reconteo: null,
+      }] })
+    assert.equal(rpc, 'rpc_solog_cashier_mutate_v4')
+    const action = body.p_action, payload = body.p_payload
+    if (action === 'start') {
+      const result = cashierV4Mutation('start', { next_action: startAction, ronda: round })
+      b = cashierV4Bootstrap('active', { next_action: startAction, ronda: round })
+      return reply(result)
+    }
+    const result = cashierV4Mutation(action, { ronda: round })
+    result.conteo_id = payload.conteo_id
+    if (action === 'finish') { b = cashierV4Bootstrap('pre_session', { next_action: 'coverage', ronda: round }); return reply(result) }
+    const isRecovery = payload.conteo_id === ids.recovery
+    const cap = isRecovery ? b.recovery_sessions[0].session_capability : b.panel_state.session_capability
+    result.session_capability = cap
+    result.saved = payload.items.length
+    result.items = payload.items.map(item => action === 'save_batch' ? { ...item, detalle_id: ids.savedDetail, stock_teorico: 10,
+      diferencia: item.stock_fisico - 10, estado_diferencia: item.stock_fisico === 10 ? 'Coincide' : 'Recontar' }
+      : { ...result.items[0], stock_reconteo: item.stock_fisico, recontado_at: item.contado_at })
+    result.panel_delta.session_capability = cap
+    if (!isRecovery && action === 'save_batch' && payload.items[0].grupo_id === ids.daily) {
+      result.panel_delta.daily_queue = []; result.panel_delta.kpis.daily_pending = 0
+      result.panel_delta.kpis.coverage_pending = 0; result.panel_delta.kpis.coverage_counted = 4; result.panel_delta.kpis.coverage_percent = 100
+      result.panel_delta.kpis.coverage_blocked_waiting_snapshot = 0
+      result.panel_delta.groups_patch = [{ ...result.panel_delta.groups_patch[0], grupo_id: ids.daily }]
+    }
+    if (isRecovery) {
+      result.panel_delta.review_queue = []; result.panel_delta.coverage_queue = []; result.panel_delta.daily_queue = []
+      result.panel_delta.kpis.review_pending = 0; result.panel_delta.kpis.coverage_queue_pending = 0; result.panel_delta.kpis.daily_pending = 0
+      result.panel_delta.next_action = 'none'
+    } else {
+      const d = result.panel_delta
+      b.panel_state = { ...b.panel_state, groups: b.panel_state.groups.map(g => ({ ...g, ...d.groups_patch.find(p => p.grupo_id === g.grupo_id) })),
+        review_queue: d.review_queue, coverage_queue: d.coverage_queue, daily_queue: d.daily_queue, kpis: d.kpis, next_action: d.next_action }
+    }
+    return reply(result)
+  })
+  const page = await context.newPage()
+  page.on('pageerror', e => errors.push(e.message)); page.setDefaultTimeout(15000)
+  try {
+    await page.goto('http://127.0.0.1:5210/login')
+    await page.getByLabel('Correo electrónico').fill(user.email)
+    await page.getByLabel('Contraseña', { exact: true }).fill('test')
+    await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
+    await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    await run(page, calls)
+    assert.equal(calls.some(c => /cashier_(bootstrap|mutate)_v3/.test(c.rpc)), false)
+    assert.deepEqual(errors, [])
+  } finally { await context.close() }
+}
+async function capture(page, review = false, daily = false) {
+  if (review) await page.getByRole('button', { name: 'Revisar Grupo recount' }).click()
+  else {
+    await page.getByRole('button', { name: /Abarrotes.*pendiente/ }).click()
+    await page.getByRole('dialog').getByRole('button', { name: daily ? /Grupo daily/ : /Grupo coverage/ }).click()
+  }
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: '1', exact: true }).click()
+  await dialog.getByRole('button', { name: '0', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Continuar', exact: true }).click()
+  if (!review) await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
+}
+const nav = page => page.getByRole('navigation', { name: 'Panel Cajero' })
+try {
+  await scenario({}, async (page, calls) => {
+    await page.getByText('Cobertura quincenal 1', { exact: true }).waitFor()
+    assert.equal(await page.getByText('Stock 0', { exact: true }).count(), 0)
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()
+    await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
+    assert.equal(await page.getByText('1 pendientes', { exact: true }).count() > 0, true)
+    await capture(page)
+    await page.getByRole('button', { name: 'Enviar pendientes', exact: true }).click()
+    await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    await page.getByText('Hay grupos esperando una actualización de stock para poder continuar.', { exact: true }).waitFor()
+    assert.equal(await nav(page).getByRole('button', { name: 'Conteo', exact: true }).isDisabled(), true)
+    await page.getByRole('button', { name: 'Finalizar conteo', exact: true }).click()
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
+    assert.deepEqual(calls.filter(c => c.rpc === 'rpc_solog_cashier_mutate_v4').map(c => c.body.p_action), ['start', 'save_batch', 'finish'])
+    console.log('PASS pre-session → start coverage → draft → save/delta → waiting → finish')
+  })
+  await scenario({ startAction: 'review' }, async (page, calls) => {
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()
+    await page.getByRole('heading', { name: 'Revisar', exact: true }).waitFor()
+    await page.evaluate(() => { history.pushState(null, '', '/cajero/conteo'); dispatchEvent(new PopStateEvent('popstate')) })
+    await page.waitForURL('**/cajero/revisar')
+    await capture(page, true)
+    await page.getByRole('button', { name: 'Enviar pendientes', exact: true }).click()
+    await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
+    assert.equal(calls.at(-1).body.p_action, 'recount_save_batch')
+    console.log('PASS race summary coverage → start review → guard → recount/delta coverage')
+  })
+  await scenario({ initial: 'active', recovery: true }, async (page, calls) => {
+    assert.equal(await page.getByRole('button', { name: 'Continuar conteo', exact: true }).isDisabled(), true)
+    assert.equal(await nav(page).getByRole('button', { name: 'Conteo', exact: true }).isEnabled(), true)
+    await page.getByRole('button', { name: 'Enviar pendientes', exact: true }).click()
+    await page.getByRole('button', { name: 'Continuar conteo', exact: true }).waitFor({ state: 'visible' })
+    await page.waitForFunction(() => ![...document.querySelectorAll('button')].find(b => b.textContent.includes('Continuar conteo')).disabled)
+    assert.equal(calls.at(-1).body.p_payload.conteo_id, ids.recovery)
+    assert.equal(calls.at(-1).body.p_payload.expected_groups_revision, 6)
+    await page.getByRole('button', { name: 'Continuar conteo', exact: true }).click()
+    await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
+    await capture(page)
+    await page.getByRole('button', { name: 'Enviar pendientes', exact: true }).click()
+    await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    assert.equal(calls.at(-1).body.p_payload.conteo_id, ids.session)
+    console.log('PASS recovery A pendiente bloquea B → delivery A aislado → capture/save B')
+  })
+  await scenario({ round: 2 }, async page => {
+    await page.getByText('Cobertura quincenal 2', { exact: true }).waitFor()
+    if (process.env.SOLOG_V4_SCREENSHOT) await page.screenshot({ path: process.env.SOLOG_V4_SCREENSHOT, fullPage: true })
+    console.log('PASS ronda 2 pre-session sin stock inventado')
+  })
+  await scenario({ initial: 'active', startAction: 'daily' }, async (page, calls) => {
+    await nav(page).getByRole('button', { name: 'Historial', exact: true }).click()
+    await page.getByRole('heading', { name: 'Historial', exact: true }).waitFor()
+    await page.getByRole('button', { name: 'Expandir detalle de Grupo histórico inválido' }).click()
+    await page.getByText('Grupo histórico inválido', { exact: true }).waitFor()
+    assert.equal(calls.at(-1).rpc, 'rpc_solog_cashier_history_v2')
+    await nav(page).getByRole('button', { name: 'Conteo diario', exact: true }).click()
+    await page.getByRole('heading', { name: 'Conteo diario', exact: true }).waitFor()
+    await capture(page, false, true)
+    await page.getByRole('button', { name: 'Enviar pendientes', exact: true }).click()
+    await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    assert.equal(calls.at(-1).body.p_payload.items[0].grupo_id, ids.daily)
+    console.log('PASS Historial V2 Inválido + Diario queue/capture/save V4')
+  })
+  await scenario({ initial: 'active', startAction: 'coverage', richCoverage: true }, async page => {
+    await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
+    await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
+    await page.getByRole('button', { name: /Stock positivo.*2 pendientes/ }).waitFor()
+    await page.getByRole('button', { name: /Abarrotes.*2 pendientes/ }).click()
+    const names = await page.getByRole('dialog').locator('.cajero-capture-summary__rows strong').allTextContents()
+    assert.deepEqual(names, ['Grupo adicional 0', 'Grupo coverage'])
+    if (process.env.SOLOG_V4_SCREENSHOT) await page.screenshot({ path: process.env.SOLOG_V4_SCREENSHOT + '.capture.png', fullPage: true })
+    await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
+    for (const label of ['Stock 0', 'Stock negativo']) {
+      await page.getByRole('button', { name: new RegExp(label + '.*1 pendientes') }).click()
+      await page.getByRole('button', { name: /Abarrotes.*1 pendientes/ }).click()
+      assert.equal(await page.getByRole('dialog').locator('.cajero-capture-summary__rows strong').count(), 1)
+      await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
+    }
+    assert.equal(await page.getByText('Grupo none', { exact: true }).count(), 0)
+    console.log('PASS queues orden backend + tiles positive/zero/negative pendientes')
+  })
+} finally { await browser.close(); await server.close() }

@@ -6,7 +6,6 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PanelLoader } from '../../../components/panel-loader'
 import { getSologErrorMessageFromUnknown } from '../errors'
-import type { CajeroSessionController } from './cajero.session'
 import { cashierHistoryDate } from './cajero.history'
 import { useCajeroServerClock } from './cajero.stock'
 import type {
@@ -36,7 +35,14 @@ function formatHistoryValuation(value: number): string {
   return `${value > 0 ? '+' : ''}${formatCajeroCurrency(value)}`
 }
 
-export function CajeroHistorial({ session }: { session: CajeroSessionController }) {
+export interface CajeroHistoryController {
+  serverOffsetMs: number
+  cacheRevision: number
+  getCachedHistory: (period: CashierHistoryPeriod) => CashierHistory | null
+  loadHistory: (period: CashierHistoryPeriod) => Promise<CashierHistory>
+}
+
+export function CajeroHistorial({ session }: { session: CajeroHistoryController }) {
   const [period, setPeriod] = useState<CashierHistoryPeriod>('today')
   const historyDate = cashierHistoryDate(useCajeroServerClock(session.serverOffsetMs), period)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)

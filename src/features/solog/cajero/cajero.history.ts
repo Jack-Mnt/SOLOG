@@ -2,11 +2,13 @@ import { supabase } from '../../../lib/supabase'
 import { createSologConfigurationError, normalizeSologError, SologApiError } from '../errors'
 import type { SologDifferenceState } from '../types'
 
+export type CashierHistoryDifferenceState = SologDifferenceState | 'Inválido'
+
 export type CashierHistoryPeriod = 'today' | 'yesterday'
 export interface CashierHistoryItem {
   detalle_id: string; grupo_id: string; grupo: string | null; categoria: string | null
   stock_teorico: number; stock_fisico: number; diferencia: number
-  precio: number; valor_diferencia: number; estado_diferencia: SologDifferenceState
+  precio: number; valor_diferencia: number; estado_diferencia: CashierHistoryDifferenceState
   contado_at: string; recontado_at: string | null
   snapshot_referencia_id: string | null; primer_snapshot_posterior_id: string | null
   snapshot_posterior_id: string | null; snapshot_reconteo_id: string | null
@@ -31,7 +33,7 @@ export function parseCashierHistory(value: unknown, period: CashierHistoryPeriod
   for (const item of r.items) {
     if (!item || ['detalle_id', 'grupo_id'].some((k) => typeof item[k as keyof CashierHistoryItem] !== 'string') ||
       ids.has(item.detalle_id) || !Number.isFinite(Date.parse(item.contado_at)) || cashierHistoryDate(Date.parse(item.contado_at)) !== r.date ||
-      !['Coincide', 'Recontar', 'Confirmada', 'Inconsistente'].includes(item.estado_diferencia)) return fail()
+      !['Coincide', 'Recontar', 'Confirmada', 'Inconsistente', 'Inválido'].includes(item.estado_diferencia)) return fail()
     for (const key of ['stock_teorico', 'stock_fisico', 'diferencia', 'precio', 'valor_diferencia'] as const) {
       if (typeof item[key] !== 'number' || !Number.isFinite(item[key])) return fail()
     }

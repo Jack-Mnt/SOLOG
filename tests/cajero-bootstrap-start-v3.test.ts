@@ -91,11 +91,12 @@ describe('Cajero V3 bootstrap, start y restauración', () => {
     expect(store.bootstrap).toBeNull()
   })
 
-  test('superficie activa importa context V3 y no mantiene refresh post-start', async () => {
+  test('corte productivo usa V4 y foundation histórica V3 conserva start sin refresh', async () => {
     const app = await Bun.file('src/features/solog/cajero/cajero.app.tsx').text()
     const session = await Bun.file('src/features/solog/cajero/cajero.session.ts').text()
     const flush = await Bun.file('src/features/solog/cajero/cajero.flush.ts').text()
-    expect(app).toContain("from './cajero.v3.context'")
+    expect(app).toContain("from './cajero.v4.context'")
+    expect(app).not.toContain("from './cajero.v3.context'")
     expect(app).not.toContain("from './cajero.v2.context'")
     expect(session).toContain('await store.start()')
     expect(session).not.toContain('startAndRefresh')
