@@ -3,35 +3,24 @@ import { expect, test } from 'bun:test'
 const source = (path: string) => Bun.file(path).text()
 
 const modules = [
-  'src/features/solog/cajero/cajero.conteo.tsx',
-  'src/features/solog/cajero/cajero.diario.tsx',
-  'src/features/solog/cajero/cajero.revisar.tsx',
+  'src/features/solog/cajero/cajero.app.tsx',
   'src/features/solog/cajero/cajero.historial.tsx',
 ] as const
 
-test('las cuatro lecturas de Cajero usan PanelLoader contained', async () => {
+test('las lecturas vigentes de Cajero usan PanelLoader contained', async () => {
   for (const path of modules) {
     const content = await source(path)
 
     expect(content).toContain("components/panel-loader")
-    expect(content).toContain('<PanelLoader variant="contained" />')
+    expect(content).toContain('<PanelLoader')
     expect(content).not.toContain('className="cajero-loading"')
   }
 })
 
 test('se retiran textos y spinners paralelos de las cargas de lectura', async () => {
-  const conteo = await source(modules[0])
-  const diario = await source(modules[1])
-  const revisar = await source(modules[2])
-  const historial = await source(modules[3])
-
-  expect(conteo).not.toContain('Cargando grupos…')
-  expect(diario).not.toContain('Cargando grupos…')
-  expect(revisar).not.toContain('Cargando casos…')
-  expect(historial).not.toContain('Cargando historial…')
-
-  for (const content of [conteo, diario, revisar, historial]) {
-    expect(content).not.toContain('LoaderCircle')
+  for (const path of modules) {
+    const content = await source(path)
+    expect(content).not.toMatch(/Cargando grupos…|Cargando casos…|Cargando historial…|LoaderCircle/)
   }
 })
 

@@ -4,7 +4,6 @@ import {
   CAJERO_STOCK_COUNTDOWN_START_MS,
   CAJERO_STOCK_NEAR_LIMIT_MS,
   CAJERO_STOCK_UPDATED_LIMIT_MS,
-  getCajeroStartRestriction,
   getCajeroStockPresentation,
 } from '../src/features/solog/cajero/cajero.stock'
 import type { SologActiveSession, SologStockState } from '../src/features/solog/types'
@@ -61,16 +60,6 @@ describe('vigencia temporal de stock y sesión', () => {
     expect(withSession.state).toBe('countdown')
     expect(withSession.countdown).toBe('01:55')
     expect(getCajeroStockPresentation(stock, null, referenceNow).state).toBe('critical')
-  })
-
-  test('stock vencido y cinco minutos exactos bloquean un inicio', () => {
-    expect(getCajeroStartRestriction(stockAtElapsed(2 * 60 * 60 * 1000, {
-      vigente: false,
-      puede_iniciar_conteo: false,
-    }), referenceNow)).toBe('stock_expired')
-    expect(getCajeroStartRestriction(stockAtElapsed(115 * 60 * 1000, {
-      puede_iniciar_conteo: false,
-    }), referenceNow)).toBe('stock_too_close')
   })
 
   test('el reloj local del countdown no importa APIs ni realiza polling a Supabase', async () => {

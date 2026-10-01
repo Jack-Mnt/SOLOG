@@ -1,3 +1,4 @@
+import type { CashierRoute } from '../src/lib/router'
 import { describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -12,9 +13,8 @@ import { parseCashierHistory } from '../src/features/solog/cajero/cajero.history
 import { draftHarness, memoryStorage, uuidFor } from './fixtures/cashier-v4-drafts'
 import { cashierV4Bootstrap, cashierV4Mutation, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 import type { CashierV4Rpc } from '../src/features/solog/cajero/cajero.v4.api'
-import type { CashierV4Route } from '../src/features/solog/cajero/cajero.v4.navigation'
 
-function renderRuntime(runtime: CashierV4Runtime, route: CashierV4Route) {
+function renderRuntime(runtime: CashierV4Runtime, route: CashierRoute) {
   const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window')
   Object.defineProperty(globalThis, 'window', { value: { localStorage: memoryStorage() }, configurable: true })
   try { return renderToStaticMarkup(createElement(CashierV4Provider, { store: runtime.store, children: createElement(CajeroV4, { runtime, route, onLogout: async () => {} }) })) }

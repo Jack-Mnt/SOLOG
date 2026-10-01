@@ -67,11 +67,9 @@ describe('S10-B: contrato V9 sin retirar compatibilidades vigentes', () => {
     expect(api).toContain('export function getSologRoute')
     expect(api).toContain('rpc_solog_route_v2')
     expect(api).not.toMatch(/\b(?:callSologRpc|getSologBootstrap|SologRpcName)\b/)
-    const operational = source('src/features/solog/cajero/cajero.operativo.tsx')
-    for (const name of ['CajeroStartEmptyState', 'CajeroSelectionGrid', 'CajeroSendBar']) {
-      expect(operational).toContain('export function ' + name)
-    }
-    expect(operational).not.toContain('CajeroOperationalView')
+    const cashier = source('src/features/solog/cajero/cajero.app.tsx')
+    expect(cashier).toContain('<CashierV4Provider')
+    expect(cashier).toContain("import('./cajero.v4.ui')")
     const errors = source('src/features/solog/errors.ts')
     for (const name of ['normalizeSologError', 'getSologErrorMessageFromUnknown', 'SologApiError']) {
       expect(errors).toContain(name)
@@ -101,7 +99,7 @@ describe('S10-B: contrato V9 sin retirar compatibilidades vigentes', () => {
   })
 
   test('saneamiento y superficies activas permanecen, incluidas RPC dinámicas Admin', () => {
-    expect(source('src/features/solog/cajero/cajero.v3.context.tsx')).toContain('purgePersistedCajeroData()')
+    expect(source('src/features/solog/cajero/cajero.v4.context.tsx')).not.toContain('localStorage.removeItem')
     const management = source('src/features/solog/admin/admin.management.v2.ts')
     for (const legacy of ['rpc_solog_admin_master_read_v2', 'rpc_solog_admin_master_v2', 'conexion-admin']) expect(management).not.toContain(legacy)
     expect(management).toContain('rpc_solog_admin_' + '${domain(action)}_v2')
@@ -116,7 +114,7 @@ describe('S10-B: contrato V9 sin retirar compatibilidades vigentes', () => {
     const groups = source('src/features/solog/admin/grupos/admin.grupos.v1.ts')
     expect(groups).not.toContain('rpc_solog_admin_groups_read_v1')
     expect(groups).not.toContain('groupsRead')
-    expect(source('src/features/solog/cajero/cajero.v3.api.ts')).toContain('rpc_solog_cashier_mutate_v3')
+    expect(source('src/features/solog/cajero/cajero.v4.api.ts')).toContain('rpc_solog_cashier_mutate_v4')
     expect(source('src/features/solog/detalles/detalles.v2.ts')).toContain('rpc_solog_details_v2')
   })
 })

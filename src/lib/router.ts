@@ -1,5 +1,10 @@
 import { useSyncExternalStore } from 'react'
-import type { CajeroRoute } from '../features/solog/cajero/cajero.types'
+export type CashierRoute =
+  | '/cajero'
+  | '/cajero/conteo'
+  | '/cajero/diario'
+  | '/cajero/revisar'
+  | '/cajero/historial'
 
 export type AdminRoute =
   | '/admin'
@@ -10,7 +15,7 @@ export type AdminRoute =
   | '/admin/grupos'
   | '/admin/dispositivos'
 
-export type AppRoute = '/login' | '/' | '/detalles' | CajeroRoute | AdminRoute
+export type AppRoute = '/login' | '/' | '/detalles' | CashierRoute | AdminRoute
 
 export const ADMIN_ROUTES: AdminRoute[] = [
   '/admin',
@@ -22,7 +27,7 @@ export const ADMIN_ROUTES: AdminRoute[] = [
   '/admin/dispositivos',
 ]
 
-export const CASHIER_ROUTES: CajeroRoute[] = [
+export const CASHIER_ROUTES: CashierRoute[] = [
   '/cajero',
   '/cajero/conteo',
   '/cajero/diario',
@@ -34,8 +39,8 @@ export function isAdminRoute(pathname: string): pathname is AdminRoute {
   return ADMIN_ROUTES.includes(pathname as AdminRoute)
 }
 
-export function isCashierRoute(pathname: string): pathname is CajeroRoute {
-  return CASHIER_ROUTES.includes(pathname as CajeroRoute)
+export function isCashierRoute(pathname: string): pathname is CashierRoute {
+  return CASHIER_ROUTES.includes(pathname as CashierRoute)
 }
 
 const NAVIGATION_EVENT = 'solog:navigation'

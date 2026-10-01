@@ -43,9 +43,12 @@ test('Fase 5 conserva las excepciones deliberadas y feedback operativo', async (
   expect(detailsPanel).toContain('Solicitando…')
   expect(detailsPanel).toContain('Generando Excel…')
 
-  for (const label of ['Ingresando…', 'Enviando…', 'Solicitando…', 'Generando Excel…', 'Publicando…']) {
+  for (const label of ['Ingresando…', 'Iniciando…', 'Solicitando…', 'Generando Excel…', 'Publicando…']) {
     expect(allSource).toContain(label)
   }
+  const cashier = await Bun.file('src/features/solog/cajero/cajero.v4.ui.tsx').text()
+  expect(cashier).toContain('disabled={runtime.getSnapshot().busy || runtime.pendingCount === 0}')
+  expect(cashier).toContain('Enviar pendientes')
 })
 
 test('Fase 5 conserva el contrato estructural de PanelLoader', async () => {

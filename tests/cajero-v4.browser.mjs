@@ -131,6 +131,32 @@ async function capture(page, review = false, daily = false) {
 }
 const nav = page => page.getByRole('navigation', { name: 'Panel Cajero' })
 try {
+  await scenario({ initial: 'active' }, async (page, calls) => {
+    await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
+    await page.getByRole('button', { name: /Abarrotes.*pendiente/ }).click()
+    await page.getByRole('dialog').getByRole('button', { name: /Grupo coverage/ }).click()
+    const dialog = page.getByRole('dialog'), before = calls.length
+    assert.deepEqual(await dialog.locator('.cajero-calculator__keys button').allTextContents(),
+      ['7', '8', '9', 'C', '4', '5', '6', '×', '1', '2', '3', '+', '0', 'x6', 'x12', '⌫'])
+    const button = name => dialog.getByRole('button', { name, exact: true })
+    const result = dialog.locator('.cajero-calculator__display strong')
+    await button('2').click(); await button('Multiplicar por 6').click()
+    assert.equal(await result.textContent(), '12')
+    await button('Limpiar expresión').click(); await button('2').click(); await button('Multiplicar por 12').click()
+    assert.equal(await result.textContent(), '24')
+    await button('Limpiar expresión').click(); await button('2').focus()
+    await page.keyboard.type('3+2*4')
+    assert.equal(await result.textContent(), '11')
+    await page.keyboard.press('Backspace'); await page.keyboard.type('5')
+    assert.equal(await result.textContent(), '13')
+    await page.keyboard.press('Delete'); await page.keyboard.type('10')
+    await button('Continuar').click()
+    await dialog.getByRole('button', { name: /Grupo coverage/ }).click()
+    assert.equal(await result.textContent(), '10')
+    await button('Cerrar').click()
+    assert.equal(calls.length, before, 'Capturar y reabrir un draft no consulta RPC')
+    console.log('PASS calculadora compartida: teclas, atajos, teclado y draft local')
+  })
   await scenario({ startTimeout: true }, async (page, calls) => {
     assert.equal(await page.getByRole('button', { name: 'Actualizar', exact: true }).count(), 0)
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()

@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from "react";
-import type { CajeroCalculatorKey } from "./cajero.types";
+import type { CajeroCalculatorKey } from "./cajero.utils";
 import {
   applyCajeroCalculatorKey,
   evaluateCajeroExpression,

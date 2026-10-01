@@ -1,3 +1,4 @@
+import type { CashierRoute } from '../../../lib/router'
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, History, Home, LogOut, Palette, Play, SearchCheck, Send, X } from 'lucide-react'
 import { navigateTo, replaceRoute } from '../../../lib/router'
@@ -11,7 +12,7 @@ import type { CashierV4Group, CashierV4NextAction } from './cajero.v4'
 import { useCashierV4 } from './cajero.v4.context'
 import { canCashierV4CaptureForSession } from './cajero.v4.capability'
 import { getCashierV4ErrorPolicy } from './cajero.v4.errors'
-import { getCashierV4RouteAccess, selectCashierV4BottomNavigation, type CashierV4Route } from './cajero.v4.navigation'
+import { getCashierV4RouteAccess, selectCashierV4BottomNavigation } from './cajero.v4.navigation'
 import { CashierV4Runtime } from './cajero.v4.runtime'
 import { cashierV4Destination, cashierV4StockType, selectCashierV4Coverage, selectCashierV4CoverageGroups,
   selectCashierV4CoveragePendingByCategory, selectCashierV4CoveragePendingByStockType, selectCashierV4DailyGroups,
@@ -203,7 +204,7 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
   </section>
 }
 
-export function CajeroV4({ runtime, route, onLogout }: { runtime: CashierV4Runtime; route: CashierV4Route; onLogout: () => Promise<void> }) {
+export function CajeroV4({ runtime, route, onLogout }: { runtime: CashierV4Runtime; route: CashierRoute; onLogout: () => Promise<void> }) {
   const { state } = useCashierV4()
   const local = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot, runtime.getSnapshot)
   // After contextual refresh, the last timer tick may predate the new server offset.

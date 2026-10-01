@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { cashierHistoryDate, CashierHistoryCache, parseCashierHistory, type CashierHistory, type CashierHistoryPeriod } from '../src/features/solog/cajero/cajero.history'
-import { getCajeroStockPresentation, getCashierStockPresentation } from '../src/features/solog/cajero/cajero.stock'
-import { parseCashierV3Bootstrap } from '../src/features/solog/cajero/cajero.v3.api'
-import { cashierV3Bootstrap } from './fixtures/cashier-v3.mjs'
+import { getCajeroStockPresentation } from '../src/features/solog/cajero/cajero.stock'
 const now = Date.parse('2026-09-03T20:30:00Z')
 function history(period: CashierHistoryPeriod = 'today', revision = 10): CashierHistory {
   return { contract_version: 2, generated_at: new Date(now).toISOString(), period,
@@ -70,9 +68,13 @@ describe('C4 historial V4', () => {
     expect(cache.get('today', now)).toBeNull()
   })
   test('no quedan llamadas Cajero v1', async () => {
+    const v2Calls: string[] = []
     for await (const path of new Bun.Glob('src/features/solog/cajero/*.{ts,tsx}').scan('.')) {
-      expect(await Bun.file(path).text()).not.toMatch(/rpc_solog_count|rpc_solog_state|callSologRpc/)
+      const source = await Bun.file(path).text()
+      expect(source).not.toMatch(/rpc_solog_count|rpc_solog_state|callSologRpc/)
+      v2Calls.push(...source.match(/rpc_solog_cashier_\w+_v2/g) ?? [])
     }
+    expect(v2Calls).toEqual(['rpc_solog_cashier_history_v2'])
   })
 })
 describe('C4 tiempo y expiración', () => {
@@ -83,13 +85,5 @@ describe('C4 tiempo y expiración', () => {
       expect(getCajeroStockPresentation(stock, session, now + minutes * 60000).state).toBe(state)
     }
     expect(getCajeroStockPresentation(stock, session, now + 117 * 60000).countdown).toBe('03:00')
-  })
-  test('nuevo snapshot no extiende sesión congelada V3', () => {
-    const b = parseCashierV3Bootstrap(cashierV3Bootstrap('session'))
-    b.stock.snapshot_id = 'newer'
-    const expiry = Date.parse(b.panel_state!.session.expira_at)
-    expect(getCashierStockPresentation(b, expiry - 60000).countdown).toBe('01:00')
-    expect(getCashierStockPresentation(b, expiry).label).toBe('Sesión en recuperación')
-    expect(getCashierStockPresentation(b, Date.parse(b.panel_state!.session.recovery_until)).state).toBe('expired')
   })
 })

@@ -1,12 +1,12 @@
+import type { CashierRoute } from '../../../lib/router'
 import type { CashierV4StartResult } from './cajero.v4'
 import type { CashierV4State } from './cajero.v4.store'
 import { canCashierV4CaptureForSession } from './cajero.v4.capability'
 import { cashierV4Destination, selectCashierV4HistoryAvailable } from './cajero.v4.selectors'
 
-export type CashierV4Route = '/cajero' | '/cajero/conteo' | '/cajero/diario' | '/cajero/revisar' | '/cajero/historial'
 export type CashierV4RouteAccess =
-  | { allowed: true; route: CashierV4Route }
-  | { allowed: false; redirect: CashierV4Route; reason: 'capture_unavailable' | 'operational_priority' | 'history_unavailable' | 'unknown_route' }
+  | { allowed: true; route: CashierRoute }
+  | { allowed: false; redirect: CashierRoute; reason: 'capture_unavailable' | 'operational_priority' | 'history_unavailable' | 'unknown_route' }
 
 // Post-start authority is the received panel, never a previously displayed pre-session CTA.
 export function cashierV4AfterStartDestination(result: CashierV4StartResult) {
@@ -14,7 +14,7 @@ export function cashierV4AfterStartDestination(result: CashierV4StartResult) {
 }
 
 // Callers supply server-adjusted time. Routing/authentication into Cajero remains Route V2's job.
-export function selectCashierV4CaptureDestination(state: CashierV4State, now: number): CashierV4Route {
+export function selectCashierV4CaptureDestination(state: CashierV4State, now: number): CashierRoute {
   const panel = state.panel_state
   if (!panel || panel.session.estado !== 'activo' || !canCashierV4CaptureForSession(state, panel.session.id, now)) return '/cajero'
   return cashierV4Destination(panel.next_action)
@@ -35,7 +35,7 @@ export function getCashierV4RouteAccess(state: CashierV4State, requestedPath: st
     : { allowed: false, redirect: destination, reason: 'operational_priority' }
 }
 
-const navigationItems: ReadonlyArray<{ route: CashierV4Route; label: string }> = [
+const navigationItems: ReadonlyArray<{ route: CashierRoute; label: string }> = [
   { route: '/cajero', label: 'Inicio' },
   { route: '/cajero/conteo', label: 'Conteo' },
   { route: '/cajero/diario', label: 'Conteo diario' },
