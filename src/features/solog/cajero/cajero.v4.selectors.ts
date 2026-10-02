@@ -113,6 +113,7 @@ export function selectCashierV4ReviewPendingByCategory(panel: CashierV4Panel | n
   return pendingByCategory(selectCashierV4ReviewGroups(panel))
 }
 
-export function selectCashierV4HistoryAvailable(state: CashierV4State): boolean {
-  return selectCashierV4OperationalSummary(state)?.kpis.coverage_pending === 0
+// Historial is read-only and remains available independently of operational priority or coverage.
+export function selectCashierV4HistoryAvailable(_state: CashierV4State): boolean {
+  return true
 }
