@@ -89,7 +89,9 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
     result.conteo_id = payload.conteo_id
     if (action === 'finish') {
       if (finishFailure && ++finishAttempts === 1) return route.abort('timedout')
-      b = cashierV4Bootstrap('pre_session', { next_action: 'coverage', ronda: round }); return reply(result)
+      if (payload.conteo_id === ids.recovery) b.recovery_sessions = []
+      else b = cashierV4Bootstrap('pre_session', { next_action: 'coverage', ronda: round })
+      return reply(result)
     }
     const isRecovery = payload.conteo_id === ids.recovery
     const cap = isRecovery ? b.recovery_sessions[0].session_capability : b.panel_state.session_capability
@@ -247,20 +249,19 @@ try {
     console.log('PASS race summary coverage → start review → guard → recount/delta coverage')
   })
   await scenario({ initial: 'active', recovery: true }, async (page, calls) => {
-    assert.equal(await page.getByRole('button', { name: 'Continuar conteo', exact: true }).isDisabled(), true)
-    assert.equal(await nav(page).getByRole('button', { name: 'Conteo', exact: true }).isEnabled(), true)
-    await page.getByRole('button', { name: 'Enviar pendientes', exact: true }).click()
     await page.getByRole('button', { name: 'Continuar conteo', exact: true }).waitFor({ state: 'visible' })
     await page.waitForFunction(() => ![...document.querySelectorAll('button')].find(b => b.textContent.includes('Continuar conteo')).disabled)
-    assert.equal(calls.at(-1).body.p_payload.conteo_id, ids.recovery)
-    assert.equal(calls.at(-1).body.p_payload.expected_groups_revision, 6)
+    const recoveryActions = calls.filter(c => c.body.p_payload?.conteo_id === ids.recovery)
+    assert.deepEqual(recoveryActions.map(c => c.body.p_action), ['save_batch', 'finish'])
+    assert.equal(recoveryActions[0].body.p_payload.expected_groups_revision, 6)
+    assert.equal(await page.getByText('Recovery', { exact: false }).count(), 0)
     await page.getByRole('button', { name: 'Continuar conteo', exact: true }).click()
     await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
     await capture(page)
     await page.getByRole('button', { name: 'Enviar pendientes', exact: true }).click()
     await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     assert.equal(calls.at(-1).body.p_payload.conteo_id, ids.session)
-    console.log('PASS recovery A pendiente bloquea B → delivery A aislado → capture/save B')
+    console.log('PASS recovery A se autocierra → B conserva captura y envío')
   })
   await scenario({ initial: 'active', expiredWithDraft: true }, async (page, calls) => {
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
@@ -268,8 +269,8 @@ try {
     assert.deepEqual(actions, ['save_batch', 'finish'])
     assert.equal(await page.getByText('Recovery', { exact: false }).count(), 0)
     assert.equal(await page.getByText('Sesión vencida', { exact: false }).count(), 0)
-    assert.equal(await page.evaluate(() => Object.values(localStorage).some(value => {
-      try { const record = JSON.parse(value); return record?.version === 1 && record?.finished === true } catch { return false }
+    assert.equal(await page.evaluate(() => Object.keys(localStorage).some(key => {
+      try { const record = JSON.parse(localStorage.getItem(key)); return record?.version === 1 && record?.finished === true } catch { return false }
     })), true)
     console.log('PASS expiry + draft → autocierre transparente → save → finish')
   })
