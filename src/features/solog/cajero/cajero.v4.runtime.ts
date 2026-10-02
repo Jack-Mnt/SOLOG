@@ -61,7 +61,23 @@ export class CashierV4Runtime {
       const records = this.storage.sessions(identity)
       for (const record of records) this.coordinator.synchronize(record.scope)
       this.storageBlocked = false
-      this.publish({ records: this.storage.sessions(identity), preparedStart })
+      const hydratedRecords = this.storage.sessions(identity)
+      this.publish({ records: hydratedRecords, preparedStart })
+      // On reload, an unresolved prepared operation must not become an automatic retry.
+      // Reconstruct the close state from durable evidence and require explicit retry.
+      if (this.snapshot.closeState === 'idle') {
+        const state = this.store.getSnapshot()
+        const now = this.serverNow()
+        const closingIds = new Set(state.recovery_sessions.map(session => session.id))
+        if (state.panel_state && now >= Date.parse(state.panel_state.session.expira_at)) closingIds.add(state.panel_state.session.id)
+        const unresolved = hydratedRecords.find(record => !record.finished && closingIds.has(record.scope.conteo_id) &&
+          record.prepared && !record.prepared.response)
+        if (unresolved?.prepared) {
+          const closeState: CashierV4CloseState = unresolved.prepared.status === 'conflict' ? 'conflict'
+            : unresolved.prepared.status === 'rejected' ? 'failed_known' : 'uncertain'
+          this.publish({ closeState, closeConteoId: unresolved.scope.conteo_id })
+        }
+      }
       if (preparedStart?.prepared_start.status === 'conflict') this.publish({ error: new SologApiError('SOLOG_IDEMPOTENCY_CONFLICT') })
     } catch (error) { this.storageBlocked = true; this.publish({ error }) } // Preserve corrupt/unavailable storage; never replace it with memory.
   }
