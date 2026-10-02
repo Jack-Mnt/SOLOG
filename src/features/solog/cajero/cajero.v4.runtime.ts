@@ -190,7 +190,7 @@ export class CashierV4Runtime {
   private async finishScopeWork(scope: CashierV4DraftScope, refresh = true) {
     if (this.sessionDenied) throw new Error('Actualiza el panel para confirmar los permisos vigentes.')
     const record = this.storage.read(scope)
-    if (record.prepared?.action !== 'finish') {
+    if (record.prepared?.action !== 'finish' && cashierV4LocalPending(record) > 0) {
       await this.coordinator.flush(scope)
       // The coordinator checks every deliverable queue and refuses finish after an unresolved batch.
     }
@@ -251,6 +251,7 @@ export class CashierV4Runtime {
     const scope = this.coordinator.sessionScope(conteoId)
     if (!scope) throw new Error('La sesión pendiente ya no tiene un scope local resoluble.')
     const record = this.storage.read(scope)
+    if (record.prepared?.action === 'finish') throw new Error('El cierre ya fue preparado y debe resolverse con el mismo identificador.')
     if (record.prepared && record.prepared.status !== 'rejected') throw new Error('Existe una operación pendiente cuyo resultado debe resolverse antes de descartar.')
     if (!canCashierV4DeliverPendingForSession(this.store.getSnapshot(), conteoId, this.serverNow())) {
       throw new Error('La sesión ya no permite un cierre seguro. Actualiza su estado antes de limpiar datos locales.')
