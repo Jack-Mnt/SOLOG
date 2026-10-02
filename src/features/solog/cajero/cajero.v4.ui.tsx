@@ -20,7 +20,7 @@ import { cashierV4Destination, cashierV4StockType, selectCashierV4Coverage, sele
   selectCashierV4WaitingForSnapshot, type CashierV4StockType } from './cajero.v4.selectors'
 
 const stockLabels = { positive: 'Stock positivo', zero: 'Stock 0', negative: 'Stock negativo' }
-const icons: Record<string, typeof Home> = {
+const icons: Record<CashierRoute, typeof Home> = {
   '/cajero': Home,
   '/cajero/conteo': ClipboardList,
   '/cajero/diario': CalendarClock,
