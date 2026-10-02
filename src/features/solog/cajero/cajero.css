@@ -1792,3 +1792,112 @@
 
 
 
+
+
+/* Cajero V4 — autocierre y recovery transparente */
+.cajero-close-notice {
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.cajero-close-notice > div:first-of-type {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+  flex: 1 1 auto;
+}
+
+.cajero-close-notice strong,
+.cajero-close-notice p {
+  margin: 0;
+}
+
+.cajero-close-notice__spinner {
+  flex: 0 0 auto;
+  animation: cajero-close-spin 0.9s linear infinite;
+}
+
+.cajero-close-notice__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.cajero-close-notice .button {
+  min-height: 42px;
+  justify-content: center;
+}
+
+.cajero-confirmation-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--color-dark-surface) 50%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.cajero-confirmation {
+  width: min(100%, 460px);
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-elevated);
+}
+
+.cajero-confirmation h2,
+.cajero-confirmation p {
+  margin: 0;
+}
+
+.cajero-confirmation h2 {
+  color: var(--color-text-primary);
+  font-size: 1.05rem;
+}
+
+.cajero-confirmation p {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.cajero-confirmation__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+@keyframes cajero-close-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cajero-close-notice__spinner {
+    animation: none;
+  }
+}
+
+@media (max-width: 599px) {
+  .cajero-close-notice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cajero-close-notice__actions,
+  .cajero-confirmation__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .cajero-close-notice__actions .button,
+  .cajero-confirmation__actions .button {
+    width: 100%;
+  }
+}
