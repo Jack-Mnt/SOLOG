@@ -173,6 +173,41 @@ describe('runtime productivo V4', () => {
     if (action === 'daily') expect(html).toContain('1 pendientes')
     runtime.dispose()
   })
+  test('UI autocierre muestra fallo conocido con retry y descarte sin exponer recovery', async () => {
+    const h = draftHarness('coverage')
+    let clock = h.now
+    const runtime = new CashierV4Runtime(h.store, h.storage, async () => {
+      throw new SologApiError('SOLOG_RECOUNT_REQUIRES_PHYSICAL_RECOUNT')
+    }, () => uuidFor(401), () => clock)
+    runtime.capture('coverage', ids.coverage, 10, '10')
+    clock = Date.parse(h.store.getSnapshot().panel_state!.session.expira_at) + 1000
+    await expect(runtime.autoCloseExpiredSession()).rejects.toThrow()
+
+    const markup = renderRuntime(runtime, '/cajero')
+    expect(markup).toContain('Envío pendiente')
+    expect(markup).toContain('Reintentar envío')
+    expect(markup).toContain('Descartar conteos')
+    expect(markup).not.toContain('Recovery')
+    runtime.dispose()
+  })
+
+  test('UI autocierre incierto ofrece solo reintento y conserva drafts', async () => {
+    const h = draftHarness('coverage')
+    let clock = h.now
+    const runtime = new CashierV4Runtime(h.store, h.storage, async () => { throw new Error('timeout') },
+      () => uuidFor(402), () => clock)
+    runtime.capture('coverage', ids.coverage, 10, '10')
+    clock = Date.parse(h.store.getSnapshot().panel_state!.session.expira_at) + 1000
+    await expect(runtime.autoCloseExpiredSession()).rejects.toThrow('timeout')
+
+    const markup = renderRuntime(runtime, '/cajero')
+    expect(markup).toContain('Estamos verificando si el último envío fue recibido.')
+    expect(markup).toContain('Reintentar')
+    expect(markup).not.toContain('Descartar conteos')
+    expect(h.storage.read(h.scope).normal).toHaveLength(1)
+    runtime.dispose()
+  })
+
   test('UI recovery-only bloquea ruta de captura, waiting no inventa coverage', () => {
     const b = cashierV4Bootstrap('recovery', { next_action: 'none' })
     const store = new CashierV4Store(ids.user, 'test-device-token-0000000000000000'); store.acceptBootstrap(b)
