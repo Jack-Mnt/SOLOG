@@ -1,6 +1,6 @@
 import { CashierHistoryCache, type CashierHistoryPeriod } from './cajero.history'
 import { mutateCashierV4, type CashierV4Rpc } from './cajero.v4.api'
-import { canCashierV4CaptureForSession } from './cajero.v4.capability'
+import { canCashierV4CaptureForSession, canCashierV4DeliverPendingForSession } from './cajero.v4.capability'
 import { CashierV4DraftCoordinator } from './cajero.v4.flush'
 import { cashierV4AfterStartDestination } from './cajero.v4.navigation'
 import { selectCashierV4CoverageGroups, selectCashierV4DailyGroups, selectCashierV4ReviewEntries } from './cajero.v4.selectors'
@@ -16,12 +16,18 @@ export function cashierV4LocalPending(record: CashierV4SessionDrafts) {
   return drafts || (record.prepared && !record.prepared.response ? 1 : 0)
 }
 
+export type CashierV4CloseState = 'idle' | 'closing' | 'failed_known' | 'uncertain' | 'conflict' | 'finished'
+
 // UI orchestration only. Planning, durable payloads and retries remain in the frozen coordinator.
 export class CashierV4Runtime {
   readonly coordinator: CashierV4DraftCoordinator
   readonly history = new CashierHistoryCache()
   private listeners = new Set<() => void>()
-  private snapshot = { revision: 0, busy: false, error: null as unknown, records: [] as CashierV4SessionDrafts[], preparedStart: null as CashierV4PreparedStart | null }
+  private snapshot = {
+    revision: 0, busy: false, error: null as unknown,
+    records: [] as CashierV4SessionDrafts[], preparedStart: null as CashierV4PreparedStart | null,
+    closeState: 'idle' as CashierV4CloseState, closeConteoId: null as string | null,
+  }
   private storageBlocked = false
   private sessionDenied = false
   private unsubscribe: () => void
@@ -65,6 +71,30 @@ export class CashierV4Runtime {
     return this.snapshot.records.filter(record => cashierV4LocalPending(record) > 0 &&
       (record.scope.conteo_id !== active?.session.id || active.session.estado !== 'activo'))
   }
+  get hasBlockingRecovery() {
+    const state = this.store.getSnapshot()
+    const recoveryIds = new Set(state.recovery_sessions.map(session => session.id))
+    return state.recovery_sessions.length > 0 || this.snapshot.records.some(record => !record.finished &&
+      (recoveryIds.has(record.scope.conteo_id) || record.prepared !== null))
+  }
+  private closeTargetScope(now = this.serverNow()): CashierV4DraftScope | null {
+    const state = this.store.getSnapshot()
+    const panel = state.panel_state
+    if (panel?.session.estado === 'activo' && now >= Date.parse(panel.session.expira_at)) {
+      return this.coordinator.activeScope()
+    }
+    for (const recovery of state.recovery_sessions) {
+      if (now >= Date.parse(recovery.recovery_until)) continue
+      const scope = this.coordinator.sessionScope(recovery.id)
+      if (scope) return scope
+    }
+    return null
+  }
+  shouldAutoClose(now = this.serverNow()) {
+    const scope = this.closeTargetScope(now)
+    if (!scope) return false
+    return this.snapshot.closeConteoId !== scope.conteo_id || this.snapshot.closeState === 'idle'
+  }
   canCapture(action: CashierV4NextAction) {
     const state = this.store.getSnapshot(), panel = state.panel_state
     return Boolean(action !== 'none' && !this.sessionDenied && !this.storageBlocked && !this.snapshot.preparedStart && !this.snapshot.busy && !this.snapshot.error && !state.loading && panel?.next_action === action &&
@@ -107,7 +137,7 @@ export class CashierV4Runtime {
     const identity = { usuario_id: b.identity.id, sede_id: b.site.id, dispositivo_id: b.device.id }
     let prepared = this.storage.readStart(identity)
     if (prepared?.prepared_start.status === 'conflict') throw new SologApiError('SOLOG_IDEMPOTENCY_CONFLICT')
-    if (!prepared && (!b.start_capability.allowed || state.panel_state?.session.estado === 'activo' || this.pendingCount > 0)) {
+    if (!prepared && (!b.start_capability.allowed || state.panel_state?.session.estado === 'activo' || this.pendingCount > 0 || this.hasBlockingRecovery)) {
       throw new Error('No se puede iniciar un conteo con este estado o con pendientes anteriores.')
     }
     prepared ??= { version: 1, identity, prepared_start: { operation_id: this.uuid(), status: 'ready' } }
@@ -118,6 +148,7 @@ export class CashierV4Runtime {
       this.hydrate()
       if (this.snapshot.error) throw this.snapshot.error
       this.storage.confirmStart(identity, prepared.prepared_start.operation_id, result)
+      this.publish({ closeState: 'idle', closeConteoId: null })
       return cashierV4AfterStartDestination(result)
     } catch (error) {
       const code = getCashierV4ErrorPolicy(error).code
@@ -156,10 +187,8 @@ export class CashierV4Runtime {
     if (active && cashierV4LocalPending(this.storage.read(active))) await this.deliver(active)
   }
   sendPending = () => this.command(() => this.sendPendingWork())
-  private async finishWork(refresh = true) {
+  private async finishScopeWork(scope: CashierV4DraftScope, refresh = true) {
     if (this.sessionDenied) throw new Error('Actualiza el panel para confirmar los permisos vigentes.')
-    const scope = this.coordinator.activeScope()
-    if (!scope) throw new Error('No hay una sesión visible para finalizar.')
     const record = this.storage.read(scope)
     if (record.prepared?.action !== 'finish') {
       await this.coordinator.flush(scope)
@@ -168,7 +197,75 @@ export class CashierV4Runtime {
     await this.coordinator.finish(scope)
     if (refresh) await this.store.refresh()
   }
+  private async finishWork(refresh = true) {
+    const scope = this.coordinator.activeScope()
+    if (!scope) throw new Error('No hay una sesión visible para finalizar.')
+    await this.finishScopeWork(scope, refresh)
+  }
   finish = () => this.command(() => this.finishWork())
+  autoCloseExpiredSession = async () => {
+    const scope = this.closeTargetScope()
+    if (!scope) {
+      if (this.store.getSnapshot().recovery_sessions.length > 0) {
+        const error = new Error('La sesión en recuperación no tiene un scope local suficiente para cerrarse de forma segura.')
+        this.publish({ closeState: 'failed_known', closeConteoId: null, error })
+        throw error
+      }
+      return false
+    }
+    if (this.snapshot.closeConteoId === scope.conteo_id && this.snapshot.closeState !== 'idle') return false
+    this.publish({ closeState: 'closing', closeConteoId: scope.conteo_id })
+    try {
+      await this.command(() => this.finishScopeWork(scope))
+      this.publish({ closeState: 'finished', closeConteoId: scope.conteo_id })
+      return true
+    } catch (error) {
+      const outcome = getCashierV4ErrorPolicy(error).outcome
+      this.publish({
+        closeState: outcome === 'conflict' ? 'conflict' : outcome === 'uncertain' || outcome === 'in_progress' ? 'uncertain' : 'failed_known',
+        closeConteoId: scope.conteo_id,
+      })
+      throw error
+    }
+  }
+  retryAutoClose = async () => {
+    const conteoId = this.snapshot.closeConteoId
+    if (!conteoId) throw new Error('No hay un cierre pendiente para reintentar.')
+    if (this.snapshot.closeState === 'conflict') throw new SologApiError('SOLOG_IDEMPOTENCY_CONFLICT')
+    const scope = this.coordinator.sessionScope(conteoId)
+    if (!scope) throw new Error('La sesión pendiente ya no tiene un scope local resoluble.')
+    this.publish({ closeState: 'closing' })
+    try {
+      await this.command(() => this.finishScopeWork(scope))
+      this.publish({ closeState: 'finished' })
+    } catch (error) {
+      const outcome = getCashierV4ErrorPolicy(error).outcome
+      this.publish({ closeState: outcome === 'conflict' ? 'conflict' : outcome === 'uncertain' || outcome === 'in_progress' ? 'uncertain' : 'failed_known' })
+      throw error
+    }
+  }
+  discardAndFinishRecovery = async () => {
+    const conteoId = this.snapshot.closeConteoId
+    if (!conteoId || this.snapshot.closeState !== 'failed_known') throw new Error('Los conteos no pueden descartarse en este estado.')
+    const scope = this.coordinator.sessionScope(conteoId)
+    if (!scope) throw new Error('La sesión pendiente ya no tiene un scope local resoluble.')
+    const record = this.storage.read(scope)
+    if (record.prepared && record.prepared.status !== 'rejected') throw new Error('Existe una operación pendiente cuyo resultado debe resolverse antes de descartar.')
+    if (!canCashierV4DeliverPendingForSession(this.store.getSnapshot(), conteoId, this.serverNow())) {
+      throw new Error('La sesión ya no permite un cierre seguro. Actualiza su estado antes de limpiar datos locales.')
+    }
+    this.storage.discardForSafeFinish(scope)
+    this.hydrate()
+    this.publish({ closeState: 'closing' })
+    try {
+      await this.command(() => this.coordinator.finish(scope).then(() => this.store.refresh()))
+      this.publish({ closeState: 'finished' })
+    } catch (error) {
+      const outcome = getCashierV4ErrorPolicy(error).outcome
+      this.publish({ closeState: outcome === 'conflict' ? 'conflict' : outcome === 'uncertain' || outcome === 'in_progress' ? 'uncertain' : 'failed_known' })
+      throw error
+    }
+  }
   logoutSafe = (onLogout: () => Promise<void>) => this.command(async () => {
     this.hydrate()
     if (this.snapshot.error) throw this.snapshot.error
