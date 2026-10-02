@@ -7,7 +7,7 @@ import { SologApiError, type SologErrorCode } from '../errors'
 import { CajeroCalculator } from './cajero.calculadora'
 import { CajeroHistorial } from './cajero.historial'
 import { formatCajeroClock, formatCajeroElapsed, getCajeroStockPresentation, useCajeroServerClock } from './cajero.stock'
-import { calculateCajeroValuationPreview, evaluateCajeroExpression, formatCajeroCurrency, formatCajeroDifference, getCajeroCategoryIcon } from './cajero.utils'
+import { calculateCajeroValuationPreview, evaluateCajeroExpression, formatCajeroCurrency, formatCajeroDifference, getCajeroCategoryIcon, getCajeroDifferenceClass } from './cajero.utils'
 import type { CashierV4Group, CashierV4NextAction } from './cajero.v4'
 import { useCashierV4 } from './cajero.v4.context'
 import { canCashierV4CaptureForSession } from './cajero.v4.capability'
@@ -232,8 +232,16 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose }: {
   const group = groups.find(group => group.grupo_id === selected)
   const scope = runtime.coordinator.activeScope(), record = runtime.getSnapshot().records.find(item =>
     item.scope.conteo_id === scope?.conteo_id && item.scope.groups_revision === scope.groups_revision) ?? null
-  const reviewEntry = runtime.store.getSnapshot().panel_state?.review_queue.find(item => item.grupo_id === selected)
+  const reviewQueue = runtime.store.getSnapshot().panel_state?.review_queue ?? []
+  const reviewEntry = reviewQueue.find(item => item.grupo_id === selected)
   const draft = action === 'review' ? record?.recount.find(item => item.detalle_id === reviewEntry?.detalle_id) : record?.normal.find(item => item.grupo_id === selected)
+  const localDraftForGroup = (item: CashierV4Group) => {
+    if (action !== 'review') return record?.normal.find(draftItem => draftItem.grupo_id === item.grupo_id)
+    const entry = reviewQueue.find(queueItem => queueItem.grupo_id === item.grupo_id)
+    return entry ? record?.recount.find(draftItem => draftItem.detalle_id === entry.detalle_id) : undefined
+  }
+  const registeredCount = groups.filter(item => Boolean(localDraftForGroup(item))).length
+  const percentage = groups.length > 0 ? Math.round((registeredCount / groups.length) * 100) : 0
   const expression = selected ? expressions[selected] ?? draft?.metadata?.expression ?? (draft ? String(draft.stock_fisico) : '') : ''
   const evaluation = evaluateCajeroExpression(expression), physical = evaluation.status === 'valid' ? evaluation.value : null
   const difference = group && physical !== null ? physical - group.stock_teorico : null
@@ -265,7 +273,10 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose }: {
   return <div className="cajero-capture-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
     <section className="cajero-capture-modal" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={dialogRef}>
       <header className="cajero-capture-modal__header"><button className="cajero-capture-modal__icon-button" aria-label="Regresar a la lista" onClick={() => setSelected(null)} type="button"><ArrowLeft size={22} /></button>
-        <h2 id={titleId}>{title}</h2><button className="cajero-capture-modal__icon-button" aria-label="Cerrar" onClick={onClose} type="button"><X size={22} /></button></header>
+        <h2 id={titleId}>{title}</h2><strong>{registeredCount}/{groups.length} contados</strong><button className="cajero-capture-modal__icon-button" aria-label="Cerrar" onClick={onClose} type="button"><X size={22} /></button></header>
+      <div className="cajero-capture-modal__progress" aria-label={`${percentage}% registrado`}>
+        <span aria-hidden="true"><span style={{ width: `${percentage}%` }} /></span><strong>{percentage}%</strong>
+      </div>
       <div className={`cajero-capture-modal__body${group ? ' cajero-capture-modal__body--detail' : ''}`}>
         {group ? <div className="cajero-capture-detail"><div className="cajero-capture-detail__information"><section className="cajero-capture-detail__card">
           <h3>{group.nombre}</h3>{group.productos.length > 1 ? <details><summary>Productos incluidos</summary><ul>{group.productos.map(p => <li key={p.c_interno}>{p.producto} - #{p.c_interno}</li>)}</ul></details> : null}
@@ -276,9 +287,13 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose }: {
           <CajeroCalculator expression={expression} disabled={!canCapture} onChange={value => setExpressions(current => ({ ...current, [group.grupo_id]: value }))} />
           <nav className="cajero-capture-detail__navigation"><button className="button button--secondary" onClick={() => setSelected(null)} type="button">Regresar</button>
             <button className="button" disabled={!canCapture || physical === null} onClick={save} type="button">Continuar</button></nav>
-        </div> : <div className="cajero-capture-summary"><div className="cajero-capture-summary__head"><span>Nombre</span><span>Stock TumiSoft</span><span>Preparado localmente</span></div>
-          <div className="cajero-capture-summary__rows">{groups.map(item => <button key={item.grupo_id} onClick={() => setSelected(item.grupo_id)} type="button">
-            <strong>{item.nombre}</strong><span>{item.stock_teorico}</span><span>{record?.normal.some(d => d.grupo_id === item.grupo_id) ? 'Por enviar' : '—'}</span><span>›</span></button>)}</div></div>}
+        </div> : <div className="cajero-capture-summary"><div className="cajero-capture-summary__head"><span>Nombre</span><span>Stock TumiSoft</span><span>Diferencia</span><span /></div>
+          <div className="cajero-capture-summary__rows">{groups.map(item => {
+            const itemDraft = localDraftForGroup(item)
+            const itemDifference = itemDraft ? itemDraft.stock_fisico - item.stock_teorico : null
+            return <button className={itemDraft ? 'is-counted' : undefined} key={item.grupo_id} onClick={() => setSelected(item.grupo_id)} type="button">
+              <strong>{item.nombre}</strong><span>{item.stock_teorico}</span><span className={getCajeroDifferenceClass(itemDifference)}>{formatCajeroDifference(itemDifference)}</span><span>›</span></button>
+          })}</div></div>}
       </div>
     </section>
   </div>
