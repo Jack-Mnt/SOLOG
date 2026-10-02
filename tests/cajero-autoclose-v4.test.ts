@@ -128,4 +128,23 @@ describe('Cajero V4 — Fase 1 autocierre y recovery transparente', () => {
     await h.runtime.retryAutoClose()
     expect(h.requests[1].payload.operation_id).toBe(operationId)
   })
+
+  test('lifecycle ausente tras refresh solo limpia residuos si no queda operación incierta', async () => {
+    const h = activeAutocloseHarness(true, async () => { throw new SologApiError('SOLOG_RECOUNT_REQUIRES_PHYSICAL_RECOUNT') })
+    await expect(h.runtime.autoCloseExpiredSession()).rejects.toThrow()
+    const terminal = structuredClone(h.initial)
+    terminal.panel_state = null
+    terminal.recovery_sessions = []
+    terminal.session_capability = {
+      mode: 'none', estado: null, capture_allowed: false, pending_delivery_allowed: false,
+      iniciado_at: null, expira_at: null, recovery_until: null, finalizado_at: null,
+    }
+    terminal.start_capability = { allowed: false, reason: 'SOLOG_STOCK_EXPIRED' }
+    h.store.acceptBootstrap(terminal)
+
+    h.runtime.cleanupConfirmedTerminal()
+    expect(h.storage.read(h.scope).finished).toBe(true)
+    expect(h.storage.read(h.scope).normal).toEqual([])
+    expect(h.runtime.getSnapshot().closeState).toBe('finished')
+  })
 })
