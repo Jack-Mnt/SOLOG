@@ -20,7 +20,13 @@ import { cashierV4Destination, cashierV4StockType, selectCashierV4Coverage, sele
   selectCashierV4WaitingForSnapshot, type CashierV4StockType } from './cajero.v4.selectors'
 
 const stockLabels = { positive: 'Stock positivo', zero: 'Stock 0', negative: 'Stock negativo' }
-const icons = [Home, ClipboardList, CalendarClock, SearchCheck, History]
+const icons: Record<string, typeof Home> = {
+  '/cajero': Home,
+  '/cajero/conteo': ClipboardList,
+  '/cajero/diario': CalendarClock,
+  '/cajero/revisar': SearchCheck,
+  '/cajero/historial': History,
+}
 const clock = (value: string | null | undefined) => value && Number.isFinite(Date.parse(value)) ? formatCajeroClock(Date.parse(value)) : '—'
 
 function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
@@ -340,9 +346,9 @@ export function CajeroV4({ runtime, route, onLogout }: { runtime: CashierV4Runti
       <button className="cajero-alert__dismiss" aria-label="Cerrar mensaje" onClick={runtime.clearError} type="button"><X size={18} /></button></div> : null}
     {!allowed || route === '/cajero' ? <CajeroV4Inicio runtime={runtime} /> : route === '/cajero/historial' ? <CajeroHistorial session={{ serverOffsetMs: runtime.store.serverOffsetMs, cacheRevision: local.revision,
       getCachedHistory: runtime.getCachedHistory, loadHistory: runtime.loadHistory }} /> : <CajeroV4Work key={route} runtime={runtime} action={route === '/cajero/revisar' ? 'review' : route === '/cajero/conteo' ? 'coverage' : 'daily'} />}
-  </main><nav className="cajero-nav" aria-label="Panel Cajero"><div className="cajero-nav__inner">{selectCashierV4BottomNavigation(state, now).map((item, i) => {
-    const Icon = icons[i]
+  </main><nav className="cajero-nav" aria-label="Panel Cajero"><div className="cajero-nav__inner">{selectCashierV4BottomNavigation(state, now).map(item => {
+    const Icon = icons[item.route]
     return <button className={route === item.route ? 'cajero-nav__item is-active' : 'cajero-nav__item'} aria-current={route === item.route ? 'page' : undefined}
-      disabled={!item.available} key={item.route} onClick={() => navigateTo(item.route)} type="button"><Icon size={22} aria-hidden="true" /><span>{item.label}</span></button>
+      key={item.route} onClick={() => navigateTo(item.route)} type="button"><Icon size={22} aria-hidden="true" /><span>{item.label}</span></button>
   })}</div></nav></div>
 }
