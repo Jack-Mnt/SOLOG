@@ -15,7 +15,7 @@ const user = { id: ids.user, email: 'cashier@example.test', role: 'authenticated
 const jwt = [{ alg: 'HS256', typ: 'JWT' }, { sub: user.id, aud: 'authenticated', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 }]
   .map(part => Buffer.from(JSON.stringify(part)).toString('base64url')).join('.') + '.test'
 
-async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
+async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false, expiredWithDraft = false, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const calls = [], errors = []
   let startAttempts = 0, finishAttempts = 0
@@ -38,6 +38,22 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
     const key = 'solog.cashier-v4.session.v1:' + [scope.usuario_id, scope.sede_id, scope.dispositivo_id, scope.conteo_id, scope.groups_revision].join(':')
     const record = { version: 1, scope, normal: [observation], recount: [], delivery_state: delivery, prepared: null, issue: null, finished: false }
     await context.addInitScript(({ key, record }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(record)) }, { key, record })
+  }
+  if (expiredWithDraft) {
+    assert.equal(initial, 'active')
+    const panel = b.panel_state
+    const scope = { usuario_id: ids.user, sede_id: ids.site, dispositivo_id: ids.device,
+      conteo_id: panel.session.id, groups_revision: panel.basis.groups_revision }
+    const delivery = { conteo_id: scope.conteo_id, groups_revision: scope.groups_revision,
+      review_queue: panel.review_queue, coverage_queue: panel.coverage_queue, daily_queue: panel.daily_queue,
+      kpis: panel.kpis, next_action: panel.next_action }
+    const observation = { kind: 'normal', scope, client_observation_id: ids.observation, grupo_id: ids.coverage,
+      stock_fisico: 10, contado_at: panel.session.iniciado_at }
+    const key = 'solog.cashier-v4.session.v1:' + [scope.usuario_id, scope.sede_id, scope.dispositivo_id, scope.conteo_id, scope.groups_revision].join(':')
+    const record = { version: 1, scope, normal: [observation], recount: [], delivery_state: delivery, prepared: null, issue: null, finished: false }
+    await context.addInitScript(({ key, record }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(record)) }, { key, record })
+    b.server_now = new Date(Date.parse(panel.session.expira_at) + 1000).toISOString()
+    b.generated_at = b.server_now
   }
   await context.route('**/*', async route => {
     const url = new URL(route.request().url())
@@ -245,6 +261,17 @@ try {
     await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     assert.equal(calls.at(-1).body.p_payload.conteo_id, ids.session)
     console.log('PASS recovery A pendiente bloquea B → delivery A aislado → capture/save B')
+  })
+  await scenario({ initial: 'active', expiredWithDraft: true }, async (page, calls) => {
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
+    const actions = calls.filter(c => c.rpc === 'rpc_solog_cashier_mutate_v4').map(c => c.body.p_action)
+    assert.deepEqual(actions, ['save_batch', 'finish'])
+    assert.equal(await page.getByText('Recovery', { exact: false }).count(), 0)
+    assert.equal(await page.getByText('Sesión vencida', { exact: false }).count(), 0)
+    assert.equal(await page.evaluate(() => Object.values(localStorage).some(value => {
+      try { const record = JSON.parse(value); return record?.version === 1 && record?.finished === true } catch { return false }
+    })), true)
+    console.log('PASS expiry + draft → autocierre transparente → save → finish')
   })
   await scenario({ round: 2 }, async page => {
     await page.getByText('Cobertura quincenal 2', { exact: true }).waitFor()
