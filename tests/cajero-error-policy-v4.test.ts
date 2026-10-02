@@ -29,6 +29,13 @@ describe('Cajero V4: política de errores aislada', () => {
     })
     expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_OPERATION_IN_PROGRESS')).message).toContain('misma operación')
   })
+  test('clasifica certeza operacional sin confundir errores cliente con rechazos backend', () => {
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_GROUP_ALREADY_COUNTED')).outcome).toBe('known_rejection')
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_OPERATION_IN_PROGRESS')).outcome).toBe('in_progress')
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_IDEMPOTENCY_CONFLICT')).outcome).toBe('conflict')
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')).outcome).toBe('uncertain')
+    expect(getCashierV4ErrorPolicy(new Error('network')).outcome).toBe('uncertain')
+  })
   test('mensajes compartidos Admin/V3 permanecen intactos; desconocidos no inventan recovery', () => {
     const device = new SologApiError('SOLOG_DEVICE_UNAUTHORIZED')
     const before = getSologErrorMessageFromUnknown(device)
