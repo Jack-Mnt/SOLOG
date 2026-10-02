@@ -96,6 +96,29 @@ describe('Cajero V4 — Fase 1 autocierre y recovery transparente', () => {
     expect(h.storage.read(h.scope).finished).toBe(true)
   })
 
+  test('reload de operación incierta restaura estado y no reintenta automáticamente', async () => {
+    let clock = Date.now()
+    const h = draftHarness('coverage')
+    clock = h.now
+    const failing = new CashierV4Runtime(h.store, h.storage, async () => { throw new Error('timeout') },
+      () => uuidFor(740), () => clock)
+    failing.capture('coverage', ids.coverage, 10, '10')
+    clock = Date.parse(h.store.getSnapshot().panel_state!.session.expira_at) + 1000
+    await expect(failing.autoCloseExpiredSession()).rejects.toThrow('timeout')
+    const operationId = h.storage.read(h.scope).prepared?.operation_id
+    failing.dispose()
+
+    let calls = 0
+    const reloaded = new CashierV4Runtime(h.store, h.storage, async () => { calls++; throw new Error('no debería llamarse') },
+      () => uuidFor(741), () => clock)
+    expect(reloaded.getSnapshot().closeState).toBe('uncertain')
+    expect(reloaded.getSnapshot().closeConteoId).toBe(h.scope.conteo_id)
+    expect(reloaded.shouldAutoClose()).toBe(false)
+    expect(h.storage.read(h.scope).prepared?.operation_id).toBe(operationId)
+    expect(calls).toBe(0)
+    reloaded.dispose()
+  })
+
   test('rechazo conocido queda rejected y permite descarte seguro seguido de finish', async () => {
     let rejected = false
     const h = activeAutocloseHarness(true, async (_name, args) => {
