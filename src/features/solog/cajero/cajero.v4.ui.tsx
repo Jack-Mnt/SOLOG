@@ -102,13 +102,20 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
   </div> : null}</>
 }
 
-function PendingSend({ runtime }: { runtime: CashierV4Runtime }) {
+function PendingRegistration({ runtime }: { runtime: CashierV4Runtime }) {
   return <article className="cajero-home-metric cajero-home-metric--pending">
-    <Send aria-hidden="true" size={23} /><span>Pendientes de envío</span>
+    <Send aria-hidden="true" size={23} /><span>Pendientes de registro</span>
     <div className="cajero-home-metric__send-row"><div className="cajero-home-metric__value"><strong>{runtime.pendingCount}</strong><small>pendientes</small></div>
       <button className="button button--secondary" disabled={runtime.getSnapshot().busy || runtime.pendingCount === 0}
-        onClick={() => void runtime.sendPending().catch(() => {})} type="button">Enviar pendientes</button></div>
+        onClick={() => void runtime.sendPending().catch(() => {})} type="button"><Send size={18} aria-hidden="true" /> Registrar conteo</button></div>
   </article>
+}
+
+function RegisterCountButton({ runtime }: { runtime: CashierV4Runtime }) {
+  return <div className="cajero-send-bar cajero-send-bar--compact">
+    <button className="button button--secondary" disabled={runtime.getSnapshot().busy || runtime.pendingCount === 0}
+      onClick={() => void runtime.sendPending().catch(() => {})} type="button"><Send size={18} aria-hidden="true" /> Registrar conteo</button>
+  </div>
 }
 
 function CajeroV4Header({ runtime, onLogout }: { runtime: CashierV4Runtime; onLogout: () => Promise<void> }) {
@@ -209,7 +216,7 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
     <div className="cajero-home-metrics">
       {panel ? <><article className="cajero-home-metric"><CalendarClock size={23} aria-hidden="true" /><span>Conteo diario</span><strong>{panel.kpis.daily_pending} pendientes</strong></article>
         <article className="cajero-home-metric"><SearchCheck size={23} aria-hidden="true" /><span>Revisar</span><strong>{panel.kpis.review_pending} pendientes</strong></article></> : null}
-      <PendingSend runtime={runtime} />
+      <PendingRegistration runtime={runtime} />
     </div>
     <section className="cajero-home-appearance"><div><Palette size={20} aria-hidden="true" /><h2>Apariencia</h2></div><PaletteSwitcher variant="home" /></section>
   </section>
@@ -294,8 +301,9 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
   const activeScope = runtime.coordinator.activeScope(), record = runtime.getSnapshot().records.find(item =>
     item.scope.conteo_id === activeScope?.conteo_id && item.scope.groups_revision === activeScope.groups_revision) ?? null
   return <section className={`cajero-module cajero-operational${action === 'review' ? ' cajero-review' : ''}`}>
-    <div className="cajero-module__heading cajero-operational__heading"><div><h1>{title}</h1><p>Registra la realidad</p>
-      {action === 'daily' ? <p>{panel?.kpis.daily_pending ?? 0} pendientes</p> : null}</div><PendingSend runtime={runtime} /></div>
+    <div className={`cajero-module__heading cajero-operational__heading${action === 'review' ? '' : ' cajero-operational__heading--with-action'}`}><div><h1>{title}</h1><p>Registra la realidad</p>
+      {action === 'daily' ? <p>{panel?.kpis.daily_pending ?? 0} pendientes</p> : null}</div>
+      {action === 'review' ? null : <RegisterCountButton runtime={runtime} />}</div>
     {action === 'coverage' ? <section className="cajero-selection-level cajero-selection-level--stock"><h2>Tipo de stock</h2><div className="cajero-selection-grid">
       {(Object.keys(stockLabels) as CashierV4StockType[]).map(type => <button aria-pressed={stockType === type} className={stockType === type ? 'is-active' : undefined} key={type} onClick={() => { setStockType(type); setCategory(null) }} type="button">
         <ClipboardList aria-hidden="true" size={23} /><span><strong>{stockLabels[type]}</strong><small>{counts[type]} pendientes</small></span></button>)}</div></section> : null}
