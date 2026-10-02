@@ -114,12 +114,12 @@ describe('13.5A logout seguro', () => {
     await h.runtime.logoutSafe(h.logout)
     expect(h.order).toEqual([`${action === 'review' ? 'recount_save_batch' : 'save_batch'}:${ids.session}`, `finish:${ids.session}`, 'auth-logout'])
   })
-  test('A recovery + B active entrega A, B, finish B, logout', async () => {
+  test('A recovery + B active entrega y finaliza A, luego B y logout', async () => {
     const h = logoutHarness(); h.runtime.capture('coverage', ids.coverage, 10, '10'); h.moveToRecovery()
     const scopeB = h.runtime.coordinator.activeScope()!
     h.coordinator.captureNormal(scopeB, { grupo_id: ids.coverage, stock_fisico: 10, contado_at: h.store.getSnapshot().panel_state!.session.iniciado_at })
     await h.runtime.logoutSafe(h.logout)
-    expect(h.order).toEqual([`save_batch:${ids.session}`, `save_batch:${scopeB.conteo_id}`, `finish:${scopeB.conteo_id}`, 'auth-logout'])
+    expect(h.order).toEqual([`save_batch:${ids.session}`, `finish:${ids.session}`, `save_batch:${scopeB.conteo_id}`, `finish:${scopeB.conteo_id}`, 'auth-logout'])
   })
   test('fallo de recovery NO finaliza B ni cierra auth', async () => {
     const h = logoutHarness(); h.runtime.capture('coverage', ids.coverage, 10, '10'); h.moveToRecovery(); h.fail('save_batch')
