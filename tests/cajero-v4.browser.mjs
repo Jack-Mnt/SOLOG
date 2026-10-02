@@ -167,7 +167,7 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
 async function capture(page, review = false, daily = false) {
   if (review) await page.getByRole('button', { name: 'Revisar Grupo recount' }).click()
   else {
-    await page.getByRole('button', { name: /Abarrotes.*pendiente/ }).click()
+    await page.getByRole('button', { name: /Abarrotes.*0\/\d+ contados/ }).click()
     await page.getByRole('dialog').getByRole('button', { name: daily ? /Grupo daily/ : /Grupo coverage/ }).click()
   }
   const dialog = page.getByRole('dialog')
@@ -349,6 +349,7 @@ try {
     await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
     assert.equal(await page.getByText('1 pendientes', { exact: true }).count() > 0, true)
     await capture(page)
+    await page.getByRole('button', { name: /Abarrotes.*1\/1 contados/ }).waitFor()
     await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
     await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     await page.getByText('Hay grupos esperando una actualización de stock para poder continuar.', { exact: true }).waitFor()
@@ -423,14 +424,14 @@ try {
     await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
     await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
     await page.getByRole('button', { name: /Stock positivo.*2 pendientes/ }).waitFor()
-    await page.getByRole('button', { name: /Abarrotes.*2 pendientes/ }).click()
+    await page.getByRole('button', { name: /Abarrotes.*0\/2 contados/ }).click()
     const names = await page.getByRole('dialog').locator('.cajero-capture-summary__rows strong').allTextContents()
     assert.deepEqual(names, ['Grupo adicional 0', 'Grupo coverage'])
     if (process.env.SOLOG_V4_SCREENSHOT) await page.screenshot({ path: process.env.SOLOG_V4_SCREENSHOT + '.capture.png', fullPage: true })
     await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
     for (const label of ['Stock 0', 'Stock negativo']) {
       await page.getByRole('button', { name: new RegExp(label + '.*1 pendientes') }).click()
-      await page.getByRole('button', { name: /Abarrotes.*1 pendientes/ }).click()
+      await page.getByRole('button', { name: /Abarrotes.*0\/1 contados/ }).click()
       assert.equal(await page.getByRole('dialog').locator('.cajero-capture-summary__rows strong').count(), 1)
       await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
     }
