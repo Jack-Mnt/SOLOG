@@ -1,8 +1,11 @@
 import { SologApiError, getSologErrorMessageFromUnknown } from '../errors'
 
+export type CashierV4ErrorOutcome = 'known_rejection' | 'uncertain' | 'in_progress' | 'conflict'
+
 export interface CashierV4ErrorPolicy {
   code: string | null
   message: string
+  outcome: CashierV4ErrorOutcome
   retryable: boolean
   requiresRefresh: boolean
   sessionInvalid: boolean
@@ -38,8 +41,14 @@ const policies: Record<string, { message: string; retryable?: boolean; requiresR
 export function getCashierV4ErrorPolicy(error: unknown): CashierV4ErrorPolicy {
   const code = error instanceof SologApiError ? error.code : null
   const policy = code ? policies[code] : undefined
+  const clientUncertain = code === 'SOLOG_INVALID_CONTRACT_RESPONSE' || code === 'SOLOG_EMPTY_RESPONSE' ||
+    code === 'SOLOG_UNKNOWN_ERROR' || code === 'SOLOG_CLIENT_NOT_CONFIGURED'
+  const outcome: CashierV4ErrorOutcome = code === 'SOLOG_IDEMPOTENCY_CONFLICT' ? 'conflict'
+    : code === 'SOLOG_OPERATION_IN_PROGRESS' ? 'in_progress'
+    : error instanceof SologApiError && !clientUncertain ? 'known_rejection'
+    : 'uncertain'
   return {
-    code, message: policy?.message ?? getSologErrorMessageFromUnknown(error),
+    code, message: policy?.message ?? getSologErrorMessageFromUnknown(error), outcome,
     retryable: policy?.retryable ?? false, requiresRefresh: policy?.requiresRefresh ?? false,
     sessionInvalid: policy?.sessionInvalid ?? false, userFeedback: true, regenerateOperationId: false,
   }
