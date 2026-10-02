@@ -238,6 +238,21 @@ export class CashierV4DraftStorage {
     // Explicit destructive path: bypass write()'s normal prepared-operation preservation guard.
     this.storage.setItem(cashierV4DraftStorageKey(scope), JSON.stringify(record))
   }
+  cleanupConfirmedTerminal(scope: CashierV4DraftScope) {
+    const record = this.read(scope)
+    check(!record.finished)
+    if (record.prepared) {
+      check(record.prepared.status === 'rejected' && record.prepared.response === null)
+    }
+    record.normal = []
+    record.recount = []
+    record.prepared = null
+    record.delivery_state = null
+    record.issue = null
+    record.finished = true
+    validateCashierV4SessionDrafts(record)
+    this.storage.setItem(cashierV4DraftStorageKey(scope), JSON.stringify(record))
+  }
   hasPending(identity: Pick<CashierV4DraftScope, 'usuario_id' | 'sede_id' | 'dispositivo_id'>, conteoId: string) {
     return this.sessions(identity).some(record => record.scope.conteo_id === conteoId &&
       (record.normal.length > 0 || record.recount.length > 0 || record.prepared !== null))
