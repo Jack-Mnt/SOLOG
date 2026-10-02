@@ -27,6 +27,23 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
   const { state } = useCashierV4()
   const local = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot, runtime.getSnapshot)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const confirmRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!confirmDiscard) return
+    const previousFocus = document.activeElement as HTMLElement | null
+    const dialog = confirmRef.current
+    dialog?.querySelector<HTMLElement>('button')?.focus()
+    const keys = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setConfirmDiscard(false); return }
+      if (event.key !== 'Tab' || !dialog) return
+      const nodes = [...dialog.querySelectorAll<HTMLElement>('button:not(:disabled),[tabindex="0"]')]
+      const first = nodes[0], last = nodes.at(-1)
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+    }
+    window.addEventListener('keydown', keys)
+    return () => { window.removeEventListener('keydown', keys); previousFocus?.focus() }
+  }, [confirmDiscard])
   const closeId = local.closeConteoId
   const lifecyclePresent = Boolean(closeId && (state.panel_state?.session.id === closeId ||
     state.recovery_sessions.some(session => session.id === closeId)))
@@ -68,7 +85,7 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
     </div>
   </div>
   {confirmDiscard ? <div className="cajero-confirmation-backdrop">
-    <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-labelledby="cajero-descartar-title">
+    <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-labelledby="cajero-descartar-title" ref={confirmRef}>
       <h2 id="cajero-descartar-title">Descartar conteos pendientes</h2>
       <p>Esta acción eliminará los conteos locales que no pudieron guardarse y cerrará la sesión cuando el estado del backend lo permita.</p>
       <div className="cajero-confirmation__actions">
