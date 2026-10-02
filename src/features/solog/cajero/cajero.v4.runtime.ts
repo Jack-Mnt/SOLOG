@@ -46,6 +46,16 @@ export class CashierV4Runtime {
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   getSnapshot = () => this.snapshot
   get requiresRefresh() { return this.sessionDenied }
+  get canDiscardClose() {
+    const conteoId = this.snapshot.closeConteoId
+    if (!conteoId || this.snapshot.closeState !== 'failed_known' || this.snapshot.busy || this.sessionDenied ||
+        getCashierV4ErrorPolicy(this.snapshot.error).requiresRefresh) return false
+    const scope = this.coordinator.sessionScope(conteoId)
+    if (!scope) return false
+    const record = this.storage.read(scope)
+    if (record.prepared && (record.prepared.action === 'finish' || record.prepared.status !== 'rejected')) return false
+    return record.finished || canCashierV4DeliverPendingForSession(this.store.getSnapshot(), conteoId, this.serverNow())
+  }
   private publish(patch: Partial<typeof this.snapshot> = {}) {
     this.snapshot = { ...this.snapshot, ...patch, revision: this.snapshot.revision + 1 }
     this.listeners.forEach(listener => listener())
@@ -262,6 +272,7 @@ export class CashierV4Runtime {
   }
   discardAndFinishRecovery = async () => {
     if (this.sessionDenied) throw new Error('Actualiza el panel antes de descartar conteos.')
+    if (!this.canDiscardClose) throw new Error('Los conteos no pueden descartarse en este estado.')
     const conteoId = this.snapshot.closeConteoId
     if (!conteoId || this.snapshot.closeState !== 'failed_known') throw new Error('Los conteos no pueden descartarse en este estado.')
     const scope = this.coordinator.sessionScope(conteoId)
@@ -288,14 +299,13 @@ export class CashierV4Runtime {
     if (this.sessionDenied) throw new Error('Actualiza el panel antes de limpiar datos locales.')
     const conteoId = this.snapshot.closeConteoId
     if (!conteoId) throw new Error('No hay una sesión pendiente para limpiar.')
-    const state = this.store.getSnapshot()
-    if (!state.bootstrap?.device.autorizado || state.panel_state?.session.id === conteoId ||
-        state.recovery_sessions.some(session => session.id === conteoId)) {
-      throw new Error('El backend todavía no confirma que la sesión haya salido del lifecycle operativo.')
-    }
-    const scope = this.coordinator.sessionScope(conteoId)
+    const records = this.snapshot.records.filter(record => record.scope.conteo_id === conteoId)
+    const scope = records.length === 1 ? records[0].scope : null
     if (!scope) throw new Error('No existe un registro local único para esta sesión.')
     const record = this.storage.read(scope)
+    // Absence from bootstrap does not prove a terminal state for this conteo_id.
+    // finished is durable evidence of an authoritative finish response, scoped to this session.
+    if (!record.finished) throw new Error('El backend todavía no confirma el cierre de esta sesión. Los conteos se conservan.')
     if (record.prepared && record.prepared.status !== 'rejected') {
       throw new Error('La operación pendiente debe resolverse antes de limpiar datos locales.')
     }

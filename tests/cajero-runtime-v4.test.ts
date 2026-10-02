@@ -188,6 +188,7 @@ describe('runtime productivo V4', () => {
     expect(markup).toContain('Reintentar envío')
     expect(markup).toContain('Descartar conteos')
     expect(markup).not.toContain('Recovery')
+    expect(markup).not.toContain('Sesión vencida')
     runtime.dispose()
   })
 

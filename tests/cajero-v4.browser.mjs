@@ -15,10 +15,11 @@ const user = { id: ids.user, email: 'cashier@example.test', role: 'authenticated
 const jwt = [{ alg: 'HS256', typ: 'JWT' }, { sub: user.id, aud: 'authenticated', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 }]
   .map(part => Buffer.from(JSON.stringify(part)).toString('base64url')).join('.') + '.test'
 
-async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false, expiredWithDraft = false, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
+async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false, expiredWithDraft = false, expiredWithoutDraft = false, autocloseError = null, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const calls = [], errors = []
-  let startAttempts = 0, finishAttempts = 0
+  let startAttempts = 0, finishAttempts = 0, batchAttempts = 0
+  let confirmedBatch = null
   let b = cashierV4Bootstrap(initial, { next_action: initial === 'pre_session' ? 'coverage' : startAction, ronda: round })
   if (recovery) b = cashierV4Bootstrap('active_recovery', { next_action: 'coverage' })
   if (richCoverage) {
@@ -47,12 +48,19 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
     const delivery = { conteo_id: scope.conteo_id, groups_revision: scope.groups_revision,
       review_queue: panel.review_queue, coverage_queue: panel.coverage_queue, daily_queue: panel.daily_queue,
       kpis: panel.kpis, next_action: panel.next_action }
-    const observation = { kind: 'normal', scope, client_observation_id: ids.observation, grupo_id: ids.coverage,
+    const recount = startAction === 'review'
+    const observation = recount ? { kind: 'recount', scope, detalle_id: ids.detail, grupo_id: ids.review,
       stock_fisico: 10, contado_at: panel.session.iniciado_at }
+      : { kind: 'normal', scope, client_observation_id: ids.observation, grupo_id: ids.coverage,
+        stock_fisico: 10, contado_at: panel.session.iniciado_at }
     const key = 'solog.cashier-v4.session.v1:' + [scope.usuario_id, scope.sede_id, scope.dispositivo_id, scope.conteo_id, scope.groups_revision].join(':')
-    const record = { version: 1, scope, normal: [observation], recount: [], delivery_state: delivery, prepared: null, issue: null, finished: false }
+    const record = { version: 1, scope, normal: recount ? [] : [observation], recount: recount ? [observation] : [], delivery_state: delivery, prepared: null, issue: null, finished: false }
     await context.addInitScript(({ key, record }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(record)) }, { key, record })
     b.server_now = new Date(Date.parse(panel.session.expira_at) + 1000).toISOString()
+    b.generated_at = b.server_now
+  }
+  if (expiredWithoutDraft) {
+    b.server_now = new Date(Date.parse(b.panel_state.session.expira_at) + 1000).toISOString()
     b.generated_at = b.server_now
   }
   await context.route('**/*', async route => {
@@ -76,6 +84,13 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
       }] })
     assert.equal(rpc, 'rpc_solog_cashier_mutate_v4')
     const action = body.p_action, payload = body.p_payload
+    if (expiredWithDraft || expiredWithoutDraft) {
+      const localRecord = await page.evaluate(conteoId => Object.keys(localStorage)
+        .filter(key => key.startsWith('solog.cashier-v4.session.v1:'))
+        .map(key => JSON.parse(localStorage.getItem(key))).find(record => record.scope.conteo_id === conteoId), payload.conteo_id)
+      assert.equal(localRecord.prepared.operation_id, payload.operation_id, 'Operación persistida antes del RPC')
+      assert.equal(localRecord.scope.groups_revision, payload.expected_groups_revision)
+    }
     if (action === 'start') {
       startAttempts++
       if (startRefreshError && startAttempts === 1) return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 'P0001', message: 'SOLOG_STOCK_EXPIRED', details: '', hint: '' }) })
@@ -89,9 +104,19 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
     result.conteo_id = payload.conteo_id
     if (action === 'finish') {
       if (finishFailure && ++finishAttempts === 1) return route.abort('timedout')
-      if (payload.conteo_id === ids.recovery) b.recovery_sessions = []
+      if (payload.conteo_id === ids.recovery) {
+        const session = b.recovery_sessions.find(session => session.id === payload.conteo_id)
+        result.session_capability.expira_at = session.expira_at
+        result.session_capability.recovery_until = session.recovery_until
+        b.recovery_sessions = []
+      }
       else b = cashierV4Bootstrap('pre_session', { next_action: 'coverage', ronda: round })
       return reply(result)
+    }
+    batchAttempts++
+    if (confirmedBatch) return reply({ ...confirmedBatch, replay: true })
+    if (autocloseError && autocloseError !== 'timeout' && batchAttempts === 1) {
+      return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 'P0001', message: autocloseError, details: '', hint: '' }) })
     }
     const isRecovery = payload.conteo_id === ids.recovery
     const cap = isRecovery ? b.recovery_sessions[0].session_capability : b.panel_state.session_capability
@@ -115,6 +140,10 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
       const d = result.panel_delta
       b.panel_state = { ...b.panel_state, groups: b.panel_state.groups.map(g => ({ ...g, ...d.groups_patch.find(p => p.grupo_id === g.grupo_id) })),
         review_queue: d.review_queue, coverage_queue: d.coverage_queue, daily_queue: d.daily_queue, kpis: d.kpis, next_action: d.next_action }
+    }
+    if (autocloseError === 'timeout' && batchAttempts === 1) {
+      confirmedBatch = structuredClone(result)
+      return route.abort('timedout') // Backend applied; response lost. Retry returns its exact replay.
     }
     return reply(result)
   })
@@ -148,7 +177,88 @@ async function capture(page, review = false, daily = false) {
   if (!review) await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
 }
 const nav = page => page.getByRole('navigation', { name: 'Panel Cajero' })
+const localRecords = page => page.evaluate(() => Object.keys(localStorage)
+  .filter(key => key.startsWith('solog.cashier-v4.session.v1:')).map(key => JSON.parse(localStorage.getItem(key))))
+const noTechnicalLifecycle = async page => {
+  assert.doesNotMatch(await page.locator('body').innerText(), /Recovery|Sesión vencida/i)
+}
+const mutations = calls => calls.filter(call => call.rpc === 'rpc_solog_cashier_mutate_v4')
 try {
+  await scenario({ initial: 'active', expiredWithoutDraft: true }, async (page, calls) => {
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
+    assert.deepEqual(mutations(calls).map(call => call.body.p_action), ['finish'])
+    const records = await localRecords(page)
+    assert.equal(records.find(record => record.scope.conteo_id === ids.session).finished, true)
+    assert.equal(await nav(page).getByRole('button', { name: 'Conteo', exact: true }).isDisabled(), true)
+    await noTechnicalLifecycle(page)
+    console.log('PASS A expiry sin drafts: un finish, sin batch, Inicio y cleanup')
+  })
+  await scenario({ initial: 'active', expiredWithDraft: true, startAction: 'review' }, async (page, calls) => {
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
+    const sent = mutations(calls)
+    assert.deepEqual(sent.map(call => call.body.p_action), ['recount_save_batch', 'finish'])
+    assert.deepEqual(sent[0].body.p_payload.items, [{ detalle_id: ids.detail, stock_fisico: 10, contado_at: cashierV4Panel().session.iniciado_at }])
+    assert.equal(sent[0].body.p_payload.conteo_id, ids.session)
+    assert.equal(sent[0].body.p_payload.expected_groups_revision, 7)
+    await noTechnicalLifecycle(page)
+    console.log('PASS B recount pre-expiry: payload original y finish automático')
+  })
+  for (const error of ['timeout', 'SOLOG_OPERATION_IN_PROGRESS']) {
+    await scenario({ initial: 'active', expiredWithDraft: true, autocloseError: error }, async (page, calls) => {
+      await page.getByText('Estamos verificando si el último envío fue recibido.', { exact: true }).waitFor()
+      const before = await localRecords(page), prepared = before[0].prepared
+      assert.equal(prepared.status, error === 'timeout' ? 'uncertain' : 'in_progress')
+      assert.equal(await page.getByRole('button', { name: 'Descartar conteos', exact: true }).count(), 0)
+      assert.equal(mutations(calls).some(call => call.body.p_action === 'finish'), false)
+      if (error === 'timeout') {
+        await page.reload()
+        await page.getByText('Estamos verificando si el último envío fue recibido.', { exact: true }).waitFor()
+        assert.deepEqual((await localRecords(page))[0].prepared, prepared)
+        assert.deepEqual((await localRecords(page))[0].normal, before[0].normal)
+        assert.equal(mutations(calls).length, 1, 'Reload no crea un retry automático')
+      }
+      await page.getByRole('button', { name: 'Reintentar', exact: true }).click()
+      await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
+      const sent = mutations(calls)
+      assert.deepEqual(sent.map(call => call.body.p_action), ['save_batch', 'save_batch', 'finish'])
+      assert.deepEqual(sent[1].body.p_payload, sent[0].body.p_payload)
+      assert.equal((await localRecords(page))[0].normal.length, 0)
+      assert.equal((await localRecords(page))[0].finished, true)
+      await noTechnicalLifecycle(page)
+      console.log(`PASS C/D ${error}: evidencia, retry exacto y un finish confirmado`)
+    })
+  }
+  await scenario({ initial: 'active', expiredWithDraft: true, autocloseError: 'SOLOG_RECOUNT_REQUIRES_PHYSICAL_RECOUNT' }, async (page, calls) => {
+    await page.getByRole('button', { name: 'Descartar conteos', exact: true }).waitFor()
+    await page.getByText('Envío pendiente', { exact: true }).waitFor()
+    assert.equal(await page.getByRole('button', { name: 'Reintentar envío', exact: true }).isVisible(), true)
+    const before = await localRecords(page), count = mutations(calls).length
+    await page.getByRole('button', { name: 'Descartar conteos', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Descartar conteos pendientes' })
+    await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click()
+    assert.deepEqual(await localRecords(page), before)
+    assert.equal(mutations(calls).length, count)
+    await page.getByRole('button', { name: 'Descartar conteos', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Descartar', exact: true }).click()
+    await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
+    assert.deepEqual(mutations(calls).map(call => call.body.p_action), ['save_batch', 'finish'])
+    const record = (await localRecords(page))[0]
+    assert.equal(record.finished, true); assert.equal(record.normal.length, 0)
+    await noTechnicalLifecycle(page)
+    console.log('PASS E rechazo definitivo: Cancelar conserva, Descartar confirmado → finish')
+  })
+  for (const code of ['SOLOG_IDEMPOTENCY_CONFLICT', 'SOLOG_SESSION_DELIVERY_NOT_ALLOWED']) {
+    await scenario({ initial: 'active', expiredWithDraft: true, autocloseError: code }, async (page, calls) => {
+      await page.getByRole('alert').first().waitFor()
+      assert.equal(await page.getByRole('button', { name: 'Descartar conteos', exact: true }).count(), 0)
+      const records = await localRecords(page)
+      assert.equal(records[0].normal.length, 1)
+      assert.equal(records[0].prepared.operation_id, mutations(calls)[0].body.p_payload.operation_id)
+      assert.equal(mutations(calls).length, 1)
+      await noTechnicalLifecycle(page)
+      console.log(`PASS E/conflicto ${code}: sin descarte ni pérdida de evidencia`)
+    })
+  }
   await scenario({ initial: 'active' }, async (page, calls) => {
     await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
     await page.getByRole('button', { name: /Abarrotes.*pendiente/ }).click()

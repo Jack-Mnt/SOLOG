@@ -240,7 +240,7 @@ export class CashierV4DraftStorage {
   }
   cleanupConfirmedTerminal(scope: CashierV4DraftScope) {
     const record = this.read(scope)
-    check(!record.finished)
+    check(record.finished)
     if (record.prepared) {
       check(record.prepared.status === 'rejected' && record.prepared.response === null)
     }

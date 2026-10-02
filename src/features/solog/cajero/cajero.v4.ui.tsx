@@ -80,8 +80,8 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
         <RefreshCw size={18} aria-hidden="true" /> Actualizar estado</button>
         : lifecyclePresent ? <button className="button button--secondary" disabled={local.busy} onClick={retry} type="button">
           <RefreshCw size={18} aria-hidden="true" /> Reintentar envío</button> : null}
-      <button className="button button--danger" disabled={local.busy || runtime.requiresRefresh} onClick={() => setConfirmDiscard(true)} type="button">
-        <Trash2 size={18} aria-hidden="true" /> Descartar conteos</button>
+      {runtime.canDiscardClose ? <button className="button button--danger" disabled={local.busy} onClick={() => setConfirmDiscard(true)} type="button">
+        <Trash2 size={18} aria-hidden="true" /> Descartar conteos</button> : null}
     </div>
   </div>
   {confirmDiscard ? <div className="cajero-confirmation-backdrop">
@@ -136,10 +136,12 @@ function CajeroV4Header({ runtime, onLogout }: { runtime: CashierV4Runtime; onLo
     return () => { window.removeEventListener('keydown', keys); previousFocus?.focus() }
   }, [confirmLogout])
   const stock = state.stock
+  const session = state.panel_state?.session
+  const visualSession = session && now < Date.parse(session.expira_at) ? session : null
   // Shared visual formatter only; operational permission continues to come from V4 capability.
   const presentation = getCajeroStockPresentation({ snapshot_at: stock?.capturado_at ?? null,
     snapshot_expira_at: stock?.snapshot_expira_at ?? null, disponible: Boolean(stock?.snapshot_id),
-    vigente: Boolean(stock?.snapshot_id && now < Date.parse(stock.snapshot_expira_at ?? '')) }, state.panel_state?.session ?? null, now)
+    vigente: Boolean(stock?.snapshot_id && now < Date.parse(stock.snapshot_expira_at ?? '')) }, visualSession, now)
   return <header className="cajero-header"><div className="cajero-header__topline">
     <button aria-label="Ir a Inicio" className="cajero-header__brand" onClick={() => navigateTo('/cajero')} type="button"><img alt="SOLOG" src="/Logo_SOLOG.png" /></button>
     <strong className="cajero-header__site">PR {b.site.nombre}</strong>
