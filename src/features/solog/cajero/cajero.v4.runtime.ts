@@ -291,13 +291,13 @@ export class CashierV4Runtime {
     this.hydrate()
     if (this.snapshot.error) throw this.snapshot.error
     if (this.snapshot.preparedStart) throw new Error('Resuelve primero el inicio pendiente antes de salir.')
-    // Recoveries remain strict blockers: they cannot be finalized by the active session and
-    // their local work must be resolved before authentication is closed.
-    for (const record of this.recoveryPending) await this.deliver(record.scope)
-    // The active session has different semantics: coordinator.finish() only blocks drafts
-    // that are still deliverable under the authoritative queues. Residual drafts that fell
-    // out of those queues are preserved, marked under the finished record, and must not
-    // make logout impossible.
+    // Recovery is technical only: logout resolves and closes every own recovery before auth.
+    for (const recovery of [...this.store.getSnapshot().recovery_sessions]) {
+      const scope = this.coordinator.sessionScope(recovery.id)
+      if (!scope) throw new Error('La sesión en recuperación no tiene un scope local suficiente para cerrarse de forma segura.')
+      await this.finishScopeWork(scope, false)
+    }
+    // Active keeps the same safety rule: deliverable drafts are flushed before finish.
     if (this.store.getSnapshot().panel_state?.session.estado === 'activo') await this.finishWork(false)
     await onLogout()
   })
