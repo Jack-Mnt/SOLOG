@@ -258,7 +258,10 @@ export class CashierV4DraftCoordinator {
       if (record.prepared && record.prepared.action !== 'finish') throw new Error('Queda una operación de captura preparada.')
       if (!record.prepared?.response) {
         const blocked = this.deliveryBlocked(scope)
-        if (blocked) { this.stop(record, blocked); throw new Error(blocked) }
+        if (blocked) {
+          this.stop(record, blocked)
+          throw new SologApiError(blocked === 'delivery_not_allowed' ? 'SOLOG_SESSION_DELIVERY_NOT_ALLOWED' : 'SOLOG_SESSION_NOT_FOUND')
+        }
       }
       if (!record.prepared) {
         const delivery = record.delivery_state
