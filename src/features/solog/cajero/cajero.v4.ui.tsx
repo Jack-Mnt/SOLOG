@@ -61,8 +61,8 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
     <div className="cajero-close-notice__actions">
       {runtime.requiresRefresh ? <button className="button button--secondary" disabled={local.busy || state.loading} onClick={refresh} type="button">
         <RefreshCw size={18} aria-hidden="true" /> Actualizar estado</button>
-        : <button className="button button--secondary" disabled={local.busy} onClick={retry} type="button">
-          <RefreshCw size={18} aria-hidden="true" /> Reintentar envío</button>}
+        : lifecyclePresent ? <button className="button button--secondary" disabled={local.busy} onClick={retry} type="button">
+          <RefreshCw size={18} aria-hidden="true" /> Reintentar envío</button> : null}
       <button className="button button--danger" disabled={local.busy || runtime.requiresRefresh} onClick={() => setConfirmDiscard(true)} type="button">
         <Trash2 size={18} aria-hidden="true" /> Descartar conteos</button>
     </div>
