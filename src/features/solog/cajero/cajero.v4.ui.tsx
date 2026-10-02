@@ -300,6 +300,7 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
   const allowed = runtime.canCapture(action)
   const activeScope = runtime.coordinator.activeScope(), record = runtime.getSnapshot().records.find(item =>
     item.scope.conteo_id === activeScope?.conteo_id && item.scope.groups_revision === activeScope.groups_revision) ?? null
+  const countedGroupIds = new Set(record?.normal.map(item => item.grupo_id) ?? [])
   return <section className={`cajero-module cajero-operational${action === 'review' ? ' cajero-review' : ''}`}>
     <div className={`cajero-module__heading cajero-operational__heading${action === 'review' ? '' : ' cajero-operational__heading--with-action'}`}><div><h1>{title}</h1><p>Registra la realidad</p>
       {action === 'daily' ? <p>{panel?.kpis.daily_pending ?? 0} pendientes</p> : null}</div>
@@ -316,10 +317,12 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
           return <button key={queueItem.detalle_id} disabled={!allowed} aria-label={`Revisar ${group.nombre}`} onClick={() => setReviewGroup(group.grupo_id)} type="button">
             <strong>{group.nombre}</strong><span>{formatCajeroDifference(queueItem.ultima_diferencia)}</span><span>{formatCajeroDifference(draft ? draft.stock_fisico - group.stock_teorico : null)}</span><span>›</span></button>
         })}</div></div></> : <section className="cajero-selection-level"><h2>Categorías</h2><div className="cajero-selection-grid">
-      {categories.map(item => { const pending = visible.filter(group => group.categoria_id === item.categoria_id).length
-        if (!pending) return null
+      {categories.map(item => {
+        const categoryGroups = visible.filter(group => group.categoria_id === item.categoria_id)
+        if (!categoryGroups.length) return null
+        const completed = categoryGroups.filter(group => countedGroupIds.has(group.grupo_id)).length
         const Icon = getCajeroCategoryIcon(item.categoria)
-        return <button key={item.categoria_id} disabled={!allowed} onClick={() => setCategory(item.categoria_id)} type="button"><Icon size={24} aria-hidden="true" /><span><strong>{item.categoria}</strong><small>{pending} pendientes</small></span></button>
+        return <button key={item.categoria_id} disabled={!allowed} onClick={() => setCategory(item.categoria_id)} type="button"><Icon size={24} aria-hidden="true" /><span><strong>{item.categoria}</strong><small>{completed}/{categoryGroups.length} contados</small></span></button>
       })}</div></section>}
     {(category || reviewGroup) && modalGroups.length > 0 ? <Capture key={`${panel?.session.id}:${category ?? reviewGroup}`} runtime={runtime} action={action} groups={modalGroups} title={selectedCategory?.categoria ?? 'Revisar'} initialGroupId={reviewGroup ?? undefined}
       onClose={() => { setCategory(null); setReviewGroup(null) }} /> : null}
