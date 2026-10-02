@@ -44,5 +44,7 @@ const navigationItems: ReadonlyArray<{ route: CashierRoute; label: string }> = [
 ]
 
 export function selectCashierV4BottomNavigation(state: CashierV4State, now: number) {
-  return navigationItems.map(item => ({ ...item, available: getCashierV4RouteAccess(state, item.route, now).allowed }))
+  return navigationItems
+    .map(item => ({ ...item, available: getCashierV4RouteAccess(state, item.route, now).allowed }))
+    .filter(item => item.available)
 }
