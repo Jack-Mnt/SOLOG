@@ -46,7 +46,7 @@ describe('Cajero 13.4: navegación autoritativa', () => {
       allowed: false, redirect: '/cajero', reason: 'capture_unavailable',
     })
     expect(getCashierV4RouteAccess(state, '/cajero', nowFor(state)).allowed).toBe(true)
-    expect(selectCashierV4BottomNavigation(state, nowFor(state)).filter(item => item.available).map(item => item.route)).toEqual(['/cajero'])
+    expect(selectCashierV4BottomNavigation(state, nowFor(state)).map(item => item.route)).toEqual(['/cajero', '/cajero/historial'])
   })
   test('active + recovery solo usa panel active, aunque recovery tenga review y otra revisión', () => {
     const state = stateFor('active_recovery', { next_action: 'daily' })
@@ -55,7 +55,7 @@ describe('Cajero 13.4: navegación autoritativa', () => {
       [a]: { ...state.delivery_state_by_session[state.panel_state!.session.id]!, conteo_id: a, groups_revision: 999, next_action: 'review' } }
     expect(selectCashierV4CaptureDestination(state, nowFor(state))).toBe('/cajero/diario')
     expect(getCashierV4RouteAccess(state, '/cajero/revisar', nowFor(state))).toMatchObject({ allowed: false, redirect: '/cajero/diario' })
-    expect(selectCashierV4BottomNavigation(state, nowFor(state)).filter(item => item.available).map(item => item.route)).toEqual([
+    expect(selectCashierV4BottomNavigation(state, nowFor(state)).map(item => item.route)).toEqual([
       '/cajero', '/cajero/diario', '/cajero/historial',
     ])
   })
@@ -72,33 +72,20 @@ describe('Cajero 13.4: navegación autoritativa', () => {
     const start = parseCashierV4Mutation(cashierV4Mutation('start', { next_action }), 'start')
     expect(cashierV4AfterStartDestination(start)).toBe(selectCashierV4Destination(stateFor('active', { next_action })))
   })
-  test('Historial usa coverage_pending=0, permanece read-only y no sustituye prioridad review', () => {
-    const state = stateFor('active', { next_action: 'review' })
-    const panel = state.panel_state!
-    panel.kpis.coverage_pending = 0
-    panel.kpis.coverage_counted = panel.kpis.coverage_total
-    panel.kpis.coverage_percent = 100
-    panel.kpis.coverage_queue_pending = 0
-    panel.coverage_queue = []
-    panel.groups.find(group => group.accion === 'coverage')!.accion = 'none'
-    expect(panel.kpis.review_pending).toBeGreaterThan(0)
+  test.each(['pre_session', 'active', 'recovery'] as const)('Historial siempre accesible en %s e independiente de cobertura/prioridad', kind => {
+    const state = stateFor(kind, { next_action: kind === 'active' ? 'review' : 'daily' })
+    const summary = state.panel_state ?? state.pre_session_summary
+    if (summary) summary.kpis.coverage_pending = Math.max(1, summary.kpis.coverage_pending)
     expect(selectCashierV4HistoryAvailable(state)).toBe(true)
     expect(getCashierV4RouteAccess(state, '/cajero/historial', nowFor(state))).toEqual({ allowed: true, route: '/cajero/historial' })
-    expect(selectCashierV4CaptureDestination(state, nowFor(state))).toBe('/cajero/revisar')
-  })
-  test('Historial pre-session completo no habilita captura; porcentaje solo no habilita Historial', () => {
-    const state = stateFor('pre_session', { next_action: 'daily' })
-    expect(selectCashierV4HistoryAvailable(state)).toBe(true)
-    expect(getCashierV4RouteAccess(state, '/cajero/historial', nowFor(state)).allowed).toBe(true)
-    expect(getCashierV4RouteAccess(state, '/cajero/diario', nowFor(state)).allowed).toBe(false)
-    state.pre_session_summary!.kpis.coverage_pending = 1
-    expect(getCashierV4RouteAccess(state, '/cajero/historial', nowFor(state))).toEqual({ allowed: false, redirect: '/cajero', reason: 'history_unavailable' })
+    if (kind === 'active') expect(selectCashierV4CaptureDestination(state, nowFor(state))).toBe('/cajero/revisar')
+    else expect(getCashierV4RouteAccess(state, '/cajero/diario', nowFor(state)).allowed).toBe(false)
   })
   test('waiting snapshot deja Inicio disponible y no elige coverage artificialmente', () => {
     const state = stateFor('active', { next_action: 'none' })
     expect(selectCashierV4WaitingForSnapshot(state)).toBe(true)
     expect(selectCashierV4CaptureDestination(state, nowFor(state))).toBe('/cajero')
-    expect(selectCashierV4BottomNavigation(state, nowFor(state)).filter(item => item.available).map(item => item.route)).toEqual(['/cajero'])
+    expect(selectCashierV4BottomNavigation(state, nowFor(state)).map(item => item.route)).toEqual(['/cajero', '/cajero/historial'])
   })
   test('capability negada, expiración y panel recovery restringen rutas de nueva captura', () => {
     const state = stateFor()
@@ -108,12 +95,12 @@ describe('Cajero 13.4: navegación autoritativa', () => {
     const recovery = stateFor('active', { estado: 'recovery' })
     expect(selectCashierV4CaptureDestination(recovery, nowFor(recovery))).toBe('/cajero')
   })
-  test('navegación inferior conserva labels/orden actuales y aplica la misma política de acceso', () => {
+  test('navegación inferior muestra solo Inicio, trabajo disponible e Historial', () => {
     const state = stateFor('active', { next_action: 'coverage' })
     const items = selectCashierV4BottomNavigation(state, nowFor(state))
-    expect(items.map(item => item.label)).toEqual(['Inicio', 'Conteo', 'Conteo diario', 'Revisar', 'Historial'])
-    expect(items.map(item => item.available)).toEqual([true, true, false, false, false])
-    items.forEach(item => expect(item.available).toBe(getCashierV4RouteAccess(state, item.route, nowFor(state)).allowed))
+    expect(items.map(item => item.label)).toEqual(['Inicio', 'Conteo', 'Historial'])
+    expect(items.map(item => item.available)).toEqual([true, true, true])
+    items.forEach(item => expect(getCashierV4RouteAccess(state, item.route, nowFor(state)).allowed).toBe(true))
   })
   test('legacy, queues y grupos incidentales no sustituyen next_action', () => {
     const state = stateFor('active', { next_action: 'none' })
@@ -122,7 +109,7 @@ describe('Cajero 13.4: navegación autoritativa', () => {
     state.panel_state!.kpis.coverage_percent = 100
     state.panel_state!.groups[0].accion = 'coverage'
     expect(selectCashierV4CaptureDestination(state, nowFor(state))).toBe('/cajero')
-    expect(selectCashierV4HistoryAvailable(state)).toBe(false)
+    expect(selectCashierV4HistoryAvailable(state)).toBe(true)
     expect(getCashierV4RouteAccess(state, '/cajero/desconocido', nowFor(state))).toMatchObject({ allowed: false, redirect: '/cajero', reason: 'unknown_route' })
   })
 })
