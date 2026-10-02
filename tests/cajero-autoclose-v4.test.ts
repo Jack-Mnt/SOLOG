@@ -3,7 +3,7 @@ import { SologApiError } from '../src/features/solog/errors'
 import type { CashierV4Rpc } from '../src/features/solog/cajero/cajero.v4.api'
 import { CashierV4Runtime } from '../src/features/solog/cajero/cajero.v4.runtime'
 import { draftHarness, uuidFor } from './fixtures/cashier-v4-drafts'
-import { cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
+import { cashierV4Bootstrap, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 
 function activeAutocloseHarness(withDraft = false, responder?: CashierV4Rpc) {
   const h = draftHarness('coverage')
@@ -39,6 +39,19 @@ describe('Cajero V4 — Fase 1 autocierre y recovery transparente', () => {
     expect(h.requests.map(item => item.action)).toEqual(['save_batch', 'finish'])
     expect(h.storage.read(h.scope).normal).toEqual([])
     expect(h.storage.read(h.scope).finished).toBe(true)
+  })
+
+  test('recovery propia bloquea un nuevo start aunque no tenga drafts pendientes', async () => {
+    const h = draftHarness('none')
+    const runtime = new CashierV4Runtime(h.store, h.storage, undefined, () => uuidFor(725), () => h.now)
+    const recovery = cashierV4Bootstrap('recovery', { next_action: 'none' })
+    recovery.start_capability = { allowed: true, reason: null }
+    h.store.acceptBootstrap(recovery)
+    runtime.hydrate()
+
+    expect(runtime.pendingCount).toBe(0)
+    expect(runtime.hasBlockingRecovery).toBe(true)
+    await expect(runtime.start()).rejects.toThrow('pendientes anteriores')
   })
 
   test('recovery restaurada tras refresh usa scope persistido y puede cerrar sin panel propio', async () => {
