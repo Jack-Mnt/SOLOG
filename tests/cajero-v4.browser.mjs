@@ -262,7 +262,7 @@ try {
   }
   await scenario({ initial: 'active' }, async (page, calls) => {
     await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
-    await page.getByRole('button', { name: /Abarrotes.*pendiente/ }).click()
+    await page.getByRole('button', { name: /Abarrotes.*0\/1 contados/ }).click()
     await page.getByRole('dialog').getByRole('button', { name: /Grupo coverage/ }).click()
     const dialog = page.getByRole('dialog'), before = calls.length
     assert.deepEqual(await dialog.locator('.cajero-calculator__keys button').allTextContents(),
@@ -280,6 +280,13 @@ try {
     assert.equal(await result.textContent(), '13')
     await page.keyboard.press('Delete'); await page.keyboard.type('10')
     await button('Continuar').click()
+    await dialog.getByText('1/1 contados', { exact: true }).waitFor()
+    await dialog.getByLabel('100% registrado').waitFor()
+    assert.deepEqual(await dialog.locator('.cajero-capture-summary__head span').allTextContents(), ['Nombre', 'Stock TumiSoft', 'Diferencia', ''])
+    const capturedRow = dialog.locator('.cajero-capture-summary__rows button').first()
+    assert.equal(await capturedRow.locator('span').nth(1).textContent(), '0')
+    assert.equal(await capturedRow.locator('span').nth(1).getAttribute('class'), 'is-zero')
+    assert.equal(await dialog.getByText('Por enviar', { exact: true }).count(), 0)
     await dialog.getByRole('button', { name: /Grupo coverage/ }).click()
     assert.equal(await result.textContent(), '10')
     await button('Cerrar').click()
@@ -425,8 +432,13 @@ try {
     await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
     await page.getByRole('button', { name: /Stock positivo.*2 pendientes/ }).waitFor()
     await page.getByRole('button', { name: /Abarrotes.*0\/2 contados/ }).click()
-    const names = await page.getByRole('dialog').locator('.cajero-capture-summary__rows strong').allTextContents()
+    const captureDialog = page.getByRole('dialog')
+    await captureDialog.getByText('0/2 contados', { exact: true }).waitFor()
+    await captureDialog.getByLabel('0% registrado').waitFor()
+    assert.deepEqual(await captureDialog.locator('.cajero-capture-summary__head span').allTextContents(), ['Nombre', 'Stock TumiSoft', 'Diferencia', ''])
+    const names = await captureDialog.locator('.cajero-capture-summary__rows strong').allTextContents()
     assert.deepEqual(names, ['Grupo adicional 0', 'Grupo coverage'])
+    assert.equal(await captureDialog.getByText('Por enviar', { exact: true }).count(), 0)
     if (process.env.SOLOG_V4_SCREENSHOT) await page.screenshot({ path: process.env.SOLOG_V4_SCREENSHOT + '.capture.png', fullPage: true })
     await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
     for (const label of ['Stock 0', 'Stock negativo']) {
