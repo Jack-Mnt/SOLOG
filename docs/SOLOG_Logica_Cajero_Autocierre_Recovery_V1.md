@@ -492,3 +492,120 @@ Para la implementación de esta mejora, la fuente primaria específica será:
 `docs/SOLOG_Logica_Cajero_Autocierre_Recovery_V1.md`
 
 Todo lo no reemplazado por este delta continúa rigiéndose por las fuentes superiores enumeradas en la sección 2.
+
+---
+
+## 21. Precisión aprobada post-preflight — descarte seguro y clasificación de fallos
+
+**Estado:** CONGELADO — DECISIÓN APROBADA
+
+Esta sección prevalece sobre cualquier formulación menos precisa de las secciones 6, 13 y 17 respecto de `Descartar conteos`, lifecycle no operable y clasificación de errores.
+
+### 21.1. Descartar solo cuando sea seguro
+
+`Descartar conteos` solo se habilita cuando se cumplan simultáneamente estas condiciones:
+
+- no existe una operación cuyo resultado sea incierto;
+- no existe una prepared operation ambigua;
+- la sesión sigue presente en el lifecycle autoritativo;
+- el estado vigente permite intentar un cierre seguro.
+
+Al confirmar:
+
+```text
+eliminar únicamente drafts locales descartables de esa sesión
+→ finish explícito de la recovery
+→ confirmar finalizado
+→ liberar sesión
+```
+
+El descarte es destructivo y requiere confirmación explícita.
+
+No debe borrar evidencia de una operación preparada incierta.
+
+### 21.2. Sesión ya no operable
+
+Si backend indica que la sesión ya no admite delivery o `finish`, el frontend no debe fingir un cierre exitoso ni borrar datos locales por asumir que la sesión terminó.
+
+Flujo:
+
+```text
+backend ya no permite operar
+→ refrescar lifecycle autoritativo
+→ comprobar estado real
+```
+
+Si backend confirma:
+
+```text
+finalizado
+OR
+expirado
+```
+
+los residuos locales no entregables pueden limpiarse mediante una acción explícita y segura.
+
+Si backend todavía no confirma un estado terminal:
+
+```text
+NO borrar drafts
+NO borrar prepared operation
+NO declarar sesión cerrada
+```
+
+### 21.3. Clasificación mínima de errores
+
+El preflight confirmó que el contrato V4 actual es suficiente para implementar el autocierre sin una nueva RPC ni un nuevo estado backend.
+
+El frontend debe distinguir al menos:
+
+- rechazo backend explícito y conocido;
+- resultado incierto de transporte/respuesta;
+- `SOLOG_OPERATION_IN_PROGRESS`;
+- `SOLOG_IDEMPOTENCY_CONFLICT`.
+
+Un código `SOLOG_*` realmente devuelto por el RPC demuestra que backend respondió, pero no implica por sí solo que `Descartar` sea seguro. La elegibilidad depende además del lifecycle autoritativo y de que no exista una operación incierta.
+
+Se consideran resultados inciertos, entre otros:
+
+- timeout;
+- fallo de red/transporte;
+- respuesta vacía;
+- respuesta contractual inválida;
+- error desconocido sin código backend autoritativo.
+
+En resultado incierto:
+
+```text
+NO descartar
+NO generar nuevo operation_id
+CONSERVAR prepared operation
+REINTENTAR la misma operación
+```
+
+### 21.4. Casos de aceptación adicionales
+
+#### Descarte seguro
+
+```text
+fallo definitivo
++ sin operación incierta
++ lifecycle permite cierre
+→ usuario confirma Descartar
+→ borrar drafts descartables
+→ finish
+→ finalizado
+```
+
+#### Sesión no operable
+
+```text
+backend rechaza delivery/finish
+→ refrescar lifecycle
+→ finalizado/expirado confirmado
+→ permitir limpiar residuos locales
+
+estado no terminal
+→ conservar drafts y prepared operation
+→ no fingir cierre
+```
