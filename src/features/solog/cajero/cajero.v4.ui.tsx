@@ -109,7 +109,9 @@ function CajeroV4Header({ runtime, onLogout }: { runtime: CashierV4Runtime; onLo
   const { state } = useCashierV4(), b = state.bootstrap!
   const now = Math.max(useCajeroServerClock(runtime.store.serverOffsetMs), runtime.serverNow())
   const [stockOpen, setStockOpen] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const stockRef = useRef<HTMLDivElement>(null)
+  const logoutConfirmRef = useRef<HTMLElement>(null)
   useEffect(() => {
     if (!stockOpen) return
     const outside = (e: PointerEvent) => { if (!stockRef.current?.contains(e.target as Node)) setStockOpen(false) }
@@ -117,6 +119,22 @@ function CajeroV4Header({ runtime, onLogout }: { runtime: CashierV4Runtime; onLo
     window.addEventListener('pointerdown', outside); window.addEventListener('keydown', escape)
     return () => { window.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', escape) }
   }, [stockOpen])
+  useEffect(() => {
+    if (!confirmLogout) return
+    const previousFocus = document.activeElement as HTMLElement | null
+    const dialog = logoutConfirmRef.current
+    dialog?.querySelector<HTMLElement>('button')?.focus()
+    const keys = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setConfirmLogout(false); return }
+      if (event.key !== 'Tab' || !dialog) return
+      const nodes = [...dialog.querySelectorAll<HTMLElement>('button:not(:disabled),[tabindex="0"]')]
+      const first = nodes[0], last = nodes.at(-1)
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+    }
+    window.addEventListener('keydown', keys)
+    return () => { window.removeEventListener('keydown', keys); previousFocus?.focus() }
+  }, [confirmLogout])
   const stock = state.stock
   // Shared visual formatter only; operational permission continues to come from V4 capability.
   const presentation = getCajeroStockPresentation({ snapshot_at: stock?.capturado_at ?? null,
@@ -133,8 +151,23 @@ function CajeroV4Header({ runtime, onLogout }: { runtime: CashierV4Runtime; onLo
         <p>Vigente hasta {clock(stock?.snapshot_expira_at)}</p>
         {state.panel_state ? <p>Sesión hasta {clock(state.panel_state.session.expira_at)}</p> : null}
       </section> : null}</div>
-      <button aria-label="Cerrar sesión" className="cajero-header__logout" disabled={runtime.getSnapshot().busy} onClick={() => void runtime.logoutSafe(onLogout).catch(() => {})} type="button"><LogOut aria-hidden="true" size={21} /><span>Salir</span></button>
-    </div></div></header>
+      <button aria-label="Cerrar sesión" className="cajero-header__logout" disabled={runtime.getSnapshot().busy}
+        onClick={() => state.panel_state?.session.estado === 'activo' ? setConfirmLogout(true) : void runtime.logoutSafe(onLogout).catch(() => {})}
+        type="button"><LogOut aria-hidden="true" size={21} /><span>Salir</span></button>
+    </div></div>
+    {confirmLogout ? <div className="cajero-confirmation-backdrop">
+      <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-labelledby="cajero-logout-title" ref={logoutConfirmRef}>
+        <h2 id="cajero-logout-title">¿Salir del conteo?</h2>
+        <p>Al salir, la sesión de conteo activa se finalizará. Los conteos pendientes se intentarán guardar antes de cerrar sesión.</p>
+        <div className="cajero-confirmation__actions">
+          <button className="button button--secondary" disabled={runtime.getSnapshot().busy} onClick={() => setConfirmLogout(false)} type="button">Cancelar</button>
+          <button className="button button--danger" disabled={runtime.getSnapshot().busy}
+            onClick={() => { setConfirmLogout(false); void runtime.logoutSafe(onLogout).catch(() => {}) }} type="button">
+            <LogOut size={18} aria-hidden="true" /> Salir
+          </button>
+        </div>
+      </section>
+    </div> : null}</header>
 }
 
 export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
