@@ -245,6 +245,7 @@ export class CashierV4Runtime {
     }
   }
   discardAndFinishRecovery = async () => {
+    if (this.sessionDenied) throw new Error('Actualiza el panel antes de descartar conteos.')
     const conteoId = this.snapshot.closeConteoId
     if (!conteoId || this.snapshot.closeState !== 'failed_known') throw new Error('Los conteos no pueden descartarse en este estado.')
     const scope = this.coordinator.sessionScope(conteoId)
