@@ -53,6 +53,15 @@ export class CashierV4DraftCoordinator {
     return { usuario_id: b.identity.id, sede_id: b.site.id, dispositivo_id: b.device.id,
       conteo_id: panel.session.id, groups_revision: panel.basis.groups_revision }
   }
+  sessionScope(conteoId: string): CashierV4DraftScope | null {
+    const active = this.activeScope()
+    if (active?.conteo_id === conteoId) return active
+    const b = this.store.getSnapshot().bootstrap
+    if (!b?.device.id) return null
+    const identity = { usuario_id: b.identity.id, sede_id: b.site.id, dispositivo_id: b.device.id }
+    const matches = this.storage.sessions(identity).filter(record => !record.finished && record.scope.conteo_id === conteoId)
+    return matches.length === 1 ? matches[0].scope : null
+  }
   // Called explicitly or before a command. Refresh never clears persisted session envelopes.
   synchronize(scope: CashierV4DraftScope) {
     this.assertIdentity(scope)
@@ -188,8 +197,9 @@ export class CashierV4DraftCoordinator {
       const current = this.storage.read(record.scope)
       if (current.prepared?.operation_id === p.operation_id) {
         const policy = getCashierV4ErrorPolicy(error)
-        current.prepared.status = policy.code === 'SOLOG_IDEMPOTENCY_CONFLICT' ? 'conflict'
-          : policy.code === 'SOLOG_OPERATION_IN_PROGRESS' ? 'in_progress' : 'uncertain'
+        current.prepared.status = policy.outcome === 'conflict' ? 'conflict'
+          : policy.outcome === 'in_progress' ? 'in_progress'
+          : policy.outcome === 'known_rejection' ? 'rejected' : 'uncertain'
         current.issue = { reason: policy.code ?? 'uncertain_response', message: policy.message, terminal: policy.sessionInvalid || current.prepared.status === 'conflict' }
         this.storage.write(current)
       }
