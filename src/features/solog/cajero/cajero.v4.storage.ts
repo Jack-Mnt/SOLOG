@@ -10,7 +10,7 @@ export type CashierV4StartIdentity = Pick<CashierV4DraftScope, 'usuario_id' | 's
 export interface CashierV4PreparedStart {
   version: 1
   identity: CashierV4StartIdentity
-  prepared_start: { operation_id: string; status: 'ready' | 'uncertain' | 'in_progress' | 'conflict' | 'rejected' }
+  prepared_start: { operation_id: string; status: 'ready' | 'uncertain' | 'in_progress' | 'conflict' }
 }
 export interface CashierV4DraftScope {
   usuario_id: string
@@ -83,7 +83,7 @@ function validatePreparedStart(value: unknown): CashierV4PreparedStart {
   check(Object.keys(identity).sort().join(',') === 'dispositivo_id,sede_id,usuario_id')
   cashierV4StartStorageKey(identity as unknown as CashierV4StartIdentity)
   check(Object.keys(p).sort().join(',') === 'operation_id,status')
-  uuid(p.operation_id); check(['ready', 'uncertain', 'in_progress', 'conflict', 'rejected'].includes(String(p.status)))
+  uuid(p.operation_id); check(['ready', 'uncertain', 'in_progress', 'conflict'].includes(String(p.status)))
   return value as CashierV4PreparedStart
 }
 
