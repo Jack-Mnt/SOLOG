@@ -268,6 +268,25 @@ export class CashierV4Runtime {
       throw error
     }
   }
+  cleanupConfirmedTerminal = () => {
+    if (this.sessionDenied) throw new Error('Actualiza el panel antes de limpiar datos locales.')
+    const conteoId = this.snapshot.closeConteoId
+    if (!conteoId) throw new Error('No hay una sesión pendiente para limpiar.')
+    const state = this.store.getSnapshot()
+    if (!state.bootstrap?.device.autorizado || state.panel_state?.session.id === conteoId ||
+        state.recovery_sessions.some(session => session.id === conteoId)) {
+      throw new Error('El backend todavía no confirma que la sesión haya salido del lifecycle operativo.')
+    }
+    const scope = this.coordinator.sessionScope(conteoId)
+    if (!scope) throw new Error('No existe un registro local único para esta sesión.')
+    const record = this.storage.read(scope)
+    if (record.prepared && record.prepared.status !== 'rejected') {
+      throw new Error('La operación pendiente debe resolverse antes de limpiar datos locales.')
+    }
+    this.storage.cleanupConfirmedTerminal(scope)
+    this.hydrate()
+    this.publish({ closeState: 'finished' })
+  }
   logoutSafe = (onLogout: () => Promise<void>) => this.command(async () => {
     this.hydrate()
     if (this.snapshot.error) throw this.snapshot.error
