@@ -1,4 +1,5 @@
 name: Cajero Inicio 2.1 Validation
+# rerun after SSR-safe stock deep-link fix
 
 on:
   push:
