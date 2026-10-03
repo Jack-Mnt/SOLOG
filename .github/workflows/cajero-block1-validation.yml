@@ -1,5 +1,5 @@
 name: Cajero Block 1 Validation
-# rerun after aligning block-one stale tests
+# final rerun after lint correction
 
 on:
   push:
@@ -44,10 +44,13 @@ jobs:
           bun test "${TEST_FILES[@]}"
 
       - name: Lint
+        if: always()
         run: bun run lint
 
       - name: Build
+        if: always()
         run: bun run build
 
       - name: Diff check
+        if: always()
         run: git diff --check HEAD^ HEAD
