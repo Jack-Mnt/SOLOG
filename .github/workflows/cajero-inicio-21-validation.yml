@@ -1,5 +1,5 @@
 name: Cajero Inicio 2.1 Validation
-# rerun after contract-valid completed coverage fixture
+# final rerun after none-state smoke alignment
 
 on:
   push:
