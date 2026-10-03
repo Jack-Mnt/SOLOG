@@ -29,7 +29,11 @@ async function scenario({ startAction = 'coverage', preSessionAction = 'coverage
     initialKpis.coverage_percent = 100
     initialKpis.coverage_queue_pending = 0
     initialKpis.coverage_blocked_waiting_snapshot = 0
-    if (b.panel_state) b.panel_state.coverage_queue = []
+    if (b.panel_state) {
+      b.panel_state.coverage_queue = []
+      const coverageGroup = b.panel_state.groups.find(group => group.grupo_id === ids.coverage)
+      if (coverageGroup) { coverageGroup.accion = 'none'; coverageGroup.detalle_reconteo_id = null }
+    }
   }
   if (blockedCoverage && initialKpis) {
     initialKpis.coverage_counted = Math.max(0, initialKpis.coverage_total - 1)
