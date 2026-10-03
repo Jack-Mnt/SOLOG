@@ -222,8 +222,8 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
   </section>
 }
 
-function Capture({ runtime, groups, action, title, initialGroupId, onClose }: {
-  runtime: CashierV4Runtime; groups: CashierV4Group[]; action: Exclude<CashierV4NextAction, 'none'>; title: string; initialGroupId?: string; onClose: () => void
+function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNextCategory }: {
+  runtime: CashierV4Runtime; groups: CashierV4Group[]; action: Exclude<CashierV4NextAction, 'none'>; title: string; initialGroupId?: string; onClose: () => void; onNextCategory?: () => void
 }) {
   const titleId = useId(), dialogRef = useRef<HTMLElement>(null), closeRef = useRef(onClose)
   const [selected, setSelected] = useState(initialGroupId ?? null)
@@ -247,6 +247,9 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose }: {
   const difference = group && physical !== null ? physical - group.stock_teorico : null
   const valuation = group && difference !== null ? calculateCajeroValuationPreview(difference, group.precio, group.unidades_por_paquete, group.precio_paquete) : null
   const canCapture = runtime.canCapture(action)
+  const activeIndex = group ? groups.findIndex(item => item.grupo_id === group.grupo_id) : -1
+  const hasInput = expression.trim().length > 0
+  const canNavigateNext = activeIndex >= 0 && (activeIndex < groups.length - 1 || (action !== 'review' && Boolean(onNextCategory)))
   useEffect(() => { closeRef.current = onClose }, [onClose])
   useEffect(() => {
     const previousFocus = document.activeElement as HTMLElement | null, overflow = document.body.style.overflow
@@ -262,12 +265,20 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose }: {
     window.addEventListener('keydown', keys)
     return () => { document.body.style.overflow = overflow; window.removeEventListener('keydown', keys); previousFocus?.focus() }
   }, [])
-  const save = () => {
-    if (!group || physical === null) return
+  const navigateNext = () => {
+    if (activeIndex < 0) return
+    const next = groups[activeIndex + 1]
+    if (next) { setSelected(next.grupo_id); return }
+    if (action !== 'review' && onNextCategory) { setSelected(null); onNextCategory(); return }
+    setSelected(null)
+  }
+  const continueToNext = () => {
+    if (!group) return
+    if (!hasInput) { if (canNavigateNext) navigateNext(); return }
+    if (!canCapture || physical === null) return
     try {
       runtime.capture(action, group.grupo_id, physical, expression); setError(null)
-      const next = groups[groups.findIndex(item => item.grupo_id === group.grupo_id) + 1]
-      if (action === 'review') onClose(); else setSelected(next?.grupo_id ?? null)
+      navigateNext()
     } catch (e) { setError(getCashierV4ErrorPolicy(e).message) }
   }
   return <div className="cajero-capture-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
@@ -285,8 +296,11 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose }: {
             <div><dt>Diferencia</dt><dd>{formatCajeroDifference(difference)}</dd></div><div><dt>Valorizado</dt><dd>{valuation === null ? '—' : formatCajeroCurrency(valuation)}</dd></div></dl>
         </section></div>{error ? <div role="alert" className="cajero-alert cajero-alert--error">{error}</div> : null}
           <CajeroCalculator expression={expression} disabled={!canCapture} onChange={value => setExpressions(current => ({ ...current, [group.grupo_id]: value }))} />
-          <nav className="cajero-capture-detail__navigation"><button className="button button--secondary" onClick={() => setSelected(null)} type="button">Regresar</button>
-            <button className="button" disabled={!canCapture || physical === null} onClick={save} type="button">Continuar</button></nav>
+          <nav className="cajero-capture-detail__navigation" aria-label="Navegación entre grupos">
+            <button className="button button--secondary" disabled={activeIndex <= 0} onClick={() => setSelected(groups[activeIndex - 1]?.grupo_id ?? null)} type="button">Anterior</button>
+            <button className="button button--secondary" onClick={() => setSelected(null)} type="button">Regresar</button>
+            <button className="button" disabled={hasInput ? !canCapture || physical === null : !canNavigateNext} onClick={continueToNext} type="button">{hasInput ? 'Continuar' : 'Siguiente'}</button>
+          </nav>
         </div> : <div className="cajero-capture-summary"><div className="cajero-capture-summary__head"><span>Nombre</span><span>Stock TumiSoft</span><span>Diferencia</span><span /></div>
           <div className="cajero-capture-summary__rows">{groups.map(item => {
             const itemDraft = localDraftForGroup(item)
@@ -311,7 +325,10 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
   const counts = selectCashierV4CoveragePendingByStockType(panel)
   const title = action === 'review' ? 'Revisar' : action === 'coverage' ? 'Conteo' : 'Conteo diario'
   const modalGroups = action === 'review' ? groups : visible.filter(group => group.categoria_id === category)
+  const selectableCategories = action === 'review' ? [] : categories.filter(item => visible.some(group => group.categoria_id === item.categoria_id))
   const selectedCategory = categories.find(item => item.categoria_id === category)
+  const selectedCategoryIndex = category ? selectableCategories.findIndex(item => item.categoria_id === category) : -1
+  const nextCategory = selectedCategoryIndex >= 0 ? selectableCategories[selectedCategoryIndex + 1] : undefined
   const allowed = runtime.canCapture(action)
   const activeScope = runtime.coordinator.activeScope(), record = runtime.getSnapshot().records.find(item =>
     item.scope.conteo_id === activeScope?.conteo_id && item.scope.groups_revision === activeScope.groups_revision) ?? null
@@ -340,7 +357,7 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
         return <button key={item.categoria_id} disabled={!allowed} onClick={() => setCategory(item.categoria_id)} type="button"><Icon size={24} aria-hidden="true" /><span><strong>{item.categoria}</strong><small>{completed}/{categoryGroups.length} contados</small></span></button>
       })}</div></section>}
     {(category || reviewGroup) && modalGroups.length > 0 ? <Capture key={`${panel?.session.id}:${category ?? reviewGroup}`} runtime={runtime} action={action} groups={modalGroups} title={selectedCategory?.categoria ?? 'Revisar'} initialGroupId={reviewGroup ?? undefined}
-      onClose={() => { setCategory(null); setReviewGroup(null) }} /> : null}
+      onClose={() => { setCategory(null); setReviewGroup(null) }} onNextCategory={nextCategory ? () => setCategory(nextCategory.categoria_id) : undefined} /> : null}
   </section>
 }
 
