@@ -114,6 +114,7 @@ export function selectCashierV4ReviewPendingByCategory(panel: CashierV4Panel | n
 }
 
 // Historial is read-only and remains available independently of operational priority or coverage.
-export function selectCashierV4HistoryAvailable(_state: CashierV4State): boolean {
+export function selectCashierV4HistoryAvailable(state: CashierV4State): boolean {
+  void state
   return true
 }
