@@ -15,13 +15,32 @@ const user = { id: ids.user, email: 'cashier@example.test', role: 'authenticated
 const jwt = [{ alg: 'HS256', typ: 'JWT' }, { sub: user.id, aud: 'authenticated', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 }]
   .map(part => Buffer.from(JSON.stringify(part)).toString('base64url')).join('.') + '.test'
 
-async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false, multiCategory = false, expiredWithDraft = false, expiredWithoutDraft = false, autocloseError = null, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
+async function scenario({ startAction = 'coverage', preSessionAction = 'coverage', coverageComplete = false, blockedCoverage = false, round = 1, initial = 'pre_session', recovery = false, richCoverage = false, multiCategory = false, expiredWithDraft = false, expiredWithoutDraft = false, autocloseError = null, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const calls = [], errors = []
   let startAttempts = 0, finishAttempts = 0, batchAttempts = 0
   let confirmedBatch = null
-  let b = cashierV4Bootstrap(initial, { next_action: initial === 'pre_session' ? 'coverage' : startAction, ronda: round })
+  let b = cashierV4Bootstrap(initial, { next_action: initial === 'pre_session' ? preSessionAction : startAction, ronda: round })
   if (recovery) b = cashierV4Bootstrap('active_recovery', { next_action: 'coverage' })
+  const initialKpis = b.panel_state?.kpis ?? b.pre_session_summary?.kpis
+  if (coverageComplete && initialKpis) {
+    initialKpis.coverage_counted = initialKpis.coverage_total
+    initialKpis.coverage_pending = 0
+    initialKpis.coverage_percent = 100
+    initialKpis.coverage_queue_pending = 0
+    initialKpis.coverage_blocked_waiting_snapshot = 0
+    if (b.panel_state) b.panel_state.coverage_queue = []
+  }
+  if (blockedCoverage && initialKpis) {
+    initialKpis.coverage_counted = Math.max(0, initialKpis.coverage_total - 1)
+    initialKpis.coverage_pending = 1
+    initialKpis.coverage_percent = initialKpis.coverage_total > 0 ? (initialKpis.coverage_counted / initialKpis.coverage_total) * 100 : 0
+    initialKpis.coverage_queue_pending = 0
+    initialKpis.coverage_blocked_waiting_snapshot = 1
+    initialKpis.review_pending = 0
+    initialKpis.daily_pending = 1
+    if (b.panel_state) { b.panel_state.coverage_queue = []; b.panel_state.review_queue = [] }
+  }
   if (richCoverage) {
     const original = b.panel_state.groups.find(g => g.grupo_id === ids.coverage)
     const added = [10, 0, -3].map((stock, index) => ({ ...original, grupo_id: `20000000-0000-4000-8000-00000000000${index + 1}`, nombre: `Grupo adicional ${index}`, stock_teorico: stock }))
@@ -269,6 +288,87 @@ try {
       console.log(`PASS E/conflicto ${code}: sin descarte ni pérdida de evidencia`)
     })
   }
+  await scenario({}, async page => {
+    const flow = page.locator('.cajero-home-flow')
+    await flow.getByRole('button', { name: /Conteo.*Ahora/ }).waitFor()
+    assert.equal(await page.getByText('Pendientes de registro', { exact: true }).count(), 0)
+    assert.equal(await page.locator('.cajero-home-metrics--operations').count(), 0)
+    await flow.getByRole('button', { name: 'Revisar', exact: true }).click()
+    await flow.getByText('Recuenta los casos que requieren una nueva verificación física.', { exact: true }).waitFor()
+    console.log('PASS Inicio A1 coverage: stepper interactivo sin KPI operativos ni registro')
+  })
+  await scenario({ preSessionAction: 'daily', blockedCoverage: true }, async page => {
+    assert.equal(await page.getByText('1 pendientes', { exact: true }).count() > 0, true)
+    assert.equal(await page.locator('.cajero-home-flow__step.is-current').getByText('Diario', { exact: true }).count(), 1)
+    assert.equal(await page.locator('.cajero-period-complete').count(), 0)
+    console.log('PASS Inicio A1 daily temporal mantiene cobertura incompleta')
+  })
+  await scenario({ preSessionAction: 'none' }, async page => {
+    assert.equal(await page.locator('.cajero-home-flow__step.is-current').count(), 0)
+    console.log('PASS Inicio A1 none no inventa énfasis')
+  })
+  await scenario({ preSessionAction: 'review', coverageComplete: true }, async page => {
+    await page.locator('.cajero-period-complete').getByText('Cobertura quincenal 1 completada', { exact: true }).waitFor()
+    const operations = page.locator('.cajero-home-metrics--operations')
+    assert.deepEqual(await operations.locator('.cajero-home-metric span').allTextContents(), ['Revisar', 'Conteo diario'])
+    assert.equal(await operations.locator('button').count(), 0)
+    assert.equal(await operations.locator('.cajero-home-metric--emphasized').getByText('Revisar', { exact: true }).count(), 1)
+    assert.equal(await page.getByText('Pendientes de registro', { exact: true }).count(), 0)
+    console.log('PASS Inicio A2 mantiene posiciones fijas e información pre-sesión')
+  })
+  await scenario({ initial: 'active', startAction: 'coverage' }, async page => {
+    assert.equal(await page.getByRole('button', { name: 'Continuar conteo', exact: true }).count(), 0)
+    assert.equal(await page.getByRole('button', { name: 'Cobertura quincenal 1', exact: true }).count(), 1)
+    assert.equal(await page.getByText('Stock 0', { exact: true }).count(), 1)
+    assert.equal(await page.getByText('Stock negativo', { exact: true }).count(), 1)
+    const register = page.getByRole('button', { name: 'Registrar conteo', exact: true })
+    assert.equal(await register.isDisabled(), true)
+    console.log('PASS Inicio B coverage usa superficies operativas y registro siempre visible')
+  })
+  await scenario({ initial: 'active', startAction: 'review' }, async page => {
+    assert.equal(await page.getByRole('button', { name: 'Cobertura quincenal 1', exact: true }).count(), 0)
+    assert.equal(await page.getByRole('button', { name: 'Abrir Revisar', exact: true }).count(), 1)
+    assert.equal(await page.locator('.cajero-home-metric--emphasized').getByText('Revisar', { exact: true }).count(), 1)
+    console.log('PASS Inicio B review vuelve Revisar interactivo sin habilitar Cobertura')
+  })
+  await scenario({ initial: 'active', startAction: 'daily', blockedCoverage: true }, async page => {
+    assert.equal(await page.locator('.cajero-period-complete').count(), 0)
+    assert.equal(await page.locator('.cajero-home-metrics--stock button').count(), 0)
+    assert.equal(await page.getByRole('button', { name: 'Abrir Revisar', exact: true }).count(), 0)
+    assert.equal(await nav(page).getByRole('button', { name: 'Conteo diario', exact: true }).count(), 1)
+    console.log('PASS Inicio B daily temporal no fabrica ruta KPI y conserva footer autoritativo')
+  })
+  await scenario({ initial: 'active', startAction: 'review', coverageComplete: true }, async page => {
+    const operations = page.locator('.cajero-home-metrics--operations')
+    assert.deepEqual(await operations.locator('.cajero-home-metric span').allTextContents(), ['Revisar', 'Conteo diario'])
+    assert.equal(await operations.getByRole('button', { name: 'Abrir Revisar', exact: true }).count(), 1)
+    assert.equal(await operations.getByRole('button', { name: 'Abrir Conteo diario', exact: true }).count(), 0)
+    assert.equal(await page.getByText('Pendientes de registro', { exact: true }).count(), 1)
+    console.log('PASS Inicio C review mantiene posiciones fijas y prioridad')
+  })
+  await scenario({ initial: 'active', startAction: 'daily', coverageComplete: true }, async page => {
+    const operations = page.locator('.cajero-home-metrics--operations')
+    assert.deepEqual(await operations.locator('.cajero-home-metric span').allTextContents(), ['Revisar', 'Conteo diario'])
+    assert.equal(await operations.getByRole('button', { name: 'Abrir Conteo diario', exact: true }).count(), 1)
+    assert.equal(await operations.getByRole('button', { name: 'Abrir Revisar', exact: true }).count(), 0)
+    console.log('PASS Inicio C daily cambia énfasis sin reordenar')
+  })
+  await scenario({ initial: 'active', startAction: 'coverage', richCoverage: true }, async page => {
+    await page.getByRole('button', { name: 'Abrir Stock 0', exact: true }).click()
+    await page.waitForURL('**/cajero/conteo?stock=zero')
+    assert.equal(await page.getByRole('button', { name: /Stock 0.*1 pendientes/ }).getAttribute('aria-pressed'), 'true')
+    await nav(page).getByRole('button', { name: 'Inicio', exact: true }).click()
+    await page.getByRole('button', { name: 'Abrir Stock negativo', exact: true }).click()
+    await page.waitForURL('**/cajero/conteo?stock=negative')
+    assert.equal(await page.getByRole('button', { name: /Stock negativo.*1 pendientes/ }).getAttribute('aria-pressed'), 'true')
+    console.log('PASS Inicio B deep-links seleccionan Stock 0 y Stock negativo')
+  })
+  await scenario({ initial: 'active', startAction: 'coverage' }, async page => {
+    await page.evaluate(() => { history.pushState(null, '', '/cajero/conteo?stock=invalid'); dispatchEvent(new Event('solog:navigation')) })
+    await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
+    assert.equal(await page.getByRole('button', { name: /Stock positivo.*1 pendientes/ }).getAttribute('aria-pressed'), 'true')
+    console.log('PASS query stock inválida usa positive')
+  })
   await scenario({ initial: 'active' }, async (page, calls) => {
     await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
     await page.getByRole('button', { name: /Abarrotes.*0\/1 contados/ }).click()
@@ -397,13 +497,12 @@ try {
     console.log('PASS race summary coverage → start review → guard → recount/delta coverage')
   })
   await scenario({ initial: 'active', recovery: true }, async (page, calls) => {
-    await page.getByRole('button', { name: 'Continuar conteo', exact: true }).waitFor({ state: 'visible' })
-    await page.waitForFunction(() => ![...document.querySelectorAll('button')].find(b => b.textContent.includes('Continuar conteo')).disabled)
+    await page.getByRole('button', { name: 'Cobertura quincenal 1', exact: true }).waitFor({ state: 'visible' })
     const recoveryActions = calls.filter(c => c.body.p_payload?.conteo_id === ids.recovery)
     assert.deepEqual(recoveryActions.map(c => c.body.p_action), ['save_batch', 'finish'])
     assert.equal(recoveryActions[0].body.p_payload.expected_groups_revision, 6)
     assert.equal(await page.getByText('Recovery', { exact: false }).count(), 0)
-    await page.getByRole('button', { name: 'Continuar conteo', exact: true }).click()
+    await page.getByRole('button', { name: 'Cobertura quincenal 1', exact: true }).click()
     await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
     await capture(page)
     await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
