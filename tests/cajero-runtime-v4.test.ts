@@ -168,9 +168,13 @@ describe('runtime productivo V4', () => {
     expect(html).not.toContain('Grupo none')
     if (action === 'coverage') {
       for (const label of ['Stock positivo', 'Stock 0', 'Stock negativo']) expect(html).toContain(label)
-      expect(html).toContain('1 pendientes'); expect(html).not.toContain('contados')
+      expect(html).toContain('1 pendientes')
+      expect(html).toContain('0/1 contados')
     }
-    if (action === 'daily') expect(html).toContain('1 pendientes')
+    if (action === 'daily') {
+      expect(html).toContain('1 pendientes')
+      expect(html).toContain('0/1 contados')
+    }
     runtime.dispose()
   })
   test('UI autocierre muestra fallo conocido con retry y descarte sin exponer recovery', async () => {
