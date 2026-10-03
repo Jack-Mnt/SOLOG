@@ -14,10 +14,10 @@ import { canCashierV4CaptureForSession } from './cajero.v4.capability'
 import { getCashierV4ErrorPolicy } from './cajero.v4.errors'
 import { getCashierV4RouteAccess, selectCashierV4BottomNavigation } from './cajero.v4.navigation'
 import { CashierV4Runtime } from './cajero.v4.runtime'
-import { cashierV4Destination, cashierV4StockType, selectCashierV4Coverage, selectCashierV4CoverageGroups,
+import { cashierV4StockType, selectCashierV4Coverage, selectCashierV4CoverageGroups,
   selectCashierV4CoveragePendingByCategory, selectCashierV4CoveragePendingByStockType, selectCashierV4DailyGroups,
   selectCashierV4DailyPendingByCategory, selectCashierV4OperationalSummary, selectCashierV4ReviewEntries,
-  selectCashierV4WaitingForSnapshot, type CashierV4StockType } from './cajero.v4.selectors'
+  type CashierV4StockType } from './cajero.v4.selectors'
 
 const stockLabels = { positive: 'Stock positivo', zero: 'Stock 0', negative: 'Stock negativo' }
 const icons: Record<CashierRoute, typeof Home> = {
@@ -118,6 +118,94 @@ function RegisterCountButton({ runtime }: { runtime: CashierV4Runtime }) {
   </div>
 }
 
+type CajeroHomeStep = Exclude<CashierV4NextAction, 'none'>
+
+const homeStepCopy: Record<CajeroHomeStep, { label: string; description: string }> = {
+  coverage: { label: 'Conteo', description: 'Completa los grupos pendientes de la cobertura quincenal.' },
+  review: { label: 'Revisar', description: 'Recuenta los casos que requieren una nueva verificación física.' },
+  daily: { label: 'Diario', description: 'Registra los grupos habilitados para el conteo diario.' },
+}
+
+function initialCashierStockType(): CashierV4StockType {
+  if (typeof window === 'undefined') return 'positive'
+  const value = new URLSearchParams(window.location.search).get('stock')
+  return value === 'zero' || value === 'negative' || value === 'positive' ? value : 'positive'
+}
+
+function HomeMetricSurface({ icon: Icon, label, value, emphasized = false, tone, wide = false, onClick, ariaLabel }: {
+  icon: typeof Home
+  label: string
+  value: number
+  emphasized?: boolean
+  tone?: 'warning' | 'danger'
+  wide?: boolean
+  onClick?: () => void
+  ariaLabel?: string
+}) {
+  const className = [
+    'cajero-home-metric',
+    onClick ? 'cajero-home-metric--action' : '',
+    emphasized ? 'cajero-home-metric--emphasized' : '',
+    tone ? `cajero-home-metric--${tone}` : '',
+    wide ? 'cajero-home-metric--wide' : '',
+  ].filter(Boolean).join(' ')
+  const body = <><Icon size={23} aria-hidden="true" /><span>{label}</span>
+    <div className="cajero-home-metric__value"><strong>{value}</strong><small>pendientes</small></div></>
+  return onClick
+    ? <button aria-label={ariaLabel ?? `Abrir ${label}`} className={className} onClick={onClick} type="button">{body}</button>
+    : <article className={className} aria-label={ariaLabel}>{body}</article>
+}
+
+function CoverageSurface({ label, counted, total, pending, percent, emphasized, onClick }: {
+  label: string
+  counted: number
+  total: number
+  pending: number
+  percent: number
+  emphasized?: boolean
+  onClick?: () => void
+}) {
+  const className = `cajero-coverage-card${onClick ? ' cajero-coverage-card--action' : ''}${emphasized ? ' cajero-coverage-card--emphasized' : ''}`
+  const body = <><div className="cajero-coverage-card__copy"><span>{label}</span><h2>{counted} / {total}</h2><small>{pending} pendientes</small></div>
+    <div className="cajero-progress-ring" role="img" aria-label={`${percent}% completado`}><svg aria-hidden="true" viewBox="0 0 120 120">
+      <circle className="cajero-progress-ring__track" cx="60" cy="60" r="52" pathLength="100" />
+      <circle className="cajero-progress-ring__value" cx="60" cy="60" r="52" pathLength="100" strokeDasharray="100" strokeDashoffset={100 - percent} /></svg><strong>{percent}%</strong></div></>
+  return onClick
+    ? <button className={className} aria-label={label} onClick={onClick} type="button">{body}</button>
+    : <article className={className} aria-label={label}>{body}</article>
+}
+
+function CoverageComplete({ label, counted, total }: { label: string; counted: number; total: number }) {
+  return <div className="cajero-period-complete" role="status">
+    <ClipboardList aria-hidden="true" size={22} />
+    <div><strong>{label} completada</strong><span>{counted} / {total} grupos</span></div>
+  </div>
+}
+
+function OperationalFlow({ current }: { current: CashierV4NextAction }) {
+  const initial = current === 'review' || current === 'daily' ? current : 'coverage'
+  const [selected, setSelected] = useState<CajeroHomeStep>(initial)
+  const renderStep = (step: CajeroHomeStep) => {
+    const item = homeStepCopy[step]
+    const isCurrent = current === step
+    return <button className={`cajero-home-flow__step${isCurrent ? ' is-current' : ''}`} aria-current={isCurrent ? 'step' : undefined}
+      aria-pressed={selected === step} onClick={() => setSelected(step)} type="button">
+      <span>{item.label}</span>{isCurrent ? <small>Ahora</small> : null}
+    </button>
+  }
+  return <section className="cajero-home-flow" aria-labelledby="cajero-home-flow-title">
+    <div className="cajero-home-flow__heading"><h2 id="cajero-home-flow-title">Flujo operativo</h2><span>Selecciona una etapa para conocer su función.</span></div>
+    <div className="cajero-home-flow__steps">
+      {renderStep('coverage')}<span className="cajero-home-flow__connector" aria-hidden="true" />
+      {renderStep('review')}<span className="cajero-home-flow__connector" aria-hidden="true" />
+      {renderStep('daily')}
+    </div>
+    <div className="cajero-home-flow__description" aria-live="polite">
+      <strong>{homeStepCopy[selected].label}</strong><p>{homeStepCopy[selected].description}</p>
+    </div>
+  </section>
+}
+
 function CajeroV4Header({ runtime, onLogout }: { runtime: CashierV4Runtime; onLogout: () => Promise<void> }) {
   const { state } = useCashierV4(), b = state.bootstrap!
   const now = Math.max(useCajeroServerClock(runtime.store.serverOffsetMs), runtime.serverNow())
@@ -190,34 +278,69 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
   const coverage = selectCashierV4Coverage(state), summary = selectCashierV4OperationalSummary(state)
   const busy = runtime.getSnapshot().busy
   const preparedStart = runtime.getSnapshot().preparedStart
-  const destination = summary ? cashierV4Destination(summary.next_action) : '/cajero'
+  const now = Math.max(useCajeroServerClock(runtime.store.serverOffsetMs), runtime.serverNow())
+  const [stockTypeCounts] = useState(() => ({ positive: 0, zero: 0, negative: 0 }))
+  const counts = panel ? selectCashierV4CoveragePendingByStockType(panel) : stockTypeCounts
+  const coverageComplete = Boolean(coverage && coverage.coverage_pending === 0)
+  const active = Boolean(panel)
+  const routeAllowed = (route: CashierRoute) => getCashierV4RouteAccess(state, route, now).allowed
+  const coverageAllowed = active && routeAllowed('/cajero/conteo')
+  const reviewAllowed = active && routeAllowed('/cajero/revisar')
+  const dailyAllowed = active && routeAllowed('/cajero/diario')
   const start = async () => { try { navigateTo(await runtime.start()) } catch { /* Error exposed by runtime. */ } }
+
   return <section className="cajero-module cajero-home" aria-labelledby="cajero-inicio-title">
     <div className="cajero-home__heading"><h1 id="cajero-inicio-title">Inicio</h1></div>
+
     <section className="cajero-stock-card cajero-stock-card--updated">
       <div className="cajero-stock-card__status"><div><h2>{state.stock?.snapshot_id ? 'Inventario disponible' : 'No hay un inventario disponible'}</h2>
         {state.bootstrap?.start_capability.reason && !panel ? <p>{getCashierV4ErrorPolicy(new SologApiError(state.bootstrap.start_capability.reason as SologErrorCode)).message}</p> : null}</div></div>
       <div className="cajero-stock-card__actions">
-        {panel && !preparedStart ? <><button className="button" disabled={!runtime.canCapture(panel.next_action) || destination === '/cajero'} type="button"
-          onClick={() => navigateTo(destination)}><Play size={19} aria-hidden="true" /> Continuar conteo</button>
-          <button className="button button--secondary" disabled={busy} onClick={() => void runtime.finish().catch(() => {})} type="button">Finalizar conteo</button></>
+        {panel && !preparedStart
+          ? <button className="button button--secondary" disabled={busy} onClick={() => void runtime.finish().catch(() => {})} type="button">Finalizar conteo</button>
           : <button className="button" disabled={busy || runtime.requiresRefresh || preparedStart?.prepared_start.status === 'conflict' ||
             (!preparedStart && (!state.bootstrap?.start_capability.allowed || runtime.pendingCount > 0 || runtime.hasBlockingRecovery || Boolean(runtime.getSnapshot().error)))}
             onClick={() => void start()} type="button"><Play size={19} aria-hidden="true" />{busy ? 'Iniciando…' : preparedStart ? 'Reintentar inicio' : 'Iniciar conteo'}</button>}
       </div>
     </section>
-    {coverage ? <article className="cajero-coverage-card" aria-label={coverage.label}>
-      <div className="cajero-coverage-card__copy"><span>{coverage.label}</span><h2>{coverage.coverage_counted} / {coverage.coverage_total}</h2><small>{coverage.coverage_pending} pendientes</small></div>
-      <div className="cajero-progress-ring" role="img" aria-label={`${coverage.coverage_percent}% completado`}><svg aria-hidden="true" viewBox="0 0 120 120">
-        <circle className="cajero-progress-ring__track" cx="60" cy="60" r="52" pathLength="100" />
-        <circle className="cajero-progress-ring__value" cx="60" cy="60" r="52" pathLength="100" strokeDasharray="100" strokeDashoffset={100 - coverage.coverage_percent} /></svg><strong>{coverage.coverage_percent}%</strong></div>
-    </article> : null}
-    {selectCashierV4WaitingForSnapshot(state) ? <div className="cajero-empty-state" role="status"><p>Hay grupos esperando una actualización de stock para poder continuar.</p></div> : null}
-    <div className="cajero-home-metrics">
-      {panel ? <><article className="cajero-home-metric"><CalendarClock size={23} aria-hidden="true" /><span>Conteo diario</span><strong>{panel.kpis.daily_pending} pendientes</strong></article>
-        <article className="cajero-home-metric"><SearchCheck size={23} aria-hidden="true" /><span>Revisar</span><strong>{panel.kpis.review_pending} pendientes</strong></article></> : null}
-      <PendingRegistration runtime={runtime} />
-    </div>
+
+    {coverage && !coverageComplete ? <CoverageSurface label={coverage.label} counted={coverage.coverage_counted} total={coverage.coverage_total}
+      pending={coverage.coverage_pending} percent={coverage.coverage_percent} emphasized={panel?.next_action === 'coverage'}
+      onClick={coverageAllowed ? () => navigateTo('/cajero/conteo') : undefined} /> : null}
+
+    {coverage && coverageComplete ? <CoverageComplete label={coverage.label} counted={coverage.coverage_counted} total={coverage.coverage_total} /> : null}
+
+    {!active && !coverageComplete && summary ? <OperationalFlow current={summary.next_action} /> : null}
+
+    {!active && coverageComplete && summary ? <div className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Trabajo operativo">
+      <HomeMetricSurface icon={SearchCheck} label="Revisar" value={summary.kpis.review_pending} emphasized={summary.next_action === 'review'} />
+      <HomeMetricSurface icon={CalendarClock} label="Conteo diario" value={summary.kpis.daily_pending} emphasized={summary.next_action === 'daily'} />
+    </div> : null}
+
+    {active && !coverageComplete && panel ? <>
+      <div className="cajero-home-metrics cajero-home-metrics--stock" aria-label="Resumen de cobertura por stock">
+        <HomeMetricSurface icon={ClipboardList} label="Stock 0" value={counts.zero} tone="warning"
+          onClick={coverageAllowed ? () => navigateTo('/cajero/conteo?stock=zero') : undefined} />
+        <HomeMetricSurface icon={AlertTriangle} label="Stock negativo" value={counts.negative} tone="danger"
+          onClick={coverageAllowed ? () => navigateTo('/cajero/conteo?stock=negative') : undefined} />
+      </div>
+      <div className="cajero-home-metrics cajero-home-metrics--stacked">
+        <HomeMetricSurface icon={SearchCheck} label="Revisar" value={panel.kpis.review_pending} wide emphasized={panel.next_action === 'review'}
+          onClick={reviewAllowed ? () => navigateTo('/cajero/revisar') : undefined} />
+        <PendingRegistration runtime={runtime} />
+      </div>
+    </> : null}
+
+    {active && coverageComplete && panel ? <>
+      <div className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Trabajo operativo">
+        <HomeMetricSurface icon={SearchCheck} label="Revisar" value={panel.kpis.review_pending} emphasized={panel.next_action === 'review'}
+          onClick={reviewAllowed ? () => navigateTo('/cajero/revisar') : undefined} />
+        <HomeMetricSurface icon={CalendarClock} label="Conteo diario" value={panel.kpis.daily_pending} emphasized={panel.next_action === 'daily'}
+          onClick={dailyAllowed ? () => navigateTo('/cajero/diario') : undefined} />
+      </div>
+      <div className="cajero-home-metrics cajero-home-metrics--stacked"><PendingRegistration runtime={runtime} /></div>
+    </> : null}
+
     <section className="cajero-home-appearance"><div><Palette size={20} aria-hidden="true" /><h2>Apariencia</h2></div><PaletteSwitcher variant="home" /></section>
   </section>
 }
@@ -315,7 +438,7 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
 
 function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: Exclude<CashierV4NextAction, 'none'> }) {
   const { state } = useCashierV4(), panel = state.panel_state
-  const [stockType, setStockType] = useState<CashierV4StockType>('positive')
+  const [stockType, setStockType] = useState<CashierV4StockType>(() => initialCashierStockType())
   const [category, setCategory] = useState<string | null>(null), [reviewGroup, setReviewGroup] = useState<string | null>(null)
   const [differenceFilter, setDifferenceFilter] = useState<'all' | 'positive' | 'negative'>('all')
   const review = selectCashierV4ReviewEntries(panel)
