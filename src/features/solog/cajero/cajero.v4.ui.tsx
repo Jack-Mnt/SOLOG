@@ -127,7 +127,7 @@ const homeStepCopy: Record<CajeroHomeStep, { label: string; description: string 
 }
 
 function initialCashierStockType(): CashierV4StockType {
-  if (typeof window === 'undefined') return 'positive'
+  if (typeof window === 'undefined' || typeof window.location?.search !== 'string') return 'positive'
   const value = new URLSearchParams(window.location.search).get('stock')
   return value === 'zero' || value === 'negative' || value === 'positive' ? value : 'positive'
 }
