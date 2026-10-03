@@ -15,7 +15,7 @@ const user = { id: ids.user, email: 'cashier@example.test', role: 'authenticated
 const jwt = [{ alg: 'HS256', typ: 'JWT' }, { sub: user.id, aud: 'authenticated', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 }]
   .map(part => Buffer.from(JSON.stringify(part)).toString('base64url')).join('.') + '.test'
 
-async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false, expiredWithDraft = false, expiredWithoutDraft = false, autocloseError = null, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
+async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_session', recovery = false, richCoverage = false, multiCategory = false, expiredWithDraft = false, expiredWithoutDraft = false, autocloseError = null, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const calls = [], errors = []
   let startAttempts = 0, finishAttempts = 0, batchAttempts = 0
@@ -28,6 +28,15 @@ async function scenario({ startAction = 'coverage', round = 1, initial = 'pre_se
     b.panel_state.groups.push(...added)
     b.panel_state.coverage_queue = [added[0].grupo_id, ids.coverage, added[1].grupo_id, added[2].grupo_id]
     b.panel_state.kpis.coverage_total = 7; b.panel_state.kpis.coverage_pending = 5; b.panel_state.kpis.coverage_percent = 2 / 7 * 100; b.panel_state.kpis.coverage_queue_pending = 4
+  }
+  if (multiCategory) {
+    const original = b.panel_state.groups.find(g => g.grupo_id === ids.coverage)
+    const next = { ...original, grupo_id: '30000000-0000-4000-8000-000000000001', nombre: 'Grupo categoría siguiente',
+      categoria_id: '30000000-0000-4000-8000-000000000010', categoria: 'Bebidas' }
+    b.panel_state.groups.push(next)
+    b.panel_state.coverage_queue = [ids.coverage, next.grupo_id]
+    b.panel_state.kpis.coverage_total = 2; b.panel_state.kpis.coverage_counted = 0; b.panel_state.kpis.coverage_pending = 2
+    b.panel_state.kpis.coverage_percent = 0; b.panel_state.kpis.coverage_queue_pending = 2
   }
   if (recovery) {
     const scope = { usuario_id: ids.user, sede_id: ids.site, dispositivo_id: ids.device, conteo_id: ids.recovery, groups_revision: 6 }
@@ -427,6 +436,20 @@ try {
     assert.equal(calls.at(-1).body.p_payload.items[0].grupo_id, ids.daily)
     console.log('PASS Historial V2 Inválido + Diario queue/capture/save V4')
   })
+  await scenario({ initial: 'active', startAction: 'coverage', multiCategory: true }, async page => {
+    await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
+    await page.getByRole('button', { name: /Abarrotes.*0\/1 contados/ }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /Grupo coverage/ }).click()
+    assert.equal(await dialog.getByRole('button', { name: 'Anterior', exact: true }).isDisabled(), true)
+    assert.equal(await dialog.getByRole('button', { name: 'Siguiente', exact: true }).isEnabled(), true)
+    await dialog.getByRole('button', { name: 'Siguiente', exact: true }).click()
+    await dialog.getByRole('heading', { name: 'Bebidas', exact: true }).waitFor()
+    assert.equal(await dialog.locator('.cajero-capture-summary__rows strong').textContent(), 'Grupo categoría siguiente')
+    assert.equal((await localRecords(page)).flatMap(record => record.normal).length, 0)
+    await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    console.log('PASS navegación sin dato avanza a siguiente categoría sin crear draft')
+  })
   await scenario({ initial: 'active', startAction: 'coverage', richCoverage: true }, async page => {
     await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
     await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
@@ -439,6 +462,20 @@ try {
     const names = await captureDialog.locator('.cajero-capture-summary__rows strong').allTextContents()
     assert.deepEqual(names, ['Grupo adicional 0', 'Grupo coverage'])
     assert.equal(await captureDialog.getByText('Por enviar', { exact: true }).count(), 0)
+    await captureDialog.getByRole('button', { name: /Grupo adicional 0/ }).click()
+    assert.equal(await captureDialog.getByRole('button', { name: 'Anterior', exact: true }).isDisabled(), true)
+    await captureDialog.getByRole('button', { name: 'Siguiente', exact: true }).click()
+    await captureDialog.getByRole('heading', { name: 'Grupo coverage', exact: true }).waitFor()
+    assert.equal(await captureDialog.getByRole('button', { name: 'Anterior', exact: true }).isEnabled(), true)
+    await captureDialog.getByRole('button', { name: 'Anterior', exact: true }).click()
+    await captureDialog.getByRole('heading', { name: 'Grupo adicional 0', exact: true }).waitFor()
+    await captureDialog.getByRole('button', { name: '1', exact: true }).click()
+    await captureDialog.getByRole('button', { name: '0', exact: true }).click()
+    await captureDialog.getByRole('button', { name: 'Continuar', exact: true }).click()
+    await captureDialog.getByRole('heading', { name: 'Grupo coverage', exact: true }).waitFor()
+    await captureDialog.getByText('1/2 contados', { exact: true }).waitFor()
+    await captureDialog.getByRole('button', { name: 'Regresar', exact: true }).click()
+    assert.equal(await captureDialog.locator('.cajero-capture-summary__rows button.is-counted').count(), 1)
     if (process.env.SOLOG_V4_SCREENSHOT) await page.screenshot({ path: process.env.SOLOG_V4_SCREENSHOT + '.capture.png', fullPage: true })
     await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
     for (const label of ['Stock 0', 'Stock negativo']) {
