@@ -1,4 +1,5 @@
 name: Cajero Block 1 Validation
+# rerun after aligning runtime progress test
 
 on:
   push:
