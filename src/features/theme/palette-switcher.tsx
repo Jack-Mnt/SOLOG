@@ -14,7 +14,7 @@ const HOME_LABELS: Record<SologPalette, string> = {
   green: "Natura",
 };
 
-const SIDEBAR_ICONS = { blue: Orbit, violet: Gem, green: Leaf };
+const PALETTE_ICONS = { blue: Orbit, violet: Gem, green: Leaf };
 
 export function PaletteSwitcher({
   collapsed = false,
@@ -56,21 +56,25 @@ export function PaletteSwitcher({
         className="cajero-home-appearance__options"
         aria-label="Paleta de color"
       >
-        {OPTIONS.map((option) => (
-          <button
-            aria-pressed={palette === option.value}
-            className="cajero-home-appearance__option"
-            key={option.value}
-            onClick={() => selectPalette(option.value)}
-            type="button"
-          >
-            <span
-              aria-hidden="true"
-              className={"palette-option palette-option--" + option.value}
-            />
-            <span>{HOME_LABELS[option.value]}</span>
-          </button>
-        ))}
+        {OPTIONS.map((option) => {
+          const Icon = PALETTE_ICONS[option.value];
+          return (
+            <button
+              aria-pressed={palette === option.value}
+              className="cajero-home-appearance__option"
+              key={option.value}
+              onClick={() => selectPalette(option.value)}
+              type="button"
+            >
+              <Icon
+                aria-hidden="true"
+                className={"cajero-home-appearance__icon cajero-home-appearance__icon--" + option.value}
+                size={19}
+              />
+              <span>{HOME_LABELS[option.value]}</span>
+            </button>
+          );
+        })}
       </div>
     );
   }
@@ -79,7 +83,7 @@ export function PaletteSwitcher({
     return <section className={"admin-appearance" + (collapsed ? " admin-appearance--collapsed" : "")} aria-label="Apariencia">
       {!collapsed && <span className="admin-main-tabs__label">APARIENCIA</span>}
       {OPTIONS.map(option => {
-        const Icon = SIDEBAR_ICONS[option.value];
+        const Icon = PALETTE_ICONS[option.value];
         return <button type="button" key={option.value} aria-label={HOME_LABELS[option.value]} title={collapsed ? HOME_LABELS[option.value] : undefined} aria-pressed={palette === option.value} onClick={() => selectPalette(option.value)}>
           <Icon aria-hidden="true" size={19} className={"admin-appearance__icon admin-appearance__icon--" + option.value} />
           {!collapsed && <span>{HOME_LABELS[option.value]}</span>}
