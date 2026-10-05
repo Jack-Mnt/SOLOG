@@ -1623,7 +1623,7 @@
   min-width: 104px;
   min-height: 46px;
   display: grid;
-  grid-template-columns: 24px 1fr 16px;
+  grid-template-columns: 24px 1fr;
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.6rem;
@@ -1655,8 +1655,21 @@
   outline-offset: 2px;
 }
 
-.cajero-home-appearance__option .palette-option {
+.cajero-home-appearance__icon {
+  flex-shrink: 0;
   pointer-events: none;
+}
+
+.cajero-home-appearance__icon--blue {
+  color: var(--swatch-blue);
+}
+
+.cajero-home-appearance__icon--violet {
+  color: var(--swatch-violet);
+}
+
+.cajero-home-appearance__icon--green {
+  color: var(--swatch-green);
 }
 
 @media (max-width: 599px) {
@@ -1675,9 +1688,6 @@
     grid-template-columns: 20px 1fr;
   }
 
-  .cajero-home-appearance__option > svg {
-    display: none;
-  }
 }
 
 /* Panel Cajero — Conteo y Conteo diario tablet-first */
