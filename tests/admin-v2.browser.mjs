@@ -164,9 +164,10 @@ export async function runAdminV2Browser() {
 
       const siteA = page.getByRole('article', { name: 'Sede Sede A' })
       await siteA.getByRole('button', { name: 'Descargar ajuste', exact: true }).click()
-      await page.getByRole('dialog').getByLabel('Período de exportación').waitFor()
+      const dashboardExportDialog = page.getByRole('dialog')
+      await dashboardExportDialog.getByRole('radiogroup', { name: 'Quincena' }).waitFor()
       assert.equal(count('export'), 0)
-      await page.getByRole('button', { name: 'Cerrar', exact: true }).click()
+      await dashboardExportDialog.getByRole('button', { name: 'Cerrar', exact: true }).click()
     }
 
     await page.getByRole('button', { name: 'Control', exact: true }).click()
@@ -230,7 +231,9 @@ export async function runAdminV2Browser() {
 
     await control.getByRole('button', { name: 'Descargar ajuste', exact: true }).click()
     const exportDialog = page.getByRole('dialog')
-    await exportDialog.getByLabel('Período de exportación').selectOption('current_biweekly')
+    const currentExportPeriod = exportDialog.getByRole('radio', { name: 'Actual' })
+    await currentExportPeriod.waitFor()
+    assert.equal(await currentExportPeriod.getAttribute('aria-checked'), 'true')
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       exportDialog.getByRole('button', { name: 'Descargar Excel', exact: true }).click(),
