@@ -143,7 +143,7 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
           <h1 id="cajero-historial-title">Historial</h1>
           <p>Consulta tus conteos recientes</p>
         </div>
-        <div className="cajero-history-tabs" aria-label="Período del historial" role="group">
+        <div className="cajero-segmented-control" aria-label="Período del historial" role="group">
           {(['today', 'yesterday'] as const).map((option) => (
             <button
               aria-pressed={period === option}
