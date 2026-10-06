@@ -1,9 +1,9 @@
 # SOLOG — UI Cajero — Filtro Revisar DualSelector — Delta V1
 
-**Estado:** CONGELADO — DECISIÓN APROBADA  
-**Fecha:** 5 de octubre de 2026  
-**Proyecto:** SOLOG  
-**Nivel:** B — UX/UI frontend Cajero  
+**Estado:** CONGELADO — DECISIÓN APROBADA
+**Fecha:** 5 de octubre de 2026
+**Proyecto:** SOLOG
+**Nivel:** B — UX/UI frontend Cajero
 **Rama:** `admin-work`
 
 ---
