@@ -1,9 +1,9 @@
 # SOLOG — Backend Admin Control — Validación Delta V1
 
-**Estado:** CONGELADO  
-**Fecha:** 6 de octubre de 2026  
-**Proyecto:** SOLOG  
-**Clasificación:** Delta de validación del bloque Control  
+**Estado:** CONGELADO
+**Fecha:** 6 de octubre de 2026
+**Proyecto:** SOLOG
+**Clasificación:** Delta de validación del bloque Control
 **Rama:** `admin-work`
 
 ## 1. Fuente primaria afectada
