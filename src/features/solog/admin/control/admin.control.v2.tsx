@@ -21,7 +21,7 @@ import type {
   DifferenceState,
 } from "../admin.v2";
 import { QueryState, Value } from "../admin.v2.presentation";
-import { validCustomRange } from "../admin.v2.format";
+import { controlCustomDateBounds, validCustomRange } from "../admin.v2.format";
 import { AdminExportDialog } from "./admin.control.v2.export-dialog";
 import { controlView, type ControlSort } from "./admin.control.data";
 import { AdminPagination, AdminSort, IconButton } from "../admin.primitives";
@@ -347,7 +347,7 @@ function GroupDetail({
     {
       site_id: site,
       group_id: group,
-      period: "previous_biweekly",
+      period: "previous_counts",
     },
     { enabled: showPrevious },
   );
@@ -375,13 +375,13 @@ function GroupDetail({
       drawerMaxWidth={560}
       footer={
         <div className="admin-control-chronology__footer-toggle">
-          <span>Incluir quincena anterior</span>
+          <span>Conteos anteriores</span>
           <button
             type="button"
             className="admin-control-chronology__switch"
             role="switch"
             aria-checked={showPrevious}
-            aria-label="Incluir quincena anterior"
+            aria-label="Conteos anteriores"
             onClick={() => setShowPrevious((current) => !current)}
           >
             <span aria-hidden="true" />
@@ -598,7 +598,8 @@ export function AdminControlV2() {
   const [from, setFrom] = useState(""),
     [to, setTo] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
-  const invalid = period === "custom" && !validCustomRange(from, to);
+  const customBounds = controlCustomDateBounds();
+  const invalid = period === "custom" && !validCustomRange(from, to, customBounds.max);
   const currentPayload: AdminPayloads["control_groups"] | null =
     !site || invalid
       ? null
@@ -635,6 +636,8 @@ export function AdminControlV2() {
               Desde
               <input
                 type="date"
+                min={customBounds.min}
+                max={customBounds.max}
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
               />
@@ -643,6 +646,8 @@ export function AdminControlV2() {
               Hasta
               <input
                 type="date"
+                min={customBounds.min}
+                max={customBounds.max}
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
               />
@@ -662,7 +667,7 @@ export function AdminControlV2() {
         </div>
       </div>
       {invalid && (
-        <p role="alert">Selecciona un rango válido de hasta 92 días.</p>
+        <p role="alert">Selecciona un rango válido dentro de los últimos 45 días.</p>
       )}
       {currentPayload ? (
         <>
