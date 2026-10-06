@@ -477,8 +477,17 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
           || (entry.queueItem.ultima_diferencia < 0 && differenceSigns.negative)
         ).map(({ group, queueItem }) => {
           const draft = record?.recount.find(item => item.detalle_id === queueItem.detalle_id)
-          return <button key={queueItem.detalle_id} disabled={!allowed} aria-label={`Revisar ${group.nombre}`} onClick={() => setReviewGroup(group.grupo_id)} type="button">
-            <strong>{group.nombre}</strong><span>{formatCajeroDifference(queueItem.ultima_diferencia)}</span><span>{formatCajeroDifference(draft ? draft.stock_fisico - group.stock_teorico : null)}</span><span>›</span></button>
+          const currentDifference = draft ? draft.stock_fisico - group.stock_teorico : null
+          const lastDifference = formatCajeroDifference(queueItem.ultima_diferencia)
+          const currentDifferenceLabel = draft ? `diferencia actual ${formatCajeroDifference(currentDifference)}` : 'sin reconteo actual'
+          return <button key={queueItem.detalle_id} disabled={!allowed}
+            aria-label={`Revisar ${group.nombre}, última diferencia ${lastDifference}, ${currentDifferenceLabel}`}
+            onClick={() => setReviewGroup(group.grupo_id)} type="button">
+            <strong>{group.nombre}</strong>
+            <span className={getCajeroDifferenceClass(queueItem.ultima_diferencia)}>{lastDifference}</span>
+            <span className="cajero-review-transition">{draft ? <><span className="cajero-review-transition__arrow" aria-hidden="true">→</span>
+              <span className={getCajeroDifferenceClass(currentDifference)}>{formatCajeroDifference(currentDifference)}</span></> : '—'}</span>
+            <span>›</span></button>
         })}</div></div></> : <section className="cajero-selection-level"><h2>Categorías</h2><div className="cajero-selection-grid">
       {categories.map(item => {
         const categoryGroups = visible.filter(group => group.categoria_id === item.categoria_id)
