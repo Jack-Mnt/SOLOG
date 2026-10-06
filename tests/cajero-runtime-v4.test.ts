@@ -175,6 +175,11 @@ describe('runtime productivo V4', () => {
       expect(html).toContain('1 pendientes')
       expect(html).toContain('0/1 contados')
     }
+    if (action === 'review') {
+      expect(html).toContain('aria-label="Ocultar sobrantes"')
+      expect(html).toContain('aria-label="Ocultar faltantes"')
+      expect((html.match(/aria-pressed="true"/g) ?? []).length).toBeGreaterThanOrEqual(2)
+    }
     runtime.dispose()
   })
   test('UI autocierre muestra fallo conocido con retry y descarte sin exponer recovery', async () => {
