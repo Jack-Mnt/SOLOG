@@ -542,10 +542,12 @@ Cambios posteriores del catálogo no reescriben una sesión activa.
 {
   "grupo_id": "uuid",
   "detalle_id": "uuid",
-  "ultima_diferencia": 0,
+  "ultima_diferencia": -4,
   "contado_at": "timestamptz"
 }
 ```
+
+`ultima_diferencia` es siempre distinta de cero en `review_queue`: una diferencia inicial `0` produce `Coincide` y no entra al ciclo de reconteo.
 
 ### `coverage_queue`
 
