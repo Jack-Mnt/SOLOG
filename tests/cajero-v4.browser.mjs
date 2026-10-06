@@ -513,7 +513,7 @@ try {
     await reviewDialog.getByRole('button', { name: 'Cerrar', exact: true }).click()
     const reviewRowAfter = page.locator('.cajero-review-list__rows button').first()
     assert.equal(await reviewRowAfter.getAttribute('aria-label'), 'Revisar Grupo recount, última diferencia -2, diferencia actual 0')
-    assert.equal(await reviewRowAfter.locator('.cajero-review-transition').innerText(), '→0')
+    assert.deepEqual(await reviewRowAfter.locator('.cajero-review-transition > span').allTextContents(), ['→', '0'])
     assert.equal(await reviewRowAfter.locator('.cajero-review-transition__arrow').getAttribute('aria-hidden'), 'true')
     assert.equal(await reviewRowAfter.locator('.cajero-review-transition .is-zero').innerText(), '0')
     await nav(page).getByRole('button', { name: 'Inicio', exact: true }).click()
