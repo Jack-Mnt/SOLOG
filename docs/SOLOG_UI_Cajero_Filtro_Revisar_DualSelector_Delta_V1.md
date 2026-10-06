@@ -65,8 +65,12 @@ No existe una tercera clase válida con `ultima_diferencia === 0`.
 
 ## 4. Composición
 
-- conservar geometría compacta actual;
-- target mínimo de 44 px;
+- el `DualSelector` de Revisar se ubica dentro del heading, en la esquina superior derecha, equivalente a la posición de `Hoy/Ayer` en Historial;
+- Revisar e Historial usan la misma clase base `.cajero-segmented-control` para normalizar geometría y estados visuales;
+- ancho mínimo por segmento: `76px` en desktop/tablet y `64px` en móvil `<=460px`;
+- alto mínimo por segmento: `44px`;
+- contenedor: `gap: 2px`, `padding: 3px`, borde y radius compartidos;
+- Revisar puede usar un modificador exclusivamente tipográfico para `+/-`, sin alterar geometría;
 - sin contadores;
 - sin cambio de representación responsive;
 - estado activo visible mediante el patrón existente;
