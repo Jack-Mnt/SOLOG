@@ -76,14 +76,14 @@ describe('Historial compartido vigente', () => {
     expect(source).toContain('Por categorías')
     expect(source).not.toContain('<dt>Estado</dt>')
     expect(source).toContain("hour12: true")
-    expect(source).toContain('cajero-history-tabs')
+    expect(source).toContain('cajero-segmented-control')
     expect(source).toContain('cajero-selection-grid cajero-history-categories')
     expect(source).toContain('getCajeroCategoryIcon')
     expect(source).toContain('cajero-history-list')
     expect(source).not.toContain('cajero-history-table')
     expect(source).toContain('useState<Set<string>>')
     expect(source).toContain('expandedItemIds.has(item.detalle_id)')
-    expect(source).toContain("expanded ? '−' : '+'")
+    expect(source).toContain('const ExpandIcon = expanded ? ChevronDown : ChevronRight')
   })
 
   test('mantiene caché por período y resuelve filtros y expansión sin API', async () => {
