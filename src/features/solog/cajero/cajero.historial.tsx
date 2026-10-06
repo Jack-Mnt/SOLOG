@@ -1,5 +1,7 @@
 import {
   AlertCircle,
+  ChevronDown,
+  ChevronRight,
   History,
   Layers3,
 } from 'lucide-react'
@@ -219,12 +221,14 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
       ) : history && visibleItems.length > 0 ? (
         <div className="cajero-history-list">
           <div className="cajero-history-list__head" aria-hidden="true">
-            <span>Nombre</span><span>Diferencia</span><span>Valorizado</span><span>+</span>
+            <span>Nombre</span><span>Diferencia</span><span>Valorizado</span><span />
           </div>
           <div className="cajero-history-list__rows">
             {visibleItems.map((item) => {
               const expanded = expandedItemIds.has(item.detalle_id)
               const differenceClass = getCajeroDifferenceClass(item.diferencia)
+              const hasRecount = item.recontado_at !== null || item.snapshot_reconteo_id !== null || item.stock_reconteo !== null
+              const ExpandIcon = expanded ? ChevronDown : ChevronRight
               return (
                 <article className={expanded ? 'is-expanded' : undefined} key={item.detalle_id}>
                   <div className="cajero-history-list__summary">
@@ -237,7 +241,7 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
                       onClick={() => toggleExpandedItem(item.detalle_id)}
                       type="button"
                     >
-                      <span aria-hidden="true">{expanded ? '−' : '+'}</span>
+                      <ExpandIcon aria-hidden="true" size={20} />
                     </button>
                   </div>
                   {expanded ? (
@@ -245,7 +249,7 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
                       <div><dt>Hora de conteo</dt><dd>{formatHistoryTime(item.contado_at)}</dd></div>
                       <div><dt>Stock TumiSoft</dt><dd>{item.stock_teorico}</dd></div>
                       <div><dt>Conteo</dt><dd className={item.estado_diferencia === 'Inconsistente' ? 'cajero-history-value--discarded' : undefined}>{item.stock_fisico}</dd></div>
-                      {item.estado_diferencia === 'Confirmada' || item.estado_diferencia === 'Inconsistente' ? (
+                      {hasRecount ? (
                         <>
                           <div><dt>Hora de reconteo</dt><dd>{item.recontado_at ? formatHistoryTime(item.recontado_at) : '—'}</dd></div>
                           <div><dt>Stock posterior</dt><dd>{item.stock_posterior ?? '—'}</dd></div>
