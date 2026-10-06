@@ -49,11 +49,11 @@ test('V10 rechaza filtros/paginación remotos, fechas incorrectas y período no 
     { ...context, date_from: '2026-09-01' },
     { ...context, period: 'custom' },
     { ...context, period: 'custom', date_from: '2026-02-30', date_to: '2026-03-01' },
-    { ...context, period: 'custom', date_from: '2026-01-01', date_to: '2026-04-03' },
+    { ...context, period: 'custom', date_from: '2026-08-22', date_to: '2026-10-06' },
   ]) {
-    expect(() => validateControlPayload('control_groups', payload)).toThrow()
+    expect(() => validateControlPayload('control_groups', payload, '2026-10-06')).toThrow()
   }
-  expect(() => validateControlPayload('control_groups', { ...context, period: 'custom', date_from: '2026-01-01', date_to: '2026-04-02' })).not.toThrow()
+  expect(() => validateControlPayload('control_groups', { ...context, period: 'custom', date_from: '2026-08-23', date_to: '2026-10-06' }, '2026-10-06')).not.toThrow()
   for (const period of ['today', 'last_week', 'custom']) {
     expect(() => validateControlPayload('control_chronology_view', { ...chronology, period })).toThrow()
   }
@@ -84,7 +84,7 @@ test('V10 cronología view se cachea por sede/grupo/quincena y conserva valores 
   await store.load('control_groups', { ...context, period: 'previous_biweekly' })
   const result = await store.load('control_chronology_view', chronology)
   await store.load('control_chronology_view', chronology)
-  await store.load('control_chronology_view', { ...chronology, period: 'previous_biweekly' })
+  await store.load('control_chronology_view', { ...chronology, period: 'previous_counts' })
   await store.load('control_chronology_view', { ...chronology, group_id: 'group-1' })
   expect(calls.filter(call => call.action === 'control_chronology_view')).toHaveLength(3)
   expect(result.chronology.map(row => row.state)).toEqual(['Inconsistente', 'Confirmada', 'Recontado', 'Coincide'])
@@ -138,7 +138,7 @@ test('V10 valida sede, grupo, período y custom antes de publicar en caché', as
     ['control_groups', context, (response: MutableScopeFixture) => { response.period.key = 'last_week' }],
     ['control_groups', { ...context, period: 'custom', date_from: '2026-09-01', date_to: '2026-09-03' }, (response: MutableScopeFixture) => { response.period.from = '2026-09-02' }],
     ['control_chronology_view', chronology, (response: MutableScopeFixture) => { response.group.id = 'other' }],
-    ['control_chronology_view', chronology, (response: MutableScopeFixture) => { response.period.key = 'previous_biweekly' }],
+    ['control_chronology_view', chronology, (response: MutableScopeFixture) => { response.period.key = 'previous_counts' }],
   ] as const) {
     const { store } = setup((current, response) => {
       if (current === action) change(response as MutableScopeFixture)
@@ -182,15 +182,17 @@ test('V10 Control no consume acciones anteriores ni envía filtros locales', asy
   expect(source).toMatch(/["']control_chronology_view["']/)
   expect(source).not.toContain('ControlChronologyPeriod')
   expect(source).toContain('period: "current_biweekly"')
-  expect(source).toContain('period: "previous_biweekly"')
+  expect(source).toContain('period: "previous_counts"')
   expect(source).toContain('{ enabled: showPrevious }')
   expect(source).toContain('latest_unit_price')
   expect(source).toContain('row.initial_difference')
   expect(source).toContain('row.found_difference')
   expect(source).not.toContain('row.valuation')
   expect(source).toContain('role="switch"')
-  expect(source).toContain('aria-label="Incluir quincena anterior"')
+  expect(source).toContain('aria-label="Conteos anteriores"')
   expect(source).toContain('className="admin-control-chronology__timeline"')
+  expect(source).toContain('controlCustomDateBounds')
+  expect(source).toContain('últimos 45 días')
   expect(source).not.toContain('Aplicar filtros')
   expect(source).not.toContain('<select')
   expect(source).not.toContain('setPayload')
@@ -199,7 +201,10 @@ test('V10 Control no consume acciones anteriores ni envía filtros locales', asy
   expect(source).toContain('No hay registros en la cronología.')
 })
 
-test('Control retiró llamadas legacy y comparte modal de exportación', async () => {
+test('Control retiró llamadas legacy, usa RPC dedicada y comparte modal de exportación', async () => {
+  const operational = await Bun.file('src/features/solog/admin/admin.v2.ts').text()
+  expect(operational).toContain("'rpc_solog_admin_control_v1'")
+  expect(operational).toMatch(/action === 'control_groups' \|\| action === 'control_chronology_view'/)
   const api = await Bun.file('src/features/solog/api.ts').text()
   expect(api).not.toMatch(/rpc_solog_control(?:'|_detalle'|_export')/)
   for (const path of ['dashboard/admin.dashboard.v2.tsx', 'control/admin.control.v2.tsx']) {
