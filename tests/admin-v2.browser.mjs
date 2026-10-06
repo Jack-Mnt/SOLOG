@@ -219,11 +219,14 @@ export async function runAdminV2Browser() {
     await previousSwitch.click()
     assert.equal(count('control_chronology_view'), 2, 'Previous-counts chronology stays cached')
     await chronologyDrawer.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await chronologyDrawer.waitFor({ state: 'detached' })
 
     await control.getByRole('button', { name: 'Ver cronología de Grupo 0', exact: true }).click()
-    await page.getByRole('dialog').getByText('Grupo 0', { exact: true }).waitFor()
+    const reopenedChronologyDrawer = page.getByRole('dialog')
+    await reopenedChronologyDrawer.getByText('Grupo 0', { exact: true }).waitFor()
     assert.equal(count('control_chronology_view'), 2, 'Current chronology stays cached after closing drawer')
-    await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await reopenedChronologyDrawer.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await reopenedChronologyDrawer.waitFor({ state: 'detached' })
 
     await control.getByRole('button', { name: 'Descargar ajuste', exact: true }).click()
     const exportDialog = page.getByRole('dialog')
