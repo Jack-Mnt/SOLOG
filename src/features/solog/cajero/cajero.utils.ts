@@ -42,8 +42,17 @@ export type CajeroCalculatorKey =
   | '×'
   | 'times6'
   | 'times12'
+  | 'times15'
+  | 'times24'
   | 'clear'
   | 'backspace'
+
+const CAJERO_QUICK_MULTIPLIERS = {
+  times6: 6,
+  times12: 12,
+  times15: 15,
+  times24: 24,
+} as const
 
 export const CAJERO_MAX_PHYSICAL_COUNT = 99_999
 
@@ -113,7 +122,8 @@ export function applyCajeroCalculatorKey(
     return trimmed.slice(0, -1)
   }
 
-  if (key === 'times6' || key === 'times12') {
+  const quickMultiplier = CAJERO_QUICK_MULTIPLIERS[key as keyof typeof CAJERO_QUICK_MULTIPLIERS]
+  if (quickMultiplier !== undefined) {
     if (
       trimmed.length === 0 ||
       trimmed.endsWith('+') ||
@@ -121,7 +131,7 @@ export function applyCajeroCalculatorKey(
     ) {
       return expression
     }
-    return `${trimmed} × ${key === 'times6' ? '6' : '12'}`
+    return `${trimmed} × ${quickMultiplier}`
   }
 
   if (key === '+' || key === '×') {
