@@ -1198,6 +1198,18 @@
   font-weight: 750;
 }
 
+.cajero-review-transition {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.cajero-review-transition__arrow {
+  color: var(--color-text-secondary);
+  font-weight: 650;
+}
+
 .cajero-capture-detail__card--review dd {
   overflow-wrap: anywhere;
 }
