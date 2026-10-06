@@ -906,8 +906,17 @@
   padding: 1rem;
 }
 
+.cajero-capture-detail__card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
 .cajero-capture-detail__card h3 {
-  margin: 1rem 0 1rem;
+  min-width: 0;
+  margin: 0;
   color: var(--color-text-primary);
   font-size: clamp(1rem, 2.8vw, 1.4rem);
 }
@@ -937,6 +946,24 @@
   color: var(--color-text-primary);
   font-size: 1.15rem;
   font-weight: 780;
+}
+
+.cajero-capture-detail__observation-button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+}
+
+.cajero-capture-detail__observation-button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
 }
 
 .cajero-calculator {
@@ -971,7 +998,8 @@
 
 .cajero-calculator__keys {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(56px, auto));
   gap: 0.6rem;
 }
 
@@ -1014,9 +1042,30 @@
   background: var(--color-primary-subtle);
 }
 
+.cajero-calculator__keys button.is-tall {
+  grid-row: span 2;
+}
+
+.cajero-calculator__keys button.is-backspace svg {
+  pointer-events: none;
+}
+
 .cajero-calculator__keys button.is-control {
   color: var(--color-text-secondary);
   background: var(--color-surface-secondary);
+}
+
+.cajero-calculator__keys button.is-clear {
+  border-color: color-mix(in srgb, var(--color-danger) 44%, var(--color-border));
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.cajero-calculator__keys button.is-clear:not(:disabled):hover,
+.cajero-calculator__keys button.is-clear:not(:disabled):active {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 .cajero-calculator__keys button.is-save {
