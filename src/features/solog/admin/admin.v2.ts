@@ -1,5 +1,6 @@
 import { supabase } from '../../../lib/supabase'
 import { createSologConfigurationError, normalizeSologError } from '../errors'
+import { validCustomRange } from './admin.v2.format'
 
 export type Biweekly = 'current_biweekly' | 'previous_biweekly'
 export type ControlPeriod = 'today' | 'last_week' | Biweekly | 'custom'
@@ -62,7 +63,7 @@ export interface ControlGroupsResponse extends Envelope {
   revisions: { operational: number }
   site_id: string; period: { key: ControlPeriod; from: string; to: string }; items: ControlGroupItem[]
 }
-export type ControlChronologyPeriod = Biweekly
+export type ControlChronologyPeriod = 'current_biweekly' | 'previous_counts'
 export interface ControlChronologyPayload { site_id: string; group_id: string; period: ControlChronologyPeriod }
 export type ControlChronologyViewRow =
   | { row_id: string; event_at: string; state: 'Coincide'; stock: number }
@@ -110,7 +111,7 @@ function source(value: unknown) { return ['initial', 'posterior', 'recount'].inc
 function dateOnly(value: unknown): value is string { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value }
 const controlPeriods = ['today', 'last_week', 'current_biweekly', 'previous_biweekly', 'custom']
 function controlRange(value: unknown, chronology = false) {
-  return record(value) && (chronology ? ['current_biweekly', 'previous_biweekly'] : controlPeriods).includes(String(value.key)) && dateOnly(value.from) && dateOnly(value.to) && value.from <= value.to
+  return record(value) && (chronology ? ['current_biweekly', 'previous_counts'] : controlPeriods).includes(String(value.key)) && dateOnly(value.from) && dateOnly(value.to) && value.from <= value.to
 }
 function unique(rows: unknown, key: string) { return Array.isArray(rows) && new Set(rows.map(row => row[key])).size === rows.length }
 function dailyStockClass(value: unknown): value is DailyStockClass { return value === 'positive' || value === 'zero' }
@@ -152,7 +153,7 @@ function chronologyViewRows(value: unknown) {
     return false
   })
 }
-export function validateControlPayload(action: AdminAction, payload: unknown) {
+export function validateControlPayload(action: AdminAction, payload: unknown, today?: string) {
   if (action === 'daily_detail_bootstrap' || action === 'daily_detail_page') {
     let valid = record(payload) && strings(payload, ['site_id', 'origin_date', 'stock_class']) && !!payload.site_id && dateOnly(payload.origin_date) && ['positive', 'zero'].includes(String(payload.stock_class))
     if (valid && record(payload)) {
@@ -171,8 +172,8 @@ export function validateControlPayload(action: AdminAction, payload: unknown) {
   if (valid && record(payload)) {
     const allowed = chronology ? ['site_id', 'group_id', 'period'] : payload.period === 'custom' ? ['site_id', 'period', 'date_from', 'date_to'] : ['site_id', 'period']
     valid = Object.keys(payload).every(key => allowed.includes(key)) && (chronology
-      ? strings(payload, ['group_id']) && !!payload.group_id && ['current_biweekly', 'previous_biweekly'].includes(String(payload.period))
-      : controlPeriods.includes(String(payload.period)) && (payload.period !== 'custom' || dateOnly(payload.date_from) && dateOnly(payload.date_to) && payload.date_from <= payload.date_to && (Date.parse(payload.date_to) - Date.parse(payload.date_from)) / 86400000 + 1 <= 92))
+      ? strings(payload, ['group_id']) && !!payload.group_id && ['current_biweekly', 'previous_counts'].includes(String(payload.period))
+      : controlPeriods.includes(String(payload.period)) && (payload.period !== 'custom' || typeof payload.date_from === 'string' && typeof payload.date_to === 'string' && validCustomRange(payload.date_from, payload.date_to, today)))
   }
   if (!valid) throw new Error(`Payload ${action} incompatible con contrato Admin.`)
 }
@@ -203,7 +204,13 @@ export function validateAdminResponse<A extends AdminAction>(action: A, value: u
 export async function adminRpc<A extends AdminAction>(action: A, payload: AdminPayloads[A]): Promise<AdminResponses[A]> {
   validateControlPayload(action, payload)
   if (!supabase) throw createSologConfigurationError()
-  const rpc = action === 'bootstrap' ? 'rpc_solog_admin_bootstrap_v2' : action === 'export' ? 'rpc_solog_control_export_v2' : 'rpc_solog_operational_v2'
+  const rpc = action === 'bootstrap'
+    ? 'rpc_solog_admin_bootstrap_v2'
+    : action === 'export'
+      ? 'rpc_solog_control_export_v2'
+      : action === 'control_groups' || action === 'control_chronology_view'
+        ? 'rpc_solog_admin_control_v1'
+        : 'rpc_solog_operational_v2'
   const args = action === 'bootstrap' || action === 'export' ? { p_payload: payload } : { p_action: action, p_payload: payload }
   const { data, error } = await supabase.rpc(rpc, args)
   if (error) throw normalizeSologError(error)
