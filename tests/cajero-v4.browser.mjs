@@ -197,7 +197,7 @@ async function scenario({ startAction = 'coverage', preSessionAction = 'coverage
   } finally { await context.close() }
 }
 async function capture(page, review = false, daily = false) {
-  if (review) await page.getByRole('button', { name: 'Revisar Grupo recount' }).click()
+  if (review) await page.getByRole('button', { name: /^Revisar Grupo recount,/ }).click()
   else {
     await page.getByRole('button', { name: /Abarrotes.*0\/\d+ contados/ }).click()
     await page.getByRole('dialog').getByRole('button', { name: daily ? /Grupo daily/ : /Grupo coverage/ }).click()
@@ -487,6 +487,11 @@ try {
     await page.getByRole('heading', { name: 'Revisar', exact: true }).waitFor()
     assert.deepEqual(await page.locator('.cajero-review-list__head span').allTextContents(), ['Nombre', 'Última diferencia', 'Diferencia actual'])
     assert.equal(await page.getByRole('button', { name: 'Registrar conteo', exact: true }).count(), 0)
+    const reviewRowBefore = page.locator('.cajero-review-list__rows button').first()
+    assert.equal(await reviewRowBefore.getAttribute('aria-label'), 'Revisar Grupo recount, última diferencia -2, sin reconteo actual')
+    assert.equal(await reviewRowBefore.locator('.is-negative').innerText(), '-2')
+    assert.equal(await reviewRowBefore.locator('.cajero-review-transition').innerText(), '—')
+    assert.equal(await reviewRowBefore.locator('.cajero-review-transition__arrow').count(), 0)
     const reviewFilter = page.locator('.cajero-segmented-control--symbols')
     const plusFilter = reviewFilter.locator('button').nth(0)
     const minusFilter = reviewFilter.locator('button').nth(1)
@@ -506,6 +511,11 @@ try {
     const reviewDialog = page.getByRole('dialog')
     await reviewDialog.getByText('1/1 contados', { exact: true }).waitFor()
     await reviewDialog.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    const reviewRowAfter = page.locator('.cajero-review-list__rows button').first()
+    assert.equal(await reviewRowAfter.getAttribute('aria-label'), 'Revisar Grupo recount, última diferencia -2, diferencia actual 0')
+    assert.equal(await reviewRowAfter.locator('.cajero-review-transition').innerText(), '→0')
+    assert.equal(await reviewRowAfter.locator('.cajero-review-transition__arrow').getAttribute('aria-hidden'), 'true')
+    assert.equal(await reviewRowAfter.locator('.cajero-review-transition .is-zero').innerText(), '0')
     await nav(page).getByRole('button', { name: 'Inicio', exact: true }).click()
     await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
