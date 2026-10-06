@@ -1,11 +1,11 @@
 # SOLOG — Backend Admin Control — Contrato V1
 
-**Estado:** CONGELADO — FUENTE PRIMARIA PARA IMPLEMENTACIÓN  
-**Fecha:** 6 de octubre de 2026  
-**Proyecto:** SOLOG  
-**Clasificación:** Nivel C — backend / contrato Admin / retención técnica / integración frontend  
-**Rama:** `admin-work`  
-**HEAD de baseline al congelar:** `ee6197064c3555b4c2c576104bfe36794646dca2`  
+**Estado:** CONGELADO — FUENTE PRIMARIA PARA IMPLEMENTACIÓN
+**Fecha:** 6 de octubre de 2026
+**Proyecto:** SOLOG
+**Clasificación:** Nivel C — backend / contrato Admin / retención técnica / integración frontend
+**Rama:** `admin-work`
+**HEAD de baseline al congelar:** `ee6197064c3555b4c2c576104bfe36794646dca2`
 **Proyecto Supabase:** `fvtohxvcvsflzmftgfzs`
 
 ---
