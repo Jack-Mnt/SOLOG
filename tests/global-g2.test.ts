@@ -32,19 +32,19 @@ test('G2 mismo caso y valores autoritativos en detalle diario, Control y ambos e
 })
 
 for (const [instant, date, clock] of [
-  ['2026-01-01T04:59:59Z','2025-12-31','23:59'],
-  ['2026-01-01T05:00:00Z','2026-01-01','00:00'],
-  ['2026-02-16T04:59:59Z','2026-02-15','23:59'],
-  ['2026-02-16T05:00:00Z','2026-02-16','00:00'],
-  ['2028-03-01T04:59:59Z','2028-02-29','23:59'],
-  ['2026-09-16T12:29:59Z','2026-09-16','07:29'],
-  ['2026-09-16T12:30:00Z','2026-09-16','07:30'],
-  ['2026-09-16T20:29:59Z','2026-09-16','15:29'],
-  ['2026-09-16T20:30:00Z','2026-09-16','15:30'],
+  ['2026-01-01T04:59:59Z','2025-12-31','11:59 p. m.'],
+  ['2026-01-01T05:00:00Z','2026-01-01','12:00 a. m.'],
+  ['2026-02-16T04:59:59Z','2026-02-15','11:59 p. m.'],
+  ['2026-02-16T05:00:00Z','2026-02-16','12:00 a. m.'],
+  ['2028-03-01T04:59:59Z','2028-02-29','11:59 p. m.'],
+  ['2026-09-16T12:29:59Z','2026-09-16','7:29 a. m.'],
+  ['2026-09-16T12:30:00Z','2026-09-16','7:30 a. m.'],
+  ['2026-09-16T20:29:59Z','2026-09-16','3:29 p. m.'],
+  ['2026-09-16T20:30:00Z','2026-09-16','3:30 p. m.'],
 ]) test('G2 presentación Lima '+instant, () => {
   expect(detailsDate(Date.parse(instant))).toBe(date)
-  // No turn/period selection in client: only presentation of authoritative timestamps.
-  expect(adminTimestamp(instant)).toContain(clock)
+  // Presentación Admin aprobada en am/pm; normaliza NBSP del Intl del runner.
+  expect(adminTimestamp(instant).replace(/\\s+/g, ' ')).toContain(clock)
 })
 
 test('G2 Total autoritativo no se suma desde turnos ni se elimina al ser cero', () => {
@@ -74,7 +74,7 @@ test('G2 precio por paquete histórico no se reemplaza con catálogo vivo', () =
   expect(getDetailsValuationExplanation(row)).toContain('S/ 50.00')
   expect(getDetailsValuationExplanation(row)).toContain('-S/ 60.00')
   expect(row.valorizado).toBe(-60)
-  expect(validCustomRange('2028-02-01','2028-02-29')).toBe(true)
+  expect(validCustomRange('2028-02-01','2028-02-29','2028-02-29')).toBe(true)
 })
 
 test('G2 dos admins: conflicto no es éxito; recarga y nueva intención con revisión vigente', async () => {
