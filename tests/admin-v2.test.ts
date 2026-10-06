@@ -150,11 +150,12 @@ describe('A3 Control actual y Excel', () => {
     expect(calls.filter(call => call[0] === 'control_chronology_view')).toHaveLength(1)
   })
 
-  test('custom permite 92 días y rechaza rango inválido o superior', () => {
-    expect(validCustomRange('2026-01-01', '2026-04-02')).toBe(true)
-    expect(validCustomRange('2026-01-01', '2026-04-03')).toBe(false)
-    expect(validCustomRange('2026-02-30', '2026-03-02')).toBe(false)
-    expect(validCustomRange('2026-09-03', '2026-09-02')).toBe(false)
+  test('custom permite 45 fechas dentro del horizonte Lima y rechaza pasado/futuro/inválidos', () => {
+    expect(validCustomRange('2026-08-23', '2026-10-06', '2026-10-06')).toBe(true)
+    expect(validCustomRange('2026-08-22', '2026-10-06', '2026-10-06')).toBe(false)
+    expect(validCustomRange('2026-10-01', '2026-10-07', '2026-10-06')).toBe(false)
+    expect(validCustomRange('2026-02-30', '2026-03-02', '2026-10-06')).toBe(false)
+    expect(validCustomRange('2026-09-03', '2026-09-02', '2026-10-06')).toBe(false)
   })
 
   test('cada export es autoritativa bajo demanda, sin operation_id', async () => {
