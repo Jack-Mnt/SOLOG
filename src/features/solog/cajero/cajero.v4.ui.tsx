@@ -1,6 +1,6 @@
 import type { CashierRoute } from '../../../lib/router'
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
-import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, History, Home, LoaderCircle, LogOut, Palette, Play, RefreshCw, SearchCheck, Send, Trash2, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, History, Home, LoaderCircle, LogOut, MessageSquarePlus, Palette, Play, RefreshCw, SearchCheck, Send, Trash2, X } from 'lucide-react'
 import { navigateTo, replaceRoute } from '../../../lib/router'
 import { PaletteSwitcher } from '../../theme/palette-switcher'
 import { SologApiError, type SologErrorCode } from '../errors'
@@ -413,7 +413,9 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
       </div>
       <div className={`cajero-capture-modal__body${group ? ' cajero-capture-modal__body--detail' : ''}`}>
         {group ? <div className="cajero-capture-detail"><div className="cajero-capture-detail__information"><section className="cajero-capture-detail__card">
-          <h3>{group.nombre}</h3>{group.productos.length > 1 ? <details><summary>Productos incluidos</summary><ul>{group.productos.map(p => <li key={p.c_interno}>{p.producto} - #{p.c_interno}</li>)}</ul></details> : null}
+          <div className="cajero-capture-detail__card-heading"><h3>{group.nombre}</h3>
+            <button aria-label="Agregar observación (próximamente)" className="cajero-capture-detail__observation-button" disabled type="button"><MessageSquarePlus aria-hidden="true" size={20} /></button>
+          </div>{group.productos.length > 1 ? <details><summary>Productos incluidos</summary><ul>{group.productos.map(p => <li key={p.c_interno}>{p.producto} - #{p.c_interno}</li>)}</ul></details> : null}
           {reviewEntry && action === 'review' ? <p>Última diferencia: {formatCajeroDifference(reviewEntry.ultima_diferencia)}</p> : null}
           <dl><div><dt>Stock TumiSoft</dt><dd>{group.stock_teorico}</dd></div><div><dt>Conteo</dt><dd>{physical ?? '—'}</dd></div>
             <div><dt>Diferencia</dt><dd>{formatCajeroDifference(difference)}</dd></div><div><dt>Valorizado</dt><dd>{valuation === null ? '—' : formatCajeroCurrency(valuation)}</dd></div></dl>
