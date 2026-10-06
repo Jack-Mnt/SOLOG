@@ -72,7 +72,7 @@ test('8.2B valida shapes compactos y diferencias autoritativas', () => {
   expect(chronology.chronology.every(row => !('valuation' in row))).toBe(true)
 })
 
-test('8.2B payloads fijan ISO estricto, page size remoto inexistente y períodos quincenales', () => {
+test('8.2B payloads fijan ISO estricto, page size remoto inexistente y períodos de cronología vigentes', () => {
   expect(() => validateControlPayload('daily_detail_bootstrap', bootstrapPayload)).not.toThrow()
   expect(() => validateControlPayload('daily_detail_page', pagePayload)).not.toThrow()
   expect(() => validateControlPayload('control_chronology_view', chronologyPayload)).not.toThrow()
@@ -121,7 +121,7 @@ test('8.2B cronología compacta conserva caché por grupo/período y lazy indepe
   await store.load('control_chronology_view', chronologyPayload)
   const previous = await store.load('control_chronology_view', {
     ...chronologyPayload,
-    period: 'previous_biweekly',
+    period: 'previous_counts',
   })
 
   expect(current.chronology.length).toBeGreaterThan(0)
