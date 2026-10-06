@@ -1,4 +1,5 @@
 name: Cajero 2.3 Validation
+# rerun after transition assertion alignment
 
 on:
   push:
