@@ -487,7 +487,7 @@ try {
     await page.getByRole('heading', { name: 'Revisar', exact: true }).waitFor()
     assert.deepEqual(await page.locator('.cajero-review-list__head span').allTextContents(), ['Nombre', 'Última diferencia', 'Diferencia actual'])
     assert.equal(await page.getByRole('button', { name: 'Registrar conteo', exact: true }).count(), 0)
-    const reviewFilter = page.locator('.cajero-review-filter')
+    const reviewFilter = page.locator('.cajero-segmented-control--symbols')
     const plusFilter = reviewFilter.locator('button').nth(0)
     const minusFilter = reviewFilter.locator('button').nth(1)
     assert.equal(await plusFilter.getAttribute('aria-pressed'), 'true')
