@@ -550,4 +550,3 @@ REVOKE ALL ON FUNCTION public.rpc_solog_admin_control_v1(text,jsonb) FROM PUBLIC
 REVOKE ALL ON FUNCTION public.rpc_solog_admin_control_v1(text,jsonb) FROM anon;
 REVOKE ALL ON FUNCTION public.rpc_solog_admin_control_v1(text,jsonb) FROM authenticated;
 GRANT EXECUTE ON FUNCTION public.rpc_solog_admin_control_v1(text,jsonb) TO authenticated;
-
