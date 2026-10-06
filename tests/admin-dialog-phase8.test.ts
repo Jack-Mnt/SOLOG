@@ -57,7 +57,7 @@ describe('AdminDialog Fase 8 — Drawers', () => {
     expect(migration).toContain("daily_detail_bootstrap")
   })
 
-  test('Cronología usa timeline y carga la quincena anterior solo al activar el switch', async () => {
+  test('Cronología usa timeline y carga Conteos anteriores solo al activar el switch', async () => {
     const control = await source('src/features/solog/admin/control/admin.control.v2.tsx')
     const context = await source('src/features/solog/admin/admin.v2.context.tsx')
     const css = await source('src/features/solog/admin/admin.css')
@@ -75,9 +75,10 @@ describe('AdminDialog Fase 8 — Drawers', () => {
     expect(control).toContain('className="admin-drawer-entity-summary"')
     expect(control).toContain('className={index === 0 ? "is-latest" : undefined}')
     expect(control).toContain('data-tone={tone}')
-    expect(control).toContain('Incluir quincena anterior')
+    expect(control).toContain('Conteos anteriores')
     expect(control).toContain('role="switch"')
     expect(control).toContain('{ enabled: showPrevious }')
+    expect(control).toContain('period: "previous_counts"')
     expect(control).toContain('useAdminQuery("control_chronology_view"')
     expect(control).toContain('currentData?.group.latest_unit_price')
     expect(control).toContain('drawerMaxWidth={560}')
