@@ -44,7 +44,7 @@ for (const [instant, date, clock] of [
 ]) test('G2 presentación Lima '+instant, () => {
   expect(detailsDate(Date.parse(instant))).toBe(date)
   // Presentación Admin aprobada en am/pm; normaliza NBSP del Intl del runner.
-  expect(adminTimestamp(instant).replace(/\\s+/g, ' ')).toContain(clock)
+  expect(adminTimestamp(instant).replace(/\s+/g, ' ')).toContain(clock)
 })
 
 test('G2 Total autoritativo no se suma desde turnos ni se elimina al ser cero', () => {
