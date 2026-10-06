@@ -1,3 +1,4 @@
+import { Delete } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import type { CajeroCalculatorKey } from "./cajero.utils";
 import {
@@ -5,7 +6,7 @@ import {
   evaluateCajeroExpression,
 } from "./cajero.utils";
 
-const BASE_KEYS: Array<{
+const KEYS: Array<{
   key: CajeroCalculatorKey;
   label: string;
   className?: string;
@@ -14,34 +15,22 @@ const BASE_KEYS: Array<{
   { key: "7", label: "7" },
   { key: "8", label: "8" },
   { key: "9", label: "9" },
-  {
-    key: "clear",
-    label: "C",
-    className: "is-control",
-    ariaLabel: "Limpiar expresión",
-  },
+  { key: "times6", label: "×6", className: "is-operator is-multiplier", ariaLabel: "Multiplicar por 6" },
+  { key: "×", label: "×", className: "is-operator is-tall", ariaLabel: "Multiplicar" },
   { key: "4", label: "4" },
   { key: "5", label: "5" },
   { key: "6", label: "6" },
-  { key: "×", label: "×", className: "is-operator", ariaLabel: "Multiplicar" },
+  { key: "times12", label: "×12", className: "is-operator is-multiplier", ariaLabel: "Multiplicar por 12" },
   { key: "1", label: "1" },
   { key: "2", label: "2" },
   { key: "3", label: "3" },
-  { key: "+", label: "+", className: "is-operator", ariaLabel: "Sumar" },
+  { key: "times15", label: "×15", className: "is-operator is-multiplier", ariaLabel: "Multiplicar por 15" },
+  { key: "+", label: "+", className: "is-operator is-tall", ariaLabel: "Sumar" },
+  { key: "clear", label: "C", className: "is-control is-clear", ariaLabel: "Limpiar expresión" },
   { key: "0", label: "0" },
+  { key: "backspace", label: "", className: "is-control is-backspace", ariaLabel: "Borrar último carácter" },
+  { key: "times24", label: "×24", className: "is-operator is-multiplier", ariaLabel: "Multiplicar por 24" },
 ];
-
-const KEYS = [
-  ...BASE_KEYS,
-  { key: "times6", label: "x6", className: "is-operator", ariaLabel: "Multiplicar por 6" },
-  { key: "times12", label: "x12", className: "is-operator", ariaLabel: "Multiplicar por 12" },
-  { key: "backspace", label: "⌫", className: "is-control", ariaLabel: "Borrar último carácter" },
-] satisfies Array<{
-  key: CajeroCalculatorKey;
-  label: string;
-  className?: string;
-  ariaLabel?: string;
-}>;
 
 export function CajeroCalculator({
   expression,
@@ -97,7 +86,7 @@ export function CajeroCalculator({
             onClick={() => applyKey(item.key)}
             type="button"
           >
-            {item.label}
+            {item.key === "backspace" ? <Delete aria-hidden="true" size={22} /> : item.label}
           </button>
         ))}
 
