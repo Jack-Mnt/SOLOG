@@ -457,22 +457,21 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
     item.scope.conteo_id === activeScope?.conteo_id && item.scope.groups_revision === activeScope.groups_revision) ?? null
   const countedGroupIds = new Set(record?.normal.map(item => item.grupo_id) ?? [])
   return <section className={`cajero-module cajero-operational${action === 'review' ? ' cajero-review' : ''}`}>
-    <div className={`cajero-module__heading cajero-operational__heading${action === 'review' ? '' : ' cajero-operational__heading--with-action'}`}><div><h1>{title}</h1><p>Registra la realidad</p>
+    <div className={`cajero-module__heading cajero-operational__heading${action === 'review' ? ' cajero-review__heading' : ' cajero-operational__heading--with-action'}`}><div><h1>{title}</h1><p>Registra la realidad</p>
       {action === 'daily' ? <p>{panel?.kpis.daily_pending ?? 0} pendientes</p> : null}</div>
-      {action === 'review' ? null : <RegisterCountButton runtime={runtime} />}</div>
+      {action === 'review' ? <div className="cajero-segmented-control cajero-segmented-control--symbols" role="group" aria-label="Filtrar por última diferencia">
+        {(['positive', 'negative'] as const).map(sign => {
+          const active = differenceSigns[sign]
+          const otherSign = sign === 'positive' ? 'negative' : 'positive'
+          const label = sign === 'positive' ? 'sobrantes' : 'faltantes'
+          return <button aria-label={`${active ? 'Ocultar' : 'Mostrar'} ${label}`} aria-pressed={active} className={active ? 'is-active' : undefined}
+            key={sign} onClick={() => setDifferenceSigns(current => current[sign] && !current[otherSign] ? current : { ...current, [sign]: !current[sign] })}
+            type="button">{sign === 'positive' ? '+' : '−'}</button>
+        })}</div> : <RegisterCountButton runtime={runtime} />}</div>
     {action === 'coverage' ? <section className="cajero-selection-level cajero-selection-level--stock"><h2>Tipo de stock</h2><div className="cajero-selection-grid">
       {(Object.keys(stockLabels) as CashierV4StockType[]).map(type => <button aria-pressed={stockType === type} className={stockType === type ? 'is-active' : undefined} key={type} onClick={() => { setStockType(type); setCategory(null) }} type="button">
         <ClipboardList aria-hidden="true" size={23} /><span><strong>{stockLabels[type]}</strong><small>{counts[type]} pendientes</small></span></button>)}</div></section> : null}
-    {action === 'review' ? <><div className="cajero-review-filter" role="group" aria-label="Filtrar por última diferencia">
-      {(['positive', 'negative'] as const).map(sign => {
-        const active = differenceSigns[sign]
-        const otherSign = sign === 'positive' ? 'negative' : 'positive'
-        const label = sign === 'positive' ? 'sobrantes' : 'faltantes'
-        return <button aria-label={`${active ? 'Ocultar' : 'Mostrar'} ${label}`} aria-pressed={active} className={active ? 'is-active' : undefined}
-          key={sign} onClick={() => setDifferenceSigns(current => current[sign] && !current[otherSign] ? current : { ...current, [sign]: !current[sign] })}
-          type="button">{sign === 'positive' ? '+' : '−'}</button>
-      })}</div>
-      <div className="cajero-review-list"><div className="cajero-review-list__head"><span>Nombre</span><span>Última diferencia</span><span>Diferencia actual</span></div>
+    {action === 'review' ? <><div className="cajero-review-list"><div className="cajero-review-list__head"><span>Nombre</span><span>Última diferencia</span><span>Diferencia actual</span></div>
         <div className="cajero-review-list__rows">{review.filter(entry =>
           (entry.queueItem.ultima_diferencia > 0 && differenceSigns.positive)
           || (entry.queueItem.ultima_diferencia < 0 && differenceSigns.negative)
