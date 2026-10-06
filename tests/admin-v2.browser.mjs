@@ -70,7 +70,7 @@ export async function runAdminV2Browser() {
     const rpc = url.pathname.split('/').at(-1)
     const body = route.request().postDataJSON()
     assert.ok(
-      ['rpc_solog_admin_bootstrap_v2', 'rpc_solog_operational_v2', 'rpc_solog_control_export_v2'].includes(rpc),
+      ['rpc_solog_admin_bootstrap_v2', 'rpc_solog_operational_v2', 'rpc_solog_admin_control_v1', 'rpc_solog_control_export_v2'].includes(rpc),
       'Unexpected Admin RPC: ' + rpc,
     )
 
@@ -173,6 +173,7 @@ export async function runAdminV2Browser() {
     const control = page.locator('.admin-control')
     await control.getByText('Grupo 49', { exact: true }).waitFor()
     assert.equal(count('control_groups'), 1)
+    assert.equal(calls.find(call => call.action === 'control_groups').rpc, 'rpc_solog_admin_control_v1')
     assert.equal(await control.locator('tbody tr').count(), 50)
 
     const groupCalls = count('control_groups')
@@ -200,22 +201,23 @@ export async function runAdminV2Browser() {
       ['Inconsistente', 'Confirmado', 'Recontado', 'Coincide'],
     )
     assert.equal(count('control_chronology_view'), 1)
+    assert.equal(calls.find(call => call.action === 'control_chronology_view').rpc, 'rpc_solog_admin_control_v1')
     assert.deepEqual(calls.find(call => call.action === 'control_chronology_view').payload, {
       site_id: 'site-a',
       group_id: 'group-0',
       period: 'current_biweekly',
     })
 
-    const previousSwitch = chronologyDrawer.getByRole('switch', { name: 'Incluir quincena anterior' })
+    const previousSwitch = chronologyDrawer.getByRole('switch', { name: 'Conteos anteriores' })
     assert.equal(await previousSwitch.getAttribute('aria-checked'), 'false')
     await previousSwitch.click()
-    await page.waitForFunction(() => document.querySelector('[role="switch"][aria-label="Incluir quincena anterior"]')?.getAttribute('aria-checked') === 'true')
+    await page.waitForFunction(() => document.querySelector('[role="switch"][aria-label="Conteos anteriores"]')?.getAttribute('aria-checked') === 'true')
     assert.equal(count('control_chronology_view'), 2)
-    assert.equal(calls.filter(call => call.action === 'control_chronology_view').at(-1).payload.period, 'previous_biweekly')
+    assert.equal(calls.filter(call => call.action === 'control_chronology_view').at(-1).payload.period, 'previous_counts')
 
     await previousSwitch.click()
     await previousSwitch.click()
-    assert.equal(count('control_chronology_view'), 2, 'Previous biweekly chronology stays cached')
+    assert.equal(count('control_chronology_view'), 2, 'Previous-counts chronology stays cached')
     await chronologyDrawer.getByRole('button', { name: 'Cerrar', exact: true }).click()
 
     await control.getByRole('button', { name: 'Ver cronología de Grupo 0', exact: true }).click()
