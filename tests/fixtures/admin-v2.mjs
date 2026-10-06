@@ -48,7 +48,9 @@ export function chronologyViewFixture(p) {
     ...envelope(),
     site_id: p.site_id,
     group: { id: p.group_id, name: 'Grupo '+p.group_id.replace('group-',''), category: 'Bebidas', latest_unit_price: current ? 42 : 22 },
-    period: gridFixture(p.site_id,p.period).period,
+    period: current
+      ? gridFixture(p.site_id,'current_biweekly').period
+      : { key: 'previous_counts', from: '2026-07-21', to: '2026-08-31' },
     chronology: current ? [
       { row_id:'final-1',event_at:'2026-09-18T22:30:00Z',state:'Inconsistente',theoretical:114,initial_difference:-10,found_difference:5 },
       { row_id:'final-0',event_at:'2026-09-16T22:30:00Z',state:'Confirmada',difference:5,valued_difference:110 },
