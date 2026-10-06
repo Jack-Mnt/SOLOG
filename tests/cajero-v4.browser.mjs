@@ -113,6 +113,11 @@ async function scenario({ startAction = 'coverage', preSessionAction = 'coverage
         precio: 4, valor_diferencia: 4, estado_diferencia: 'Inválido', contado_at: b.server_now, recontado_at: null,
         snapshot_referencia_id: null, primer_snapshot_posterior_id: null, snapshot_posterior_id: null, snapshot_reconteo_id: null,
         stock_posterior: null, stock_teorico_reconteo: null, stock_reconteo: null,
+      }, {
+        detalle_id: ids.savedDetail, grupo_id: ids.review, grupo: 'Grupo histórico coincide', categoria: 'Abarrotes', stock_teorico: 12, stock_fisico: 10, diferencia: 0,
+        precio: 4, valor_diferencia: 0, estado_diferencia: 'Coincide', contado_at: b.server_now, recontado_at: b.server_now,
+        snapshot_referencia_id: ids.snapshot, primer_snapshot_posterior_id: ids.snapshot, snapshot_posterior_id: ids.snapshot, snapshot_reconteo_id: ids.snapshot,
+        stock_posterior: 10, stock_teorico_reconteo: 10, stock_reconteo: 10,
       }] })
     assert.equal(rpc, 'rpc_solog_cashier_mutate_v4')
     const action = body.p_action, payload = body.p_payload
@@ -557,8 +562,18 @@ try {
   await scenario({ initial: 'active', startAction: 'daily' }, async (page, calls) => {
     await nav(page).getByRole('button', { name: 'Historial', exact: true }).click()
     await page.getByRole('heading', { name: 'Historial', exact: true }).waitFor()
-    await page.getByRole('button', { name: 'Expandir detalle de Grupo histórico inválido' }).click()
-    await page.getByText('Grupo histórico inválido', { exact: true }).waitFor()
+    assert.deepEqual(await page.locator('.cajero-history-list__head span').allTextContents(), ['Nombre', 'Diferencia', 'Valorizado', ''])
+    const invalidArticle = page.locator('.cajero-history-list__rows article').filter({ hasText: 'Grupo histórico inválido' })
+    const invalidExpand = invalidArticle.getByRole('button', { name: 'Expandir detalle de Grupo histórico inválido' })
+    assert.match(await invalidExpand.locator('svg').getAttribute('class'), /lucide-chevron-right/)
+    await invalidExpand.click()
+    assert.match(await invalidArticle.getByRole('button', { name: 'Contraer detalle de Grupo histórico inválido' }).locator('svg').getAttribute('class'), /lucide-chevron-down/)
+    assert.equal(await invalidArticle.getByText('Hora de reconteo', { exact: true }).count(), 0)
+    const coincideArticle = page.locator('.cajero-history-list__rows article').filter({ hasText: 'Grupo histórico coincide' })
+    await coincideArticle.getByRole('button', { name: 'Expandir detalle de Grupo histórico coincide' }).click()
+    assert.equal(await coincideArticle.getByText('Hora de reconteo', { exact: true }).count(), 1)
+    assert.equal(await coincideArticle.getByText('Stock posterior', { exact: true }).count(), 1)
+    assert.equal(await coincideArticle.getByText('Reconteo', { exact: true }).count(), 1)
     assert.equal(calls.at(-1).rpc, 'rpc_solog_cashier_history_v2')
     await nav(page).getByRole('button', { name: 'Conteo diario', exact: true }).click()
     await page.getByRole('heading', { name: 'Conteo diario', exact: true }).waitFor()
