@@ -65,7 +65,8 @@
 }
 
 .cajero-stock-indicator__trigger--near_expiry .cajero-stock-indicator__dot,
-.cajero-stock-indicator__trigger--critical .cajero-stock-indicator__dot {
+.cajero-stock-indicator__trigger--critical .cajero-stock-indicator__dot,
+.cajero-stock-indicator__trigger--countdown .cajero-stock-indicator__dot {
   background: #ffc857;
   box-shadow: 0 0 0 3px rgb(255 200 87 / 14%);
 }
