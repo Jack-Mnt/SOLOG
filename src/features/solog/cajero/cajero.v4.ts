@@ -1,4 +1,4 @@
-// Wire contract: docs/SOLOG_Backend_Contrato_Cajero_V4.md.
+// Wire contract: docs/SOLOG_Backend_Contrato_Cajero_V4_Delta_Prioridades_V1.md.
 // Foundation only; the productive runtime is connected in a later phase.
 export type CashierV4SessionState = 'activo' | 'recovery' | 'finalizado' | 'expirado'
 export type CashierV4GroupAction = 'recount' | 'coverage' | 'daily' | 'none'
