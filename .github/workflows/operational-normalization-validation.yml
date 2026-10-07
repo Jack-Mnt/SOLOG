@@ -1,4 +1,5 @@
 name: Operational Normalization Validation
+# rerun after smoke synchronization and whitespace cleanup
 
 on:
   push:
