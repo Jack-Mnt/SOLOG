@@ -570,7 +570,7 @@ try {
     await nav(page).getByRole('button', { name: 'Historial', exact: true }).click()
     await page.getByRole('heading', { name: 'Historial', exact: true }).waitFor()
     assert.equal(await page.getByText('2 registros', { exact: true }).count(), 1)
-    assert.equal(await page.getByText('El historial muestra únicamente conteos registrados en SOLOG.', { exact: true }).count(), 0)
+    assert.equal(await page.getByText('2 observaciones', { exact: true }).count(), 0)
     assert.deepEqual(await page.locator('.cajero-history-list__head span').allTextContents(), ['Nombre', 'Diferencia', 'Valorizado', ''])
     const invalidArticle = page.locator('.cajero-history-list__rows article').filter({ hasText: 'Grupo histórico inválido' })
     const invalidExpand = invalidArticle.getByRole('button', { name: 'Expandir detalle de Grupo histórico inválido' })
