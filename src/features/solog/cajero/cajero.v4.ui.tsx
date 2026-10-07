@@ -70,22 +70,22 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
   </div>
   if (local.closeState === 'uncertain') return <div className="cajero-alert cajero-alert--warning cajero-close-notice" role="status">
     <AlertTriangle size={22} aria-hidden="true" />
-    <div><strong>Estamos verificando si el último envío fue recibido.</strong><p>Los conteos permanecen guardados en este dispositivo.</p></div>
+    <div><strong>Estamos verificando si el último registro se completó.</strong><p>Los conteos permanecen guardados en este dispositivo.</p></div>
     <button className="button button--secondary" disabled={local.busy} onClick={retry} type="button"><RefreshCw size={18} aria-hidden="true" /> Reintentar</button>
   </div>
   if (local.closeState === 'conflict') return <div className="cajero-alert cajero-alert--error cajero-close-notice" role="alert">
     <AlertTriangle size={22} aria-hidden="true" />
-    <div><strong>El envío necesita revisión.</strong><p>La operación conserva su identificador y sus datos. No se puede descartar automáticamente.</p></div>
+    <div><strong>El registro necesita revisión.</strong><p>Los datos de la operación permanecen guardados. No se puede descartar automáticamente.</p></div>
   </div>
 
   return <><div className="cajero-alert cajero-alert--error cajero-close-notice" role="alert">
     <AlertTriangle size={22} aria-hidden="true" />
-    <div><strong>Envío pendiente</strong><p>No se pudieron guardar algunos conteos. Tus conteos permanecen guardados en este dispositivo.</p></div>
+    <div><strong>Registro pendiente</strong><p>No se pudieron guardar algunos conteos. Tus conteos permanecen guardados en este dispositivo.</p></div>
     <div className="cajero-close-notice__actions">
       {runtime.requiresRefresh ? <button className="button button--secondary" disabled={local.busy || state.loading} onClick={refresh} type="button">
         <RefreshCw size={18} aria-hidden="true" /> Actualizar estado</button>
         : lifecyclePresent ? <button className="button button--secondary" disabled={local.busy} onClick={retry} type="button">
-          <RefreshCw size={18} aria-hidden="true" /> Reintentar envío</button> : null}
+          <RefreshCw size={18} aria-hidden="true" /> Reintentar registro</button> : null}
       {runtime.canDiscardClose ? <button className="button button--danger" disabled={local.busy} onClick={() => setConfirmDiscard(true)} type="button">
         <Trash2 size={18} aria-hidden="true" /> Descartar conteos</button> : null}
     </div>
@@ -123,7 +123,7 @@ type CajeroHomeStep = Exclude<CashierV4NextAction, 'none'>
 const homeStepCopy: Record<CajeroHomeStep, { label: string; description: string }> = {
   coverage: { label: 'Conteo', description: 'Completa los grupos pendientes de la cobertura quincenal.' },
   review: { label: 'Revisar', description: 'Recuenta los casos que requieren una nueva verificación física.' },
-  daily: { label: 'Diario', description: 'Registra los grupos habilitados para el conteo diario.' },
+  daily: { label: 'Conteo diario', description: 'Registra los grupos habilitados para el conteo diario.' },
 }
 
 function initialCashierStockType(): CashierV4StockType {
@@ -293,7 +293,7 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
     <div className="cajero-home__heading"><h1 id="cajero-inicio-title">Inicio</h1></div>
 
     <section className="cajero-stock-card cajero-stock-card--updated">
-      <div className="cajero-stock-card__status"><div><h2>{state.stock?.snapshot_id ? 'Inventario disponible' : 'No hay un inventario disponible'}</h2>
+      <div className="cajero-stock-card__status"><div><h2>{state.stock?.snapshot_id ? 'Inventario cargado' : 'No hay inventario cargado'}</h2>
         {state.bootstrap?.start_capability.reason && !panel ? <p>{getCashierV4ErrorPolicy(new SologApiError(state.bootstrap.start_capability.reason as SologErrorCode)).message}</p> : null}</div></div>
       <div className="cajero-stock-card__actions">
         {panel && !preparedStart
@@ -416,7 +416,7 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
           <div className="cajero-capture-detail__card-heading"><h3>{group.nombre}</h3>
             <button aria-label="Agregar observación (próximamente)" className="cajero-capture-detail__observation-button" disabled type="button"><MessageSquarePlus aria-hidden="true" size={20} /></button>
           </div>{group.productos.length > 1 ? <details><summary>Productos incluidos</summary><ul>{group.productos.map(p => <li key={p.c_interno}>{p.producto} - #{p.c_interno}</li>)}</ul></details> : null}
-          {reviewEntry && action === 'review' ? <p>Última diferencia: {formatCajeroDifference(reviewEntry.ultima_diferencia)}</p> : null}
+          {reviewEntry && action === 'review' ? <p>Diferencia inicial: {formatCajeroDifference(reviewEntry.ultima_diferencia)}</p> : null}
           <dl><div><dt>Stock TumiSoft</dt><dd>{group.stock_teorico}</dd></div><div><dt>Conteo</dt><dd>{physical ?? '—'}</dd></div>
             <div><dt>Diferencia</dt><dd>{formatCajeroDifference(difference)}</dd></div><div><dt>Valorizado</dt><dd>{valuation === null ? '—' : formatCajeroCurrency(valuation)}</dd></div></dl>
         </section></div>{error ? <div role="alert" className="cajero-alert cajero-alert--error">{error}</div> : null}
@@ -459,9 +459,9 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
     item.scope.conteo_id === activeScope?.conteo_id && item.scope.groups_revision === activeScope.groups_revision) ?? null
   const countedGroupIds = new Set(record?.normal.map(item => item.grupo_id) ?? [])
   return <section className={`cajero-module cajero-operational${action === 'review' ? ' cajero-review' : ''}`}>
-    <div className={`cajero-module__heading cajero-operational__heading${action === 'review' ? ' cajero-review__heading' : ' cajero-operational__heading--with-action'}`}><div><h1>{title}</h1><p>Registra la realidad</p>
+    <div className={`cajero-module__heading cajero-operational__heading${action === 'review' ? ' cajero-review__heading' : ' cajero-operational__heading--with-action'}`}><div><h1>{title}</h1><p>{action === 'review' ? 'Verifica la realidad' : 'Registra la realidad'}</p>
       {action === 'daily' ? <p>{panel?.kpis.daily_pending ?? 0} pendientes</p> : null}</div>
-      {action === 'review' ? <div className="cajero-segmented-control cajero-segmented-control--symbols" role="group" aria-label="Filtrar por última diferencia">
+      {action === 'review' ? <div className="cajero-segmented-control cajero-segmented-control--symbols" role="group" aria-label="Filtrar por diferencia inicial">
         {(['positive', 'negative'] as const).map(sign => {
           const active = differenceSigns[sign]
           const otherSign = sign === 'positive' ? 'negative' : 'positive'
@@ -473,7 +473,7 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
     {action === 'coverage' ? <section className="cajero-selection-level cajero-selection-level--stock"><h2>Tipo de stock</h2><div className="cajero-selection-grid">
       {(Object.keys(stockLabels) as CashierV4StockType[]).map(type => <button aria-pressed={stockType === type} className={stockType === type ? 'is-active' : undefined} key={type} onClick={() => { setStockType(type); setCategory(null) }} type="button">
         <ClipboardList aria-hidden="true" size={23} /><span><strong>{stockLabels[type]}</strong><small>{counts[type]} pendientes</small></span></button>)}</div></section> : null}
-    {action === 'review' ? <><div className="cajero-review-list"><div className="cajero-review-list__head"><span>Nombre</span><span>Última diferencia</span><span>Diferencia actual</span></div>
+    {action === 'review' ? <><div className="cajero-review-list"><div className="cajero-review-list__head"><span>Nombre</span><span>Diferencia inicial</span><span>Diferencia actual</span></div>
         <div className="cajero-review-list__rows">{review.filter(entry =>
           (entry.queueItem.ultima_diferencia > 0 && differenceSigns.positive)
           || (entry.queueItem.ultima_diferencia < 0 && differenceSigns.negative)
@@ -483,7 +483,7 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
           const lastDifference = formatCajeroDifference(queueItem.ultima_diferencia)
           const currentDifferenceLabel = draft ? `diferencia actual ${formatCajeroDifference(currentDifference)}` : 'sin reconteo actual'
           return <button key={queueItem.detalle_id} disabled={!allowed}
-            aria-label={`Revisar ${group.nombre}, última diferencia ${lastDifference}, ${currentDifferenceLabel}`}
+            aria-label={`Revisar ${group.nombre}, diferencia inicial ${lastDifference}, ${currentDifferenceLabel}`}
             onClick={() => setReviewGroup(group.grupo_id)} type="button">
             <strong>{group.nombre}</strong>
             <span className={getCajeroDifferenceClass(queueItem.ultima_diferencia)}>{lastDifference}</span>
@@ -523,7 +523,7 @@ export function CajeroV4({ runtime, route, onLogout }: { runtime: CashierV4Runti
   }, [autoCloseDue, local.busy, runtime])
   return <div className="cajero-shell"><CajeroV4Header runtime={runtime} onLogout={onLogout} /><main className="cajero-main">
     {(autoCloseDue || closeVisible) ? <CajeroCloseNotice runtime={runtime} /> : null}
-    {!autoCloseDue && !closeVisible && runtime.recoveryPending.length ? <div className="cajero-alert cajero-alert--warning" role="status"><AlertTriangle size={22} aria-hidden="true" /><p>Hay conteos pendientes de envío. Se conservan en este dispositivo hasta poder completar su guardado.</p></div> : null}
+    {!autoCloseDue && !closeVisible && runtime.recoveryPending.length ? <div className="cajero-alert cajero-alert--warning" role="status"><AlertTriangle size={22} aria-hidden="true" /><p>Hay conteos pendientes de registro. Se conservan en este dispositivo hasta poder completar su guardado.</p></div> : null}
     {!autoCloseDue && !closeVisible && (captureClosed || (runtime.requiresRefresh && !policy)) ? <div className="cajero-alert cajero-alert--warning" role="status"><p>Esta sesión requiere consultar el estado actualizado del panel; los pendientes locales se conservan.</p>
       <button className="button button--secondary" disabled={local.busy || state.loading} onClick={() => void runtime.refresh().catch(() => {})} type="button">Actualizar</button></div> : null}
     {!closeVisible && policy ? <div className="cajero-alert cajero-alert--error" role="alert"><p>{policy.message}</p>
