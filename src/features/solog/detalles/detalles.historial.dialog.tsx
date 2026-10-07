@@ -176,7 +176,7 @@ export function SologDetailsHistoryDialog({
         <div className="details-history-dialog__toolbar">
           <div
             aria-label="Período del historial"
-            className="cajero-history-tabs"
+            className="cajero-segmented-control"
             role="group"
           >
             {(['today', 'yesterday'] as const).map((option) => (
