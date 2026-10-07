@@ -1,4 +1,5 @@
 name: Cajero 2.6 Validation
+# rerun after terminology expectation alignment
 
 on:
   push:
