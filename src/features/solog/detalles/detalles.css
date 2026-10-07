@@ -1,4 +1,4 @@
-/* Estilos exclusivos de Detalles — Fase 6. */
+/* Estilos exclusivos de Detalles. */
 
 /* Detalles de dispositivo — resumen aislado y de solo lectura */
 .details-shell {
@@ -13,26 +13,13 @@
   gap: clamp(0.9rem, 2vw, 1.2rem);
 }
 
-.details-panel__heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
 .details-panel__heading h1 {
   margin: 0.2rem 0 0.35rem;
   font-size: clamp(1.55rem, 3vw, 2rem);
   letter-spacing: -0.035em;
 }
 
-.details-panel__heading p {
-  margin: 0;
-  color: var(--color-text-secondary);
-}
-
-.details-readonly-badge,
-.details-request-status {
+.details-readonly-badge {
   width: fit-content;
   display: inline-flex;
   align-items: center;
@@ -116,83 +103,6 @@
   justify-content: center;
 }
 
-.details-request-status {
-  padding: 0.38rem 0.65rem;
-  color: var(--color-warning);
-  background: var(--color-warning-soft);
-}
-
-.details-notice {
-  border-color: color-mix(
-    in srgb,
-    var(--color-success) 35%,
-    var(--color-border)
-  );
-  color: color-mix(
-    in srgb,
-    var(--color-success) 76%,
-    var(--color-text-primary)
-  );
-  background: var(--color-success-soft);
-}
-
-.details-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.85rem;
-}
-
-.details-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.15rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-default);
-}
-
-.details-actions > div {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.details-actions > div > svg {
-  flex: 0 0 auto;
-  color: var(--color-primary);
-}
-
-.details-actions h2,
-.details-actions p {
-  margin: 0;
-}
-
-.details-actions h2 {
-  font-size: 0.95rem;
-}
-
-.details-actions p {
-  margin-top: 0.2rem;
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
-}
-
-.details-actions .button {
-  min-height: 46px;
-  flex: 0 0 auto;
-  justify-content: center;
-}
-
-.details-actions__buttons {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 20px;
-}
-
 .details-history-backdrop {
   position: fixed;
   z-index: 110;
@@ -270,21 +180,6 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .details-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .details-actions .button {
-    width: 100%;
-  }
-
-  .details-actions__buttons {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 20px;
-  }
 }
 
 @media (max-width: 599px) {
