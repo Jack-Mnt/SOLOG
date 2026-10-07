@@ -46,6 +46,7 @@ const states = ['activo', 'recovery', 'finalizado', 'expirado'] as const
 const actions = ['start', 'save_batch', 'recount_save_batch', 'finish'] as const
 const nextActions = ['review', 'coverage', 'daily', 'none'] as const
 const groupActions = ['recount', 'coverage', 'daily', 'none'] as const
+const reviewPriorityClasses = ['review_for_coverage', 'review_regular'] as const
 function round(value: unknown) { oneOf(value, [1, 2]) }
 function shift(value: unknown) { oneOf(value, ['early', 'day', 'night']) }
 function revisions(value: unknown) {
@@ -140,6 +141,7 @@ function queues(value: Record<string, unknown>) {
   const review = array(value.review_queue).map((value) => {
     const q = record(value)
     uuid(q.grupo_id); uuid(q.detalle_id); finite(q.ultima_diferencia); timestamp(q.contado_at)
+    oneOf(q.priority_class, reviewPriorityClasses)
     return q
   })
   const coverage = array(value.coverage_queue)
