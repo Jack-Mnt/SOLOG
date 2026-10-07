@@ -193,8 +193,8 @@ describe('runtime productivo V4', () => {
     await expect(runtime.autoCloseExpiredSession()).rejects.toThrow()
 
     const markup = renderRuntime(runtime, '/cajero')
-    expect(markup).toContain('Envío pendiente')
-    expect(markup).toContain('Reintentar envío')
+    expect(markup).toContain('Registro pendiente')
+    expect(markup).toContain('Reintentar registro')
     expect(markup).toContain('Descartar conteos')
     expect(markup).not.toContain('Recovery')
     expect(markup).not.toContain('Sesión vencida')
@@ -211,7 +211,7 @@ describe('runtime productivo V4', () => {
     await expect(runtime.autoCloseExpiredSession()).rejects.toThrow('timeout')
 
     const markup = renderRuntime(runtime, '/cajero')
-    expect(markup).toContain('Estamos verificando si el último envío fue recibido.')
+    expect(markup).toContain('Estamos verificando si el último registro se completó.')
     expect(markup).toContain('Reintentar')
     expect(markup).not.toContain('Descartar conteos')
     expect(h.storage.read(h.scope).normal).toHaveLength(1)
