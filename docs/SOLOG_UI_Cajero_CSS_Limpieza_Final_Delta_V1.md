@@ -1,9 +1,9 @@
 # SOLOG — UI Cajero — CSS Limpieza Final — Delta V1
 
-**Estado:** CONGELADO — DECISIÓN APROBADA  
-**Fecha:** 7 de octubre de 2026  
-**Proyecto:** SOLOG  
-**Clasificación:** Nivel B — limpieza estructural frontend Cajero  
+**Estado:** CONGELADO — DECISIÓN APROBADA
+**Fecha:** 7 de octubre de 2026
+**Proyecto:** SOLOG
+**Clasificación:** Nivel B — limpieza estructural frontend Cajero
 **Rama:** `admin-work`
 
 ---
