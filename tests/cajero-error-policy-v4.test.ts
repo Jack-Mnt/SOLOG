@@ -10,6 +10,7 @@ describe('Cajero V4: política de errores aislada', () => {
     ['SOLOG_SESSION_PRIORITY_CONFLICT', false, true, false],
     ['SOLOG_GROUP_ALREADY_COUNTED', false, true, false],
     ['SOLOG_NORMAL_COUNT_ALREADY_IN_SHIFT', false, true, false],
+    ['SOLOG_NORMAL_COUNT_BLOCKED_AFTER_INCONSISTENT', false, true, false],
     ['SOLOG_RECOUNT_REQUIRES_PHYSICAL_RECOUNT', false, false, false],
     ['SOLOG_IDEMPOTENCY_CONFLICT', false, false, false],
     ['SOLOG_OPERATION_IN_PROGRESS', true, false, false],
@@ -32,6 +33,8 @@ describe('Cajero V4: política de errores aislada', () => {
       .toBe('La lista de grupos cambió. Actualiza el panel y conserva los pendientes de esta sesión.')
     expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_STOCK_EXPIRED')).message)
       .toBe('El inventario está desactualizado. Se necesita una nueva actualización.')
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_NORMAL_COUNT_BLOCKED_AFTER_INCONSISTENT')).message)
+      .toBe('Este grupo debe volver a contarse en el siguiente turno. Actualiza el panel.')
     expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_IDEMPOTENCY_CONFLICT')).message)
       .not.toContain('identificador')
   })
