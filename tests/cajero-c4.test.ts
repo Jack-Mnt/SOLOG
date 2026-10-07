@@ -85,6 +85,6 @@ describe('C4 tiempo y expiración', () => {
       expect(getCajeroStockPresentation(stock, session, now + minutes * 60000).state).toBe(state)
     }
     expect(getCajeroStockPresentation(stock, session, now + 117 * 60000).countdown).toBe('03:00')
-    expect(getCajeroStockPresentation(stock, session, now + 120 * 60000).label).toBe('Stock desactualizado')
+    expect(getCajeroStockPresentation(stock, null, now + 120 * 60000).label).toBe('Stock desactualizado')
   })
 })
