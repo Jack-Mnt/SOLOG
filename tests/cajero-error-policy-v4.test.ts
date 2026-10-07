@@ -23,6 +23,18 @@ describe('Cajero V4: política de errores aislada', () => {
     expect(policy).toMatchObject({ code, retryable, requiresRefresh, sessionInvalid, userFeedback: true, regenerateOperationId: false })
     expect(policy.message).not.toBe('No se pudo completar la operación en SOLOG.')
   })
+  test('copy visible evita jargon interno del contrato', () => {
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_CONFIRMED_SNAPSHOT_INCOMPLETE')).message)
+      .toBe('El inventario recibido está incompleto. Se necesita una actualización completa del inventario.')
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_SESSION_DELIVERY_NOT_ALLOWED')).message)
+      .toBe('Esta sesión ya no permite registrar conteos pendientes.')
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_GROUPS_REVISION_CONFLICT')).message)
+      .toBe('La lista de grupos cambió. Actualiza el panel y conserva los pendientes de esta sesión.')
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_STOCK_EXPIRED')).message)
+      .toBe('El inventario está desactualizado. Se necesita una nueva actualización.')
+    expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_IDEMPOTENCY_CONFLICT')).message)
+      .not.toContain('identificador')
+  })
   test('idempotency conflict no genera otro UUID ni habilita retry automático', () => {
     expect(getCashierV4ErrorPolicy(new SologApiError('SOLOG_IDEMPOTENCY_CONFLICT'))).toMatchObject({
       regenerateOperationId: false, retryable: false, requiresRefresh: false,
