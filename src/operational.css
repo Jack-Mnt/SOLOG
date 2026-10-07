@@ -1,4 +1,4 @@
-/* Base operacional compartida temporalmente global en Fase 4. Retirar su import global en Fase 6. */
+/* Base operacional compartida por Cajero y Detalles. */
 
 .cajero-shell {
   min-height: 100dvh;
@@ -104,6 +104,20 @@
   gap: 1.25rem;
 }
 
+.cajero-module__heading,
+.details-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cajero-module__heading p,
+.details-panel__heading p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
 .cajero-header__brand:focus-visible,
 .cajero-header__logout:focus-visible {
   outline: 2px solid var(--color-focus);
@@ -158,6 +172,24 @@
   flex: 1 1 auto;
 }
 
+.cajero-alert__dismiss {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-small);
+  color: currentColor;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cajero-alert__dismiss:hover,
+.cajero-alert__dismiss:focus-visible {
+  background: color-mix(in srgb, var(--color-text-primary) 7%, transparent);
+}
+
 .cajero-alert--warning {
   border-color: color-mix(
     in srgb,
@@ -170,6 +202,20 @@
     var(--color-text-primary)
   );
   background: var(--color-warning-soft);
+}
+
+.cajero-alert--success {
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 35%,
+    var(--color-border)
+  );
+  color: color-mix(
+    in srgb,
+    var(--color-success) 76%,
+    var(--color-text-primary)
+  );
+  background: var(--color-success-soft);
 }
 
 .cajero-alert--error {
@@ -196,6 +242,22 @@
     linear-gradient(120deg, var(--color-success-soft), transparent 72%),
     var(--color-surface);
   box-shadow: var(--shadow-default);
+}
+
+.cajero-stock-card--stale {
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border)
+  );
+  background:
+    linear-gradient(120deg, var(--color-warning-soft), transparent 72%),
+    var(--color-surface);
+}
+
+.cajero-stock-card--stale .cajero-stock-card__icon {
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
 }
 
 .cajero-stock-card__status {
@@ -314,6 +376,13 @@
   color: var(--color-primary);
   font-size: clamp(1.35rem, 4vw, 1.8rem);
   letter-spacing: -0.035em;
+}
+
+.cajero-home-metrics,
+.details-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
 }
 
 .cajero-home-metric {
