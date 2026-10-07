@@ -36,6 +36,29 @@ describe('D3 export V4', () => {
     wrongSite = true
     await expect(store.export('current_biweekly')).rejects.toThrow()
   })
+  test('normalización operacional comparte contratos sin iniciar el refactor de namespace', async () => {
+    const operational = await Bun.file('src/operational.css').text()
+    const detailsCss = await Bun.file('src/features/solog/detalles/detalles.css').text()
+    const panel = await Bun.file('src/features/solog/detalles/detalles.panel.tsx').text()
+    const history = await Bun.file('src/features/solog/detalles/detalles.historial.dialog.tsx').text()
+
+    expect(operational).toContain('.details-panel__heading')
+    expect(operational).toContain('.details-metrics')
+    expect(operational).toContain('.cajero-alert__dismiss')
+    expect(operational).toContain('.cajero-alert--success')
+    expect(operational).toContain('.cajero-stock-card--stale')
+    expect(panel).toContain('cajero-alert cajero-alert--success')
+    expect(panel).toContain('cajero-stock-card--stale')
+    expect(panel).not.toContain('details-notice')
+    expect(panel).not.toContain('details-device-card__copy')
+    expect(panel).not.toContain('cajero-module cajero-home details-panel')
+    expect(history).toContain('cajero-segmented-control')
+    expect(history).not.toContain('cajero-history-tabs')
+    expect(detailsCss).not.toContain('.details-actions')
+    expect(detailsCss).not.toContain('.details-request-status')
+    expect(detailsCss).not.toContain('.details-notice')
+  })
+
   test('Excel bajo demanda y sin contrato Control', async () => {
     const source = await Bun.file('src/features/solog/detalles/detalles.export.ts').text()
     expect(source).toMatch(/sheet:\s*["']Resumen["']/)
