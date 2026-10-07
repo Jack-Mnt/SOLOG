@@ -28,10 +28,10 @@
   justify-content: center;
   gap: 0.45rem;
   padding: 0;
-  border: 1px solid rgb(255 255 255 / 18%);
+  border: 1px solid color-mix(in srgb, var(--color-text-inverse) 18%, transparent);
   border-radius: var(--radius-control);
   color: var(--color-text-inverse);
-  background: rgb(255 255 255 / 8%);
+  background: color-mix(in srgb, var(--color-text-inverse) 8%, transparent);
   font: inherit;
   font-size: 0.72rem;
   font-weight: 750;
@@ -43,16 +43,16 @@
   width: auto;
   min-width: 76px;
   padding-inline: 0.55rem;
-  border-color: color-mix(in srgb, var(--color-warning) 70%, white);
-  color: #fff7d6;
-  background: rgb(183 118 0 / 32%);
+  border-color: color-mix(in srgb, var(--color-warning) 70%, var(--color-text-inverse));
+  color: var(--color-warning-soft);
+  background: color-mix(in srgb, var(--color-warning) 32%, transparent);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
 }
 
 .cajero-stock-indicator__trigger--expired {
-  border-color: color-mix(in srgb, var(--color-danger) 70%, white);
-  background: rgb(176 32 45 / 28%);
+  border-color: color-mix(in srgb, var(--color-danger) 70%, var(--color-text-inverse));
+  background: color-mix(in srgb, var(--color-danger) 28%, transparent);
 }
 
 .cajero-stock-indicator__dot {
@@ -60,20 +60,20 @@
   height: 8px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: #61d69b;
-  box-shadow: 0 0 0 3px rgb(97 214 155 / 14%);
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 14%, transparent);
 }
 
 .cajero-stock-indicator__trigger--near_expiry .cajero-stock-indicator__dot,
 .cajero-stock-indicator__trigger--critical .cajero-stock-indicator__dot,
 .cajero-stock-indicator__trigger--countdown .cajero-stock-indicator__dot {
-  background: #ffc857;
-  box-shadow: 0 0 0 3px rgb(255 200 87 / 14%);
+  background: var(--color-warning);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warning) 14%, transparent);
 }
 
 .cajero-stock-indicator__trigger--expired .cajero-stock-indicator__dot {
-  background: #ff7885;
-  box-shadow: 0 0 0 3px rgb(255 120 133 / 14%);
+  background: var(--color-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 14%, transparent);
 }
 
 .cajero-stock-indicator__popover {
@@ -130,10 +130,10 @@
   left: 0;
   min-height: calc(68px + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
-  border-top: 1px solid rgb(255 255 255 / 10%);
+  border-top: 1px solid color-mix(in srgb, var(--color-text-inverse) 10%, transparent);
   color: var(--color-text-inverse);
   background: var(--color-dark-surface);
-  box-shadow: 0 -8px 24px rgb(7 17 38 / 15%);
+  box-shadow: 0 -8px 24px color-mix(in srgb, var(--color-dark-surface) 15%, transparent);
 }
 
 .cajero-nav__inner {
@@ -204,7 +204,7 @@
 .cajero-nav__item:focus-visible,
 .cajero-nav__item.is-active {
   color: var(--color-text-inverse);
-  background: rgb(255 255 255 / 6%);
+  background: color-mix(in srgb, var(--color-text-inverse) 6%, transparent);
 }
 
 .cajero-nav__item:focus-visible {
@@ -254,7 +254,7 @@
 
 .cajero-alert__dismiss:hover,
 .cajero-alert__dismiss:focus-visible {
-  background: rgb(15 23 42 / 7%);
+  background: color-mix(in srgb, var(--color-text-primary) 7%, transparent);
 }
 
 .cajero-period-complete {
@@ -810,8 +810,6 @@
   flex-direction: row;
 }
 
-@media (max-width: 720px) {.cajero-review-list__head, .cajero-review-list__rows button { grid-template-columns: minmax(120px, 1fr) 92px 92px 22px; gap: 0.45rem; padding-inline: 0.7rem; }.cajero-review-list__head { font-size: 0.62rem; }}
-
 /* Panel Cajero — Inicio tablet-first */
 .cajero-home {
   gap: clamp(0.9rem, 2vw, 1.2rem);
@@ -1048,12 +1046,6 @@
   background: var(--color-primary-soft);
 }
 
-@media (max-width: 720px) {
-  .cajero-send-bar .button {
-    align-self: flex-end;
-  }
-}
-
 /* Panel Cajero — selección por tipo y categoría */
 .cajero-operational__heading--with-action {
   align-items: flex-start;
@@ -1081,13 +1073,36 @@
   font-size: 0.92rem;
 }
 
-@media (max-width: 720px) {.cajero-send-bar--compact { width: auto; align-items: center; flex-direction: row; justify-content: flex-end; }}
-
 .cajero-stock-card__actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+/* Tablet estrecha */
+@media (max-width: 720px) {
+  .cajero-review-list__head,
+  .cajero-review-list__rows button {
+    grid-template-columns: minmax(120px, 1fr) 92px 92px 22px;
+    gap: 0.45rem;
+    padding-inline: 0.7rem;
+  }
+
+  .cajero-review-list__head {
+    font-size: 0.62rem;
+  }
+
+  .cajero-send-bar .button {
+    align-self: flex-end;
+  }
+
+  .cajero-send-bar--compact {
+    width: auto;
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
 }
 
 .cajero-capture-detail__card h3 small {
