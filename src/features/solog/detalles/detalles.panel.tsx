@@ -163,7 +163,7 @@ export function SologDetailsPanel({
 
       <main className="cajero-main">
         <section
-          className="cajero-module cajero-home details-panel"
+          className="cajero-module details-panel"
           aria-labelledby="details-title"
         >
           <div className="details-panel__heading">
@@ -184,7 +184,7 @@ export function SologDetailsPanel({
           ) : null}
 
           {notice ? (
-            <div className="cajero-alert details-notice" role="status">
+            <div className="cajero-alert cajero-alert--success" role="status">
               <CheckCircle2 aria-hidden="true" size={22} />
               <p>{notice}</p>
               <button
@@ -211,7 +211,7 @@ export function SologDetailsPanel({
                     <ShieldAlert size={30} />
                   )}
                 </span>
-                <div className="details-device-card__copy">
+                <div>
                   <span className="details-device-card__site">
                     PR {summary.site.nombre}
                   </span>
@@ -492,7 +492,7 @@ export function SologDetailsPanel({
                 </div>
               ) : null}
               {detailsExport.notice ? (
-                <div className="cajero-alert details-notice" role="status">
+                <div className="cajero-alert cajero-alert--success" role="status">
                   <CheckCircle2 aria-hidden="true" size={22} />
                   <p>{detailsExport.notice}</p>
                 </div>
