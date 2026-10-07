@@ -1,4 +1,5 @@
 name: Cajero 2.7.1 Validation
+# rerun after deterministic header assertion and whitespace cleanup
 
 on:
   push:
