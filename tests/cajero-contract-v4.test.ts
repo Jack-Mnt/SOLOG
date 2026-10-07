@@ -38,10 +38,10 @@ describe('Cajero V4: contrato independiente', () => {
   test('valida las tres colas y conserva metadata de review', () => {
     const panel = validateCashierV4Panel(cashierV4Panel())
     expect(panel.review_queue).toEqual([{ grupo_id: ids.review, detalle_id: ids.detail,
-      ultima_diferencia: -2, contado_at: '2026-09-30T22:00:00Z' }])
-    expect(panel.coverage_queue).toEqual([ids.coverage])
+      ultima_diferencia: -2, contado_at: '2026-09-30T22:00:00Z', priority_class: 'review_for_coverage' }])
+    expect(panel.coverage_queue).toEqual([])
     expect(panel.daily_queue).toEqual([ids.daily])
-    expect(panel.groups.map(g => g.accion)).toEqual(['recount', 'coverage', 'daily', 'none'])
+    expect(panel.groups.map(g => g.accion)).toEqual(['recount', 'none', 'daily', 'none'])
   })
   test.each(['activo', 'recovery', 'finalizado', 'expirado'] as const)('acepta session.estado=%s', (estado) => {
     const panel = validateCashierV4Panel(cashierV4Panel({ estado }))
@@ -60,7 +60,8 @@ describe('Cajero V4: contrato independiente', () => {
   test.each(['basis.groups_revision', 'basis.ronda', 'basis.ronda_desde', 'basis.ronda_hasta',
     'basis.turno', 'basis.turno_desde', 'basis.turno_hasta', 'basis.snapshot_referencia_id',
     'basis.version_catalogo', 'session.estado', 'groups', 'review_queue', 'coverage_queue', 'daily_queue',
-    'next_action', 'session_capability', 'groups.0.accion', 'groups.0.productos', 'groups.0.recontado_at'])('rechaza campo de panel ausente: %s', (path) => {
+    'next_action', 'session_capability', 'groups.0.accion', 'groups.0.productos', 'groups.0.recontado_at',
+    'review_queue.0.priority_class'])('rechaza campo de panel ausente: %s', (path) => {
     expect(() => validateCashierV4Panel(changed(cashierV4Panel(), path))).toThrow(SologApiError)
   })
   test.each(['coverage_round', 'coverage_total', 'coverage_counted', 'coverage_pending', 'coverage_percent',
@@ -75,8 +76,8 @@ describe('Cajero V4: contrato independiente', () => {
     ['session.estado', 'active'], ['next_action', 'recount'], ['groups.0.accion', 'review'],
     ['groups.0.grupo_id', 'group-1'], ['groups.0.precio', Number.NaN], ['groups.0.tipo', 'Otro'],
     ['kpis.coverage_percent', 200], ['kpis.daily_pending', -1], ['kpis.coverage_round', 2],
-    ['review_queue.0.detalle_id', ids.savedDetail], ['coverage_queue', [ids.none]],
-    ['coverage_queue', []], ['groups.0.snapshot_referencia_id', ids.recovery],
+    ['review_queue.0.detalle_id', ids.savedDetail], ['review_queue.0.priority_class', 'review_urgent'],
+    ['coverage_queue', [ids.none]], ['groups.0.snapshot_referencia_id', ids.recovery],
     ['daily_queue', [ids.coverage]], ['daily_queue', [ids.daily, ids.daily]],
     ['coverage_queue', null], ['session_capability.capture_allowed', 'true'],
     ['session_capability.expira_at', null],
@@ -89,6 +90,27 @@ describe('Cajero V4: contrato independiente', () => {
     expect(() => validateCashierV4Panel(p)).toThrow(SologApiError)
     const original = cashierV4Panel()
     expect(() => validateCashierV4Panel(changed(original, 'basis.turno_hasta', original.basis.turno_desde))).toThrow(SologApiError)
+  })
+  test.each(['review_for_coverage', 'review_regular'] as const)('acepta priority_class=%s en review', (priority_class) => {
+    const panel = validateCashierV4Panel(cashierV4Panel({ review_priority_class: priority_class }))
+    expect(panel.review_queue[0].priority_class).toBe(priority_class)
+    const delta = validateCashierV4PanelDelta(cashierV4Delta({ next_action: 'review', review_priority_class: priority_class }))
+    expect(delta.review_queue[0].priority_class).toBe(priority_class)
+  })
+  test('fixtures respetan la prioridad pública V4', () => {
+    const coverage = cashierV4Panel({ next_action: 'coverage' })
+    expect(coverage.coverage_queue.length).toBeGreaterThan(0)
+    const review = cashierV4Panel({ next_action: 'review' })
+    expect(review.coverage_queue).toEqual([])
+    expect(review.review_queue.length).toBeGreaterThan(0)
+    const daily = cashierV4Panel({ next_action: 'daily' })
+    expect(daily.coverage_queue).toEqual([])
+    expect(daily.review_queue).toEqual([])
+    expect(daily.daily_queue.length).toBeGreaterThan(0)
+    const none = cashierV4Panel({ next_action: 'none' })
+    expect(none.coverage_queue).toEqual([])
+    expect(none.review_queue).toEqual([])
+    expect(none.daily_queue).toEqual([])
   })
   test('recovery y none nunca autorizan captura; none conserva fechas finales', () => {
     const p = cashierV4Panel({ estado: 'recovery' })
@@ -118,7 +140,7 @@ describe('Cajero V4: mutaciones y delta', () => {
     expect(validateCashierV4PanelDelta(input)).toEqual(original)
     expect(input).toEqual(original)
     expect(input.groups_patch[0].accion).toBe('none')
-    expect(input.next_action).toBe('coverage')
+    expect(input.next_action).toBe('daily')
   })
   test.each(['groups_patch', 'review_queue', 'coverage_queue', 'daily_queue', 'kpis', 'next_action', 'session_capability'])('delta exige %s', (field) => {
     expect(() => validateCashierV4PanelDelta(changed(cashierV4Delta(), field))).toThrow(SologApiError)
