@@ -66,15 +66,16 @@ export function cashierV4Group(accion = 'coverage', options = {}) {
     contado_detalle_id: null, contado_at: null, recontado_at: null, ...options }
 }
 export function cashierV4Kpis({ ronda = 1, next_action = 'review', review_priority_class = 'review_for_coverage' } = {}) {
+  const blockedWaiting = next_action === 'none' ? 1 : 0
   const coveragePending = next_action === 'coverage' ? 2
-    : next_action === 'review' && review_priority_class === 'review_for_coverage' ? 1 : 0
+    : next_action === 'review' && review_priority_class === 'review_for_coverage' ? 1 : blockedWaiting
   const reviewPending = ['coverage', 'review'].includes(next_action) ? 1 : 0
   return { coverage_round: ronda, coverage_total: 4, coverage_counted: 4 - coveragePending,
     coverage_pending: coveragePending, coverage_percent: (4 - coveragePending) * 25,
     review_pending: reviewPending,
     coverage_queue_pending: next_action === 'coverage' ? 1 : 0,
     daily_pending: next_action === 'none' ? 0 : 1,
-    coverage_blocked_waiting_snapshot: next_action === 'none' ? 1 : 0 }
+    coverage_blocked_waiting_snapshot: blockedWaiting }
 }
 export function cashierV4Panel(options = {}) {
   const next = options.next_action ?? 'review'
