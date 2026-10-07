@@ -1,6 +1,6 @@
 # SOLOG — Motor Cajero — Prioridades, Reconteos e Inconsistentes — Delta V1
 
-**Estado:** CONGELADO — DECISIÓN FUNCIONAL APROBADA / BACKEND FASES 1–2 IMPLEMENTADAS / VALIDACIÓN FASE 3 PENDIENTE  
+**Estado:** CONGELADO — BACKEND DESPLEGADO Y VALIDADO TÉCNICAMENTE / CONTRATO BACKEND CONGELADO  
 **Fecha:** 7 de octubre de 2026  
 **Proyecto:** SOLOG  
 **Nivel:** C — Motor / backend / reglas críticas de negocio  
@@ -484,9 +484,10 @@ Decisión funcional: APROBADA
 Documento: CONGELADO
 Backend Fase 1: IMPLEMENTADA
 Backend Fase 2: IMPLEMENTADA
-Validación global Fase 3: PENDIENTE
+Validación global Fase 3: PASS
 Supabase desplegado: prioridad nueva activa en Motor V4
+Contrato backend: CONGELADO
 Frontend: SIN ADAPTAR priority_class
 ```
 
-El siguiente paso es ejecutar la Fase 3 de validación backend global. Solo después de validarla debe congelarse el contrato backend actualizado y realizarse el handoff frontend.
+Backend cerrado técnicamente para este delta. El siguiente paso permitido es el handoff frontend Cajero contra `docs/SOLOG_Backend_Contrato_Cajero_V4_Delta_Prioridades_V1.md`. Codex no debe modificar backend.
