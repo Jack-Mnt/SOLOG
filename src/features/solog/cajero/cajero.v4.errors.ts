@@ -21,6 +21,7 @@ const policies: Record<string, { message: string; retryable?: boolean; requiresR
   SOLOG_SESSION_PRIORITY_CONFLICT: { message: 'Cambió la prioridad de trabajo. Actualiza el panel.', requiresRefresh: true },
   SOLOG_GROUP_ALREADY_COUNTED: { message: 'Este grupo ya fue contado. Actualiza el panel.', requiresRefresh: true },
   SOLOG_NORMAL_COUNT_ALREADY_IN_SHIFT: { message: 'Este grupo ya tiene un conteo normal en este turno.', requiresRefresh: true },
+  SOLOG_NORMAL_COUNT_BLOCKED_AFTER_INCONSISTENT: { message: 'Este grupo debe volver a contarse en el siguiente turno. Actualiza el panel.', requiresRefresh: true },
   SOLOG_RECOUNT_REQUIRES_PHYSICAL_RECOUNT: { message: 'Este caso requiere un nuevo reconteo físico.' },
   SOLOG_IDEMPOTENCY_CONFLICT: { message: 'La operación ya existe con información distinta. No se puede continuar automáticamente.' },
   SOLOG_OPERATION_IN_PROGRESS: { message: 'La operación sigue en curso. Puedes reintentar la misma operación.', retryable: true },
