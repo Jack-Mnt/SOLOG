@@ -243,14 +243,14 @@ try {
   })
   for (const error of ['timeout', 'SOLOG_OPERATION_IN_PROGRESS']) {
     await scenario({ initial: 'active', expiredWithDraft: true, autocloseError: error }, async (page, calls) => {
-      await page.getByText('Estamos verificando si el último envío fue recibido.', { exact: true }).waitFor()
+      await page.getByText('Estamos verificando si el último registro se completó.', { exact: true }).waitFor()
       const before = await localRecords(page), prepared = before[0].prepared
       assert.equal(prepared.status, error === 'timeout' ? 'uncertain' : 'in_progress')
       assert.equal(await page.getByRole('button', { name: 'Descartar conteos', exact: true }).count(), 0)
       assert.equal(mutations(calls).some(call => call.body.p_action === 'finish'), false)
       if (error === 'timeout') {
         await page.reload()
-        await page.getByText('Estamos verificando si el último envío fue recibido.', { exact: true }).waitFor()
+        await page.getByText('Estamos verificando si el último registro se completó.', { exact: true }).waitFor()
         assert.deepEqual((await localRecords(page))[0].prepared, prepared)
         assert.deepEqual((await localRecords(page))[0].normal, before[0].normal)
         assert.equal(mutations(calls).length, 1, 'Reload no crea un retry automático')
@@ -268,8 +268,8 @@ try {
   }
   await scenario({ initial: 'active', expiredWithDraft: true, autocloseError: 'SOLOG_RECOUNT_REQUIRES_PHYSICAL_RECOUNT' }, async (page, calls) => {
     await page.getByRole('button', { name: 'Descartar conteos', exact: true }).waitFor()
-    await page.getByText('Envío pendiente', { exact: true }).waitFor()
-    assert.equal(await page.getByRole('button', { name: 'Reintentar envío', exact: true }).isVisible(), true)
+    await page.getByText('Registro pendiente', { exact: true }).waitFor()
+    assert.equal(await page.getByRole('button', { name: 'Reintentar registro', exact: true }).isVisible(), true)
     const before = await localRecords(page), count = mutations(calls).length
     await page.getByRole('button', { name: 'Descartar conteos', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Descartar conteos pendientes' })
@@ -308,7 +308,7 @@ try {
   })
   await scenario({ preSessionAction: 'daily', blockedCoverage: true }, async page => {
     assert.equal(await page.getByText('1 pendientes', { exact: true }).count() > 0, true)
-    assert.equal(await page.locator('.cajero-home-flow__step.is-current').getByText('Diario', { exact: true }).count(), 1)
+    assert.equal(await page.locator('.cajero-home-flow__step.is-current').getByText('Conteo diario', { exact: true }).count(), 1)
     assert.equal(await page.locator('.cajero-period-complete').count(), 0)
     console.log('PASS Inicio A1 daily temporal mantiene cobertura incompleta')
   })
@@ -497,10 +497,10 @@ try {
   await scenario({ startAction: 'review' }, async (page, calls) => {
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()
     await page.getByRole('heading', { name: 'Revisar', exact: true }).waitFor()
-    assert.deepEqual(await page.locator('.cajero-review-list__head span').allTextContents(), ['Nombre', 'Última diferencia', 'Diferencia actual'])
+    assert.deepEqual(await page.locator('.cajero-review-list__head span').allTextContents(), ['Nombre', 'Diferencia inicial', 'Diferencia actual'])
     assert.equal(await page.getByRole('button', { name: 'Registrar conteo', exact: true }).count(), 0)
     const reviewRowBefore = page.locator('.cajero-review-list__rows button').first()
-    assert.equal(await reviewRowBefore.getAttribute('aria-label'), 'Revisar Grupo recount, última diferencia -2, sin reconteo actual')
+    assert.equal(await reviewRowBefore.getAttribute('aria-label'), 'Revisar Grupo recount, diferencia inicial -2, sin reconteo actual')
     assert.equal(await reviewRowBefore.locator('.is-negative').innerText(), '-2')
     assert.equal(await reviewRowBefore.locator('.cajero-review-transition').innerText(), '—')
     assert.equal(await reviewRowBefore.locator('.cajero-review-transition__arrow').count(), 0)
@@ -524,7 +524,7 @@ try {
     await reviewDialog.getByText('1/1 contados', { exact: true }).waitFor()
     await reviewDialog.getByRole('button', { name: 'Cerrar', exact: true }).click()
     const reviewRowAfter = page.locator('.cajero-review-list__rows button').first()
-    assert.equal(await reviewRowAfter.getAttribute('aria-label'), 'Revisar Grupo recount, última diferencia -2, diferencia actual 0')
+    assert.equal(await reviewRowAfter.getAttribute('aria-label'), 'Revisar Grupo recount, diferencia inicial -2, diferencia actual 0')
     assert.deepEqual(await reviewRowAfter.locator('.cajero-review-transition > span').allTextContents(), ['→', '0'])
     assert.equal(await reviewRowAfter.locator('.cajero-review-transition__arrow').getAttribute('aria-hidden'), 'true')
     assert.equal(await reviewRowAfter.locator('.cajero-review-transition .is-zero').innerText(), '0')
@@ -569,6 +569,8 @@ try {
   await scenario({ initial: 'active', startAction: 'daily' }, async (page, calls) => {
     await nav(page).getByRole('button', { name: 'Historial', exact: true }).click()
     await page.getByRole('heading', { name: 'Historial', exact: true }).waitFor()
+    assert.equal(await page.getByText('2 registros', { exact: true }).count(), 1)
+    assert.equal(await page.getByText('El historial muestra únicamente conteos registrados en SOLOG.', { exact: true }).count(), 0)
     assert.deepEqual(await page.locator('.cajero-history-list__head span').allTextContents(), ['Nombre', 'Diferencia', 'Valorizado', ''])
     const invalidArticle = page.locator('.cajero-history-list__rows article').filter({ hasText: 'Grupo histórico inválido' })
     const invalidExpand = invalidArticle.getByRole('button', { name: 'Expandir detalle de Grupo histórico inválido' })
