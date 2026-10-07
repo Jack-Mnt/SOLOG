@@ -190,7 +190,7 @@ shift_coverage = 20
 → next_action = shift_coverage
 ```
 
-Cuando llega un snapshot posterior utilizable y un caso se vuelve accionable, el Motor vuelve a aplicar la prioridad normal.
+Cuando llega un snapshot posterior utilizable y un caso se vuelve accionable, el Motor vuelve a aplicar la prioridad normal en la siguiente reconstrucción autoritativa compatible con el lifecycle vigente. El snapshot no reescribe ni agrega acciones dinámicamente a una sesión activa cuyo runtime ya fue congelado.
 
 ---
 
@@ -393,10 +393,10 @@ shift_coverage > 0
 ```text
 shift_coverage activo
 → llega snapshot posterior
-→ review pasa a accionable
+→ review pasa a accionable para el siguiente runtime autoritativo
 
-→ reaplicar prioridad
-→ review correspondiente prevalece
+→ no reescribir la sesión activa congelada
+→ al siguiente start/rebuild aplicable, review correspondiente prevalece
 ```
 
 ### F. Inconsistente en turno posterior al conteo original
