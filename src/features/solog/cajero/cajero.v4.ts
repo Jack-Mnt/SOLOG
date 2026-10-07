@@ -3,6 +3,7 @@
 export type CashierV4SessionState = 'activo' | 'recovery' | 'finalizado' | 'expirado'
 export type CashierV4GroupAction = 'recount' | 'coverage' | 'daily' | 'none'
 export type CashierV4NextAction = 'review' | 'coverage' | 'daily' | 'none'
+export type CashierV4ReviewPriorityClass = 'review_for_coverage' | 'review_regular'
 export type CashierV4Round = 1 | 2
 export type CashierV4Shift = 'early' | 'day' | 'night'
 export type CashierV4Action = 'start' | 'save_batch' | 'recount_save_batch' | 'finish'
@@ -107,6 +108,7 @@ export interface CashierV4ReviewQueueItem {
   detalle_id: string
   ultima_diferencia: number
   contado_at: string
+  priority_class: CashierV4ReviewPriorityClass
 }
 export interface CashierV4Queues {
   review_queue: CashierV4ReviewQueueItem[]
