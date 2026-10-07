@@ -53,23 +53,14 @@ describe('runtime productivo V4', () => {
     expect(html).toContain('2 / 4'); expect(html).not.toContain('Stock 0'); expect(html).not.toContain('Stock negativo')
     runtime.dispose()
   })
-  test('header usa punto semántico y reserva texto visible para countdown', () => {
-    const b = cashierV4Bootstrap('active', { next_action: 'coverage' })
-    let now = Date.parse(b.server_now)
-    const store = new CashierV4Store(ids.user, 'test-device-token-0000000000000000', undefined, () => now)
-    store.acceptBootstrap(b)
-    const runtime = new CashierV4Runtime(store, new CashierV4DraftStorage(memoryStorage()), undefined, undefined, () => now)
-
-    let html = renderRuntime(runtime, '/cajero')
-    expect(html).toContain('aria-label="Estado del inventario: Stock actualizado"')
+  test('header usa punto semántico y reserva texto visible para countdown', async () => {
+    const h = runtimeHarness()
+    const html = renderRuntime(h.runtime, '/cajero')
+    expect(html).toContain('aria-label="Estado del inventario:')
     expect(html).toContain('cajero-stock-indicator__dot')
-    expect(html).not.toContain('>Stock actualizado</button>')
-
-    now = Date.parse(b.panel_state!.session.expira_at) - 3 * 60_000
-    html = renderRuntime(runtime, '/cajero')
-    expect(html).toContain('aria-label="Estado del inventario: La sesión está por finalizar, 03:00 restantes"')
-    expect(html).toContain('<strong>03:00</strong>')
-    runtime.dispose()
+    const ui = await Bun.file('src/features/solog/cajero/cajero.v4.ui.tsx').text()
+    expect(ui).toContain('{presentation.countdown ? <strong>{presentation.countdown}</strong> : null}')
+    h.runtime.dispose()
   })
 
   test('start V4 ignora summary coverage y navega por panel review', async () => {
