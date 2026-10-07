@@ -65,29 +65,33 @@ export function cashierV4Group(accion = 'coverage', options = {}) {
     detalle_reconteo_id: accion === 'recount' ? ids.detail : null,
     contado_detalle_id: null, contado_at: null, recontado_at: null, ...options }
 }
-export function cashierV4Kpis({ ronda = 1, next_action = 'review' } = {}) {
-  const pending = next_action === 'daily' ? 0 : next_action === 'review' || next_action === 'coverage' ? 2 : 1
-  return { coverage_round: ronda, coverage_total: 4, coverage_counted: 4 - pending,
-    coverage_pending: pending, coverage_percent: (4 - pending) * 25,
-    review_pending: next_action === 'review' ? 1 : 0,
-    coverage_queue_pending: ['review', 'coverage'].includes(next_action) ? 1 : 0,
+export function cashierV4Kpis({ ronda = 1, next_action = 'review', review_priority_class = 'review_for_coverage' } = {}) {
+  const coveragePending = next_action === 'coverage' ? 2
+    : next_action === 'review' && review_priority_class === 'review_for_coverage' ? 1 : 0
+  const reviewPending = ['coverage', 'review'].includes(next_action) ? 1 : 0
+  return { coverage_round: ronda, coverage_total: 4, coverage_counted: 4 - coveragePending,
+    coverage_pending: coveragePending, coverage_percent: (4 - coveragePending) * 25,
+    review_pending: reviewPending,
+    coverage_queue_pending: next_action === 'coverage' ? 1 : 0,
     daily_pending: next_action === 'none' ? 0 : 1,
-    coverage_blocked_waiting_snapshot: ['coverage', 'none'].includes(next_action) ? 1 : 0 }
+    coverage_blocked_waiting_snapshot: next_action === 'none' ? 1 : 0 }
 }
 export function cashierV4Panel(options = {}) {
   const next = options.next_action ?? 'review'
+  const reviewPriority = options.review_priority_class ?? 'review_for_coverage'
   const s = cashierV4Session(options)
   const mode = s.estado === 'activo' ? 'active' : s.estado === 'recovery' ? 'recovery' : 'none'
   const groups = [cashierV4Group('recount'), cashierV4Group('coverage'), cashierV4Group('daily'), cashierV4Group('none')]
-  if (next !== 'review') groups[0] = { ...groups[0], accion: 'none', detalle_reconteo_id: null }
-  if (['daily', 'none'].includes(next)) groups[1].accion = 'none'
+  if (!['coverage', 'review'].includes(next)) groups[0] = { ...groups[0], accion: 'none', detalle_reconteo_id: null }
+  if (next !== 'coverage') groups[1].accion = 'none'
   if (next === 'none') groups[2].accion = 'none'
   return { source: 'session', frozen: true, session: s, basis: cashierV4Basis(options), groups,
-    review_queue: next === 'review' ? [{ grupo_id: ids.review, detalle_id: ids.detail,
-      ultima_diferencia: -2, contado_at: '2026-09-30T22:00:00Z' }] : [],
-    coverage_queue: ['review', 'coverage'].includes(next) ? [ids.coverage] : [],
+    review_queue: ['coverage', 'review'].includes(next) ? [{ grupo_id: ids.review, detalle_id: ids.detail,
+      ultima_diferencia: -2, contado_at: '2026-09-30T22:00:00Z', priority_class: reviewPriority }] : [],
+    coverage_queue: next === 'coverage' ? [ids.coverage] : [],
     daily_queue: next === 'none' ? [] : [ids.daily],
-    kpis: cashierV4Kpis(options), next_action: next, session_capability: cashierV4Capability(mode, options) }
+    kpis: cashierV4Kpis({ ...options, review_priority_class: reviewPriority }),
+    next_action: next, session_capability: cashierV4Capability(mode, options) }
 }
 export function cashierV4Summary(options = {}) {
   return { basis: cashierV4TemporalBasis(options), kpis: cashierV4Kpis(options), next_action: options.next_action ?? 'review' }
@@ -146,16 +150,13 @@ export function cashierV4Mutation(action = 'start', options = {}) {
     return { ...common, status: 'finalizado', finalizado_at: stamp, session_capability: finished }
   }
   const recount = action === 'recount_save_batch'
-  const delta = cashierV4Delta({ ...options, next_action: recount ? 'coverage' : 'none' })
+  const delta = cashierV4Delta({ ...options, next_action: recount ? 'daily' : 'review' })
   delta.groups_patch = [{ grupo_id: recount ? ids.review : ids.coverage, accion: 'none',
     detalle_reconteo_id: null, contado_detalle_id: recount ? null : ids.savedDetail,
     contado_at: recount ? null : stamp, recontado_at: recount ? stamp : null }]
   if (recount) {
-    delta.kpis.coverage_counted = 3; delta.kpis.coverage_pending = 1
-    delta.kpis.coverage_percent = 75; delta.kpis.coverage_blocked_waiting_snapshot = 0
-  } else {
-    // Coverage is blocked by a case waiting for a later snapshot, despite a frozen daily queue.
-    delta.daily_queue = [ids.daily]; delta.kpis.daily_pending = 1
+    delta.kpis.coverage_counted = 4; delta.kpis.coverage_pending = 0
+    delta.kpis.coverage_percent = 100; delta.kpis.coverage_blocked_waiting_snapshot = 0
   }
   const item = recount
     ? { detalle_id: ids.detail, grupo_id: ids.review, snapshot_reconteo_id: ids.snapshot,
