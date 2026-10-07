@@ -145,9 +145,11 @@ describe('Cajero V4: mutaciones y delta', () => {
   test.each(['groups_patch', 'review_queue', 'coverage_queue', 'daily_queue', 'kpis', 'next_action', 'session_capability'])('delta exige %s', (field) => {
     expect(() => validateCashierV4PanelDelta(changed(cashierV4Delta(), field))).toThrow(SologApiError)
   })
-  test('delta rechaza patches duplicados y campos de patch ausentes', () => {
+  test('delta rechaza patches duplicados, campos ausentes y priority_class inválido', () => {
     const d = cashierV4Mutation('save_batch').panel_delta
     expect(() => validateCashierV4PanelDelta(changed(d, 'groups_patch.0.accion'))).toThrow(SologApiError)
+    expect(() => validateCashierV4PanelDelta(changed(d, 'review_queue.0.priority_class'))).toThrow(SologApiError)
+    expect(() => validateCashierV4PanelDelta(changed(d, 'review_queue.0.priority_class', 'review_urgent'))).toThrow(SologApiError)
     d.groups_patch.push(structuredClone(d.groups_patch[0]))
     expect(() => validateCashierV4PanelDelta(d)).toThrow(SologApiError)
   })
