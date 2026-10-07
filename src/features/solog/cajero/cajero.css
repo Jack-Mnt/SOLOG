@@ -221,40 +221,10 @@
 
 @media (min-width: 900px) {.cajero-nav__item { font-size: 0.78rem; }}
 
-.cajero-module__heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
 .cajero-module__heading h1 {
   margin: 0.15rem 0 0.35rem;
   font-size: clamp(1.55rem, 3vw, 2rem);
   line-height: 1.15;
-}
-
-.cajero-module__heading p {
-  margin: 0;
-  color: var(--color-text-secondary);
-}
-
-.cajero-alert__dismiss {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 0;
-  border-radius: var(--radius-small);
-  color: currentColor;
-  background: transparent;
-  cursor: pointer;
-}
-
-.cajero-alert__dismiss:hover,
-.cajero-alert__dismiss:focus-visible {
-  background: color-mix(in srgb, var(--color-text-primary) 7%, transparent);
 }
 
 .cajero-period-complete {
@@ -831,12 +801,6 @@
   min-height: 48px;
   flex: 0 0 auto;
   justify-content: center;
-}
-
-.cajero-home-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.85rem;
 }
 
 .cajero-home-metric > small {
