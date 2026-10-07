@@ -661,7 +661,7 @@
 }
 
 .cajero-history-list__detail dd.cajero-history-value--discarded {
-  color: var(--danger, #b42318);
+  color: var(--color-danger);
   text-decoration: line-through;
 }
 
