@@ -248,9 +248,14 @@ function CajeroV4Header({ runtime, onLogout }: { runtime: CashierV4Runtime; onLo
     <strong className="cajero-header__site">PR {b.site.nombre}</strong>
     <div className="cajero-header__actions"><div className="cajero-stock-indicator" ref={stockRef}>
       <button className={`cajero-stock-indicator__trigger cajero-stock-indicator__trigger--${presentation.state}`}
-        aria-expanded={stockOpen} aria-haspopup="dialog" onClick={() => setStockOpen(!stockOpen)} type="button">{presentation.countdown ?? presentation.label}</button>
+        aria-expanded={stockOpen} aria-haspopup="dialog"
+        aria-label={`Estado del inventario: ${presentation.label}${presentation.countdown ? `, ${presentation.countdown} restantes` : ''}`}
+        onClick={() => setStockOpen(!stockOpen)} type="button">
+        <span aria-hidden="true" className="cajero-stock-indicator__dot" />
+        {presentation.countdown ? <strong>{presentation.countdown}</strong> : null}
+      </button>
       {stockOpen ? <section className="cajero-stock-indicator__popover" role="dialog" aria-label="Estado del inventario">
-        <strong>Estado del inventario</strong><p>{formatCajeroElapsed(stock?.capturado_at ? now - Date.parse(stock.capturado_at) : null)}</p>
+        <strong>{presentation.label}</strong><p>{formatCajeroElapsed(stock?.capturado_at ? now - Date.parse(stock.capturado_at) : null)}</p>
         <p>Vigente hasta {clock(stock?.snapshot_expira_at)}</p>
         {state.panel_state ? <p>Sesión hasta {clock(state.panel_state.session.expira_at)}</p> : null}
       </section> : null}</div>
@@ -292,7 +297,7 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
   return <section className="cajero-module cajero-home" aria-labelledby="cajero-inicio-title">
     <div className="cajero-home__heading"><h1 id="cajero-inicio-title">Inicio</h1></div>
 
-    <section className="cajero-stock-card cajero-stock-card--updated">
+    <section className="cajero-stock-card">
       <div className="cajero-stock-card__status"><div><h2>{state.stock?.snapshot_id ? 'Inventario cargado' : 'No hay inventario cargado'}</h2>
         {state.bootstrap?.start_capability.reason && !panel ? <p>{getCashierV4ErrorPolicy(new SologApiError(state.bootstrap.start_capability.reason as SologErrorCode)).message}</p> : null}</div></div>
       <div className="cajero-stock-card__actions">
@@ -458,7 +463,7 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
   const activeScope = runtime.coordinator.activeScope(), record = runtime.getSnapshot().records.find(item =>
     item.scope.conteo_id === activeScope?.conteo_id && item.scope.groups_revision === activeScope.groups_revision) ?? null
   const countedGroupIds = new Set(record?.normal.map(item => item.grupo_id) ?? [])
-  return <section className={`cajero-module cajero-operational${action === 'review' ? ' cajero-review' : ''}`}>
+  return <section className="cajero-module cajero-operational">
     <div className={`cajero-module__heading cajero-operational__heading${action === 'review' ? ' cajero-review__heading' : ' cajero-operational__heading--with-action'}`}><div><h1>{title}</h1><p>{action === 'review' ? 'Verifica la realidad' : 'Registra la realidad'}</p>
       {action === 'daily' ? <p>{panel?.kpis.daily_pending ?? 0} pendientes</p> : null}</div>
       {action === 'review' ? <div className="cajero-segmented-control cajero-segmented-control--symbols" role="group" aria-label="Filtrar por diferencia inicial">
