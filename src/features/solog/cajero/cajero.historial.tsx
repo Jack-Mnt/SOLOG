@@ -171,7 +171,7 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
             <Layers3 aria-hidden="true" size={23} />
             <span>
               <strong>Todas</strong>
-              <small>{items.length} {items.length === 1 ? 'observación' : 'observaciones'}</small>
+              <small>{items.length} {items.length === 1 ? 'registro' : 'registros'}</small>
             </span>
           </button>
           <button
@@ -201,7 +201,7 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
                 <Icon aria-hidden="true" size={23} />
                 <span>
                   <strong>{category.nombre}</strong>
-                  <small>{category.count} {category.count === 1 ? 'observación' : 'observaciones'}</small>
+                  <small>{category.count} {category.count === 1 ? 'registro' : 'registros'}</small>
                 </span>
               </button>
             )
@@ -267,8 +267,8 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
         <div className="cajero-empty-state" role="status">
           <History aria-hidden="true" size={28} />
           <div>
-            <strong>{selectedCategoryId === null ? `No hay observaciones para ${period === 'today' ? 'hoy' : 'ayer'}.` : 'No hay observaciones en esta categoría.'}</strong>
-            <p>El historial muestra únicamente capturas confirmadas por SOLOG.</p>
+            <strong>{selectedCategoryId === null ? `No hay registros para ${period === 'today' ? 'hoy' : 'ayer'}.` : 'No hay registros en esta categoría.'}</strong>
+            <p>El historial muestra únicamente conteos registrados en SOLOG.</p>
           </div>
         </div>
       ) : null}
