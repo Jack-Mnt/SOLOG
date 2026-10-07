@@ -54,7 +54,7 @@ export function getCajeroStockPresentation(
   if (!stock.disponible || !stock.vigente || locallyExpired) {
     return {
       state: 'expired',
-      label: 'Stock vencido',
+      label: 'Stock desactualizado',
       countdown: null,
       elapsedMs,
       stockExpiresAtMs,
