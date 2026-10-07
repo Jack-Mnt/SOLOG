@@ -1,9 +1,9 @@
 # SOLOG — UI Operacional — Normalización Cajero + Detalles — V1
 
-**Estado:** CONGELADO — APROBADO  
-**Fecha:** 7 de octubre de 2026  
-**Proyecto:** SOLOG  
-**Clasificación:** Nivel B — normalización estructural frontend  
+**Estado:** CONGELADO — APROBADO
+**Fecha:** 7 de octubre de 2026
+**Proyecto:** SOLOG
+**Clasificación:** Nivel B — normalización estructural frontend
 **Rama:** `admin-work`
 
 ## 1. Fuente primaria y precedencia
