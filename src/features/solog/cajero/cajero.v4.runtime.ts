@@ -3,7 +3,9 @@ import { mutateCashierV4, type CashierV4Rpc } from './cajero.v4.api'
 import { canCashierV4CaptureForSession, canCashierV4DeliverPendingForSession } from './cajero.v4.capability'
 import { CashierV4DraftCoordinator } from './cajero.v4.flush'
 import { cashierV4AfterStartDestination } from './cajero.v4.navigation'
-import { selectCashierV4CoverageGroups, selectCashierV4DailyGroups, selectCashierV4ReviewEntries } from './cajero.v4.selectors'
+import {
+  selectCashierV4ActionableReviewEntries, selectCashierV4CoverageGroups, selectCashierV4DailyGroups,
+} from './cajero.v4.selectors'
 import { CashierV4DraftStorage, type CashierV4DraftScope, type CashierV4SessionDrafts, type CashierV4PreparedStart } from './cajero.v4.storage'
 import { CashierV4Store } from './cajero.v4.store'
 import type { CashierV4NextAction } from './cajero.v4'
@@ -133,8 +135,8 @@ export class CashierV4Runtime {
     const panel = this.store.getSnapshot().panel_state!, scope = this.coordinator.activeScope()!
     const contado_at = new Date(this.serverNow()).toISOString()
     if (action === 'review') {
-      const entry = selectCashierV4ReviewEntries(panel).find(entry => entry.group.grupo_id === grupoId)
-      if (!entry) throw new Error('El grupo no pertenece a la cola de revisión vigente.')
+      const entry = selectCashierV4ActionableReviewEntries(panel).find(entry => entry.group.grupo_id === grupoId)
+      if (!entry) throw new Error('El grupo no pertenece a la prioridad de revisión vigente.')
       this.coordinator.captureRecount(scope, { detalle_id: entry.queueItem.detalle_id, grupo_id: grupoId, stock_fisico: stockFisico, contado_at }, { expression })
     } else {
       const groups = action === 'coverage' ? selectCashierV4CoverageGroups(panel) : selectCashierV4DailyGroups(panel)
