@@ -56,7 +56,7 @@ export function draftHarness(next: CashierV4NextAction = 'review', count?: numbe
     const review_queue = delivery?.review_queue.filter(item => !sentDetails.has(item.detalle_id)) ?? []
     const coverage_queue = delivery?.coverage_queue.filter(id => !sentGroups.has(id)) ?? []
     const daily_queue = delivery?.daily_queue.filter(id => !sentGroups.has(id)) ?? []
-    const next_action = forcedNext ?? (review_queue.length ? 'review' : coverage_queue.length ? 'coverage' : daily_queue.length ? 'daily' : 'none')
+    const next_action = forcedNext ?? (coverage_queue.length ? 'coverage' : review_queue.length ? 'review' : daily_queue.length ? 'daily' : 'none')
     result.session_capability = cap
     result.saved = sent.length
     result.items = sent.map((item, n) => action === 'save_batch' ? {
