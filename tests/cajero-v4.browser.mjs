@@ -4,7 +4,11 @@ import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
 import { cashierV4Bootstrap, cashierV4Mutation, cashierV4Panel, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 
-const { chromium } = await import(pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href)
+const playwrightModule = process.env.SOLOG_PLAYWRIGHT_MODULE
+  ? await import(pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href)
+  : await import('playwright')
+const { chromium } = playwrightModule.default ?? playwrightModule
+if (!chromium) throw new Error('Playwright Chromium no está disponible en este runtime.')
 const server = await createServer({ server: { host: '127.0.0.1', port: 5210, strictPort: true }, define: {
   'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('https://solog-cashier-v4.test'),
   'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('test-only'),
