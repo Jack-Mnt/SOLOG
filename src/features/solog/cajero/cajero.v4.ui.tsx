@@ -1,6 +1,6 @@
 import type { CashierRoute } from '../../../lib/router'
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
-import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, History, Home, LoaderCircle, LogOut, MessageSquarePlus, Palette, Play, RefreshCw, SearchCheck, Send, Trash2, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LoaderCircle, LogOut, MessageSquarePlus, Palette, Play, RefreshCw, SearchCheck, Send, Trash2, X } from 'lucide-react'
 import { navigateTo, replaceRoute } from '../../../lib/router'
 import { PaletteSwitcher } from '../../theme/palette-switcher'
 import { SologApiError, type SologErrorCode } from '../errors'
@@ -292,14 +292,28 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
   const coverageAllowed = active && routeAllowed('/cajero/conteo')
   const reviewAllowed = active && routeAllowed('/cajero/revisar')
   const dailyAllowed = active && routeAllowed('/cajero/diario')
+  const stockAvailable = Boolean(state.stock?.snapshot_id)
+  const stockStale = Boolean(
+    stockAvailable &&
+    state.stock &&
+    getCajeroStockPresentation(state.stock, null, now).state === 'expired',
+  )
+  const stockCardClass = `cajero-stock-card${stockStale ? ' cajero-stock-card--stale' : stockAvailable ? ' cajero-stock-card--updated' : ''}`
   const start = async () => { try { navigateTo(await runtime.start()) } catch { /* Error exposed by runtime. */ } }
 
   return <section className="cajero-module cajero-home" aria-labelledby="cajero-inicio-title">
     <div className="cajero-home__heading"><h1 id="cajero-inicio-title">Inicio</h1></div>
 
-    <section className="cajero-stock-card">
-      <div className="cajero-stock-card__status"><div><h2>{state.stock?.snapshot_id ? 'Inventario cargado' : 'No hay inventario cargado'}</h2>
-        {state.bootstrap?.start_capability.reason && !panel ? <p>{getCashierV4ErrorPolicy(new SologApiError(state.bootstrap.start_capability.reason as SologErrorCode)).message}</p> : null}</div></div>
+    <section className={stockCardClass}>
+      <div className="cajero-stock-card__status">
+        <span className="cajero-stock-card__icon" aria-hidden="true">
+          {stockStale ? <AlertTriangle size={23} /> : <Database size={23} />}
+        </span>
+        <div className="cajero-stock-card__copy">
+          <h2>{stockStale ? 'Inventario desactualizado' : stockAvailable ? 'Inventario cargado' : 'No hay inventario cargado'}</h2>
+          {state.bootstrap?.start_capability.reason && !panel ? <p>{getCashierV4ErrorPolicy(new SologApiError(state.bootstrap.start_capability.reason as SologErrorCode)).message}</p> : null}
+        </div>
+      </div>
       <div className="cajero-stock-card__actions">
         {panel && !preparedStart
           ? <button className="button button--secondary" disabled={busy} onClick={() => void runtime.finish().catch(() => {})} type="button">Finalizar conteo</button>
