@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { validateCashierV4Panel } from '../src/features/solog/cajero/cajero.v4.api'
 import {
-  cashierV4StockType, selectCashierV4CoverageGroups, selectCashierV4DailyGroups,
+  cashierV4ActionableReviewQueue, cashierV4CurrentReviewPriority, cashierV4StockType,
+  selectCashierV4ActionableReviewEntries, selectCashierV4CoverageGroups, selectCashierV4DailyGroups,
   selectCashierV4ReviewGroups, selectCashierV4ReviewEntries,
   selectCashierV4CoveragePendingByStockType, selectCashierV4DailyPendingByStockType,
   selectCashierV4CoveragePendingByCategory, selectCashierV4DailyPendingByCategory,
@@ -12,7 +13,7 @@ import { parseCashierV4Bootstrap } from '../src/features/solog/cajero/cajero.v4.
 import { cashierV4Panel, cashierV4Bootstrap, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 
 function orderedPanel() {
-  const panel = cashierV4Panel()
+  const panel = cashierV4Panel({ next_action: 'coverage' })
   const clone = (index: number, tail: number, category: string, stock: number) => ({
     ...structuredClone(panel.groups[index]), grupo_id: `10000000-0000-4000-8000-${String(tail).padStart(12, '0')}`,
     categoria_id: category === 'Bebidas' ? '10000000-0000-4000-8000-000000000099' : ids.category,
@@ -26,8 +27,9 @@ function orderedPanel() {
   panel.groups.push(coverage2, coverage3, daily2, review2)
   panel.coverage_queue = [coverage3.grupo_id, coverage2.grupo_id, ids.coverage]
   panel.daily_queue = [daily2.grupo_id, ids.daily]
-  panel.review_queue = [{ ...panel.review_queue[0], grupo_id: review2.grupo_id,
-    detalle_id: review2.detalle_reconteo_id, ultima_diferencia: 7, contado_at: '2026-09-29T22:00:00Z' }, ...panel.review_queue]
+  panel.review_queue = [...panel.review_queue, { ...panel.review_queue[0], grupo_id: review2.grupo_id,
+    detalle_id: review2.detalle_reconteo_id, ultima_diferencia: 7, contado_at: '2026-09-29T22:00:00Z',
+    priority_class: 'review_regular' }]
   panel.kpis = { ...panel.kpis, coverage_total: 8, coverage_counted: 4, coverage_pending: 4,
     coverage_percent: 50, review_pending: 2, coverage_queue_pending: 3, daily_pending: 2 }
   return validateCashierV4Panel(panel)
@@ -55,8 +57,25 @@ describe('Cajero 13.4: mapping de queues y pendientes', () => {
       expect(entry.queueItem).toBe(panel.review_queue[index])
       expect(entry.group).toBe(panel.groups.find(group => group.grupo_id === entry.queueItem.grupo_id))
     })
-    expect(entries[0].queueItem).toMatchObject({ ultima_diferencia: 7, contado_at: '2026-09-29T22:00:00Z' })
-    expect(entries[0].group.detalle_reconteo_id).toBe(entries[0].queueItem.detalle_id)
+    expect(entries[1].queueItem).toMatchObject({
+      ultima_diferencia: 7, contado_at: '2026-09-29T22:00:00Z', priority_class: 'review_regular',
+    })
+    expect(entries[1].group.detalle_reconteo_id).toBe(entries[1].queueItem.detalle_id)
+  })
+  test('subprioridad review es única, actionable filtra y transiciona a regular', () => {
+    const panel = orderedPanel()
+    expect(cashierV4CurrentReviewPriority(panel.review_queue)).toBe('review_for_coverage')
+    expect(selectCashierV4ActionableReviewEntries(panel).map(entry => entry.queueItem.priority_class))
+      .toEqual(['review_for_coverage'])
+    const regularOnly = panel.review_queue.filter(item => item.priority_class === 'review_regular')
+    expect(cashierV4CurrentReviewPriority(regularOnly)).toBe('review_regular')
+    expect(cashierV4ActionableReviewQueue(regularOnly)).toEqual(regularOnly)
+  })
+  test('snapshot review legacy sin priority_class falla cerrado sin inferir', () => {
+    const panel = orderedPanel()
+    const legacy = panel.review_queue.map(({ priority_class: _priority, ...item }) => item) as typeof panel.review_queue
+    expect(cashierV4CurrentReviewPriority(legacy)).toBeNull()
+    expect(cashierV4ActionableReviewQueue(legacy)).toEqual([])
   })
   test.each([[3, 'positive'], [0, 'zero'], [-3, 'negative']] as const)('stock %s se presenta como %s', (stock, expected) => {
     expect(cashierV4StockType(stock)).toBe(expected)
