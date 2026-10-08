@@ -118,16 +118,16 @@ describe('Cajero V4: selectors autoritativos', () => {
     expect(selectCashierV4WaitingForSnapshot(createCashierV4State())).toBe(false)
   })
   test.each([1, 2] as const)('ronda %s usa label y cinco KPI backend sin reconstrucción', (round) => {
-    const state = stateFor('pre_session', { ronda: round })
-    expect(cashierV4CoverageLabel(round)).toBe(`Cobertura quincenal ${round}`)
+    const state = stateFor('pre_session', { ronda: round, next_action: 'coverage' })
+    expect(cashierV4CoverageLabel(round)).toBe(`Cobertura de ronda ${round}`)
     expect(selectCashierV4Coverage(state)).toEqual({
       coverage_round: round, coverage_total: 4, coverage_counted: 2, coverage_pending: 2, coverage_percent: 50,
-      label: `Cobertura quincenal ${round}`,
+      label: `Cobertura de ronda ${round}`,
     })
     expect(selectCashierV4Coverage(createCashierV4State())).toBeNull()
   })
   test('tres colas determinan grupos; accion, stock y KPI no sustituyen pertenencia', () => {
-    const panel = cashierV4Panel()
+    const panel = cashierV4Panel({ next_action: 'coverage' })
     expect(selectCashierV4ReviewQueue(panel)).toBe(panel.review_queue)
     expect(selectCashierV4CoverageQueue(panel)).toBe(panel.coverage_queue)
     expect(selectCashierV4DailyQueue(panel)).toBe(panel.daily_queue)
