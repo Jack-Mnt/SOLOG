@@ -95,7 +95,7 @@ describe('S10-B: contrato V9 sin retirar compatibilidades vigentes', () => {
     const activeCss = stylesCss + '\n' + operationalCss
     expect(activeCss).not.toMatch(/\.cajero-count-table[\w-]*\b|\.cajero-review-reason\b/)
     expect(operationalCss).toMatch(/\.cajero-history-list__detail\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/)
-    expect(operationalCss).toMatch(/\.cajero-history-list__detail dd\.cajero-history-value--discarded\s*\{[^}]*color:\s*var\(--danger,\s*#b42318\)[^}]*text-decoration:\s*line-through/)
+    expect(operationalCss).toMatch(/\.cajero-history-list__detail dd\.cajero-history-value--discarded\s*\{[^}]*color:\s*var\(--color-danger\)[^}]*text-decoration:\s*line-through/)
   })
 
   test('saneamiento y superficies activas permanecen, incluidas RPC dinámicas Admin', () => {
