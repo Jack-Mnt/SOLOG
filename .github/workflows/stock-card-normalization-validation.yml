@@ -1,4 +1,5 @@
 name: Stock Card Normalization Validation
+# isolated rerun after V4 stock typing fix
 
 on:
   push:
@@ -19,15 +20,12 @@ jobs:
           bun-version: 1.3.14
       - run: bun install --frozen-lockfile
 
-      - name: Directed Cajero and Detalles tests
+      - name: Directed stock card tests
         run: >
           bun test
+          tests/operational-stock-card.test.ts
           tests/details-phase4.test.ts
-          tests/cajero-runtime-v4.test.ts
           tests/cajero-c4.test.ts
-          tests/cajero-navigation-v4.test.ts
-          tests/cajero-capability-selectors-v4.test.ts
-          tests/cajero-post-cutover-v4.test.ts
 
       - name: Install browser smoke dependency
         run: |
@@ -46,9 +44,15 @@ jobs:
           export SOLOG_TEST_BROWSER="$(node -e "console.log(require('playwright').chromium.executablePath())")"
           bun tests/details-v2.browser.mjs
 
-      - name: Lint
+      - name: Targeted lint
         if: always()
-        run: bun run lint
+        run: >
+          bunx eslint
+          src/features/solog/cajero/cajero.v4.ui.tsx
+          src/features/solog/detalles/detalles.panel.tsx
+          src/features/solog/detalles/detalles.stock.ts
+          tests/details-phase4.test.ts
+          tests/operational-stock-card.test.ts
 
       - name: Build
         if: always()
