@@ -1,6 +1,6 @@
 # SOLOG — Integración — Cajero Prioridades Frontend — Fase 5 Revisión V1
 
-**Estado:** VALIDACIÓN TÉCNICA COMPLETA PASS / SMOKE HUMANO PENDIENTE
+**Estado:** REVISIÓN GLOBAL + VALIDACIONES DIRIGIDAS PASS / SUITE GLOBAL Y SMOKE HUMANO PENDIENTES
 **Fecha:** 7 de octubre de 2026
 **Proyecto:** SOLOG
 **Nivel:** B — adaptación funcional frontend
@@ -227,7 +227,7 @@ La ejecución con Bun de Playwright quedó descartada por timeout de handshake d
 node tests/cajero-v4.browser.mjs
 ```
 
-Queda únicamente repetir `bun run lint` y `git diff --check` sobre el HEAD final, porque después de la última corrida se modificaron archivos de tests/browser.
+Las validaciones dirigidas, browser smoke, lint, build y `git diff --check` quedaron registradas como PASS. No existe evidencia registrada de una ejecución de la **suite global completa** (`bun test`) sobre este bloque; por tanto, esa validación continúa pendiente antes del cierre técnico.
 
 ## 14. Estado
 
@@ -239,9 +239,10 @@ Backend adicional: NO REQUERIDO
 Tests focales: PASS por evidencia acumulada
 Runtime focal final: 26 PASS / 0 FAIL
 Browser smoke: 32 PASS
-Lint final sobre HEAD: PASS
+Lint final sobre HEAD previo a esta corrección documental: PASS
 Build: PASS
-git diff --check final sobre HEAD: PASS
+git diff --check final sobre HEAD previo a esta corrección documental: PASS
+Suite global `bun test`: PENDIENTE
 Smoke humano: PENDIENTE
 Bloque: NO CERRADO AÚN
 ```
