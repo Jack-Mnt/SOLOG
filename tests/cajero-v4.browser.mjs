@@ -168,9 +168,11 @@ async function scenario({ startAction = 'coverage', preSessionAction = 'coverage
       : { ...result.items[0], stock_reconteo: item.stock_fisico, recontado_at: item.contado_at })
     result.panel_delta.session_capability = cap
     if (!isRecovery && action === 'save_batch' && payload.items[0].grupo_id === ids.daily) {
-      result.panel_delta.daily_queue = []; result.panel_delta.kpis.daily_pending = 0
+      result.panel_delta.review_queue = []; result.panel_delta.coverage_queue = []; result.panel_delta.daily_queue = []
+      result.panel_delta.kpis.review_pending = 0; result.panel_delta.kpis.daily_pending = 0
       result.panel_delta.kpis.coverage_pending = 0; result.panel_delta.kpis.coverage_counted = 4; result.panel_delta.kpis.coverage_percent = 100
       result.panel_delta.kpis.coverage_blocked_waiting_snapshot = 0
+      result.panel_delta.next_action = 'none'
       result.panel_delta.groups_patch = [{ ...result.panel_delta.groups_patch[0], grupo_id: ids.daily }]
     }
     if (isRecovery) {
@@ -487,16 +489,19 @@ try {
     await capture(page)
     await page.getByRole('button', { name: /Abarrotes.*1\/1 contados/ }).waitFor()
     await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+    await page.getByRole('heading', { name: 'Revisar', exact: true }).waitFor()
+    assert.equal(await nav(page).getByRole('button', { name: 'Conteo', exact: true }).count(), 0)
+    assert.equal(await nav(page).getByRole('button', { name: 'Revisar', exact: true }).count(), 1)
+    await nav(page).getByRole('button', { name: 'Inicio', exact: true }).click()
     await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     await page.getByText('Cobertura de ronda 1', { exact: true }).waitFor()
     assert.equal(await page.getByRole('button', { name: 'Cobertura de ronda 1', exact: true }).count(), 0)
-    assert.equal(await page.locator('.cajero-home-metric--emphasized').count(), 0)
-    assert.equal(await nav(page).getByRole('button', { name: 'Conteo', exact: true }).count(), 0)
+    assert.equal(await page.locator('.cajero-home-metric--emphasized').getByText('Revisar', { exact: true }).count(), 1)
     assert.equal(await nav(page).getByRole('button', { name: 'Historial', exact: true }).count(), 1)
     await page.getByRole('button', { name: 'Finalizar conteo', exact: true }).click()
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
     assert.deepEqual(calls.filter(c => c.rpc === 'rpc_solog_cashier_mutate_v4').map(c => c.body.p_action), ['start', 'save_batch', 'finish'])
-    console.log('PASS pre-session → start coverage → draft → save/delta → waiting → finish')
+    console.log('PASS pre-session → start coverage → draft → save/delta review → finish')
   })
   await scenario({ startAction: 'review' }, async (page, calls) => {
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).click()
@@ -536,9 +541,9 @@ try {
     await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
     assert.equal(calls.at(-1).body.p_action, 'recount_save_batch')
-    await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
-    await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
-    console.log('PASS race summary coverage → start review → guard → recount/delta coverage')
+    await nav(page).getByRole('button', { name: 'Cobertura de turno', exact: true }).click()
+    await page.getByRole('heading', { name: 'Cobertura de turno', exact: true }).waitFor()
+    console.log('PASS race summary coverage → start review → guard → recount/delta turno')
   })
   await scenario({ initial: 'active', recovery: true }, async (page, calls) => {
     await page.getByRole('button', { name: 'Cobertura de ronda 1', exact: true }).waitFor({ state: 'visible' })
@@ -550,9 +555,9 @@ try {
     await page.getByRole('heading', { name: 'Conteo', exact: true }).waitFor()
     await capture(page)
     await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
-    await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    await page.getByRole('heading', { name: 'Revisar', exact: true }).waitFor()
     assert.equal(calls.at(-1).body.p_payload.conteo_id, ids.session)
-    console.log('PASS recovery A se autocierra → B conserva captura y envío')
+    console.log('PASS recovery A se autocierra → B conserva captura y avanza a review')
   })
   await scenario({ initial: 'active', expiredWithDraft: true }, async (page, calls) => {
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
