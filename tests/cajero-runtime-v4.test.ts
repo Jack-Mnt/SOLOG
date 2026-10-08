@@ -11,7 +11,7 @@ import { cashierV4DraftStorageKey } from '../src/features/solog/cajero/cajero.v4
 import { SologApiError } from '../src/features/solog/errors'
 import { parseCashierHistory } from '../src/features/solog/cajero/cajero.history'
 import { draftHarness, memoryStorage, uuidFor } from './fixtures/cashier-v4-drafts'
-import { cashierV4Bootstrap, cashierV4Mutation, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
+import { cashierV4Bootstrap, cashierV4Group, cashierV4Mutation, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 import type { CashierV4Rpc } from '../src/features/solog/cajero/cajero.v4.api'
 
 function renderRuntime(runtime: CashierV4Runtime, route: CashierRoute) {
@@ -92,7 +92,24 @@ describe('runtime productivo V4', () => {
     expect(h.storage.read(h.scope).normal).toHaveLength(0)
     await h.runtime.sendPending()
     expect(h.requests.map(r => r.action)).toEqual(['recount_save_batch'])
-    expect(h.store.getSnapshot().panel_state!.next_action).toBe('coverage')
+    expect(h.store.getSnapshot().panel_state!.next_action).toBe('daily')
+  })
+  test('review_regular no es capturable mientras exista review_for_coverage', () => {
+    const h = runtimeHarness('review')
+    const b = cashierV4Bootstrap('active', { next_action: 'review' })
+    const regularGroupId = uuidFor(51001), regularDetailId = uuidFor(51002)
+    b.panel_state!.groups.push(cashierV4Group('recount', {
+      grupo_id: regularGroupId, detalle_reconteo_id: regularDetailId,
+    }))
+    b.panel_state!.review_queue.push({
+      ...b.panel_state!.review_queue[0], grupo_id: regularGroupId, detalle_id: regularDetailId,
+      priority_class: 'review_regular',
+    })
+    b.panel_state!.kpis.review_pending = 2
+    h.store.acceptBootstrap(b)
+    expect(() => h.runtime.capture('review', regularGroupId, 10, '10')).toThrow('prioridad de revisión vigente')
+    h.runtime.capture('review', ids.review, 10, '10')
+    expect(h.storage.read(h.scope).recount.map(item => item.grupo_id)).toEqual([ids.review])
   })
   test('daily no acepta grupo coverage, ni capture con capability negada', () => {
     const h = runtimeHarness('daily')
