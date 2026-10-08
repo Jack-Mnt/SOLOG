@@ -607,7 +607,7 @@ Browser smoke Fase 5: 32 PASS
 Build: PASS
 Lint final previo a la corrección documental: PASS
 git diff --check final previo a la corrección documental: PASS
-Suite global `bun test`: RUN 1 = 737 PASS / 11 FAIL; CORRECCIONES APLICADAS / RERUN PENDIENTE
+Suite global `bun test`: RUN 1 = 737 PASS / 11 FAIL; rerun focal = 26 PASS / 1 FAIL; último test obsoleto corregido / RERUN PENDIENTE
 Smoke humano: PENDIENTE
 Backend adicional: NO REQUERIDO
 ```
