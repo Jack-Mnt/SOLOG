@@ -24,10 +24,12 @@ test('se retiran textos y spinners paralelos de las cargas de lectura', async ()
   }
 })
 
-test('la geometría tablet vigente de Cajero permanece estable', async () => {
-  const css = await source('src/features/solog/cajero/cajero.css')
+test('la geometría tablet vigente de Cajero permanece estable entre CSS propio y compartido', async () => {
+  const cajeroCss = await source('src/features/solog/cajero/cajero.css')
+  const operationalCss = await source('src/operational.css')
+  const activeCss = cajeroCss + '\n' + operationalCss
 
-  expect(css).toContain('@media (max-width: 899px)')
-  expect(css).toContain('@media (max-width: 720px)')
-  expect(css).toContain('@media (max-width: 460px)')
+  expect(activeCss).toContain('@media (max-width: 899px)')
+  expect(activeCss).toContain('@media (max-width: 720px)')
+  expect(activeCss).toContain('@media (max-width: 460px)')
 })
