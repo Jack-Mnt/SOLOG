@@ -101,6 +101,9 @@ describe('Cajero 13.4: navegación autoritativa', () => {
     expect(items.map(item => item.label)).toEqual(['Inicio', 'Conteo', 'Historial'])
     expect(items.map(item => item.available)).toEqual([true, true, true])
     items.forEach(item => expect(getCashierV4RouteAccess(state, item.route, nowFor(state)).allowed).toBe(true))
+    const daily = stateFor('active', { next_action: 'daily' })
+    expect(selectCashierV4BottomNavigation(daily, nowFor(daily)).map(item => item.label))
+      .toEqual(['Inicio', 'Cobertura de turno', 'Historial'])
   })
   test('legacy, queues y grupos incidentales no sustituyen next_action', () => {
     const state = stateFor('active', { next_action: 'none' })
