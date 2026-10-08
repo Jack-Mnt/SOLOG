@@ -19,9 +19,11 @@ export function draftHarness(next: CashierV4NextAction = 'review', count?: numbe
   if (count) {
     initial.panel_state!.groups = Array.from({ length: count }, (_, n) => cashierV4Group('coverage', { grupo_id: uuidFor(n + 1) }))
     initial.panel_state!.coverage_queue = initial.panel_state!.groups.map(group => group.grupo_id)
+    initial.panel_state!.review_queue = []
     initial.panel_state!.daily_queue = []
     initial.panel_state!.kpis = { ...initial.panel_state!.kpis, coverage_total: count, coverage_counted: 0,
-      coverage_pending: count, coverage_percent: 0, coverage_queue_pending: count, daily_pending: 0 }
+      coverage_pending: count, coverage_percent: 0, review_pending: 0,
+      coverage_queue_pending: count, daily_pending: 0 }
   }
   const now = Date.parse(initial.server_now)
   const store = new CashierV4Store(ids.user, cashierV4DeviceToken, undefined, () => now)
