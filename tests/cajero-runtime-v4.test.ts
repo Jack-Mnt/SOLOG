@@ -82,7 +82,7 @@ describe('runtime productivo V4', () => {
     await h.runtime.sendPending()
     expect(h.requests.map(r => r.action)).toEqual(['save_batch'])
     expect(h.runtime.pendingCount).toBe(0)
-    expect(h.store.getSnapshot().panel_state!.next_action).toBe('daily')
+    expect(h.store.getSnapshot().panel_state!.next_action).toBe('review')
   })
   test('review puede capturar antes de coverage completa y guarda recount separado', async () => {
     const h = runtimeHarness('review')
@@ -107,6 +107,7 @@ describe('runtime productivo V4', () => {
     })
     b.panel_state!.kpis.review_pending = 2
     h.store.acceptBootstrap(b)
+    h.store.serverOffsetMs = h.now - Date.now()
     const html = renderRuntime(h.runtime, '/cajero/revisar')
     expect(html).toContain('1 prioritarios para completar la ronda · 2 pendientes totales')
     expect(html).toContain('Grupo recount')
