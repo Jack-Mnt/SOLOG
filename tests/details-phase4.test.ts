@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { isDetailsStockStale } from '../src/features/solog/detalles/detalles.panel'
 import { getDetailsExportFilename, getDetailsValuationExplanation, validateDetailsExportResponse } from '../src/features/solog/detalles/detalles.export'
 import { DetailsStore } from '../src/features/solog/detalles/detalles.store'
 import { detailsRpc } from '../src/features/solog/detalles/detalles.v2'
@@ -36,6 +37,13 @@ describe('D3 export V4', () => {
     wrongSite = true
     await expect(store.export('current_biweekly')).rejects.toThrow()
   })
+  test('stock stale comienza exactamente a las dos horas', () => {
+    const confirmedAt = '2026-10-07T10:00:00.000Z'
+    expect(isDetailsStockStale(confirmedAt, '2026-10-07T11:59:59.999Z')).toBe(false)
+    expect(isDetailsStockStale(confirmedAt, '2026-10-07T12:00:00.000Z')).toBe(true)
+    expect(isDetailsStockStale(null, '2026-10-07T12:00:00.000Z')).toBe(false)
+  })
+
   test('normalización operacional comparte contratos sin iniciar el refactor de namespace', async () => {
     const operational = await Bun.file('src/operational.css').text()
     const detailsCss = await Bun.file('src/features/solog/detalles/detalles.css').text()
@@ -46,9 +54,14 @@ describe('D3 export V4', () => {
     expect(operational).toContain('.details-metrics')
     expect(operational).toContain('.cajero-alert__dismiss')
     expect(operational).toContain('.cajero-alert--success')
+    expect(operational).toContain('.cajero-stock-card--updated')
     expect(operational).toContain('.cajero-stock-card--stale')
+    expect(operational).toContain('.cajero-stock-card__copy')
     expect(panel).toContain('cajero-alert cajero-alert--success')
     expect(panel).toContain('cajero-stock-card--stale')
+    expect(panel).toContain('cajero-stock-card--updated')
+    expect(panel).toContain('cajero-stock-card__icon')
+    expect(panel).toContain('Stock desactualizado')
     expect(panel).not.toContain('details-notice')
     expect(panel).not.toContain('details-device-card__copy')
     expect(panel).not.toContain('cajero-module cajero-home details-panel')
