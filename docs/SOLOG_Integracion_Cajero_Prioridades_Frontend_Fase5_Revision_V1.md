@@ -1,6 +1,6 @@
 # SOLOG — Integración — Cajero Prioridades Frontend — Fase 5 Revisión V1
 
-**Estado:** REVISIÓN GLOBAL ESTÁTICA PASS / VALIDACIÓN EJECUTABLE PENDIENTE
+**Estado:** REVISIÓN GLOBAL ESTÁTICA PASS / TESTS Y BROWSER SMOKE PASS / CIERRE TÉCNICO FINAL PENDIENTE
 **Fecha:** 7 de octubre de 2026
 **Proyecto:** SOLOG
 **Nivel:** B — adaptación funcional frontend
@@ -191,38 +191,43 @@ Se detectó y corrigió un único trailing whitespace en el documento fuente.
 
 Después de la corrección no queda un hallazgo funcional conocido atribuible al bloque.
 
-## 13. Validación ejecutable pendiente
+## 13. Validación ejecutable
 
-Este entorno no dispone de Bun y el HEAD actual no tiene workflow/check automático asociado.
+Evidencia local reportada el 8 de octubre de 2026:
 
-Por tanto NO se consideran ejecutados todavía:
+- suite focal Cajero V4: primera corrida 270 PASS / 1 FAIL;
+- el único fallo restante correspondía al test de reloj de `review_regular`;
+- tras corregir exclusivamente ese test: `tests/cajero-runtime-v4.test.ts` = 26 PASS / 0 FAIL;
+- lint: PASS en la corrida previa;
+- build: PASS, Vite completó correctamente;
+- browser smoke ejecutado con Node + Playwright: 32 escenarios PASS;
+- Chromium/Playwright: launcher validado bajo Node.
 
-- tests;
-- lint;
-- build;
-- `git diff --check`.
+El browser smoke cubrió, entre otros:
 
-Validación requerida en entorno local:
+- expiry/autocierre con y sin drafts;
+- retry exacto e idempotencia;
+- rechazo definitivo y conflictos;
+- Inicio pre-session/active;
+- coverage/review/daily;
+- deep-links de stock;
+- calculadora y drafts locales;
+- start perdido;
+- logout con finish;
+- recovery;
+- Historial V2;
+- transición `coverage → review → daily → none`;
+- ronda 2;
+- navegación entre categorías;
+- queues por stock.
 
-```bash
-bun test tests/cajero-contract-v4.test.ts \
-  tests/cajero-error-policy-v4.test.ts \
-  tests/cajero-capability-selectors-v4.test.ts \
-  tests/cajero-state-v4.test.ts \
-  tests/cajero-queue-mapping-v4.test.ts \
-  tests/cajero-runtime-v4.test.ts \
-  tests/cajero-flush-drafts-v4.test.ts \
-  tests/cajero-drafts-storage-v4.test.ts \
-  tests/cajero-recovery-delivery-state-v4.test.ts \
-  tests/cajero-navigation-v4.test.ts
+La ejecución con Bun de Playwright quedó descartada por timeout de handshake del launcher en Windows. El mismo Chromium lanzó correctamente con Node, por lo que el smoke válido se ejecutó con:
 
-bun test tests/cajero-v4.browser.mjs
-bun run lint
-bun run build
-git diff --check
+```powershell
+node tests/cajero-v4.browser.mjs
 ```
 
-Después debe ejecutarse un smoke humano corto.
+Queda únicamente repetir `bun run lint` y `git diff --check` sobre el HEAD final, porque después de la última corrida se modificaron archivos de tests/browser.
 
 ## 14. Estado
 
@@ -231,10 +236,12 @@ Implementación Fases 1–4: COMPLETA
 Revisión global estática: PASS
 Regresiones estáticas detectadas: CORREGIDAS
 Backend adicional: NO REQUERIDO
-Tests ejecutables: PENDIENTES
-Lint: PENDIENTE
-Build: PENDIENTE
-git diff --check real: PENDIENTE
+Tests focales: PASS por evidencia acumulada
+Runtime focal final: 26 PASS / 0 FAIL
+Browser smoke: 32 PASS
+Lint: PASS previo / REEJECUCIÓN FINAL PENDIENTE
+Build: PASS
+git diff --check real: REEJECUCIÓN FINAL PENDIENTE
 Smoke humano: PENDIENTE
 Bloque: NO CERRADO AÚN
 ```
