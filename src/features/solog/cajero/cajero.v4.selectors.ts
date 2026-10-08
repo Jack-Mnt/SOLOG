@@ -1,5 +1,8 @@
 import { SologApiError } from '../errors'
-import type { CashierV4Group, CashierV4NextAction, CashierV4Panel, CashierV4Round } from './cajero.v4'
+import type {
+  CashierV4Group, CashierV4NextAction, CashierV4Panel, CashierV4ReviewPriorityClass,
+  CashierV4ReviewQueueItem, CashierV4Round,
+} from './cajero.v4'
 import type { CashierV4State } from './cajero.v4.store'
 
 export function getCashierV4DeliveryState(state: CashierV4State, conteoId: string) {
@@ -45,6 +48,30 @@ export function selectCashierV4ReviewQueue(panel: CashierV4Panel | null) { retur
 export function selectCashierV4CoverageQueue(panel: CashierV4Panel | null) { return panel?.coverage_queue ?? [] }
 export function selectCashierV4DailyQueue(panel: CashierV4Panel | null) { return panel?.daily_queue ?? [] }
 
+export function cashierV4CurrentReviewPriority(
+  queue: readonly CashierV4ReviewQueueItem[],
+): CashierV4ReviewPriorityClass | null {
+  if (!queue.length) return null
+  let hasForCoverage = false
+  let hasRegular = false
+  for (const item of queue) {
+    const priority = (item as Partial<CashierV4ReviewQueueItem>).priority_class
+    if (priority === 'review_for_coverage') hasForCoverage = true
+    else if (priority === 'review_regular') hasRegular = true
+    else return null // Legacy/ambiguous persisted snapshots fail closed.
+  }
+  return hasForCoverage ? 'review_for_coverage' : hasRegular ? 'review_regular' : null
+}
+
+export function cashierV4ActionableReviewQueue(queue: readonly CashierV4ReviewQueueItem[]) {
+  const priority = cashierV4CurrentReviewPriority(queue)
+  return priority ? queue.filter(item => item.priority_class === priority) : []
+}
+
+export function selectCashierV4CurrentReviewPriority(panel: CashierV4Panel | null) {
+  return cashierV4CurrentReviewPriority(selectCashierV4ReviewQueue(panel))
+}
+
 function groupsInQueue(panel: CashierV4Panel | null, ids: readonly string[]): CashierV4Group[] {
   if (!panel) return []
   const groupsById = new Map(panel.groups.map(group => [group.grupo_id, group]))
@@ -55,14 +82,24 @@ function groupsInQueue(panel: CashierV4Panel | null, ids: readonly string[]): Ca
   })
 }
 
-export function selectCashierV4ReviewEntries(panel: CashierV4Panel | null) {
-  const queue = selectCashierV4ReviewQueue(panel)
+function reviewEntries(panel: CashierV4Panel | null, queue: readonly CashierV4ReviewQueueItem[]) {
   const groups = groupsInQueue(panel, queue.map(item => item.grupo_id))
   return queue.map((queueItem, index) => ({ queueItem, group: groups[index] }))
 }
 
+export function selectCashierV4ReviewEntries(panel: CashierV4Panel | null) {
+  return reviewEntries(panel, selectCashierV4ReviewQueue(panel))
+}
+
+export function selectCashierV4ActionableReviewEntries(panel: CashierV4Panel | null) {
+  return reviewEntries(panel, cashierV4ActionableReviewQueue(selectCashierV4ReviewQueue(panel)))
+}
+
 export function selectCashierV4ReviewGroups(panel: CashierV4Panel | null) {
   return selectCashierV4ReviewEntries(panel).map(entry => entry.group)
+}
+export function selectCashierV4ActionableReviewGroups(panel: CashierV4Panel | null) {
+  return selectCashierV4ActionableReviewEntries(panel).map(entry => entry.group)
 }
 export function selectCashierV4CoverageGroups(panel: CashierV4Panel | null) {
   return groupsInQueue(panel, selectCashierV4CoverageQueue(panel))
