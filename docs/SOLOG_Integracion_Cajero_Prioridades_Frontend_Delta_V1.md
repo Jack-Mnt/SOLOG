@@ -1,6 +1,6 @@
 # SOLOG — Integración — Cajero Prioridades Frontend — Delta V1
 
-**Estado:** CONGELADO — FASES 1–4 IMPLEMENTADAS / VALIDACIÓN GLOBAL PENDIENTE
+**Estado:** CONGELADO — FASES 1–4 IMPLEMENTADAS / FASE 5 REVISIÓN ESTÁTICA PASS / VALIDACIÓN EJECUTABLE PENDIENTE
 **Fecha:** 7 de octubre de 2026  
 **Proyecto:** SOLOG  
 **Clasificación:** Nivel B — adaptación funcional frontend  
@@ -600,7 +600,9 @@ Implementación frontend Fase 1: COMPLETADA
 Implementación frontend Fase 2: COMPLETADA
 Implementación frontend Fase 3: COMPLETADA
 Implementación frontend Fase 4: COMPLETADA
-Validación global Fase 5: PENDIENTE
+Revisión global Fase 5: PASS ESTÁTICO
+Validación ejecutable Fase 5: PENDIENTE
+Smoke humano: PENDIENTE
 Backend adicional: NO REQUERIDO
 ```
 
