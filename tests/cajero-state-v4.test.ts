@@ -65,9 +65,9 @@ describe('Cajero V4: reducer', () => {
     expect(next.panel_state!.basis).toBe(state.panel_state!.basis)
     expect(state).toEqual(previous)
   })
-  test('backend gobierna review → coverage → daily → none', () => {
-    let state = bootstrap()
-    for (const next of ['coverage', 'daily', 'none'] as const) {
+  test('backend gobierna coverage → review → daily → none', () => {
+    let state = bootstrap('active', { next_action: 'coverage' })
+    for (const next of ['review', 'daily', 'none'] as const) {
       state = transition(state, next)
       expect(state.panel_state!.next_action).toBe(next)
     }
