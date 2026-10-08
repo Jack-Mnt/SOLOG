@@ -235,13 +235,21 @@
   gap: 1rem;
   min-height: 88px;
   padding: 1rem 1.15rem;
-  border: 1px solid
-    color-mix(in srgb, var(--color-success) 32%, var(--color-border));
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-default);
+}
+
+.cajero-stock-card--updated {
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 32%,
+    var(--color-border)
+  );
   background:
     linear-gradient(120deg, var(--color-success-soft), transparent 72%),
     var(--color-surface);
-  box-shadow: var(--shadow-default);
 }
 
 .cajero-stock-card--stale {
@@ -274,8 +282,17 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+}
+
+.cajero-stock-card--updated .cajero-stock-card__icon {
   color: var(--color-success);
   background: var(--color-success-soft);
+}
+
+.cajero-stock-card__copy {
+  min-width: 0;
 }
 
 .cajero-stock-card h2,
