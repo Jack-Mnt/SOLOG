@@ -296,7 +296,15 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
   const stockStale = Boolean(
     stockAvailable &&
     state.stock &&
-    getCajeroStockPresentation(state.stock, null, now).state === 'expired',
+    getCajeroStockPresentation({
+      snapshot_at: state.stock.capturado_at,
+      snapshot_expira_at: state.stock.snapshot_expira_at,
+      disponible: true,
+      vigente: Boolean(
+        state.stock.snapshot_expira_at &&
+        now < Date.parse(state.stock.snapshot_expira_at),
+      ),
+    }, null, now).state === 'expired',
   )
   const stockCardClass = `cajero-stock-card${stockStale ? ' cajero-stock-card--stale' : stockAvailable ? ' cajero-stock-card--updated' : ''}`
   const start = async () => { try { navigateTo(await runtime.start()) } catch { /* Error exposed by runtime. */ } }
