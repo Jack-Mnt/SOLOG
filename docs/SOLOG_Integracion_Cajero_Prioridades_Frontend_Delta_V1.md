@@ -1,6 +1,6 @@
 # SOLOG — Integración — Cajero Prioridades Frontend — Delta V1
 
-**Estado:** CONGELADO — FASES 1–5 REVISADAS / SUITE GLOBAL CORREGIDA Y PENDIENTE DE RERUN / SMOKE HUMANO PENDIENTE
+**Estado:** CONGELADO — FASES 1–5 TÉCNICAMENTE VALIDADAS / SMOKE HUMANO PENDIENTE
 **Fecha:** 7 de octubre de 2026  
 **Proyecto:** SOLOG  
 **Clasificación:** Nivel B — adaptación funcional frontend  
@@ -605,9 +605,9 @@ Tests focales Fase 5: PASS POR EVIDENCIA ACUMULADA
 Runtime focal final: 26 PASS / 0 FAIL
 Browser smoke Fase 5: 32 PASS
 Build: PASS
-Lint final previo a la corrección documental: PASS
-git diff --check final previo a la corrección documental: PASS
-Suite global `bun test`: RUN 1 = 737 PASS / 11 FAIL; rerun focal = 26 PASS / 1 FAIL; último test obsoleto corregido / RERUN PENDIENTE
+Lint final sobre HEAD: PASS
+git diff --check final sobre HEAD: PASS
+Suite global `bun test`: PASS FINAL
 Smoke humano: PENDIENTE
 Backend adicional: NO REQUERIDO
 ```
