@@ -23,6 +23,7 @@ import type { DetailsExportPeriod } from "./detalles.v2";
 import { useSologDetailsExport } from "./detalles.export.hook";
 import { SologDetailsHistoryDialog } from "./detalles.historial.dialog";
 import { useSologDetailsSummary } from "./detalles.hook";
+import { isDetailsStockStale } from "./detalles.stock";
 
 const LIMA_TIME_ZONE = "America/Lima";
 
@@ -43,19 +44,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat("es-PE", {
 function formatDeviceState(state: string) {
   return DEVICE_STATE_LABELS[state] ?? state.replaceAll("_", " ");
 }
-const DETAILS_STOCK_STALE_LIMIT_MS = 2 * 60 * 60 * 1000;
-
-export function isDetailsStockStale(
-  confirmedAt: string | null,
-  serverNow: string,
-) {
-  if (!confirmedAt) return false;
-  const confirmedAtMs = Date.parse(confirmedAt);
-  const serverNowMs = Date.parse(serverNow);
-  if (!Number.isFinite(confirmedAtMs) || !Number.isFinite(serverNowMs)) return false;
-  return Math.max(0, serverNowMs - confirmedAtMs) >= DETAILS_STOCK_STALE_LIMIT_MS;
-}
-
 function formatStockUpdate(confirmedAt: string | null, serverNow: string) {
   if (!confirmedAt) return "Sin actualización confirmada";
 
