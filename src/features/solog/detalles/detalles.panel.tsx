@@ -43,6 +43,19 @@ const dateTimeFormatter = new Intl.DateTimeFormat("es-PE", {
 function formatDeviceState(state: string) {
   return DEVICE_STATE_LABELS[state] ?? state.replaceAll("_", " ");
 }
+const DETAILS_STOCK_STALE_LIMIT_MS = 2 * 60 * 60 * 1000;
+
+export function isDetailsStockStale(
+  confirmedAt: string | null,
+  serverNow: string,
+) {
+  if (!confirmedAt) return false;
+  const confirmedAtMs = Date.parse(confirmedAt);
+  const serverNowMs = Date.parse(serverNow);
+  if (!Number.isFinite(confirmedAtMs) || !Number.isFinite(serverNowMs)) return false;
+  return Math.max(0, serverNowMs - confirmedAtMs) >= DETAILS_STOCK_STALE_LIMIT_MS;
+}
+
 function formatStockUpdate(confirmedAt: string | null, serverNow: string) {
   if (!confirmedAt) return "Sin actualización confirmada";
 
@@ -131,6 +144,13 @@ export function SologDetailsPanel({
     device?.current_device_state === "autorizado" &&
     device.current_device_matches_site;
   const checkingAuthorization = status === "loading" && Boolean(summary);
+  const stockSnapshot = summary?.summary.ultimo_snapshot ?? null;
+  const stockStale = Boolean(
+    stockSnapshot &&
+      summary &&
+      isDetailsStockStale(stockSnapshot.confirmado_at, summary.generated_at),
+  );
+  const stockCardClass = `cajero-stock-card${stockStale ? " cajero-stock-card--stale" : stockSnapshot ? " cajero-stock-card--updated" : ""}`;
 
   const authorizationMessage = isCurrentDeviceAuthorized
     ? "Este dispositivo ya está autorizado. Puedes continuar al panel de Cajero."
@@ -359,7 +379,7 @@ export function SologDetailsPanel({
                 </article>
 
                 <section
-                  className={`cajero-stock-card${summary.summary.ultimo_snapshot ? "" : " cajero-stock-card--stale"}`}
+                  className={stockCardClass}
                   aria-labelledby="details-stock-title"
                 >
                   <div className="cajero-stock-card__status">
@@ -367,22 +387,23 @@ export function SologDetailsPanel({
                       className="cajero-stock-card__icon"
                       aria-hidden="true"
                     >
-                      {summary.summary.ultimo_snapshot ? (
-                        <Database size={23} />
-                      ) : (
+                      {stockStale ? (
                         <AlertTriangle size={23} />
+                      ) : (
+                        <Database size={23} />
                       )}
                     </span>
-                    <div>
+                    <div className="cajero-stock-card__copy">
                       <h2 id="details-stock-title">
-                        {summary.summary.ultimo_snapshot
-                          ? "Última actualización de stock"
-                          : "Stock no disponible"}
+                        {stockStale
+                          ? "Stock desactualizado"
+                          : stockSnapshot
+                            ? "Última actualización de stock"
+                            : "Stock no disponible"}
                       </h2>
                       <p>
                         {formatStockUpdate(
-                          summary.summary.ultimo_snapshot?.confirmado_at ??
-                            null,
+                          stockSnapshot?.confirmado_at ?? null,
                           summary.generated_at,
                         )}
                       </p>
