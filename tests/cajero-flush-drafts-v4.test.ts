@@ -3,7 +3,7 @@ import { SologApiError } from '../src/features/solog/errors'
 import { CashierV4Store } from '../src/features/solog/cajero/cajero.v4.store'
 import { CashierV4DraftCoordinator } from '../src/features/solog/cajero/cajero.v4.flush'
 import { draftHarness, uuidFor } from './fixtures/cashier-v4-drafts'
-import { cashierV4Ids as ids, cashierV4DeviceToken } from './fixtures/cashier-v4.mjs'
+import { cashierV4Bootstrap, cashierV4Ids as ids, cashierV4DeviceToken } from './fixtures/cashier-v4.mjs'
 
 const normal = (h: ReturnType<typeof draftHarness>, group = ids.coverage) => h.coordinator.captureNormal(h.scope, {
   grupo_id: group, stock_fisico: 10, contado_at: h.stamp,
@@ -17,16 +17,40 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
     expect(h.requests).toEqual([])
     expect(h.storage.read(h.scope).normal).toHaveLength(2)
   })
-  test('review → coverage → daily → none reevalúa autoridad después de cada confirmación', async () => {
-    const h = draftHarness()
+  test('coverage → review_for_coverage → review_regular → daily reevalúa autoridad tras cada delta', async () => {
+    const h = draftHarness('coverage')
+    const regularGroupId = uuidFor(51001), regularDetailId = uuidFor(51002)
+    const b = cashierV4Bootstrap('active', { next_action: 'coverage' })
+    b.panel_state!.groups.push({
+      ...structuredClone(b.panel_state!.groups[0]),
+      grupo_id: regularGroupId,
+      detalle_reconteo_id: regularDetailId,
+    })
+    b.panel_state!.review_queue.push({
+      ...b.panel_state!.review_queue[0],
+      grupo_id: regularGroupId,
+      detalle_id: regularDetailId,
+      priority_class: 'review_regular',
+    })
+    b.panel_state!.kpis.review_pending = 2
+    h.store.acceptBootstrap(b)
     normal(h); normal(h, ids.daily)
-    h.coordinator.captureRecount(h.scope, { detalle_id: ids.detail, grupo_id: ids.review, stock_fisico: 10, contado_at: h.stamp })
+    // Capture regular first on purpose: local order must not bypass backend subpriority.
+    h.coordinator.captureRecount(h.scope, {
+      detalle_id: regularDetailId, grupo_id: regularGroupId, stock_fisico: 10, contado_at: h.stamp,
+    })
+    h.coordinator.captureRecount(h.scope, {
+      detalle_id: ids.detail, grupo_id: ids.review, stock_fisico: 10, contado_at: h.stamp,
+    })
     const result = await h.coordinator.flush(h.scope)
-    expect(result).toEqual({ confirmedBatches: 3, reason: 'none' })
-    expect(h.requests.map(request => request.action)).toEqual(['recount_save_batch', 'save_batch', 'save_batch'])
-    expect((h.requests[1].payload.items as Array<{ grupo_id: string }>)[0].grupo_id).toBe(ids.coverage)
-    expect((h.requests[2].payload.items as Array<{ grupo_id: string }>)[0].grupo_id).toBe(ids.daily)
-    expect(new Set(h.requests.map(request => request.payload.operation_id)).size).toBe(3)
+    expect(result).toEqual({ confirmedBatches: 4, reason: 'none' })
+    expect(h.requests.map(request => request.action))
+      .toEqual(['save_batch', 'recount_save_batch', 'recount_save_batch', 'save_batch'])
+    expect((h.requests[0].payload.items as Array<{ grupo_id: string }>)[0].grupo_id).toBe(ids.coverage)
+    expect((h.requests[1].payload.items as Array<{ detalle_id: string }>)[0].detalle_id).toBe(ids.detail)
+    expect((h.requests[2].payload.items as Array<{ detalle_id: string }>)[0].detalle_id).toBe(regularDetailId)
+    expect((h.requests[3].payload.items as Array<{ grupo_id: string }>)[0].grupo_id).toBe(ids.daily)
+    expect(new Set(h.requests.map(request => request.payload.operation_id)).size).toBe(4)
     expect(h.storage.read(h.scope).normal).toEqual([])
     expect(h.storage.read(h.scope).recount).toEqual([])
     expect(h.storage.read(h.scope).prepared).toBeNull()
