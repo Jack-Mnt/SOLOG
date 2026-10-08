@@ -1,5 +1,5 @@
 name: Stock Card Normalization Validation
-# isolated rerun after V4 stock typing fix
+# final rerun: Details smoke executes even if concurrent Cajero flow fails
 
 on:
   push:
@@ -39,6 +39,7 @@ jobs:
           bun tests/cajero-v4.browser.mjs
 
       - name: Details browser smoke
+        if: always()
         run: |
           export SOLOG_PLAYWRIGHT_MODULE="$(node -p "require.resolve('playwright')")"
           export SOLOG_TEST_BROWSER="$(node -e "console.log(require('playwright').chromium.executablePath())")"
