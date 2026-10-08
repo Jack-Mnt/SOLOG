@@ -4,6 +4,7 @@ import type { CashierV4CountItem, CashierV4RecountItem, CashierV4MutationResult 
 import { CashierV4Store, type CashierV4DeliveryState } from './cajero.v4.store'
 import { canCashierV4CaptureForSession, canCashierV4DeliverPendingForSession, getCashierV4SessionCapability } from './cajero.v4.capability'
 import { getCashierV4ErrorPolicy } from './cajero.v4.errors'
+import { cashierV4ActionableReviewQueue } from './cajero.v4.selectors'
 import {
   CASHIER_V4_BATCH_LIMIT, CashierV4DraftStorage, cashierV4DraftStorageKey,
   type CashierV4DraftScope, type CashierV4NormalDraft, type CashierV4RecountDraft,
@@ -25,9 +26,12 @@ function deltaDelivery(scope: CashierV4DraftScope, response: Extract<CashierV4Mu
 function eligible(record: CashierV4SessionDrafts) {
   const delivery = record.delivery_state
   if (!delivery || delivery.next_action === 'none') return { normal: [], recount: [] }
-  if (delivery.next_action === 'review') return {
-    normal: [], recount: record.recount.filter(draft => delivery.review_queue.some(item =>
-      item.detalle_id === draft.detalle_id && item.grupo_id === draft.grupo_id)),
+  if (delivery.next_action === 'review') {
+    const actionable = cashierV4ActionableReviewQueue(delivery.review_queue)
+    return {
+      normal: [], recount: record.recount.filter(draft => actionable.some(item =>
+        item.detalle_id === draft.detalle_id && item.grupo_id === draft.grupo_id)),
+    }
   }
   const queue = new Set(delivery.next_action === 'coverage' ? delivery.coverage_queue : delivery.daily_queue)
   return { normal: record.normal.filter(draft => queue.has(draft.grupo_id)), recount: [] }
