@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { SologApiError } from '../src/features/solog/errors'
 import { CashierV4Store } from '../src/features/solog/cajero/cajero.v4.store'
 import { CashierV4DraftCoordinator } from '../src/features/solog/cajero/cajero.v4.flush'
+import { cashierV4DraftStorageKey } from '../src/features/solog/cajero/cajero.v4.storage'
 import { draftHarness, uuidFor } from './fixtures/cashier-v4-drafts'
 import { cashierV4Bootstrap, cashierV4Ids as ids, cashierV4DeviceToken } from './fixtures/cashier-v4.mjs'
 
@@ -149,6 +150,32 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
     expect(h.storage.read(h.scope).normal[0].scope).toEqual(h.scope)
     expect(h.requests).toEqual([])
   })
+  test('recovery legacy sin priority_class falla cerrado y conserva drafts sin reescribir metadata', async () => {
+    const h = draftHarness('review')
+    h.coordinator.captureRecount(h.scope, {
+      detalle_id: ids.detail, grupo_id: ids.review, stock_fisico: 10, contado_at: h.stamp,
+    })
+    const b = h.moveToRecovery()
+    const key = cashierV4DraftStorageKey(h.scope)
+    const rawRecord = JSON.parse(h.raw.getItem(key)!)
+    delete rawRecord.delivery_state.review_queue[0].priority_class
+    h.raw.setItem(key, JSON.stringify(rawRecord))
+
+    const reloaded = new CashierV4Store(ids.user, cashierV4DeviceToken, undefined, () => h.now)
+    reloaded.acceptBootstrap(b)
+    const requests: unknown[] = []
+    const coordinator = new CashierV4DraftCoordinator(reloaded, h.storage, async () => {
+      requests.push(true)
+      throw new Error('No debe enviar')
+    }, undefined, () => h.now)
+
+    expect(await coordinator.flush(h.scope)).toEqual({ confirmedBatches: 0, reason: 'no_eligible_drafts' })
+    expect(requests).toEqual([])
+    expect(h.storage.read(h.scope).recount).toHaveLength(1)
+    expect(h.storage.read(h.scope).delivery_state!.review_queue[0]).not.toHaveProperty('priority_class')
+    expect(JSON.parse(h.raw.getItem(key)!).delivery_state.review_queue[0]).not.toHaveProperty('priority_class')
+  })
+
   test('recovery tras reload sin snapshot ni prepared bloquea conservando drafts', async () => {
     const h = draftHarness('coverage')
     normal(h)
