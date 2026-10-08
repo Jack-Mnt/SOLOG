@@ -127,7 +127,7 @@ describe('Cajero 13.4: mapping de queues y pendientes', () => {
       type: 'bootstrap', bootstrap: parseCashierV4Bootstrap(cashierV4Bootstrap('pre_session', { ronda })),
     })
     expect(selectCashierV4Coverage(state)).toEqual({ coverage_round: ronda, coverage_counted: 2,
-      coverage_total: 4, coverage_pending: 2, coverage_percent: 50, label: `Cobertura quincenal ${ronda}` })
+      coverage_total: 4, coverage_pending: 2, coverage_percent: 50, label: `Cobertura de ronda ${ronda}` })
     expect(selectCashierV4Coverage(state)!.coverage_percent).toBeLessThanOrEqual(100)
   })
 })
