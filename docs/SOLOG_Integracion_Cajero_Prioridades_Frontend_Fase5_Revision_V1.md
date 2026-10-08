@@ -1,9 +1,9 @@
 # SOLOG — Integración — Cajero Prioridades Frontend — Fase 5 Revisión V1
 
-**Estado:** REVISIÓN GLOBAL ESTÁTICA PASS / VALIDACIÓN EJECUTABLE PENDIENTE  
-**Fecha:** 7 de octubre de 2026  
-**Proyecto:** SOLOG  
-**Nivel:** B — adaptación funcional frontend  
+**Estado:** REVISIÓN GLOBAL ESTÁTICA PASS / VALIDACIÓN EJECUTABLE PENDIENTE
+**Fecha:** 7 de octubre de 2026
+**Proyecto:** SOLOG
+**Nivel:** B — adaptación funcional frontend
 **Rama:** `admin-work`
 
 ## 1. Fuente primaria
