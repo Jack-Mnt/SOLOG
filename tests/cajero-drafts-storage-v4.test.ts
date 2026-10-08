@@ -30,10 +30,11 @@ describe('Cajero 13.3: drafts y persistencia independiente', () => {
     expect(record.recount).toHaveLength(1)
     expect(record.recount[0].kind).toBe('recount')
   })
-  test('snapshot persistido tiene colas originales y no capability', () => {
+  test('snapshot persistido conserva priority_class y no capability', () => {
     const h = draftHarness()
     const record = h.coordinator.synchronize(h.scope)
     expect(record.delivery_state?.next_action).toBe('review')
+    expect(record.delivery_state?.review_queue[0].priority_class).toBe('review_for_coverage')
     expect(record.delivery_state).not.toHaveProperty('session_capability')
     expect(record.delivery_state).not.toHaveProperty('groups')
   })
@@ -45,6 +46,7 @@ describe('Cajero 13.3: drafts y persistencia independiente', () => {
     const record = h.storage.read(h.scope)
     expect(record.normal[0]).toEqual(draft)
     expect(record.delivery_state!.groups_revision).toBe(7)
+    expect(record.delivery_state!.review_queue[0].priority_class).toBe('review_for_coverage')
     expect(h.coordinator.activeScope()!.groups_revision).toBe(99)
     expect(h.storage.hasPending(h.scope, h.scope.conteo_id)).toBe(true)
   })
@@ -85,6 +87,21 @@ describe('Cajero 13.3: drafts y persistencia independiente', () => {
     expect(draftB.scope.conteo_id).not.toBe(a.scope.conteo_id)
     expect(draftB.client_observation_id).not.toBe(a.client_observation_id)
     expect(h.storage.sessions(h.scope)).toHaveLength(2)
+  })
+  test('snapshot local legacy sin priority_class se recupera sin inferir ni reescribir', () => {
+    const h = draftHarness()
+    h.coordinator.captureRecount(h.scope, {
+      grupo_id: ids.review, detalle_id: ids.detail, stock_fisico: 10, contado_at: h.stamp,
+    })
+    const key = cashierV4DraftStorageKey(h.scope)
+    const rawRecord = JSON.parse(h.raw.getItem(key)!)
+    delete rawRecord.delivery_state.review_queue[0].priority_class
+    h.raw.setItem(key, JSON.stringify(rawRecord))
+
+    const recovered = new CashierV4DraftStorage(h.raw).read(h.scope)
+    expect(recovered.recount).toHaveLength(1)
+    expect(recovered.delivery_state!.review_queue[0]).not.toHaveProperty('priority_class')
+    expect(JSON.parse(h.raw.getItem(key)!).delivery_state.review_queue[0]).not.toHaveProperty('priority_class')
   })
   test('V3 y datos corruptos permanecen intactos; no hay migración destructiva', () => {
     const raw = memoryStorage()
