@@ -123,8 +123,16 @@ export function validateCashierV4SessionDrafts(value: unknown): CashierV4Session
     const delivery = object(record.delivery_state)
     check(delivery.conteo_id === scope.conteo_id && delivery.groups_revision === scope.groups_revision)
     check(Object.keys(delivery).sort().join(',') === 'conteo_id,coverage_queue,daily_queue,groups_revision,kpis,next_action,review_queue')
-    // Validate operational fields using the existing backend validator, without retaining capability.
-    validateCashierV4PanelDelta({ ...delivery, groups_patch: [], session_capability: {
+    // Backend responses are strict, but a persisted pre-delta delivery snapshot may lack
+    // review_queue[].priority_class. Validate every other contract field with a temporary
+    // validation-only class; return/persist the original object unchanged so selectors fail closed.
+    const reviewQueueForValidation = Array.isArray(delivery.review_queue)
+      ? delivery.review_queue.map(value => {
+        const item = object(value)
+        return 'priority_class' in item ? value : { ...item, priority_class: 'review_regular' }
+      })
+      : delivery.review_queue
+    validateCashierV4PanelDelta({ ...delivery, review_queue: reviewQueueForValidation, groups_patch: [], session_capability: {
       mode: 'none', estado: null, capture_allowed: false, pending_delivery_allowed: false,
       iniciado_at: null, expira_at: null, recovery_until: null, finalizado_at: null,
     } })
