@@ -223,6 +223,7 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
   })
   test('501 review_for_coverage se agotan antes de preparar review_regular', async () => {
     const h = draftHarness('coverage')
+    h.coordinator.synchronize(h.scope)
     const b = h.moveToRecovery()
     const record = h.storage.read(h.scope)
     const priorityQueue = Array.from({ length: 501 }, (_, n) => ({
