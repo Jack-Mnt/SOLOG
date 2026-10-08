@@ -1,6 +1,6 @@
 # SOLOG — Integración — Cajero Prioridades Frontend — Fase 5 Revisión V1
 
-**Estado:** REVISIÓN GLOBAL PASS / SUITE GLOBAL CORREGIDA Y PENDIENTE DE RERUN / SMOKE HUMANO PENDIENTE
+**Estado:** VALIDACIÓN TÉCNICA COMPLETA PASS / SMOKE HUMANO PENDIENTE
 **Fecha:** 7 de octubre de 2026
 **Proyecto:** SOLOG
 **Nivel:** B — adaptación funcional frontend
@@ -239,10 +239,10 @@ Backend adicional: NO REQUERIDO
 Tests focales: PASS por evidencia acumulada
 Runtime focal final: 26 PASS / 0 FAIL
 Browser smoke: 32 PASS
-Lint final sobre HEAD previo a esta corrección documental: PASS
+Lint final sobre HEAD: PASS
 Build: PASS
-git diff --check final sobre HEAD previo a esta corrección documental: PASS
-Suite global `bun test`: RUN 1 = 737 PASS / 11 FAIL; rerun focal = 26 PASS / 1 FAIL; último test obsoleto corregido / RERUN PENDIENTE
+git diff --check final sobre HEAD: PASS
+Suite global `bun test`: PASS FINAL
 Smoke humano: PENDIENTE
 Bloque: NO CERRADO AÚN
 ```
