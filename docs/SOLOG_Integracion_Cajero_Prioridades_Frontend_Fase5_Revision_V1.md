@@ -242,7 +242,7 @@ Browser smoke: 32 PASS
 Lint final sobre HEAD previo a esta corrección documental: PASS
 Build: PASS
 git diff --check final sobre HEAD previo a esta corrección documental: PASS
-Suite global `bun test`: RUN 1 = 737 PASS / 11 FAIL; CORRECCIONES APLICADAS / RERUN PENDIENTE
+Suite global `bun test`: RUN 1 = 737 PASS / 11 FAIL; rerun focal = 26 PASS / 1 FAIL; último test obsoleto corregido / RERUN PENDIENTE
 Smoke humano: PENDIENTE
 Bloque: NO CERRADO AÚN
 ```
