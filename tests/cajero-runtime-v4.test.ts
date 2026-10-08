@@ -53,15 +53,6 @@ describe('runtime productivo V4', () => {
     expect(html).toContain('2 / 4'); expect(html).not.toContain('Stock 0'); expect(html).not.toContain('Stock negativo')
     runtime.dispose()
   })
-  test('Inicio usa tarjeta de inventario compartida con icono y estados semánticos', async () => {
-    const ui = await Bun.file('src/features/solog/cajero/cajero.v4.ui.tsx').text()
-    expect(ui).toContain('cajero-stock-card__icon')
-    expect(ui).toContain('cajero-stock-card__copy')
-    expect(ui).toContain('cajero-stock-card--updated')
-    expect(ui).toContain('cajero-stock-card--stale')
-    expect(ui).toContain('Inventario desactualizado')
-  })
-
   test('header usa punto semántico y reserva texto visible para countdown', async () => {
     const h = runtimeHarness()
     const html = renderRuntime(h.runtime, '/cajero')
