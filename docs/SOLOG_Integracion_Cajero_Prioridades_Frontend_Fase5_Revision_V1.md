@@ -227,7 +227,7 @@ La ejecución con Bun de Playwright quedó descartada por timeout de handshake d
 node tests/cajero-v4.browser.mjs
 ```
 
-Las validaciones dirigidas, browser smoke, lint, build y `git diff --check` quedaron registradas como PASS. La primera ejecución de la **suite global completa** (`bun test`) reportó 737 PASS / 11 FAIL. Nueve fallos correspondían a una regresión real de `adminTimestamp()` al no forzar am/pm en el runtime local; dos correspondían a tests históricos desactualizados frente a cambios posteriores ya aprobados (`899px` como breakpoint vigente y `--color-danger` como token semántico). Las tres correcciones mínimas fueron aplicadas; falta repetir la suite global sobre el nuevo HEAD.
+Las validaciones dirigidas, browser smoke, lint, build y `git diff --check` quedaron registradas como PASS. La primera ejecución de la **suite global completa** (`bun test`) reportó 737 PASS / 11 FAIL. Nueve fallos correspondían a una regresión real de `adminTimestamp()` al no forzar am/pm en el runtime local; dos correspondían a tests históricos desactualizados frente a cambios posteriores ya aprobados (`899px` como breakpoint vigente y `--color-danger` como token semántico). Las tres correcciones mínimas fueron aplicadas y la suite global se repitió sobre el nuevo HEAD con resultado PASS FINAL.
 
 ## 14. Estado
 
