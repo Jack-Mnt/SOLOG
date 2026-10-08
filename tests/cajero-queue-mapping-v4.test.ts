@@ -73,7 +73,11 @@ describe('Cajero 13.4: mapping de queues y pendientes', () => {
   })
   test('snapshot review legacy sin priority_class falla cerrado sin inferir', () => {
     const panel = orderedPanel()
-    const legacy = panel.review_queue.map(({ priority_class: _priority, ...item }) => item) as typeof panel.review_queue
+    const legacy = panel.review_queue.map(item => {
+      const copy = { ...item } as Partial<typeof item>
+      delete copy.priority_class
+      return copy
+    }) as typeof panel.review_queue
     expect(cashierV4CurrentReviewPriority(legacy)).toBeNull()
     expect(cashierV4ActionableReviewQueue(legacy)).toEqual([])
   })
@@ -124,7 +128,9 @@ describe('Cajero 13.4: mapping de queues y pendientes', () => {
   })
   test.each([1, 2] as const)('KPI ronda %s conserva cinco valores backend y label sin combinar rondas', ronda => {
     const state = cashierV4Reducer(createCashierV4State(), {
-      type: 'bootstrap', bootstrap: parseCashierV4Bootstrap(cashierV4Bootstrap('pre_session', { ronda })),
+      type: 'bootstrap', bootstrap: parseCashierV4Bootstrap(cashierV4Bootstrap('pre_session', {
+        ronda, next_action: 'coverage',
+      })),
     })
     expect(selectCashierV4Coverage(state)).toEqual({ coverage_round: ronda, coverage_counted: 2,
       coverage_total: 4, coverage_pending: 2, coverage_percent: 50, label: `Cobertura de ronda ${ronda}` })
