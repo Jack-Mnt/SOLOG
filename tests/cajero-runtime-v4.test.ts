@@ -49,7 +49,7 @@ describe('runtime productivo V4', () => {
     let html: string
     try { html = renderToStaticMarkup(createElement(CashierV4Provider, { store, children: createElement(CajeroV4Inicio, { runtime }) })) }
     finally { if (originalWindow) Object.defineProperty(globalThis, 'window', originalWindow); else Reflect.deleteProperty(globalThis, 'window') }
-    expect(html).toContain('Inicio'); expect(html).toContain(`Cobertura quincenal ${round}`)
+    expect(html).toContain('Inicio'); expect(html).toContain(`Cobertura de ronda ${round}`)
     expect(html).toContain('2 / 4'); expect(html).not.toContain('Stock 0'); expect(html).not.toContain('Stock negativo')
     runtime.dispose()
   })
@@ -99,7 +99,7 @@ describe('runtime productivo V4', () => {
     const b = cashierV4Bootstrap('active', { next_action: 'review' })
     const regularGroupId = uuidFor(51001), regularDetailId = uuidFor(51002)
     b.panel_state!.groups.push(cashierV4Group('recount', {
-      grupo_id: regularGroupId, detalle_reconteo_id: regularDetailId,
+      grupo_id: regularGroupId, detalle_reconteo_id: regularDetailId, nombre: 'Grupo regular',
     }))
     b.panel_state!.review_queue.push({
       ...b.panel_state!.review_queue[0], grupo_id: regularGroupId, detalle_id: regularDetailId,
@@ -107,6 +107,10 @@ describe('runtime productivo V4', () => {
     })
     b.panel_state!.kpis.review_pending = 2
     h.store.acceptBootstrap(b)
+    const html = renderRuntime(h.runtime, '/cajero/revisar')
+    expect(html).toContain('1 prioritarios para completar la ronda · 2 pendientes totales')
+    expect(html).toContain('Grupo recount')
+    expect(html).not.toContain('Grupo regular')
     expect(() => h.runtime.capture('review', regularGroupId, 10, '10')).toThrow('prioridad de revisión vigente')
     h.runtime.capture('review', ids.review, 10, '10')
     expect(h.storage.read(h.scope).recount.map(item => item.grupo_id)).toEqual([ids.review])
