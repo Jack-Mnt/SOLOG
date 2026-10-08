@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { isDetailsStockStale } from '../src/features/solog/detalles/detalles.panel'
+import { isDetailsStockStale } from '../src/features/solog/detalles/detalles.stock'
 import { getDetailsExportFilename, getDetailsValuationExplanation, validateDetailsExportResponse } from '../src/features/solog/detalles/detalles.export'
 import { DetailsStore } from '../src/features/solog/detalles/detalles.store'
 import { detailsRpc } from '../src/features/solog/detalles/detalles.v2'
