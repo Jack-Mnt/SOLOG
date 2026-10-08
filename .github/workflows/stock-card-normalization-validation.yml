@@ -1,0 +1,59 @@
+name: Stock Card Normalization Validation
+
+on:
+  push:
+    branches:
+      - admin-work
+    paths:
+      - ".github/workflows/stock-card-normalization-validation.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+
+      - name: Directed Cajero and Detalles tests
+        run: >
+          bun test
+          tests/details-phase4.test.ts
+          tests/cajero-runtime-v4.test.ts
+          tests/cajero-c4.test.ts
+          tests/cajero-navigation-v4.test.ts
+          tests/cajero-capability-selectors-v4.test.ts
+          tests/cajero-post-cutover-v4.test.ts
+
+      - name: Install browser smoke dependency
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+
+      - name: Cajero browser smoke
+        run: |
+          export SOLOG_PLAYWRIGHT_MODULE="$(node -p "require.resolve('playwright')")"
+          export SOLOG_TEST_BROWSER="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          bun tests/cajero-v4.browser.mjs
+
+      - name: Details browser smoke
+        run: |
+          export SOLOG_PLAYWRIGHT_MODULE="$(node -p "require.resolve('playwright')")"
+          export SOLOG_TEST_BROWSER="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          bun tests/details-v2.browser.mjs
+
+      - name: Lint
+        if: always()
+        run: bun run lint
+
+      - name: Build
+        if: always()
+        run: bun run build
+
+      - name: Diff check
+        if: always()
+        run: git diff --check 4fe7b174fc8d7763db1b2cc4dff1f60a4725709b HEAD
