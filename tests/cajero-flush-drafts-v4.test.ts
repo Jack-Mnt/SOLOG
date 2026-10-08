@@ -221,6 +221,59 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
     expect(h.requests.map(request => (request.payload.items as unknown[]).length)).toEqual(count === 500 ? [500] : [500, 1])
     expect(h.storage.read(h.scope).normal).toEqual([])
   })
+  test('501 review_for_coverage se agotan antes de preparar review_regular', async () => {
+    const h = draftHarness('coverage')
+    const b = h.moveToRecovery()
+    const record = h.storage.read(h.scope)
+    const priorityQueue = Array.from({ length: 501 }, (_, n) => ({
+      grupo_id: uuidFor(30000 + n),
+      detalle_id: uuidFor(40000 + n),
+      ultima_diferencia: -1,
+      contado_at: h.stamp,
+      priority_class: 'review_for_coverage' as const,
+    }))
+    const regular = {
+      grupo_id: uuidFor(50001),
+      detalle_id: uuidFor(50002),
+      ultima_diferencia: 1,
+      contado_at: h.stamp,
+      priority_class: 'review_regular' as const,
+    }
+    record.delivery_state = {
+      ...record.delivery_state!,
+      next_action: 'review',
+      coverage_queue: [],
+      daily_queue: [],
+      review_queue: [...priorityQueue, regular],
+      kpis: { ...record.delivery_state!.kpis, coverage_queue_pending: 0, daily_pending: 0, review_pending: 502 },
+    }
+    record.normal = []
+    record.recount = [...priorityQueue, regular].map(item => ({
+      kind: 'recount' as const,
+      scope: h.scope,
+      detalle_id: item.detalle_id,
+      grupo_id: item.grupo_id,
+      stock_fisico: 10,
+      contado_at: h.stamp,
+    }))
+    h.storage.write(record)
+
+    const reloaded = new CashierV4Store(ids.user, cashierV4DeviceToken, undefined, () => h.now)
+    reloaded.acceptBootstrap(b)
+    let serial = 60000
+    const coordinator = new CashierV4DraftCoordinator(reloaded, h.storage, async (_name, args) => {
+      h.requests.push({ action: args.p_action as string, payload: structuredClone(args.p_payload as Record<string, unknown>) })
+      return h.responseFor(args.p_action as string, args.p_payload as Record<string, unknown>)
+    }, () => uuidFor(serial++), () => h.now)
+
+    expect(await coordinator.flush(h.scope)).toEqual({ confirmedBatches: 3, reason: 'none' })
+    expect(h.requests.map(request => (request.payload.items as unknown[]).length)).toEqual([500, 1, 1])
+    expect((h.requests[0].payload.items as Array<{ detalle_id: string }>).some(item => item.detalle_id === regular.detalle_id)).toBe(false)
+    expect((h.requests[1].payload.items as Array<{ detalle_id: string }>)[0].detalle_id).toBe(priorityQueue[500].detalle_id)
+    expect((h.requests[2].payload.items as Array<{ detalle_id: string }>)[0].detalle_id).toBe(regular.detalle_id)
+    expect(h.storage.read(h.scope).recount).toEqual([])
+  })
+
   test('batch 1 confirmado + batch 2 falla conserva progreso y retry exacto de batch 2', async () => {
     const h = draftHarness('coverage', 501)
     const record = h.coordinator.synchronize(h.scope)
