@@ -1,5 +1,5 @@
 export function adminTimestamp(value: string | null) {
-  return value === null ? '—' : new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
+  return value === null ? '—' : new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', dateStyle: 'short', timeStyle: 'short', hour12: true }).format(new Date(value))
 }
 
 function validDateOnly(value: string) {
