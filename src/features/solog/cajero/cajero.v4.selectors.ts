@@ -31,7 +31,7 @@ export function selectCashierV4WaitingForSnapshot(state: CashierV4State): boolea
 }
 
 export function cashierV4CoverageLabel(round: CashierV4Round) {
-  return round === 1 ? 'Cobertura quincenal 1' : 'Cobertura quincenal 2'
+  return round === 1 ? 'Cobertura de ronda 1' : 'Cobertura de ronda 2'
 }
 
 export function selectCashierV4Coverage(state: CashierV4State) {
