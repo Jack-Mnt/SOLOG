@@ -16,7 +16,8 @@ import { getCashierV4RouteAccess, selectCashierV4BottomNavigation } from './caje
 import { CashierV4Runtime } from './cajero.v4.runtime'
 import { cashierV4StockType, selectCashierV4Coverage, selectCashierV4CoverageGroups,
   selectCashierV4CoveragePendingByCategory, selectCashierV4CoveragePendingByStockType, selectCashierV4DailyGroups,
-  selectCashierV4DailyPendingByCategory, selectCashierV4OperationalSummary, selectCashierV4ReviewEntries,
+  selectCashierV4ActionableReviewEntries, selectCashierV4CurrentReviewPriority,
+  selectCashierV4DailyPendingByCategory, selectCashierV4OperationalSummary,
   type CashierV4StockType } from './cajero.v4.selectors'
 
 const stockLabels = { positive: 'Stock positivo', zero: 'Stock 0', negative: 'Stock negativo' }
@@ -121,9 +122,9 @@ function RegisterCountButton({ runtime }: { runtime: CashierV4Runtime }) {
 type CajeroHomeStep = Exclude<CashierV4NextAction, 'none'>
 
 const homeStepCopy: Record<CajeroHomeStep, { label: string; description: string }> = {
-  coverage: { label: 'Conteo', description: 'Completa los grupos pendientes de la cobertura quincenal.' },
+  coverage: { label: 'Conteo', description: 'Completa los grupos pendientes de la cobertura de la ronda.' },
   review: { label: 'Revisar', description: 'Recuenta los casos que requieren una nueva verificación física.' },
-  daily: { label: 'Conteo diario', description: 'Registra los grupos habilitados para el conteo diario.' },
+  daily: { label: 'Cobertura de turno', description: 'Registra los grupos habilitados para un conteo normal en este turno.' },
 }
 
 function initialCashierStockType(): CashierV4StockType {
@@ -341,7 +342,7 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
 
     {!active && coverageComplete && summary ? <div className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Trabajo operativo">
       <HomeMetricSurface icon={SearchCheck} label="Revisar" value={summary.kpis.review_pending} emphasized={summary.next_action === 'review'} />
-      <HomeMetricSurface icon={CalendarClock} label="Conteo diario" value={summary.kpis.daily_pending} emphasized={summary.next_action === 'daily'} />
+      <HomeMetricSurface icon={CalendarClock} label="Cobertura de turno" value={summary.kpis.daily_pending} emphasized={summary.next_action === 'daily'} />
     </div> : null}
 
     {active && !coverageComplete && panel ? <>
@@ -362,7 +363,7 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
       <div className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Trabajo operativo">
         <HomeMetricSurface icon={SearchCheck} label="Revisar" value={panel.kpis.review_pending} emphasized={panel.next_action === 'review'}
           onClick={reviewAllowed ? () => navigateTo('/cajero/revisar') : undefined} />
-        <HomeMetricSurface icon={CalendarClock} label="Conteo diario" value={panel.kpis.daily_pending} emphasized={panel.next_action === 'daily'}
+        <HomeMetricSurface icon={CalendarClock} label="Cobertura de turno" value={panel.kpis.daily_pending} emphasized={panel.next_action === 'daily'}
           onClick={dailyAllowed ? () => navigateTo('/cajero/diario') : undefined} />
       </div>
       <div className="cajero-home-metrics cajero-home-metrics--stacked"><PendingRegistration runtime={runtime} /></div>
@@ -470,12 +471,14 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
   const [stockType, setStockType] = useState<CashierV4StockType>(() => initialCashierStockType())
   const [category, setCategory] = useState<string | null>(null), [reviewGroup, setReviewGroup] = useState<string | null>(null)
   const [differenceSigns, setDifferenceSigns] = useState({ positive: true, negative: true })
-  const review = selectCashierV4ReviewEntries(panel)
+  const review = selectCashierV4ActionableReviewEntries(panel)
+  const reviewPriority = selectCashierV4CurrentReviewPriority(panel)
+  const reviewTotal = panel?.kpis.review_pending ?? 0
   const groups = action === 'review' ? review.map(entry => entry.group) : action === 'coverage' ? selectCashierV4CoverageGroups(panel) : selectCashierV4DailyGroups(panel)
   const categories = action === 'coverage' ? selectCashierV4CoveragePendingByCategory(panel) : selectCashierV4DailyPendingByCategory(panel)
   const visible = action === 'coverage' ? groups.filter(group => cashierV4StockType(group.stock_teorico) === stockType) : groups
   const counts = selectCashierV4CoveragePendingByStockType(panel)
-  const title = action === 'review' ? 'Revisar' : action === 'coverage' ? 'Conteo' : 'Conteo diario'
+  const title = action === 'review' ? 'Revisar' : action === 'coverage' ? 'Conteo' : 'Cobertura de turno'
   const modalGroups = action === 'review' ? groups : visible.filter(group => group.categoria_id === category)
   const selectableCategories = action === 'review' ? [] : categories.filter(item => visible.some(group => group.categoria_id === item.categoria_id))
   const selectedCategory = categories.find(item => item.categoria_id === category)
@@ -487,7 +490,10 @@ function CajeroV4Work({ runtime, action }: { runtime: CashierV4Runtime; action: 
   const countedGroupIds = new Set(record?.normal.map(item => item.grupo_id) ?? [])
   return <section className="cajero-module cajero-operational">
     <div className={`cajero-module__heading cajero-operational__heading${action === 'review' ? ' cajero-review__heading' : ' cajero-operational__heading--with-action'}`}><div><h1>{title}</h1><p>{action === 'review' ? 'Verifica la realidad' : 'Registra la realidad'}</p>
-      {action === 'daily' ? <p>{panel?.kpis.daily_pending ?? 0} pendientes</p> : null}</div>
+      {action === 'review' && reviewPriority === 'review_for_coverage' && reviewTotal > review.length
+        ? <p>{review.length} prioritarios para completar la ronda · {reviewTotal} pendientes totales</p>
+        : action === 'review' ? <p>{reviewTotal} pendientes</p>
+        : action === 'daily' ? <p>{panel?.kpis.daily_pending ?? 0} pendientes</p> : null}</div>
       {action === 'review' ? <div className="cajero-segmented-control cajero-segmented-control--symbols" role="group" aria-label="Filtrar por diferencia inicial">
         {(['positive', 'negative'] as const).map(sign => {
           const active = differenceSigns[sign]
