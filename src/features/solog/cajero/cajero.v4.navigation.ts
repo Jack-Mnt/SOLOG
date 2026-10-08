@@ -38,7 +38,7 @@ export function getCashierV4RouteAccess(state: CashierV4State, requestedPath: st
 const navigationItems: ReadonlyArray<{ route: CashierRoute; label: string }> = [
   { route: '/cajero', label: 'Inicio' },
   { route: '/cajero/conteo', label: 'Conteo' },
-  { route: '/cajero/diario', label: 'Conteo diario' },
+  { route: '/cajero/diario', label: 'Cobertura de turno' },
   { route: '/cajero/revisar', label: 'Revisar' },
   { route: '/cajero/historial', label: 'Historial' },
 ]
