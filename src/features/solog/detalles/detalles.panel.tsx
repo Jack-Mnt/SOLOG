@@ -16,7 +16,7 @@ import {
   Tablet,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PanelLoader } from "../../../components/panel-loader";
 import { navigateTo } from "../../../lib/router";
 import type { DetailsExportPeriod } from "./detalles.v2";
@@ -44,11 +44,10 @@ const dateTimeFormatter = new Intl.DateTimeFormat("es-PE", {
 function formatDeviceState(state: string) {
   return DEVICE_STATE_LABELS[state] ?? state.replaceAll("_", " ");
 }
-function formatStockUpdate(confirmedAt: string | null, serverNow: string) {
+function formatStockUpdate(confirmedAt: string | null, serverNowMs: number) {
   if (!confirmedAt) return "Sin actualización confirmada";
 
   const confirmedAtMs = Date.parse(confirmedAt);
-  const serverNowMs = Date.parse(serverNow);
   if (!Number.isFinite(confirmedAtMs) || !Number.isFinite(serverNowMs)) {
     return dateTimeFormatter.format(new Date(confirmedAt));
   }
@@ -76,6 +75,7 @@ export function SologDetailsPanel({
   onLogout: () => void;
 }) {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [clockNow, setClockNow] = useState(() => Date.now());
   const [exportPeriod, setExportPeriod] =
     useState<DetailsExportPeriod>("current_biweekly");
   const {
@@ -91,6 +91,12 @@ export function SologDetailsPanel({
     summary,
   } = useSologDetailsSummary(userId);
   const detailsExport = useSologDetailsExport(store);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setClockNow(Date.now()), 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+  const serverNow = clockNow + store.serverOffsetMs;
 
   if (!summary && status === "loading") return <PanelLoader />;
 
@@ -136,7 +142,7 @@ export function SologDetailsPanel({
   const stockStale = Boolean(
     stockSnapshot &&
       summary &&
-      isDetailsStockStale(stockSnapshot.confirmado_at, summary.generated_at),
+      isDetailsStockStale(stockSnapshot.confirmado_at, new Date(serverNow).toISOString()),
   );
   const stockCardClass = `cajero-stock-card${stockStale ? " cajero-stock-card--stale" : stockSnapshot ? " cajero-stock-card--updated" : ""}`;
 
@@ -339,7 +345,7 @@ export function SologDetailsPanel({
               >
                 <article className="cajero-home-metric">
                   <Clock3 aria-hidden="true" size={23} />
-                  <span>Conteo diario pendiente</span>
+                  <span>Cobertura de turno pendiente</span>
                   <div className="cajero-home-metric__value">
                     <strong>{summary.summary.conteo_diario_pendientes}</strong>
                     <small>
@@ -392,7 +398,7 @@ export function SologDetailsPanel({
                       <p>
                         {formatStockUpdate(
                           stockSnapshot?.confirmado_at ?? null,
-                          summary.generated_at,
+                          serverNow,
                         )}
                       </p>
                     </div>
