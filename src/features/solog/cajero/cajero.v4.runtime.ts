@@ -37,10 +37,23 @@ export class CashierV4Runtime {
     private readonly call?: CashierV4Rpc, private readonly uuid = () => crypto.randomUUID(), private readonly now = Date.now) {
     this.coordinator = new CashierV4DraftCoordinator(store, storage, call, uuid, now)
     let bootstrap = store.getSnapshot().bootstrap
+    let operational = store.getSnapshot().revisions?.operational ?? null
+    let identity = bootstrap ? [bootstrap.identity.id, bootstrap.site.id, bootstrap.device.id].join(':') : null
     this.unsubscribe = store.subscribe(() => {
-      const next = store.getSnapshot().bootstrap
+      const state = store.getSnapshot()
+      const next = state.bootstrap
       if (next !== bootstrap) { bootstrap = next; this.sessionDenied = false }
-      this.history.clear(); this.hydrate()
+      const nextIdentity = next ? [next.identity.id, next.site.id, next.device.id].join(':') : null
+      const nextOperational = state.revisions?.operational ?? null
+      if (nextIdentity !== identity) {
+        this.history.clear()
+        identity = nextIdentity
+        operational = nextOperational
+      } else if (nextOperational !== null && nextOperational !== operational) {
+        this.history.invalidate(nextOperational)
+        operational = nextOperational
+      }
+      this.hydrate()
     })
     this.hydrate()
   }
