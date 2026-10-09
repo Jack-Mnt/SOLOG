@@ -38,6 +38,7 @@ export function SologDetailsHistoryDialog({
 }) {
   const titleId = useId()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLElement>(null)
   const requestVersion = useRef(0)
   const [period, setPeriod] = useState<DetailsPeriod>('today')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
@@ -52,21 +53,48 @@ export function SologDetailsHistoryDialog({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   useEffect(() => {
+    const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     closeButtonRef.current?.focus()
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onCloseRef.current()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const dialog = dialogRef.current
+      if (!dialog) return
+      const candidates = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter(element => element.getClientRects().length > 0 && element.tabIndex >= 0)
+      if (candidates.length === 0) {
+        event.preventDefault()
+        dialog.focus()
+        return
+      }
+      const first = candidates[0]
+      const last = candidates[candidates.length - 1]
+      if (!dialog.contains(document.activeElement) || (event.shiftKey && document.activeElement === first)) {
+        event.preventDefault()
+        ;(event.shiftKey ? last : first).focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
-    window.addEventListener('keydown', handleKeyDown)
-
+    document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keydown', handleKeyDown)
+      if (returnFocus?.isConnected) returnFocus.focus()
     }
-  }, [onClose])
+  }, [])
 
   const loadHistory = useCallback(async () => {
     const currentRequest = ++requestVersion.current
@@ -154,6 +182,8 @@ export function SologDetailsHistoryDialog({
       <section
         aria-labelledby={titleId}
         aria-modal="true"
+        ref={dialogRef}
+        tabIndex={-1}
         className="details-history-dialog"
         role="dialog"
       >
