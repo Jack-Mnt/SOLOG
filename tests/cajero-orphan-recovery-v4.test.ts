@@ -14,7 +14,7 @@ function orphanHarness(respond?: CashierV4Rpc) {
     if (respond) return respond(name, args)
     return h.responseFor('finish', args.p_payload as Record<string, unknown>)
   }
-  const runtime = new CashierV4Runtime(h.store, storage, call, () => uuidFor(976), () => Date.parse(h.store.getSnapshot().bootstrap!.server_now))
+  const runtime = new CashierV4Runtime(h.store, storage, call, () => uuidFor(976), () => h.now)
   h.store.refresh = async () => {}
   return { ...h, runtime, calls, storage }
 }
@@ -58,7 +58,8 @@ describe('Cajero V4 — recovery sin scope local', () => {
     let loggedOut = false
     await h.runtime.logoutSafe(async () => { loggedOut = true })
     expect(loggedOut).toBe(true)
-    expect(h.calls.map(x => x.name)).toEqual(['rpc_solog_cashier_orphan_finish_v1'])
+    expect(h.calls.map(x => x.name)).toEqual(['rpc_solog_cashier_orphan_finish_v1', 'rpc_solog_cashier_mutate_v4'])
+    expect(h.calls[1].payload.conteo_id).not.toBe(h.scope.conteo_id)
     h.runtime.dispose()
   })
 
