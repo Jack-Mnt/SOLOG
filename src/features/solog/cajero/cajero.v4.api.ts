@@ -284,7 +284,7 @@ export function parseCashierV4Mutation<A extends CashierV4Action>(value: unknown
   return value as CashierV4MutationResultFor<A>
 }
 
-export type CashierV4Rpc = (name: 'rpc_solog_cashier_bootstrap_v4' | 'rpc_solog_cashier_mutate_v4', args: Record<string, unknown>) => Promise<unknown>
+export type CashierV4Rpc = (name: 'rpc_solog_cashier_bootstrap_v4' | 'rpc_solog_cashier_mutate_v4' | 'rpc_solog_cashier_orphan_finish_v1', args: Record<string, unknown>) => Promise<unknown>
 async function rpc(name: Parameters<CashierV4Rpc>[0], args: Record<string, unknown>) {
   if (!supabase) throw createSologConfigurationError()
   const { data, error } = await supabase.rpc(name, args)
@@ -299,4 +299,12 @@ export async function mutateCashierV4<A extends CashierV4Action>(
 ): Promise<CashierV4MutationResultFor<A>> {
   // IDs, observation times and operation identity belong to the caller; never regenerate them here.
   return parseCashierV4Mutation(await call('rpc_solog_cashier_mutate_v4', { p_action: action, p_payload: payload }), action)
+}
+
+// Cierre autoritativo de recovery sin scope: la RPC valida la ausencia de operaciones sin resolver.
+export async function finishOrphanCashierRecovery(
+  payload: { conteo_id: string; operation_id: string; device_token: string },
+  call: CashierV4Rpc = rpc,
+) {
+  return parseCashierV4Mutation(await call('rpc_solog_cashier_orphan_finish_v1', { p_payload: payload }), 'finish')
 }
