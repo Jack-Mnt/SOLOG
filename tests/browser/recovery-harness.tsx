@@ -1,5 +1,5 @@
 // Fixture EXCLUSIVO de tests/browser; no altera rutas ni datos productivos.
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { CashierV4Provider } from '../../src/features/solog/cajero/cajero.v4.context'
 import { CajeroV4 } from '../../src/features/solog/cajero/cajero.v4.ui'
