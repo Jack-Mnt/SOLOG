@@ -1,6 +1,6 @@
 # SOLOG — Backend — Resolución segura de recovery sin scope V1
 
-**Estado:** CONGELADO — política aprobada; pendiente despliegue y validación.
+**Estado:** CONGELADO — RPC desplegada e integración frontend implementada; validación integral pendiente.
 **Fecha:** 2026-10-11
 **Nivel:** C
 **Rama de frontend:** `admin-work`
@@ -33,3 +33,19 @@ No cambiar Motor V4, períodos, drafts existentes, historial, estado Inválido, 
 
 ## Estado actual
 Preflight parcial confirmado, **sin despliegue ni validación**; no afirmar que la recuperación sin scope ya funciona.
+
+## Implementación del 11 de octubre de 2026
+
+- Nueva RPC desplegada: `public.rpc_solog_cashier_orphan_finish_v1(p_payload jsonb)`.
+- Payload: `{ conteo_id: uuid, operation_id: uuid, device_token: string }`. No admite `expected_groups_revision` del navegador.
+- Respuesta: misma forma de `finish` de `rpc_solog_cashier_mutate_v4`; se valida con `parseCashierV4Mutation(..., 'finish')`.
+- Verifica `auth.uid()`, rol Cajero activo, sede, propiedad de la sesión, estado `recovery`, y usa bloqueo de sede y sesión.
+- Bloquea cuando encuentra **cualquier** operación `cashier_v4:start|save_batch|recount_save_batch|finish` del actor con `response IS NULL`; criterio conservador por falta de vínculo `conteo_id` en la tabla de operaciones.
+- El cierre reutiliza `rpc_solog_cashier_mutate_v4('finish')` para preservar idempotencia y respuesta; en la ruta sin scope el frontend usa `operation_id = conteo_id` de manera estable incluso tras borrar almacenamiento local.
+- Si la sesión ya figura finalizada, la RPC reutiliza el finish para devolver respuesta idempotente; otros estados se rechazan.
+- `EXECUTE` revocado a `PUBLIC` y `anon`; concedido a `authenticated`. La RPC mantiene verificaciones de identidad aunque un permiso futuro cambie.
+- Frontend: `cajero.v4.api.ts`, `cajero.v4.runtime.ts` y mensajes en `cajero.v4.ui.tsx`. Se conserva el flujo anterior para sesiones con scope o registros locales.
+- Pruebas añadidas: `tests/cajero-orphan-recovery-v4.test.ts`.
+
+### Validación pendiente
+Ejecutar subset de tests, suite total, lint, build y smoke real con usuario Cajero; verificar en Supabase la matriz de acceso con roles y los rechazos por operación no resuelta, sesión ajena y estados no recuperables. La simple presencia de la función en pg_proc no sustituye esas verificaciones. Hasta entonces **no declarar cerrado el bloque**.
