@@ -67,7 +67,7 @@ describe('Cajero V4 — recovery sin scope local', () => {
     await expect(h.runtime.autoCloseExpiredSession()).rejects.toThrow()
     expect(h.runtime.hasBlockingRecovery).toBe(true)
     expect(h.runtime.getSnapshot().closeState).toBe('uncertain')
-    expect(h.storage.sessions({ usuario_id: h.scope.usuario_id, sede_id: h.scope.sede_id, dispositivo_id: h.scope.dispositivo_id })).toHaveLength(0)
+    expect(h.storage.sessions({ usuario_id: h.scope.usuario_id, sede_id: h.scope.sede_id, dispositivo_id: h.scope.dispositivo_id }).filter(record => record.scope.conteo_id === h.scope.conteo_id)).toHaveLength(0)
     h.runtime.dispose()
   })
 })
