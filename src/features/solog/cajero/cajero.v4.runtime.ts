@@ -153,7 +153,10 @@ export class CashierV4Runtime {
       device_token: this.store.deviceToken,
     }, this.call)
     this.store.acceptMutation(response)
-    if (refresh) await this.store.refresh()
+    if (refresh) {
+      // The finish response is authoritative: failure to refresh its summary must not undo a confirmed close.
+      try { await this.store.refresh() } catch { /* A later refresh can recover the summary. */ }
+    }
   }
   shouldAutoClose(now = this.serverNow()) {
     const scope = this.closeTargetScope(now)
