@@ -1,3 +1,4 @@
+/* global window */
 import { test, expect } from '@playwright/test'
 
 const path = '/tests/browser/recovery-harness.html'
