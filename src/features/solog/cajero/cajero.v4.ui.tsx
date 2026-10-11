@@ -52,6 +52,8 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
     return () => { window.removeEventListener('keydown', keys); previousFocus?.focus() }
   }, [confirmDiscard])
   const closeId = local.closeConteoId
+  const orphanClose = Boolean(closeId && state.recovery_sessions.some(session => session.id === closeId) &&
+    !runtime.coordinator.sessionScope(closeId))
   const lifecyclePresent = Boolean(closeId && (state.panel_state?.session.id === closeId ||
     state.recovery_sessions.some(session => session.id === closeId)))
   const retry = () => void runtime.retryAutoClose().catch(() => {})
@@ -71,7 +73,7 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
   </div>
   if (local.closeState === 'uncertain') return <div className="cajero-alert cajero-alert--warning cajero-close-notice" role="status">
     <AlertTriangle size={22} aria-hidden="true" />
-    <div><strong>Estamos verificando si el último registro se completó.</strong><p>Los conteos permanecen guardados en este dispositivo.</p></div>
+    <div><strong>Estamos verificando si el último registro se completó.</strong><p>{orphanClose ? 'No hay datos locales recuperables de esta sesión. El cierre se verificará en Supabase.' : 'Los conteos permanecen guardados en este dispositivo.'}</p></div>
     <button className="button button--secondary" disabled={local.busy} onClick={retry} type="button"><RefreshCw size={18} aria-hidden="true" /> Reintentar</button>
   </div>
   if (local.closeState === 'conflict') return <div className="cajero-alert cajero-alert--error cajero-close-notice" role="alert">
@@ -81,7 +83,7 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
 
   return <><div className="cajero-alert cajero-alert--error cajero-close-notice" role="alert">
     <AlertTriangle size={22} aria-hidden="true" />
-    <div><strong>Registro pendiente</strong><p>No se pudieron guardar algunos conteos. Tus conteos permanecen guardados en este dispositivo.</p></div>
+    <div><strong>Registro pendiente</strong><p>{orphanClose ? 'No se pudo confirmar un cierre seguro. Es posible que requiera revisión administrativa; no se eliminaron datos.' : 'No se pudieron guardar algunos conteos. Tus conteos permanecen guardados en este dispositivo.'}</p></div>
     <div className="cajero-close-notice__actions">
       {runtime.requiresRefresh ? <button className="button button--secondary" disabled={local.busy || state.loading} onClick={refresh} type="button">
         <RefreshCw size={18} aria-hidden="true" /> Actualizar estado</button>
