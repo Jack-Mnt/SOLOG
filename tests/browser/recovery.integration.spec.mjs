@@ -1,3 +1,4 @@
+/* global process, fetch */
 import { test, expect } from '@playwright/test'
 
 // Este caso modifica una sesión real: requiere fixture aislada y opt-in explícito.
