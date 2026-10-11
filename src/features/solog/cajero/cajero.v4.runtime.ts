@@ -1,5 +1,5 @@
 import { CashierHistoryCache, type CashierHistoryPeriod } from './cajero.history'
-import { mutateCashierV4, type CashierV4Rpc } from './cajero.v4.api'
+import { finishOrphanCashierRecovery, mutateCashierV4, type CashierV4Rpc } from './cajero.v4.api'
 import { canCashierV4CaptureForSession, canCashierV4DeliverPendingForSession } from './cajero.v4.capability'
 import { CashierV4DraftCoordinator } from './cajero.v4.flush'
 import { cashierV4AfterStartDestination } from './cajero.v4.navigation'
@@ -131,10 +131,35 @@ export class CashierV4Runtime {
     }
     return null
   }
+  private orphanRecoveryId(): string | null {
+    if (this.storageBlocked || this.sessionDenied) return null
+    for (const recovery of this.store.getSnapshot().recovery_sessions) {
+      if (this.coordinator.sessionScope(recovery.id)) continue
+      // Any local record, even without a resolvable scope, must remain protected.
+      if (this.snapshot.records.some(record => record.scope.conteo_id === recovery.id)) continue
+      return recovery.id
+    }
+    return null
+  }
+  private async finishOrphanRecovery(conteoId: string, refresh = true) {
+    if (this.storageBlocked || this.sessionDenied || this.snapshot.records.some(record => record.scope.conteo_id === conteoId) ||
+        this.coordinator.sessionScope(conteoId)) {
+      throw new Error('No se puede cerrar esta sesión sin resolver primero sus datos locales.')
+    }
+    const response = await finishOrphanCashierRecovery({
+      conteo_id: conteoId,
+      // Stable across reloads, including loss of browser storage.
+      operation_id: conteoId,
+      device_token: this.store.deviceToken,
+    }, this.call)
+    this.store.acceptMutation(response)
+    if (refresh) await this.store.refresh()
+  }
   shouldAutoClose(now = this.serverNow()) {
     const scope = this.closeTargetScope(now)
-    if (!scope) return false
-    return this.snapshot.closeConteoId !== scope.conteo_id || this.snapshot.closeState === 'idle'
+    const targetId = scope?.conteo_id ?? this.orphanRecoveryId()
+    if (!targetId) return false
+    return this.snapshot.closeConteoId !== targetId || this.snapshot.closeState === 'idle'
   }
   canCapture(action: CashierV4NextAction) {
     const state = this.store.getSnapshot(), panel = state.panel_state
@@ -246,25 +271,26 @@ export class CashierV4Runtime {
   finish = () => this.command(() => this.finishWork())
   autoCloseExpiredSession = async () => {
     const scope = this.closeTargetScope()
-    if (!scope) {
+    const conteoId = scope?.conteo_id ?? this.orphanRecoveryId()
+    if (!conteoId) {
       if (this.store.getSnapshot().recovery_sessions.length > 0) {
-        const error = new Error('La sesión en recuperación no tiene un scope local suficiente para cerrarse de forma segura.')
+        const error = new Error('La sesión pendiente conserva datos locales o requiere revisión administrativa.')
         this.publish({ closeState: 'failed_known', closeConteoId: null, error })
         throw error
       }
       return false
     }
-    if (this.snapshot.closeConteoId === scope.conteo_id && this.snapshot.closeState !== 'idle') return false
-    this.publish({ closeState: 'closing', closeConteoId: scope.conteo_id })
+    if (this.snapshot.closeConteoId === conteoId && this.snapshot.closeState !== 'idle') return false
+    this.publish({ closeState: 'closing', closeConteoId: conteoId })
     try {
-      await this.command(() => this.finishScopeWork(scope))
-      this.publish({ closeState: 'finished', closeConteoId: scope.conteo_id })
+      await this.command(() => scope ? this.finishScopeWork(scope) : this.finishOrphanRecovery(conteoId))
+      this.publish({ closeState: 'finished', closeConteoId: conteoId })
       return true
     } catch (error) {
       const outcome = getCashierV4ErrorPolicy(error).outcome
       this.publish({
         closeState: outcome === 'conflict' ? 'conflict' : outcome === 'uncertain' || outcome === 'in_progress' ? 'uncertain' : 'failed_known',
-        closeConteoId: scope.conteo_id,
+        closeConteoId: conteoId,
       })
       throw error
     }
@@ -274,10 +300,10 @@ export class CashierV4Runtime {
     if (!conteoId) throw new Error('No hay un cierre pendiente para reintentar.')
     if (this.snapshot.closeState === 'conflict') throw new SologApiError('SOLOG_IDEMPOTENCY_CONFLICT')
     const scope = this.coordinator.sessionScope(conteoId)
-    if (!scope) throw new Error('La sesión pendiente ya no tiene un scope local resoluble.')
+    if (!scope && this.orphanRecoveryId() !== conteoId) throw new Error('La sesión pendiente conserva datos locales o requiere revisión administrativa.')
     this.publish({ closeState: 'closing' })
     try {
-      await this.command(() => this.finishScopeWork(scope))
+      await this.command(() => scope ? this.finishScopeWork(scope) : this.finishOrphanRecovery(conteoId))
       this.publish({ closeState: 'finished' })
     } catch (error) {
       const outcome = getCashierV4ErrorPolicy(error).outcome
@@ -335,8 +361,9 @@ export class CashierV4Runtime {
     // Recovery is technical only: logout resolves and closes every own recovery before auth.
     for (const recovery of [...this.store.getSnapshot().recovery_sessions]) {
       const scope = this.coordinator.sessionScope(recovery.id)
-      if (!scope) throw new Error('La sesión en recuperación no tiene un scope local suficiente para cerrarse de forma segura.')
-      await this.finishScopeWork(scope, false)
+      if (scope) await this.finishScopeWork(scope, false)
+      else if (this.orphanRecoveryId() === recovery.id) await this.finishOrphanRecovery(recovery.id, false)
+      else throw new Error('La sesión pendiente conserva datos locales o requiere revisión administrativa.')
     }
     // Active keeps the same safety rule: deliverable drafts are flushed before finish.
     if (this.store.getSnapshot().panel_state?.session.estado === 'activo') await this.finishWork(false)
