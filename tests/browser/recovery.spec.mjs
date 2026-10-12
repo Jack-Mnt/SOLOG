@@ -16,7 +16,10 @@ test('sin scope: cierra recovery, confirma estado y desbloquea inicio', async ({
   await page.goto(path)
   await expect.poll(async () => (await diagnostic(page)).closeState).toBe('finished')
   const data = await diagnostic(page)
-  expect(data.calls).toHaveLength(1)
+  expect(data.calls.map(call => call.name)).toEqual([
+    'rpc_solog_cashier_orphan_finish_v1',
+    'rpc_solog_cashier_bootstrap_v4',
+  ])
   expect(data.calls[0].name).toBe('rpc_solog_cashier_orphan_finish_v1')
   expect(data.calls[0].payload.expected_groups_revision).toBeUndefined()
   expect(data.recoveryCount).toBe(0)
@@ -32,7 +35,11 @@ test('timeout: no reintenta automáticamente, CTA reintenta con mismo operation_
   await page.getByRole('button', { name: /reintentar/i }).click()
   await expect.poll(async () => (await diagnostic(page)).closeState).toBe('finished')
   const after = await diagnostic(page)
-  expect(after.calls).toHaveLength(2)
+  expect(after.calls.map(call => call.name)).toEqual([
+    'rpc_solog_cashier_orphan_finish_v1',
+    'rpc_solog_cashier_orphan_finish_v1',
+    'rpc_solog_cashier_bootstrap_v4',
+  ])
   expect(after.calls[1].payload).toEqual(after.calls[0].payload)
 })
 
