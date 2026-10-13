@@ -1,6 +1,6 @@
 import type { CashierRoute } from '../../../lib/router'
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
-import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LoaderCircle, LogOut, MessageSquarePlus, Palette, Play, RefreshCw, SearchCheck, Send, Trash2, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LoaderCircle, LogOut, MessageSquarePlus, Palette, Play, RefreshCw, SearchCheck, Send, Square, Trash2, X } from 'lucide-react'
 import { navigateTo, replaceRoute } from '../../../lib/router'
 import { PaletteSwitcher } from '../../theme/palette-switcher'
 import { SologApiError, type SologErrorCode } from '../errors'
@@ -74,17 +74,17 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
   </div>
   if (local.closeState === 'uncertain') return <div className="cajero-alert cajero-alert--warning cajero-close-notice" role="status">
     <AlertTriangle size={22} aria-hidden="true" />
-    <div><strong>Estamos verificando si el último registro se completó.</strong><p>{orphanClose ? 'No hay datos locales recuperables de esta sesión. El cierre se verificará en Supabase.' : 'Los conteos permanecen guardados en este dispositivo.'}</p></div>
+    <div><strong>Estamos verificando si el último registro se completó.</strong><p>{orphanClose ? 'Estamos comprobando si el conteo terminó correctamente.' : 'Los conteos permanecen guardados en este dispositivo.'}</p></div>
     <button className="button button--secondary" disabled={local.busy} onClick={retry} type="button"><RefreshCw size={18} aria-hidden="true" /> Reintentar</button>
   </div>
   if (local.closeState === 'conflict') return <div className="cajero-alert cajero-alert--error cajero-close-notice" role="alert">
     <AlertTriangle size={22} aria-hidden="true" />
-    <div><strong>El registro necesita revisión.</strong><p>Los datos de la operación permanecen guardados. No se puede descartar automáticamente.</p></div>
+    <div><strong>El registro necesita revisión.</strong><p>La información está guardada. Este problema necesita revisión antes de continuar.</p></div>
   </div>
 
   return <><div className="cajero-alert cajero-alert--error cajero-close-notice" role="alert">
     <AlertTriangle size={22} aria-hidden="true" />
-    <div><strong>Registro pendiente</strong><p>{orphanClose ? 'No se pudo confirmar un cierre seguro. Es posible que requiera revisión administrativa; no se eliminaron datos.' : 'No se pudieron guardar algunos conteos. Tus conteos permanecen guardados en este dispositivo.'}</p></div>
+    <div><strong>Registro pendiente</strong><p>{orphanClose ? 'No pudimos comprobar si el conteo terminó. No se ha eliminado información. Solicita ayuda al encargado si el problema continúa.' : 'No se pudieron guardar algunos conteos. Tus conteos permanecen guardados en este dispositivo.'}</p></div>
     <div className="cajero-close-notice__actions">
       {runtime.requiresRefresh ? <button className="button button--secondary" disabled={local.busy || state.loading} onClick={refresh} type="button">
         <RefreshCw size={18} aria-hidden="true" /> Actualizar estado</button>
@@ -97,7 +97,7 @@ function CajeroCloseNotice({ runtime }: { runtime: CashierV4Runtime }) {
   {confirmDiscard ? <div className="cajero-confirmation-backdrop">
     <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-labelledby="cajero-descartar-title" ref={confirmRef}>
       <h2 id="cajero-descartar-title">Descartar conteos pendientes</h2>
-      <p>Esta acción eliminará los conteos locales que no pudieron guardarse y cerrará la sesión cuando el estado del backend lo permita.</p>
+      <p>Se eliminarán los conteos pendientes que no se pudieron registrar. No podrás recuperarlos. Si es posible, el conteo también se finalizará.</p>
       <div className="cajero-confirmation__actions">
         <button className="button button--secondary" disabled={local.busy} onClick={() => setConfirmDiscard(false)} type="button">Cancelar</button>
         <button className="button button--danger" disabled={local.busy} onClick={() => void discard()} type="button"><Trash2 size={18} aria-hidden="true" /> Descartar</button>
@@ -328,7 +328,7 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
       </div>
       <div className="cajero-stock-card__actions">
         {panel && !preparedStart
-          ? <button className="button button--secondary" disabled={busy} onClick={() => void runtime.finish().catch(() => {})} type="button">Finalizar conteo</button>
+          ? <button className="button button--danger" disabled={busy} onClick={() => void runtime.finish().catch(() => {})} type="button"><Square size={18} aria-hidden="true" /> Finalizar conteo</button>
           : <button className="button" disabled={busy || runtime.requiresRefresh || preparedStart?.prepared_start.status === 'conflict' ||
             (!preparedStart && (!state.bootstrap?.start_capability.allowed || runtime.pendingCount > 0 || runtime.hasBlockingRecovery || Boolean(runtime.getSnapshot().error)))}
             onClick={() => void start()} type="button"><Play size={19} aria-hidden="true" />{busy ? 'Iniciando…' : preparedStart ? 'Reintentar inicio' : 'Iniciar conteo'}</button>}
@@ -600,7 +600,7 @@ export function CajeroV4({ runtime, route, onLogout }: { runtime: CashierV4Runti
   return <div className="cajero-shell"><CajeroV4Header runtime={runtime} onLogout={onLogout} /><main className="cajero-main">
     {(autoCloseDue || closeVisible) ? <CajeroCloseNotice runtime={runtime} /> : null}
     {!autoCloseDue && !closeVisible && runtime.recoveryPending.length ? <div className="cajero-alert cajero-alert--warning" role="status"><AlertTriangle size={22} aria-hidden="true" /><p>Hay conteos pendientes de registro. Se conservan en este dispositivo hasta poder completar su guardado.</p></div> : null}
-    {!autoCloseDue && !closeVisible && (captureClosed || (runtime.requiresRefresh && !policy)) ? <div className="cajero-alert cajero-alert--warning" role="status"><p>Esta sesión requiere consultar el estado actualizado del panel; los pendientes locales se conservan.</p>
+    {!autoCloseDue && !closeVisible && (captureClosed || (runtime.requiresRefresh && !policy)) ? <div className="cajero-alert cajero-alert--warning" role="status"><p>Necesitamos comprobar el estado del conteo antes de continuar. Tus conteos pendientes están guardados.</p>
       <button className="button button--secondary" disabled={local.busy || state.loading} onClick={() => void runtime.refresh().catch(() => {})} type="button">Actualizar</button></div> : null}
     {!closeVisible && policy ? <div className="cajero-alert cajero-alert--error" role="alert"><p>{policy.message}</p>
       {policy.requiresRefresh || runtime.requiresRefresh ? <button className="button button--secondary" disabled={local.busy || state.loading} onClick={() => void runtime.refresh().catch(() => {})} type="button">Actualizar</button> : null}
