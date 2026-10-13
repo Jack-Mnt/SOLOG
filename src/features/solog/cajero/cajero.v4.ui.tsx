@@ -429,7 +429,7 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
     setConfirmExit(false)
     destination?.()
   }
-  useEffect(() => { closeRef.current = onClose }, [onClose])
+  useEffect(() => { closeRef.current = () => requestExit(onClose) })
   useEffect(() => {
     const previousFocus = document.activeElement as HTMLElement | null, overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'; dialogRef.current?.querySelector<HTMLElement>('button')?.focus()
