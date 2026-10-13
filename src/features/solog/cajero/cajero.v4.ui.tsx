@@ -378,10 +378,13 @@ export function CajeroV4Inicio({ runtime }: { runtime: CashierV4Runtime }) {
 function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNextCategory }: {
   runtime: CashierV4Runtime; groups: CashierV4Group[]; action: Exclude<CashierV4NextAction, 'none'>; title: string; initialGroupId?: string; onClose: () => void; onNextCategory?: () => void
 }) {
-  const titleId = useId(), dialogRef = useRef<HTMLElement>(null), closeRef = useRef(onClose)
+  const titleId = useId(), confirmTitleId = useId(), dialogRef = useRef<HTMLElement>(null), confirmationRef = useRef<HTMLElement>(null), closeRef = useRef(onClose)
   const [selected, setSelected] = useState(initialGroupId ?? null)
   const [expressions, setExpressions] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
+  const [confirmExit, setConfirmExit] = useState(false)
+  const confirmationOpenRef = useRef(false)
+  const pendingExitRef = useRef<(() => void) | null>(null)
   const group = groups.find(group => group.grupo_id === selected)
   const scope = runtime.coordinator.activeScope(), record = runtime.getSnapshot().records.find(item =>
     item.scope.conteo_id === scope?.conteo_id && item.scope.groups_revision === scope.groups_revision) ?? null
@@ -403,14 +406,37 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
   const activeIndex = group ? groups.findIndex(item => item.grupo_id === group.grupo_id) : -1
   const hasInput = expression.trim().length > 0
   const canNavigateNext = activeIndex >= 0 && (activeIndex < groups.length - 1 || (action !== 'review' && Boolean(onNextCategory)))
+  const hasUnsavedEdit = Boolean(group && selected && Object.prototype.hasOwnProperty.call(expressions, selected) &&
+    (draft ? physical === null || physical !== draft.stock_fisico : expression.trim().length > 0))
+  const requestExit = (destination: () => void) => {
+    if (!hasUnsavedEdit) { destination(); return }
+    pendingExitRef.current = destination
+    confirmationOpenRef.current = true
+    setConfirmExit(true)
+  }
+  const cancelExit = () => { confirmationOpenRef.current = false; pendingExitRef.current = null; setConfirmExit(false) }
+  const completeExit = (save: boolean) => {
+    if (save) {
+      if (!group || physical === null || !canCapture) return
+      try { runtime.capture(action, group.grupo_id, physical, expression); setError(null) }
+      catch (e) { setError(getCashierV4ErrorPolicy(e).message); cancelExit(); return }
+    } else if (selected) {
+      setExpressions(current => { const next = { ...current }; delete next[selected]; return next })
+    }
+    const destination = pendingExitRef.current
+    confirmationOpenRef.current = false
+    pendingExitRef.current = null
+    setConfirmExit(false)
+    destination?.()
+  }
   useEffect(() => { closeRef.current = onClose }, [onClose])
   useEffect(() => {
     const previousFocus = document.activeElement as HTMLElement | null, overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'; dialogRef.current?.querySelector<HTMLElement>('button')?.focus()
     const keys = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); closeRef.current() }
+      if (e.key === 'Escape') { e.preventDefault(); if (confirmationOpenRef.current) { confirmationOpenRef.current = false; pendingExitRef.current = null; setConfirmExit(false) } else closeRef.current(); return }
       if (e.key !== 'Tab') return
-      const nodes = [...(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled),[tabindex="0"]') ?? [])]
+      const nodes = [...((confirmationOpenRef.current ? confirmationRef.current : dialogRef.current)?.querySelectorAll<HTMLElement>('button:not(:disabled),[tabindex="0"]') ?? [])]
       const first = nodes[0], last = nodes.at(-1)
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus() }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus() }
@@ -418,6 +444,7 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
     window.addEventListener('keydown', keys)
     return () => { document.body.style.overflow = overflow; window.removeEventListener('keydown', keys); previousFocus?.focus() }
   }, [])
+  useEffect(() => { if (confirmExit) confirmationRef.current?.querySelector<HTMLElement>('button')?.focus() }, [confirmExit])
   const navigateNext = () => {
     if (activeIndex < 0) return
     const next = groups[activeIndex + 1]
@@ -427,17 +454,17 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
   }
   const continueToNext = () => {
     if (!group) return
-    if (!hasInput) { if (canNavigateNext) navigateNext(); return }
+    if (!hasInput) { if (canNavigateNext) requestExit(navigateNext); return }
     if (!canCapture || physical === null) return
     try {
       runtime.capture(action, group.grupo_id, physical, expression); setError(null)
       navigateNext()
     } catch (e) { setError(getCashierV4ErrorPolicy(e).message) }
   }
-  return <div className="cajero-capture-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
+  return <div className="cajero-capture-backdrop" onMouseDown={e => { if (e.target === e.currentTarget && !confirmExit) requestExit(onClose) }}>
     <section className="cajero-capture-modal" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={dialogRef}>
-      <header className="cajero-capture-modal__header"><button className="cajero-capture-modal__icon-button" aria-label="Regresar a la lista" onClick={() => setSelected(null)} type="button"><ArrowLeft size={22} /></button>
-        <h2 id={titleId}>{title}</h2><strong>{registeredCount}/{groups.length} contados</strong><button className="cajero-capture-modal__icon-button" aria-label="Cerrar" onClick={onClose} type="button"><X size={22} /></button></header>
+      <header className="cajero-capture-modal__header"><button className="cajero-capture-modal__icon-button" aria-label="Regresar a la lista" onClick={() => requestExit(() => setSelected(null))} type="button"><ArrowLeft size={22} /></button>
+        <h2 id={titleId}>{title}</h2><strong>{registeredCount}/{groups.length} contados</strong><button className="cajero-capture-modal__icon-button" aria-label="Cerrar" onClick={() => requestExit(onClose)} type="button"><X size={22} /></button></header>
       <div className="cajero-capture-modal__progress" aria-label={`${percentage}% registrado`}>
         <span aria-hidden="true"><span style={{ width: `${percentage}%` }} /></span><strong>{percentage}%</strong>
       </div>
@@ -452,19 +479,30 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
         </section></div>{error ? <div role="alert" className="cajero-alert cajero-alert--error">{error}</div> : null}
           <CajeroCalculator expression={expression} disabled={!canCapture} onChange={value => setExpressions(current => ({ ...current, [group.grupo_id]: value }))} />
           <nav className="cajero-capture-detail__navigation" aria-label="Navegación entre grupos">
-            <button className="button button--secondary" disabled={activeIndex <= 0} onClick={() => setSelected(groups[activeIndex - 1]?.grupo_id ?? null)} type="button">Anterior</button>
-            <button className="button button--secondary" onClick={() => setSelected(null)} type="button">Regresar</button>
+            <button className="button button--secondary" disabled={activeIndex <= 0} onClick={() => requestExit(() => setSelected(groups[activeIndex - 1]?.grupo_id ?? null))} type="button">Anterior</button>
+            <button className="button button--secondary" onClick={() => requestExit(() => setSelected(null))} type="button">Regresar</button>
             <button className="button" disabled={hasInput ? !canCapture || physical === null : !canNavigateNext} onClick={continueToNext} type="button">{hasInput ? 'Continuar' : 'Siguiente'}</button>
           </nav>
         </div> : <div className="cajero-capture-summary"><div className="cajero-capture-summary__head"><span>Nombre</span><span>Stock TumiSoft</span><span>Diferencia</span><span /></div>
           <div className="cajero-capture-summary__rows">{groups.map(item => {
             const itemDraft = localDraftForGroup(item)
             const itemDifference = itemDraft ? itemDraft.stock_fisico - item.stock_teorico : null
-            return <button className={itemDraft ? 'is-counted' : undefined} key={item.grupo_id} onClick={() => setSelected(item.grupo_id)} type="button">
+            return <button className={itemDraft ? 'is-counted' : undefined} key={item.grupo_id} onClick={() => requestExit(() => setSelected(item.grupo_id))} type="button">
               <strong>{item.nombre}</strong><span>{item.stock_teorico}</span><span className={getCajeroDifferenceClass(itemDifference)}>{formatCajeroDifference(itemDifference)}</span><span>›</span></button>
           })}</div></div>}
       </div>
     </section>
+    {confirmExit ? <div className="cajero-confirmation-backdrop">
+      <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-labelledby={confirmTitleId} ref={confirmationRef}>
+        <h2 id={confirmTitleId}>¿Qué deseas hacer con este conteo?</h2>
+        <p>Hay una cantidad sin guardar.</p>
+        <div className="cajero-confirmation__actions">
+          <button className="button button--secondary" onClick={cancelExit} type="button">Cancelar</button>
+          <button className="button button--danger" onClick={() => completeExit(false)} type="button">Descartar</button>
+          <button className="button" disabled={physical === null || !canCapture} onClick={() => completeExit(true)} type="button">Guardar</button>
+        </div>
+      </section>
+    </div> : null}
   </div>
 }
 
