@@ -5,6 +5,7 @@ import { navigateTo, replaceRoute } from '../../../lib/router'
 import { PaletteSwitcher } from '../../theme/palette-switcher'
 import { SologApiError, type SologErrorCode } from '../errors'
 import { CajeroCalculator } from './cajero.calculadora'
+import { hasUnsavedCaptureEdit } from './cajero.capture.guard'
 import { CajeroHistorial } from './cajero.historial'
 import { formatCajeroClock, formatCajeroElapsed, getCajeroStockPresentation, useCajeroServerClock } from './cajero.stock'
 import { calculateCajeroValuationPreview, evaluateCajeroExpression, formatCajeroCurrency, formatCajeroDifference, getCajeroCategoryIcon, getCajeroDifferenceClass } from './cajero.utils'
@@ -406,8 +407,10 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
   const activeIndex = group ? groups.findIndex(item => item.grupo_id === group.grupo_id) : -1
   const hasInput = expression.trim().length > 0
   const canNavigateNext = activeIndex >= 0 && (activeIndex < groups.length - 1 || (action !== 'review' && Boolean(onNextCategory)))
-  const hasUnsavedEdit = Boolean(group && selected && Object.prototype.hasOwnProperty.call(expressions, selected) &&
-    (draft ? physical === null || physical !== draft.stock_fisico : expression.trim().length > 0))
+  const hasUnsavedEdit = Boolean(group && selected && hasUnsavedCaptureEdit({
+    edited: Object.prototype.hasOwnProperty.call(expressions, selected),
+    expression, physical, savedPhysical: draft?.stock_fisico ?? null,
+  }))
   const requestExit = (destination: () => void) => {
     if (!hasUnsavedEdit) { destination(); return }
     pendingExitRef.current = destination
