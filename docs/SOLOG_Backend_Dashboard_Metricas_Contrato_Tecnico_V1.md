@@ -213,7 +213,7 @@ Se mantienen activos, **sin cambios**, los jobs existentes `conexion_cleanup_sna
 | Nuevo job | Horario propuesto UTC | Responsabilidad | Vida útil |
 |---|---|---|---|
 | `metrics_rondas_cierre_recuperable` | `4 * * * *` | Revisa cortes temporales vencidos; cierra de forma «as-of», reintenta omisiones sin rehacer cortes válidos | Permanente |
-| `metrics_actividad_turnos_cierre` | `5 * * * *` | Cierra provisionalmente turnos vencidos; la hora real la da el contexto, no el job | Permanente |
+| `metrics_actividad_turnos_cierre` | `6 * * * *` | Cierra provisionalmente turnos vencidos; la hora real la da el contexto, no el job | Permanente |
 | `metrics_calibracion_c24_6h` | `5 5,11,17,23 * * *` | Solo registra muestras de C24 para noviembre | **Temporal** |
 
 **El horario de los dos primeros jobs es propuesta técnica, no una nueva decisión funcional congelada.** Las funciones deben operar por `ronda_hasta` y `turno_hasta` reales, no usar la hora de disparo como corte. Si una ronda tiene evidencia incompleta, marcar `N/D` con motivo; no fabricar el último estado confirmado. Probar recuperación después de caídas y entrega tardía.
@@ -273,7 +273,7 @@ En implementación con fuente inicializada válida, los recuentos 0 pueden ser r
 **`rounds`**:
 
 ```json
-{"site_id":"uuid","current":{"round_from":"2026-10-12T05:00:00Z","round_to":"2026-10-16T05:00:00Z","round":2,
+{"site_id":"uuid","current":{"round_from":"2026-10-08T05:00:00Z","round_to":"2026-10-16T05:00:00Z","round":2,
  "coverage":{"counted":0,"required":0,"percent":null},
  "milestones":{"50":null,"90":null,"100":null},"quality":"partial"},
  "period_rounds":[{"round":1,"round_from":"ISO","coverage":{"counted":0,"required":0,"percent":null},
