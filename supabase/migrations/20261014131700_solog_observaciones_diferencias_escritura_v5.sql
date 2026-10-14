@@ -1057,7 +1057,7 @@ begin
     );
   end if;
 end;
-$function$
+$function$;
 
 REVOKE ALL ON FUNCTION public.rpc_solog_cashier_mutate_v5(text,jsonb) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.rpc_solog_cashier_mutate_v5(text,jsonb) TO authenticated;
