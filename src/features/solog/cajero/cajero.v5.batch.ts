@@ -103,3 +103,54 @@ export function assertSameCashierV5Operation(
   })
   check(business(original) === business(updated))
 }
+
+
+export const CASHIER_V5_PREPARED_STORAGE_PREFIX = 'solog.cashier-v5.prepared.v1:'
+
+export interface CashierV5PreparedStoragePort {
+  getItem(key: string): string | null
+  setItem(key: string, value: string): void
+  removeItem(key: string): void
+}
+
+/**
+ * Recibos y payloads preparados de V5. La escritura es atómica para cada operación.
+ * No convierte ni reinterpreta claves de storage de otras versiones.
+ */
+export class CashierV5PreparedStorage {
+  constructor(private readonly port: CashierV5PreparedStoragePort) {}
+
+  private key(scope: { usuario_id: string; sede_id: string; dispositivo_id: string; conteo_id: string }) {
+    check(uuid(scope.usuario_id) && uuid(scope.sede_id) && uuid(scope.dispositivo_id) && uuid(scope.conteo_id))
+    return CASHIER_V5_PREPARED_STORAGE_PREFIX +
+      [scope.usuario_id, scope.sede_id, scope.dispositivo_id, scope.conteo_id].map(encodeURIComponent).join(':')
+  }
+
+  read(scope: { usuario_id: string; sede_id: string; dispositivo_id: string; conteo_id: string }) {
+    const raw = this.port.getItem(this.key(scope))
+    return raw === null ? null : deserializeCashierV5PreparedBatch(raw)
+  }
+
+  write(
+    scope: { usuario_id: string; sede_id: string; dispositivo_id: string; conteo_id: string },
+    prepared: CashierV5PreparedBatch,
+  ) {
+    check(prepared.conteo_id === scope.conteo_id)
+    const previous = this.read(scope)
+    if (previous) {
+      assertSameCashierV5Operation(previous, prepared)
+      // No se puede reemplazar un recibo confirmado por uno nulo durante recuperación.
+      if (previous.response !== null) check(prepared.response !== null)
+    }
+    this.port.setItem(this.key(scope), serializeCashierV5PreparedBatch(prepared))
+  }
+
+  clearConfirmed(
+    scope: { usuario_id: string; sede_id: string; dispositivo_id: string; conteo_id: string },
+    operationId: string,
+  ) {
+    const previous = this.read(scope)
+    check(previous !== null && previous.operation_id === operationId && previous.response !== null)
+    this.port.removeItem(this.key(scope))
+  }
+}
