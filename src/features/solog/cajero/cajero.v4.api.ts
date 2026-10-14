@@ -3,7 +3,9 @@ import { createSologConfigurationError, normalizeSologError, SologApiError } fro
 import type {
   CashierV4Action, CashierV4Bootstrap, CashierV4BootstrapRequest, CashierV4MutationResultFor,
   CashierV4Panel, CashierV4PanelDelta, CashierV4RequestFor,
+  CashierV5MutationResultFor, CashierV5RequestFor,
 } from './cajero.v4'
+import { validCashierInitialObservation, validCashierRecountObservation } from './cajero.observaciones.v5'
 
 function check(condition: unknown): asserts condition {
   if (!condition) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
@@ -236,7 +238,7 @@ export function parseCashierV4Bootstrap(value: unknown): CashierV4Bootstrap {
   if (!device.autorizado) check(r.panel_state === null && !start.allowed && !c.capture_allowed && !c.pending_delivery_allowed)
   return value as CashierV4Bootstrap
 }
-function savedItem(value: unknown, recount: boolean) {
+function savedItem(value: unknown, recount: boolean, version: 4 | 5 = 4) {
   const i = record(value)
   uuid(i.detalle_id); uuid(i.grupo_id)
   if (recount) {
@@ -252,12 +254,23 @@ function savedItem(value: unknown, recount: boolean) {
     oneOf(i.estado_diferencia, ['Coincide', 'Recontar'])
     timestamp(i.contado_at)
   }
+  if (version === 5) {
+    if (recount) {
+      check(Object.hasOwn(i, 'motivo_diferencia') && Object.hasOwn(i, 'observacion_reconteo'))
+      check(validCashierRecountObservation(i))
+      const isResolved = i.stock_reconteo === i.stock_teorico_reconteo
+      check(isResolved ? i.observacion_reconteo === 'Resuelto' : i.observacion_reconteo !== 'Resuelto')
+    } else {
+      check(Object.hasOwn(i, 'motivo_diferencia') && Object.hasOwn(i, 'observacion_diferencia'))
+      check(validCashierInitialObservation(i))
+    }
+  }
   return i
 }
-export function parseCashierV4Mutation<A extends CashierV4Action>(value: unknown, action: A): CashierV4MutationResultFor<A> {
+function parseCashierMutation<A extends CashierV4Action>(value: unknown, action: A, version: 4 | 5): unknown {
   oneOf(action, actions)
   const r = record(value)
-  check(r.contract_version === 4 && r.action === action)
+  check(r.contract_version === version && r.action === action)
   boolean(r.replay); uuid(r.conteo_id); timestamp(r.generated_at); revisions(r.revisions)
   capability(r.session_capability, action === 'finish')
   if (action === 'start') {
@@ -274,17 +287,23 @@ export function parseCashierV4Mutation<A extends CashierV4Action>(value: unknown
     check(instantEqual(r.finalizado_at, record(r.session_capability).finalizado_at))
   } else {
     check(!('panel_state' in r))
-    const items = array(r.items).map((value) => savedItem(value, action === 'recount_save_batch'))
+    const items = array(r.items).map((value) => savedItem(value, action === 'recount_save_batch', version))
     count(r.saved); check(r.saved === items.length)
     unique(items.map((i) => i.detalle_id)); unique(items.map((i) => i.grupo_id))
     if (action === 'save_batch') unique(items.map((i) => i.client_observation_id))
     const delta = validateCashierV4PanelDelta(r.panel_delta)
     capabilitiesMatch(r.session_capability, delta.session_capability)
   }
-  return value as CashierV4MutationResultFor<A>
+  return value
+}
+export function parseCashierV4Mutation<A extends CashierV4Action>(value: unknown, action: A): CashierV4MutationResultFor<A> {
+  return parseCashierMutation(value, action, 4) as CashierV4MutationResultFor<A>
+}
+export function parseCashierV5Mutation<A extends CashierV4Action>(value: unknown, action: A): CashierV5MutationResultFor<A> {
+  return parseCashierMutation(value, action, 5) as CashierV5MutationResultFor<A>
 }
 
-export type CashierV4Rpc = (name: 'rpc_solog_cashier_bootstrap_v4' | 'rpc_solog_cashier_mutate_v4' | 'rpc_solog_cashier_orphan_finish_v1', args: Record<string, unknown>) => Promise<unknown>
+export type CashierV4Rpc = (name: 'rpc_solog_cashier_bootstrap_v4' | 'rpc_solog_cashier_mutate_v4' | 'rpc_solog_cashier_mutate_v5' | 'rpc_solog_cashier_orphan_finish_v1', args: Record<string, unknown>) => Promise<unknown>
 async function rpc(name: Parameters<CashierV4Rpc>[0], args: Record<string, unknown>) {
   if (!supabase) throw createSologConfigurationError()
   const { data, error } = await supabase.rpc(name, args)
@@ -299,6 +318,13 @@ export async function mutateCashierV4<A extends CashierV4Action>(
 ): Promise<CashierV4MutationResultFor<A>> {
   // IDs, observation times and operation identity belong to the caller; never regenerate them here.
   return parseCashierV4Mutation(await call('rpc_solog_cashier_mutate_v4', { p_action: action, p_payload: payload }), action)
+}
+
+// La ruta V5 queda preparada; la captura operativa se activará con el diálogo en Fase 3.
+export async function mutateCashierV5<A extends CashierV4Action>(
+  action: A, payload: CashierV5RequestFor<NoInfer<A>>, call: CashierV4Rpc = rpc,
+): Promise<CashierV5MutationResultFor<A>> {
+  return parseCashierV5Mutation(await call('rpc_solog_cashier_mutate_v5', { p_action: action, p_payload: payload }), action)
 }
 
 // Cierre autoritativo de recovery sin scope: la RPC valida la ausencia de operaciones sin resolver.
