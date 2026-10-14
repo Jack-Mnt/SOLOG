@@ -6,7 +6,7 @@ import {
 } from '../src/features/solog/cajero/cajero.observaciones.v5'
 import {
   assertSameCashierV5Operation, deserializeCashierV5PreparedBatch,
-  prepareCashierV5Batch, serializeCashierV5PreparedBatch,
+  prepareCashierV5Batch, serializeCashierV5PreparedBatch, CashierV5PreparedStorage,
 } from '../src/features/solog/cajero/cajero.v5.batch'
 import { cashierV4Ids, cashierV4Mutation, cashierV4Request } from './fixtures/cashier-v4.mjs'
 
@@ -116,5 +116,32 @@ describe('Cajero observaciones V5', () => {
     expect(() => prepareCashierV5Batch('save_batch', [{
       ...normal, motivo_diferencia: 'Transferencia', observacion_diferencia: 'abc', desconocido: true,
     }] as never, scope)).toThrow()
+  })
+
+  test('storage V5 conserva operación y recibo y no permite reemplazar payload', () => {
+    const db = new Map<string, string>()
+    const storage = new CashierV5PreparedStorage({
+      getItem: key => db.get(key) ?? null,
+      setItem: (key, value) => { db.set(key, value) },
+      removeItem: key => { db.delete(key) },
+    })
+    const identity = {
+      usuario_id: cashierV4Ids.user, sede_id: cashierV4Ids.site,
+      dispositivo_id: cashierV4Ids.device, conteo_id: cashierV4Ids.session,
+    }
+    const batch = prepareCashierV5Batch('save_batch', [normal], scope)
+    storage.write(identity, batch)
+    expect(storage.read(identity)).toEqual(batch)
+    expect(() => storage.clearConfirmed(identity, batch.operation_id)).toThrow()
+    expect(() => storage.write(identity, {
+      ...batch, items: [{ ...normal, observacion_diferencia: 'Otra nota' }],
+    })).toThrow()
+    const withReceipt = { ...batch, status: 'uncertain' as const,
+      response: v5Result('save_batch') as never }
+    storage.write(identity, withReceipt)
+    expect(storage.read(identity)).toEqual(withReceipt)
+    expect(() => storage.write(identity, batch)).toThrow()
+    storage.clearConfirmed(identity, batch.operation_id)
+    expect(storage.read(identity)).toBeNull()
   })
 })
