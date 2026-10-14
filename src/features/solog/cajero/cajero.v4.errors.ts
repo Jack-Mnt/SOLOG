@@ -15,6 +15,13 @@ export interface CashierV4ErrorPolicy {
 }
 
 const policies: Record<string, { message: string; retryable?: boolean; requiresRefresh?: boolean; sessionInvalid?: boolean }> = {
+  SOLOG_OBSERVATION_FIELDS_REQUIRED: { message: 'Falta información de la observación. Revisa el motivo y la explicación.' },
+  SOLOG_INVALID_DIFFERENCE_REASON: { message: 'Selecciona un motivo válido para la diferencia.' },
+  SOLOG_INVALID_DIFFERENCE_OBSERVATION: { message: 'Escribe una explicación de al menos tres caracteres.' },
+  SOLOG_DIFFERENCE_EXPLANATION_REQUIRED: { message: 'Esta diferencia necesita un motivo y una explicación antes de registrarse.' },
+  SOLOG_DIFFERENCE_REASON_IMMUTABLE: { message: 'El motivo anterior de este conteo no se puede modificar.' },
+  SOLOG_INVALID_RECOUNT_OBSERVATION: { message: 'Revisa el motivo y la explicación del reconteo.' },
+  SOLOG_RECOUNT_EXPLANATION_REQUIRED: { message: 'Este reconteo necesita un motivo y una explicación antes de registrarse.' },
   SOLOG_DEVICE_UNAUTHORIZED: { message: 'Esta tablet no está autorizada. Actualiza el panel.', requiresRefresh: true, sessionInvalid: true },
   SOLOG_CONFIRMED_SNAPSHOT_INCOMPLETE: { message: 'El inventario recibido está incompleto. Se necesita una actualización completa del inventario.', requiresRefresh: true },
   SOLOG_SESSION_DELIVERY_NOT_ALLOWED: { message: 'Esta sesión ya no permite registrar conteos pendientes.', requiresRefresh: true, sessionInvalid: true },
