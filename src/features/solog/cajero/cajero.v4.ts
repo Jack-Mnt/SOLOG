@@ -247,6 +247,31 @@ export interface CashierV4FinishResult extends CashierV4MutationBase<'finish', C
 export type CashierV4MutationResult = CashierV4StartResult | CashierV4SaveBatchResult | CashierV4RecountBatchResult | CashierV4FinishResult
 export type CashierV4MutationResultFor<A extends CashierV4Action> = Extract<CashierV4MutationResult, { action: A }>
 
+// Cajero V5 añade observaciones solamente a mutaciones. Bootstrap y panel conservan V4.
+import type { CashierInitialObservation, CashierRecountObservation } from './cajero.observaciones.v5'
+
+export type CashierV5CountItem = CashierV4CountItem & CashierInitialObservation
+export type CashierV5RecountItem = CashierV4RecountItem & CashierRecountObservation
+export interface CashierV5Requests extends Omit<CashierV4Requests, 'save_batch' | 'recount_save_batch'> {
+  save_batch: CashierV4SessionRequest & { items: CashierV5CountItem[] }
+  recount_save_batch: CashierV4SessionRequest & { items: CashierV5RecountItem[] }
+}
+export type CashierV5RequestFor<A extends CashierV4Action> = CashierV5Requests[A]
+
+type V5Envelope<T> = Omit<T, 'contract_version'> & { contract_version: 5 }
+export type CashierV5StartResult = V5Envelope<CashierV4StartResult>
+export type CashierV5FinishResult = V5Envelope<CashierV4FinishResult>
+export type CashierV5SaveBatchResult = V5Envelope<Omit<CashierV4SaveBatchResult, 'items'> & {
+  items: (CashierV4CountSavedItem & CashierInitialObservation)[]
+}>
+export type CashierV5RecountBatchResult = V5Envelope<Omit<CashierV4RecountBatchResult, 'items'> & {
+  items: (CashierV4RecountSavedItem & CashierRecountObservation)[]
+}>
+export type CashierV5MutationResult =
+  | CashierV5StartResult | CashierV5SaveBatchResult | CashierV5RecountBatchResult | CashierV5FinishResult
+export type CashierV5MutationResultFor<A extends CashierV4Action> =
+  Extract<CashierV5MutationResult, { action: A }>
+
 export function cashierV4SessionRequestScope(panel: CashierV4Panel): Pick<CashierV4SessionRequest, 'conteo_id' | 'expected_groups_revision'> {
   return { conteo_id: panel.session.id, expected_groups_revision: panel.basis.groups_revision }
 }
