@@ -31,13 +31,14 @@ export function validCashierInitialObservation(value: unknown): value is Cashier
     isCashierDifferenceReason(reason) && hasCashierObservationText(text)
 }
 
-export function validCashierRecountObservation(value: unknown): value is CashierRecountObservation {
+export function validCashierRecountObservation(value: unknown, persisted = false): value is CashierRecountObservation {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false
   const note = value as Record<string, unknown>
   const reason = note.motivo_diferencia
   const text = note.observacion_reconteo
   // Un reconteo puede conservar un motivo anterior sin necesitar un segundo texto.
   // El backend sustituye por 'Resuelto' cuando coincide con el teórico del reconteo.
-  return (reason === null || isCashierDifferenceReason(reason)) &&
-    (text === null || hasCashierObservationText(text))
+  if (text === 'Resuelto') return persisted && (reason === null || isCashierDifferenceReason(reason))
+  return (reason === null && text === null) ||
+    (isCashierDifferenceReason(reason) && (text === null || hasCashierObservationText(text)))
 }
