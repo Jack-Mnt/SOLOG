@@ -1,7 +1,7 @@
 import { SologApiError } from '../errors'
-import { fetchCashierV4Bootstrap, parseCashierV4Bootstrap, parseCashierV4Mutation, type CashierV4Rpc } from './cajero.v4.api'
+import { fetchCashierV4Bootstrap, parseCashierV4Bootstrap, parseCashierV4Mutation, parseCashierV5Mutation, type CashierV4Rpc } from './cajero.v4.api'
 import type {
-  CashierV4Bootstrap, CashierV4MutationResult, CashierV4Panel, CashierV4PanelDelta,
+  CashierV4Bootstrap, CashierV4MutationResult, CashierV5MutationResult, CashierV4Panel, CashierV4PanelDelta,
   CashierV4PreSessionSummary, CashierV4RecoverySession, CashierV4Revisions,
   CashierV4SessionCapability, CashierV4Stock,
 } from './cajero.v4'
@@ -56,7 +56,7 @@ export type CashierV4Event =
   | { type: 'loading' }
   | { type: 'error'; error: unknown }
   | { type: 'bootstrap'; bootstrap: CashierV4Bootstrap }
-  | { type: 'mutation'; response: CashierV4MutationResult }
+  | { type: 'mutation'; response: CashierV4MutationResult | CashierV5MutationResult }
 
 function invalid(): never { throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE') }
 
@@ -218,8 +218,10 @@ export class CashierV4Store {
     this.dispatch({ type: 'bootstrap', bootstrap: b })
   }
 
-  acceptMutation(response: CashierV4MutationResult) {
-    const parsed = parseCashierV4Mutation(response, response.action)
+  acceptMutation(response: CashierV4MutationResult | CashierV5MutationResult) {
+    const parsed = response.contract_version === 5
+      ? parseCashierV5Mutation(response, response.action)
+      : parseCashierV4Mutation(response, response.action)
     this.dispatch({ type: 'mutation', response: parsed })
   }
 
