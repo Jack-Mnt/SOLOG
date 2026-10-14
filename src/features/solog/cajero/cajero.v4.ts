@@ -1,3 +1,5 @@
+import type { CashierInitialObservation, CashierRecountObservation } from './cajero.observaciones.v5'
+
 // Wire contract: docs/SOLOG_Backend_Contrato_Cajero_V4_Delta_Prioridades_V1.md.
 // Foundation only; the productive runtime is connected in a later phase.
 export type CashierV4SessionState = 'activo' | 'recovery' | 'finalizado' | 'expirado'
@@ -248,7 +250,6 @@ export type CashierV4MutationResult = CashierV4StartResult | CashierV4SaveBatchR
 export type CashierV4MutationResultFor<A extends CashierV4Action> = Extract<CashierV4MutationResult, { action: A }>
 
 // Cajero V5 añade observaciones solamente a mutaciones. Bootstrap y panel conservan V4.
-import type { CashierInitialObservation, CashierRecountObservation } from './cajero.observaciones.v5'
 
 export type CashierV5CountItem = CashierV4CountItem & CashierInitialObservation
 export type CashierV5RecountItem = CashierV4RecountItem & CashierRecountObservation
