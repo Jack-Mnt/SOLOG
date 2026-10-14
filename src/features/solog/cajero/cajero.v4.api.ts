@@ -257,7 +257,7 @@ function savedItem(value: unknown, recount: boolean, version: 4 | 5 = 4) {
   if (version === 5) {
     if (recount) {
       check(Object.hasOwn(i, 'motivo_diferencia') && Object.hasOwn(i, 'observacion_reconteo'))
-      check(validCashierRecountObservation(i))
+      check(validCashierRecountObservation(i, true))
       const isResolved = i.stock_reconteo === i.stock_teorico_reconteo
       check(isResolved ? i.observacion_reconteo === 'Resuelto' : i.observacion_reconteo !== 'Resuelto')
     } else {
