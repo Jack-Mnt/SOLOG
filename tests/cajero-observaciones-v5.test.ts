@@ -46,7 +46,7 @@ describe('Cajero observaciones V5', () => {
     expect(validCashierInitialObservation({ motivo_diferencia: 'Otro motivo', observacion_diferencia: 'abc' })).toBe(true)
     expect(validCashierInitialObservation({ motivo_diferencia: null, observacion_diferencia: 'abc' })).toBe(false)
     expect(validCashierRecountObservation({ motivo_diferencia: 'Otro motivo', observacion_reconteo: null })).toBe(true)
-    expect(validCashierRecountObservation({ motivo_diferencia: null, observacion_reconteo: 'abc' })).toBe(true)
+    expect(validCashierRecountObservation({ motivo_diferencia: null, observacion_reconteo: 'abc' })).toBe(false)
   })
 
   test.each(['start', 'save_batch', 'recount_save_batch', 'finish'] as const)('RPC V5 %s usa payload y UUID sin alterarlos', async action => {
