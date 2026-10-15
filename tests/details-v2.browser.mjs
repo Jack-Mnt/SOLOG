@@ -66,6 +66,11 @@ export async function runDetailsV2Browser() {
     if (action === 'detail') {
       assert.deepEqual(Object.keys(payload), ['case_id'])
       const r = detailFixture(Number(payload.case_id.split('-').at(-1))); r.revisions.operational = revision
+      if (payload.case_id === 'case-0') Object.assign(r.case, {
+        motivo_diferencia: 'Transferencia',
+        observacion_diferencia: 'Se trasladaron doce unidades',
+        observacion_reconteo: 'Se comprobó el traslado durante el reconteo',
+      })
       return fulfill(r)
     }
     if (action === 'request_access') {
@@ -97,6 +102,9 @@ export async function runDetailsV2Browser() {
     assert.equal(count('history'), 1); assert.equal(count('detail'), 0)
     await page.getByRole('button', { name: 'Expandir detalle de Grupo 0', exact: true }).click()
     await page.getByText('Stock posterior', { exact: true }).waitFor()
+    await page.getByRole('heading', { name: 'Motivo y observaciones', exact: true }).waitFor()
+    await page.getByText('Se trasladaron doce unidades', { exact: true }).waitFor()
+    await page.getByText('Se comprobó el traslado durante el reconteo', { exact: true }).waitFor()
     await page.getByRole('button', { name: 'Contraer detalle de Grupo 0', exact: true }).click()
     await page.getByRole('button', { name: 'Expandir detalle de Grupo 0', exact: true }).click()
     await page.getByText('Stock posterior', { exact: true }).waitFor()
