@@ -11,7 +11,7 @@ import { cashierV4DraftStorageKey } from '../src/features/solog/cajero/cajero.v4
 import { SologApiError } from '../src/features/solog/errors'
 import { parseCashierHistory } from '../src/features/solog/cajero/cajero.history'
 import { draftHarness, memoryStorage, uuidFor } from './fixtures/cashier-v4-drafts'
-import { cashierV4Bootstrap, cashierV4Group, cashierV4Mutation, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
+import { cashierV4Bootstrap, cashierV4Group, cashierV4Mutation, cashierV5Mutation, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 import type { CashierV4Rpc } from '../src/features/solog/cajero/cajero.v4.api'
 
 function renderRuntime(runtime: CashierV4Runtime, route: CashierRoute) {
@@ -66,11 +66,11 @@ describe('runtime productivo V4', () => {
   test('start V4 ignora summary coverage y navega por panel review', async () => {
     const b = cashierV4Bootstrap('pre_session', { next_action: 'coverage' }), now = Date.parse(b.server_now)
     const calls: string[] = []
-    const call: CashierV4Rpc = async (name, args) => { calls.push(name); expect(args.p_action).toBe('start'); return cashierV4Mutation('start', { next_action: 'review' }) }
+    const call: CashierV4Rpc = async (name, args) => { calls.push(name); expect(args.p_action).toBe('start'); return cashierV5Mutation('start', { next_action: 'review' }) }
     const store = new CashierV4Store(ids.user, 'test-device-token-0000000000000000', call, () => now); store.acceptBootstrap(b)
     const storage = new CashierV4DraftStorage(memoryStorage()), runtime = new CashierV4Runtime(store, storage, call, () => uuidFor(99), () => now)
     expect(await runtime.start()).toBe('/cajero/revisar')
-    expect(calls).toEqual(['rpc_solog_cashier_mutate_v4'])
+    expect(calls).toEqual(['rpc_solog_cashier_mutate_v5'])
     expect(storage.read(runtime.coordinator.activeScope()!).delivery_state?.next_action).toBe('review')
   })
   test('capture normal guarda V4 y send usa flush/delta, sin modificar KPI local', async () => {
