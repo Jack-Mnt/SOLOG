@@ -98,37 +98,44 @@ export class CashierV4DraftCoordinator {
     if (record.prepared || record.finished) throw new Error('Resuelve primero la operación preparada de esta sesión.')
     return record
   }
-  captureNormal(scope: CashierV4DraftScope, input: Omit<CashierV5CountItem, 'client_observation_id'>, metadata?: Record<string, string>): CashierV4NormalDraft {
+  captureNormal(scope: CashierV4DraftScope, input: Omit<CashierV5CountItem, 'client_observation_id' | 'motivo_diferencia' | 'observacion_diferencia'> &
+    Partial<Pick<CashierV5CountItem, 'motivo_diferencia' | 'observacion_diferencia'>>, metadata?: Record<string, string>): CashierV4NormalDraft {
     const record = this.captureRecord(scope, input.contado_at)
     const panel = this.store.getSnapshot().panel_state
     const group = panel?.groups.find(group => group.grupo_id === input.grupo_id)
-    if (!group || !validCashierInitialObservation(input) ||
+    const normalized = { ...input, motivo_diferencia: input.motivo_diferencia ?? null,
+      observacion_diferencia: input.observacion_diferencia ?? null }
+    if (!group || !validCashierInitialObservation(normalized) ||
         (Math.abs(input.stock_fisico - group.stock_teorico) >= 12 &&
-          (input.motivo_diferencia === null || input.observacion_diferencia === null))) {
+          (normalized.motivo_diferencia === null || normalized.observacion_diferencia === null))) {
       throw new Error('La diferencia requiere un motivo y una explicación válida antes de guardar.')
     }
     const previous = record.normal.find(draft => draft.grupo_id === input.grupo_id)
-    const draft: CashierV4NormalDraft = { ...input, scope, kind: 'normal', metadata,
+    const draft: CashierV4NormalDraft = { ...normalized, scope, kind: 'normal', metadata,
       client_observation_id: previous?.client_observation_id ?? this.uuid(), contado_at: previous?.contado_at ?? input.contado_at }
     record.normal = [...record.normal.filter(item => item.grupo_id !== draft.grupo_id), draft]
     this.storage.write(record)
     return structuredClone(draft)
   }
-  captureRecount(scope: CashierV4DraftScope, input: CashierV5RecountItem & { grupo_id: string }, metadata?: Record<string, string>): CashierV4RecountDraft {
+  captureRecount(scope: CashierV4DraftScope, input: Omit<CashierV5RecountItem, 'motivo_diferencia' | 'observacion_reconteo'> &
+    { grupo_id: string } & Partial<Pick<CashierV5RecountItem, 'motivo_diferencia' | 'observacion_reconteo'>>, metadata?: Record<string, string>): CashierV4RecountDraft {
     const record = this.captureRecord(scope, input.contado_at)
     const panel = this.store.getSnapshot().panel_state
     const group = panel?.groups.find(group => group.grupo_id === input.grupo_id)
     const original = panel?.review_queue.find(item => item.detalle_id === input.detalle_id && item.grupo_id === input.grupo_id)
-    if (!group || !original || !validCashierRecountObservation(input) ||
-        (original.motivo_diferencia !== null && input.motivo_diferencia !== original.motivo_diferencia) ||
-        (input.motivo_diferencia !== null && original.motivo_diferencia === null &&
-          input.stock_fisico !== group.stock_teorico && input.observacion_reconteo === null) ||
+    const normalized = { ...input,
+      motivo_diferencia: input.motivo_diferencia === undefined ? original?.motivo_diferencia ?? null : input.motivo_diferencia,
+      observacion_reconteo: input.observacion_reconteo ?? null }
+    if (!group || !original || !validCashierRecountObservation(normalized) ||
+        (original.motivo_diferencia !== null && normalized.motivo_diferencia !== original.motivo_diferencia) ||
+        (normalized.motivo_diferencia !== null && original.motivo_diferencia === null &&
+          input.stock_fisico !== group.stock_teorico && normalized.observacion_reconteo === null) ||
         (Math.abs(input.stock_fisico - group.stock_teorico) >= 12 &&
-          (input.motivo_diferencia === null || input.observacion_reconteo === null))) {
+          (normalized.motivo_diferencia === null || normalized.observacion_reconteo === null))) {
       throw new Error('La observación del reconteo es inválida o requiere una explicación.')
     }
     const previous = record.recount.find(draft => draft.detalle_id === input.detalle_id)
-    const draft: CashierV4RecountDraft = { ...input, scope, kind: 'recount', metadata, contado_at: previous?.contado_at ?? input.contado_at }
+    const draft: CashierV4RecountDraft = { ...normalized, scope, kind: 'recount', metadata, contado_at: previous?.contado_at ?? input.contado_at }
     record.recount = [...record.recount.filter(item => item.detalle_id !== draft.detalle_id), draft]
     this.storage.write(record)
     return structuredClone(draft)
