@@ -8,6 +8,8 @@ import { cashierV4Bootstrap, cashierV4Ids as ids, cashierV4DeviceToken } from '.
 
 const normal = (h: ReturnType<typeof draftHarness>, group = ids.coverage) => h.coordinator.captureNormal(h.scope, {
   grupo_id: group, stock_fisico: 10, contado_at: h.stamp,
+  ...(group === ids.none ? { motivo_diferencia: 'Otro motivo' as const,
+    observacion_diferencia: 'Diferencia detectada en grupo fuera de la cola' } : {}),
 })
 
 describe('Cajero 13.3: flush y prioridad backend', () => {
@@ -73,12 +75,13 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
     expect(h.requests.map(request => request.action)).not.toContain('finish')
     expect(h.storage.read(h.scope).normal[0].grupo_id).toBe(ids.coverage)
   })
-  test('recount requiere coincidencia de detalle y grupo en review_queue', async () => {
+  test('recount rechaza grupo ajeno al detalle de review_queue antes de persistir', () => {
     const h = draftHarness()
-    h.coordinator.captureRecount(h.scope, { detalle_id: ids.detail, grupo_id: ids.none, stock_fisico: 10, contado_at: h.stamp })
-    expect((await h.coordinator.flush(h.scope)).reason).toBe('no_eligible_drafts')
+    expect(() => h.coordinator.captureRecount(h.scope, {
+      detalle_id: ids.detail, grupo_id: ids.none, stock_fisico: 10, contado_at: h.stamp,
+    })).toThrow()
     expect(h.requests).toEqual([])
-    expect(h.storage.read(h.scope).recount).toHaveLength(1)
+    expect(h.storage.read(h.scope).recount).toHaveLength(0)
   })
   test('retry normal reproduce UUID, client ID, timestamp, items y revisión tras timeout', async () => {
     const h = draftHarness('coverage')
