@@ -5,7 +5,7 @@ import type {
   CashierV4Panel, CashierV4PanelDelta, CashierV4RequestFor,
   CashierV5MutationResultFor, CashierV5RequestFor,
 } from './cajero.v4'
-import { validCashierInitialObservation, validCashierRecountObservation } from './cajero.observaciones.v5'
+import { isCashierDifferenceReason, validCashierInitialObservation, validCashierRecountObservation } from './cajero.observaciones.v5'
 
 function check(condition: unknown): asserts condition {
   if (!condition) throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE')
@@ -143,6 +143,9 @@ function queues(value: Record<string, unknown>) {
   const review = array(value.review_queue).map((value) => {
     const q = record(value)
     uuid(q.grupo_id); uuid(q.detalle_id); finite(q.ultima_diferencia); timestamp(q.contado_at)
+    check(q.motivo_diferencia === null || isCashierDifferenceReason(q.motivo_diferencia))
+    check(q.observacion_diferencia === null || (typeof q.observacion_diferencia === 'string' && q.observacion_diferencia.trim().length >= 3))
+    check(q.observacion_diferencia === null || q.motivo_diferencia !== null)
     oneOf(q.priority_class, reviewPriorityClasses)
     return q
   })
