@@ -173,7 +173,9 @@ export class CashierV4Runtime {
       canCashierV4CaptureForSession(state, panel.session.id, this.serverNow()))
   }
   capture(action: Exclude<CashierV4NextAction, 'none'>, grupoId: string, stockFisico: number, expression: string,
-    observation: CashierInitialObservation | CashierRecountObservation) {
+    observation: CashierInitialObservation | CashierRecountObservation = action === 'review'
+      ? { motivo_diferencia: null, observacion_reconteo: null }
+      : { motivo_diferencia: null, observacion_diferencia: null }) {
     if (!this.canCapture(action)) throw new Error('Resuelve los pendientes anteriores o actualiza la sesión antes de capturar.')
     const panel = this.store.getSnapshot().panel_state!, scope = this.coordinator.activeScope()!
     const contado_at = new Date(this.serverNow()).toISOString()
