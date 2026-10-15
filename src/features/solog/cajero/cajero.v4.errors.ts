@@ -31,7 +31,7 @@ const policies: Record<string, { message: string; retryable?: boolean; requiresR
   SOLOG_NORMAL_COUNT_BLOCKED_AFTER_INCONSISTENT: { message: 'Este grupo debe volver a contarse en el siguiente turno. Actualiza el panel.', requiresRefresh: true },
   SOLOG_RECOUNT_REQUIRES_PHYSICAL_RECOUNT: { message: 'Este caso requiere un nuevo reconteo físico.' },
   SOLOG_IDEMPOTENCY_CONFLICT: { message: 'No se pudo completar el registro porque hay información que no coincide. Solicita ayuda antes de volver a intentarlo.' },
-  SOLOG_OPERATION_IN_PROGRESS: { message: 'El registro aún no termina. Puedes pulsar Reintentar.', retryable: true },
+  SOLOG_OPERATION_IN_PROGRESS: { message: 'El registro aún no termina. Puedes reintentar la misma operación.', retryable: true },
   SOLOG_SESSION_CONFLICT: { message: 'Ya existe una sesión activa. Actualiza el panel.', requiresRefresh: true },
   SOLOG_STOCK_EXPIRED: { message: 'El inventario está desactualizado. Se necesita una nueva actualización.', requiresRefresh: true },
   SOLOG_STOCK_TOO_CLOSE_TO_EXPIRY: { message: 'El inventario está próximo a quedar desactualizado. Se necesita una nueva actualización.', requiresRefresh: true },
