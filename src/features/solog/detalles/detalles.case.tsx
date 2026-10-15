@@ -2,8 +2,40 @@ import { useEffect, useState } from 'react'
 import { getSologErrorMessageFromUnknown } from '../errors'
 import { getSologDifferenceStateLabel } from '../labels'
 import type { DetailsStore } from './detalles.store'
-import type { DetailsDetail } from './detalles.v2'
+import type { DetailsCase, DetailsDetail } from './detalles.v2'
 const time = (value: string | null) => value === null ? '—' : new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
+type DetailsCaseObservationFields = Pick<DetailsCase,
+  'motivo_diferencia' | 'observacion_diferencia' | 'observacion_reconteo'>
+
+/** Presentación de solo lectura, separada por momento de registro. */
+export function DetailsCaseObservations({ caseData }: { caseData: DetailsCaseObservationFields }) {
+  const hasInitial = caseData.observacion_diferencia !== null
+  // Cuando no existe nota inicial, el motivo pudo ser incorporado recién en el reconteo.
+  const recountReason = !hasInitial && caseData.motivo_diferencia !== null
+  const hasRecount = caseData.observacion_reconteo !== null || recountReason
+  if (!hasInitial && !hasRecount) return null
+
+  return <section aria-label="Motivo y observaciones del conteo" className="details-case-observations">
+    <h3>Motivo y observaciones</h3>
+    {hasInitial ? <div className="details-case-observations__entry">
+      <h4>Conteo inicial</h4>
+      <dl className="details-case-observations__reason">
+        <div><dt>Motivo</dt><dd>{caseData.motivo_diferencia}</dd></div>
+      </dl>
+      <p className="details-case-observations__text">{caseData.observacion_diferencia}</p>
+    </div> : null}
+    {hasRecount ? <div className="details-case-observations__entry">
+      <h4>Reconteo</h4>
+      {recountReason ? <dl className="details-case-observations__reason">
+        <div><dt>Motivo registrado durante el reconteo</dt><dd>{caseData.motivo_diferencia}</dd></div>
+      </dl> : null}
+      {caseData.observacion_reconteo !== null
+        ? <p className="details-case-observations__text">{caseData.observacion_reconteo}</p>
+        : null}
+    </div> : null}
+  </section>
+}
+
 export function DetailsCaseView({ store, caseId }: { store: DetailsStore; caseId: string }) {
   const [detail, setDetail] = useState<DetailsDetail | null>(() => store.getDetail(caseId))
   const [error, setError] = useState<string | null>(null)
@@ -31,6 +63,7 @@ export function DetailsCaseView({ store, caseId }: { store: DetailsStore; caseId
       <div><dt>Reconteo</dt><dd>{c.stock_reconteo ?? '—'}</dd></div>
       <div><dt>Hora de reconteo</dt><dd>{time(c.recontado_at)}</dd></div>
     </dl>
+    <DetailsCaseObservations caseData={c} />
     <details><summary>SKU y contexto</summary>
       <p>Los códigos pertenecen al caso; nombres, marcas y precio_actual del contexto SKU provienen del catálogo actual.</p>
       <ul>{detail.skus.map((sku) => <li key={sku.c_interno}>{sku.c_interno} · {sku.producto ?? '—'} · {sku.marca ?? '—'} · {sku.precio_actual ?? '—'}</li>)}</ul>
