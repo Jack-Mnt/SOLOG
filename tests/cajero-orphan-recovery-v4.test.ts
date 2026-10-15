@@ -11,8 +11,14 @@ function orphanHarness(respond?: CashierV4Rpc) {
   const calls: Array<{ name: string; payload: Record<string, unknown> }> = []
   const call: CashierV4Rpc = async (name, args) => {
     calls.push({ name, payload: structuredClone(args.p_payload as Record<string, unknown>) })
-    if (respond) return respond(name, args)
-    return h.responseFor('finish', args.p_payload as Record<string, unknown>)
+    const result = respond ? await respond(name, args)
+      : h.responseFor('finish', args.p_payload as Record<string, unknown>)
+    // orphan_finish_v1 conserva la respuesta contract_version=4, a diferencia
+    // de las mutaciones operativas, que ya usan exclusivamente V5.
+    return name === 'rpc_solog_cashier_orphan_finish_v1' && result !== null &&
+      typeof result === 'object' && !Array.isArray(result)
+      ? { ...result, contract_version: 4 }
+      : result
   }
   const runtime = new CashierV4Runtime(h.store, storage, call, () => uuidFor(976), () => h.now)
   h.store.refresh = async () => {}
