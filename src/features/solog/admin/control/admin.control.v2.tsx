@@ -369,7 +369,7 @@ export function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
               </div>
             )}
             <article
-              className={index === 0 ? "is-latest" : undefined}
+              className={[index === 0 ? "is-latest" : "", opened ? "has-observation-open" : ""].filter(Boolean).join(" ") || undefined}
               data-tone={tone}
             >
               <header>
