@@ -112,7 +112,7 @@ describe('Cajero V5 — motivos, guardia, escritura y recovery', () => {
     const markup = renderToStaticMarkup(createElement(CajeroObservacionDialog, {
       initialReason: null, initialText: null, priorReason: null, priorText: null,
       isRecount: false, isResolved: false, mandatory: true,
-      onApply: () => {}, onCancel: () => {}, onOmit: () => {},
+      onApply: () => {}, onCancel: () => {}, onClear: () => {}, onOmit: () => {},
     }))
     expect(markup).toContain('Omitir producto')
     expect(markup).toContain('Explica esta diferencia')
