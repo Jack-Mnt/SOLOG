@@ -28,6 +28,16 @@ describe('Admin Control — observaciones de la cronología', () => {
     expect(fixture).toEqual(before)
   })
 
+  test('el período previous_counts conserva los mismos campos por evento', () => {
+    const prev = responseFixture('control_chronology_view', {
+      ...payload, period: 'previous_counts',
+    })
+    const parsed = validateAdminResponse('control_chronology_view', prev)
+    expect(parsed.chronology).toHaveLength(1)
+    expect(parsed.chronology[0].observaciones.inicial?.motivo).toBe('Venta por mayor')
+    expect(parsed.chronology[0].observaciones.reconteo).toBeNull()
+  })
+
   test('solo se ofrece información en eventos con anotaciones humanas', () => {
     const data = validateAdminResponse('control_chronology_view', response())
     const markup = renderToStaticMarkup(createElement(ChronologyTimeline, { rows: data.chronology }))
