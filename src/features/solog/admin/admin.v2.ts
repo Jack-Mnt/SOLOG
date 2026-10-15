@@ -162,7 +162,7 @@ function chronologyObservation(value: unknown, initial: boolean) {
   if (value === null) return true
   if (!record(value) || !strings(value, ['texto', 'registrada_at']) ||
       !nullableTime(value.registrada_at) || !value.registrada_at ||
-      value.texto.trim().length < 3 ||
+      typeof value.texto !== 'string' || value.texto.trim().length < 3 ||
       !(value.motivo === null || chronologyReasons.includes(String(value.motivo)))) return false
   if (initial) return value.motivo !== null
   return value.motivo !== null || value.texto === 'Resuelto'
