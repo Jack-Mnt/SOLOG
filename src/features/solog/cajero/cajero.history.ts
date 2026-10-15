@@ -1,6 +1,7 @@
 import { supabase } from '../../../lib/supabase'
 import { createSologConfigurationError, normalizeSologError, SologApiError } from '../errors'
 import type { SologDifferenceState } from '../types'
+import { isCashierDifferenceReason } from './cajero.observaciones.v5'
 
 export type CashierHistoryDifferenceState = SologDifferenceState | 'Inválido'
 
@@ -13,6 +14,7 @@ export interface CashierHistoryItem {
   snapshot_referencia_id: string | null; primer_snapshot_posterior_id: string | null
   snapshot_posterior_id: string | null; snapshot_reconteo_id: string | null
   stock_posterior: number | null; stock_teorico_reconteo: number | null; stock_reconteo: number | null
+  motivo_diferencia: string | null; observacion_diferencia: string | null; observacion_reconteo: string | null
 }
 export interface CashierHistory {
   contract_version: 2; generated_at: string; period: CashierHistoryPeriod
@@ -43,6 +45,13 @@ export function parseCashierHistory(value: unknown, period: CashierHistoryPeriod
     for (const key of ['grupo', 'categoria', 'snapshot_referencia_id', 'primer_snapshot_posterior_id', 'snapshot_posterior_id', 'snapshot_reconteo_id', 'recontado_at'] as const) {
       if (item[key] !== null && typeof item[key] !== 'string') return fail()
     }
+    if (!(item.motivo_diferencia === null || isCashierDifferenceReason(item.motivo_diferencia)) ||
+      !(item.observacion_diferencia === null || (typeof item.observacion_diferencia === 'string' && item.observacion_diferencia.trim().length >= 3)) ||
+      !(item.observacion_reconteo === null || (typeof item.observacion_reconteo === 'string' && item.observacion_reconteo.trim().length >= 3)) ||
+      (item.observacion_diferencia !== null && item.motivo_diferencia === null) ||
+      (item.observacion_reconteo !== null && item.observacion_reconteo !== 'Resuelto' && item.motivo_diferencia === null) ||
+      (item.observacion_reconteo === 'Resuelto' &&
+        (item.stock_reconteo === null || item.stock_reconteo !== item.stock_teorico_reconteo))) return fail()
     ids.add(item.detalle_id)
   }
   return r
