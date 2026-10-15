@@ -14,13 +14,14 @@ interface Props {
   mandatory: boolean
   onApply: (reason: CashierDifferenceReason | null, note: string | null) => void
   onCancel: () => void
+  onClear: () => void
   onOmit: () => void
 }
 
 /** Diálogo de captura local: Aplicar no ejecuta una RPC por sí mismo. */
 export function CajeroObservacionDialog({
   initialReason, initialText, priorReason, priorText,
-  isRecount, isResolved, mandatory, onApply, onCancel, onOmit,
+  isRecount, isResolved, mandatory, onApply, onCancel, onClear, onOmit,
 }: Props) {
   const titleId = useId()
   const [reason, setReason] = useState<CashierDifferenceReason | null>(priorReason ?? initialReason)
@@ -82,6 +83,9 @@ export function CajeroObservacionDialog({
         </p>
       </>}
       <div className="cajero-observacion-dialog__actions">
+        {!mandatory ? <button className="button button--secondary" type="button" onClick={onClear}>
+          Limpiar
+        </button> : null}
         {mandatory ? <button className="button button--secondary" type="button" onClick={onOmit}>
           Omitir producto
         </button> : null}
