@@ -31,6 +31,9 @@ export interface DetailsCase extends DetailsHistoryItem {
   stock_posterior: number | null; snapshot_reconteo_id: string | null; stock_teorico_reconteo: number | null
   stock_reconteo: number | null; diferencia_reconteo: number | null; precio: number
   unidades_por_paquete: number | null; precio_paquete: number | null
+  motivo_diferencia: string | null
+  observacion_diferencia: string | null
+  observacion_reconteo: string | null
 }
 export interface DetailsDetail extends Envelope {
   revisions: { operational: number }; case: DetailsCase
@@ -122,6 +125,21 @@ export function parseDetailsResponse<A extends DetailsAction>(action: A, value: 
     check(['stock_posterior', 'stock_teorico_reconteo', 'stock_reconteo', 'diferencia_reconteo', 'unidades_por_paquete', 'precio_paquete'].every((k) => nullableNumber(c[k])))
     check(['snapshot_referencia_id', 'primer_snapshot_posterior_id', 'snapshot_posterior_id', 'snapshot_reconteo_id'].every((k) => nullableText(c[k])))
     check(number(c.diferencia_inicial) && number(c.precio) && Array.isArray(r.skus) && Array.isArray(r.chronology))
+    // El contrato de lectura V2 siempre incluye las tres claves, incluso en históricos (null).
+    const motivos = ['Transferencia', 'Venta por mayor', 'Dañado', 'Vencido', 'Otro motivo']
+    check((c.motivo_diferencia === null || motivos.includes(String(c.motivo_diferencia))) &&
+      nullableText(c.observacion_diferencia) && nullableText(c.observacion_reconteo))
+    const initialNote = c.observacion_diferencia
+    const recountNote = c.observacion_reconteo
+    check(initialNote === null ||
+      (c.motivo_diferencia !== null && (initialNote as string).trim().length >= 3))
+    check(recountNote === null || (recountNote as string).trim().length >= 3)
+    if (recountNote === 'Resuelto') {
+      check(c.stock_reconteo !== null && c.stock_teorico_reconteo !== null &&
+        c.stock_reconteo === c.stock_teorico_reconteo)
+    } else if (recountNote !== null) {
+      check(c.motivo_diferencia !== null)
+    }
     for (const value of r.skus) { const sku = record(value); check(Number.isInteger(sku.c_interno) && nullableText(sku.producto) && nullableText(sku.marca) && nullableNumber(sku.precio_actual)) }
     for (const value of r.chronology) { const event = record(value); check(text(event.case_id) && timestamp(event.contado_at) && state(event.estado_diferencia) && number(event.diferencia) && (event.recontado_at === null || timestamp(event.recontado_at))) }
   } else if (action === 'export') {
