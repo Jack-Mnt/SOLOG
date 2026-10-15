@@ -88,7 +88,8 @@ export function cashierV4Panel(options = {}) {
   if (next === 'none') groups[2].accion = 'none'
   return { source: 'session', frozen: true, session: s, basis: cashierV4Basis(options), groups,
     review_queue: ['coverage', 'review'].includes(next) ? [{ grupo_id: ids.review, detalle_id: ids.detail,
-      ultima_diferencia: -2, contado_at: '2026-09-30T22:00:00Z', priority_class: reviewPriority }] : [],
+      ultima_diferencia: -2, contado_at: '2026-09-30T22:00:00Z',
+      motivo_diferencia: null, observacion_diferencia: null, priority_class: reviewPriority }] : [],
     coverage_queue: next === 'coverage' ? [ids.coverage] : [],
     daily_queue: next === 'none' ? [] : [ids.daily],
     kpis: cashierV4Kpis({ ...options, review_priority_class: reviewPriority }),
@@ -176,4 +177,21 @@ export function cashierV4Request(action = 'start', options = {}) {
   return { ...scoped, items: [action === 'save_batch'
     ? { client_observation_id: ids.observation, grupo_id: ids.coverage, stock_fisico: 10, contado_at: stamp }
     : { detalle_id: ids.detail, stock_fisico: 10, contado_at: stamp }] }
+}
+
+/** Resultados para la mutación V5. Bootstrap sigue publicando contrato V4. */
+export function cashierV5Mutation(action = 'start', options = {}) {
+  const result = cashierV4Mutation(action, options)
+  const versioned = { ...result, contract_version: 5 }
+  if (action === 'save_batch') return { ...versioned,
+    items: result.items.map(item => ({
+      ...item, motivo_diferencia: null, observacion_diferencia: null,
+    })),
+  }
+  if (action === 'recount_save_batch') return { ...versioned,
+    items: result.items.map(item => ({
+      ...item, motivo_diferencia: null, observacion_reconteo: 'Resuelto',
+    })),
+  }
+  return versioned
 }
