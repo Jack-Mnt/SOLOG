@@ -372,7 +372,7 @@ export function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
               className={[index === 0 ? "is-latest" : "", opened ? "has-observation-open" : ""].filter(Boolean).join(" ") || undefined}
               data-tone={tone}
             >
-              <header>
+              <header className={hasObservation ? "has-observations" : undefined}>
                 <time dateTime={row.event_at}>{eventTime(row.event_at)}</time>
                 <span
                   className={`admin-control__badge admin-status-badge admin-status-badge--${tone}`}
