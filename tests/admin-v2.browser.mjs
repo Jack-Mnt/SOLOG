@@ -202,6 +202,36 @@ export async function runAdminV2Browser() {
       ['Inconsistente', 'Confirmado', 'Recontado', 'Coincide'],
     )
     assert.equal(count('control_chronology_view'), 1)
+    // Las notas pertenecen al evento: sin iconos ni popups para filas sin datos.
+    assert.equal(await events.locator('.admin-control-chronology__observation-trigger').count(), 3)
+    assert.equal(await events.nth(1).locator('.admin-control-chronology__observation-trigger').count(), 0)
+    const initialButton = events.nth(2).getByRole('button', { name: /Ver observaciones de Recontado/ })
+    await initialButton.click()
+    let notes = chronologyDrawer.getByRole('region', { name: 'Observaciones del evento' })
+    await notes.getByText('Se trasladaron doce unidades sin registrar').waitFor()
+    assert.equal(await notes.getByText('Reconteo', { exact: true }).count(), 0)
+    assert.equal(await initialButton.getAttribute('aria-expanded'), 'true')
+    await page.keyboard.press('Escape')
+    await notes.waitFor({ state: 'detached' })
+    assert.equal(await chronologyDrawer.getByRole('heading', { name: 'Cronología por producto · Sede A' }).count(), 1)
+
+    const bothButton = events.nth(3).getByRole('button', { name: /Ver observaciones de Coincide/ })
+    await bothButton.click()
+    notes = chronologyDrawer.getByRole('region', { name: 'Observaciones del evento' })
+    await notes.getByText('Se observó una diferencia en la captura original').waitFor()
+    await notes.getByText('Resuelto', { exact: true }).waitFor()
+    assert.equal(await notes.getByText('Otro motivo', { exact: true }).count(), 1)
+    assert.equal(await notes.locator('time').count(), 2)
+    await notes.getByRole('button', { name: 'Cerrar observaciones' }).click()
+    await notes.waitFor({ state: 'detached' })
+
+    const recountButton = events.nth(0).getByRole('button', { name: /Ver observaciones de Inconsistente/ })
+    await recountButton.click()
+    notes = chronologyDrawer.getByRole('region', { name: 'Observaciones del evento' })
+    await notes.getByText('Se confirmó el daño durante el reconteo').waitFor()
+    await chronologyDrawer.getByText('Grupo 0', { exact: true }).click()
+    await notes.waitFor({ state: 'detached' })
+    assert.equal(count('control_chronology_view'), 1, 'Popover must not refetch chronology')
     assert.equal(calls.find(call => call.action === 'control_chronology_view').rpc, 'rpc_solog_admin_control_v1')
     assert.deepEqual(calls.find(call => call.action === 'control_chronology_view').payload, {
       site_id: 'site-a',
