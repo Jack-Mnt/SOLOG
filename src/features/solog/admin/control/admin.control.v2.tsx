@@ -9,6 +9,8 @@ import {
   ChevronDown,
   Download,
   Eye,
+  Info,
+  X,
   Search,
   SearchX,
 } from "lucide-react";
@@ -17,6 +19,7 @@ import { useAdminQuery, useAdminStore } from "../admin.v2.context";
 import type {
   AdminPayloads,
   ControlChronologyViewResponse,
+  ControlChronologyObservations,
   ControlPeriod,
   DifferenceState,
 } from "../admin.v2";
@@ -270,7 +273,72 @@ function sortedChronology(
   );
 }
 
-function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
+function observationTimestamp(value: string) {
+  return new Intl.DateTimeFormat("es-PE", {
+    timeZone: "America/Lima",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value)) + ", " + eventTime(value);
+}
+
+export function ChronologyObservationDetails({
+  observations,
+  onClose,
+}: {
+  observations: ControlChronologyObservations;
+  onClose: () => void;
+}) {
+  const reason = observations.inicial?.motivo ?? observations.reconteo?.motivo;
+  return (
+    <div className="admin-control-chronology__observation-popover"
+      role="region" aria-label="Observaciones del evento">
+      <div className="admin-control-chronology__observation-heading">
+        <strong>Motivo y observaciones</strong>
+        <IconButton aria-label="Cerrar observaciones" title="Cerrar observaciones" onClick={onClose}>
+          <X size={16} aria-hidden="true" />
+        </IconButton>
+      </div>
+      {reason && <div className="admin-control-chronology__observation-reason">
+        <span>Motivo</span><strong>{reason}</strong>
+      </div>}
+      {(["inicial", "reconteo"] as const).map((stage) => {
+        const note = observations[stage];
+        if (!note) return null;
+        return (
+          <div key={stage} className="admin-control-chronology__observation-entry">
+            <strong>{stage === "inicial" ? "Conteo inicial" : "Reconteo"}</strong>
+            <time dateTime={note.registrada_at}>{observationTimestamp(note.registrada_at)}</time>
+            <p>{note.texto}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+  const openRowRef = useRef<HTMLLIElement>(null);
+  const popupId = useId();
+
+  useEffect(() => {
+    if (openRowId === null) return;
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !openRowRef.current?.contains(event.target)) {
+        setOpenRowId(null);
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [openRowId]);
+
+  const closeAndFocus = () => {
+    openRowRef.current?.querySelector<HTMLButtonElement>(
+      ".admin-control-chronology__observation-trigger",
+    )?.focus();
+    setOpenRowId(null);
+  };
   return (
     <ol className="admin-control-chronology__timeline">
       {rows.map((row, index) => {
@@ -279,8 +347,22 @@ function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
           index > 0 ? eventDate(rows[index - 1].event_at) : null;
         const showDate = previousDate !== date;
         const tone = chronologyTone(row);
+        const hasObservation = row.observaciones.inicial !== null ||
+          row.observaciones.reconteo !== null;
+        const opened = hasObservation && openRowId === row.row_id;
         return (
-          <li className="admin-control-chronology__event" key={row.row_id}>
+          <li className="admin-control-chronology__event" key={row.row_id}
+            ref={opened ? openRowRef : null}
+            onBlur={(event) => {
+              if (opened && !event.currentTarget.contains(event.relatedTarget)) setOpenRowId(null);
+            }}
+            onKeyDown={(event) => {
+              if (opened && event.key === "Escape") {
+                event.preventDefault();
+                event.stopPropagation();
+                closeAndFocus();
+              }
+            }}>
             {showDate && (
               <div className="admin-control-chronology__date-marker">
                 {date}
@@ -297,6 +379,18 @@ function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
                 >
                   {chronologyStateLabel(row)}
                 </span>
+                {hasObservation && (
+                  <IconButton
+                    className="admin-control-chronology__observation-trigger"
+                    aria-label={`Ver observaciones de ${chronologyStateLabel(row)} · ${eventDate(row.event_at)}, ${eventTime(row.event_at)}`}
+                    title="Ver motivo y observaciones"
+                    aria-expanded={opened}
+                    aria-controls={opened ? popupId : undefined}
+                    onClick={() => setOpenRowId(current => current === row.row_id ? null : row.row_id)}
+                  >
+                    <Info size={16} aria-hidden="true" />
+                  </IconButton>
+                )}
               </header>
 
               <dl className="admin-control-chronology__event-values">
@@ -316,6 +410,11 @@ function ChronologyTimeline({ rows }: { rows: ChronologyRow[] }) {
                   </div>
                 ))}
               </dl>
+              {opened && (
+                <div id={popupId} className="admin-control-chronology__observation-wrapper">
+                  <ChronologyObservationDetails observations={row.observaciones} onClose={closeAndFocus} />
+                </div>
+              )}
             </article>
           </li>
         );
