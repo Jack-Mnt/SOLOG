@@ -11,7 +11,7 @@ import { cashierV4DraftStorageKey } from '../src/features/solog/cajero/cajero.v4
 import { SologApiError } from '../src/features/solog/errors'
 import { parseCashierHistory } from '../src/features/solog/cajero/cajero.history'
 import { draftHarness, memoryStorage, uuidFor } from './fixtures/cashier-v4-drafts'
-import { cashierV4Bootstrap, cashierV4Group, cashierV4Mutation, cashierV5Mutation, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
+import { cashierV4Bootstrap, cashierV4Group, cashierV5Mutation, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 import type { CashierV4Rpc } from '../src/features/solog/cajero/cajero.v4.api'
 
 function renderRuntime(runtime: CashierV4Runtime, route: CashierRoute) {
