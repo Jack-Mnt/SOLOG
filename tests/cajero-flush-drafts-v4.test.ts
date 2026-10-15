@@ -245,6 +245,7 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
     const record = h.coordinator.synchronize(h.scope)
     record.normal = record.delivery_state!.coverage_queue.map((grupo_id, n) => ({
       kind: 'normal', scope: h.scope, grupo_id, stock_fisico: 10, contado_at: h.stamp, client_observation_id: uuidFor(20000 + n),
+      motivo_diferencia: null, observacion_diferencia: null,
     }))
     h.storage.write(record)
     await h.coordinator.flush(h.scope)
@@ -261,6 +262,8 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
       detalle_id: uuidFor(40000 + n),
       ultima_diferencia: -1,
       contado_at: h.stamp,
+      motivo_diferencia: null,
+      observacion_diferencia: null,
       priority_class: 'review_for_coverage' as const,
     }))
     const regular = {
@@ -268,6 +271,8 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
       detalle_id: uuidFor(50002),
       ultima_diferencia: 1,
       contado_at: h.stamp,
+      motivo_diferencia: null,
+      observacion_diferencia: null,
       priority_class: 'review_regular' as const,
     }
     record.delivery_state = {
@@ -286,6 +291,8 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
       grupo_id: item.grupo_id,
       stock_fisico: 10,
       contado_at: h.stamp,
+      motivo_diferencia: null,
+      observacion_reconteo: null,
     }))
     h.storage.write(record)
 
@@ -310,6 +317,7 @@ describe('Cajero 13.3: flush y prioridad backend', () => {
     const record = h.coordinator.synchronize(h.scope)
     record.normal = record.delivery_state!.coverage_queue.map((grupo_id, n) => ({
       kind: 'normal', scope: h.scope, grupo_id, stock_fisico: 10, contado_at: h.stamp, client_observation_id: uuidFor(20000 + n),
+      motivo_diferencia: null, observacion_diferencia: null,
     }))
     h.storage.write(record)
     h.respond(async (_, args) => {
