@@ -1,6 +1,7 @@
+import { validCashierInitialObservation, validCashierRecountObservation } from './cajero.observaciones.v5'
 import { SologApiError } from '../errors'
-import { mutateCashierV4, type CashierV4Rpc } from './cajero.v4.api'
-import type { CashierV4CountItem, CashierV4RecountItem, CashierV4MutationResult } from './cajero.v4'
+import { mutateCashierV5, type CashierV4Rpc } from './cajero.v4.api'
+import type { CashierV5CountItem, CashierV5RecountItem, CashierV5MutationResult } from './cajero.v4'
 import { CashierV4Store, type CashierV4DeliveryState } from './cajero.v4.store'
 import { canCashierV4CaptureForSession, canCashierV4DeliverPendingForSession, getCashierV4SessionCapability } from './cajero.v4.capability'
 import { getCashierV4ErrorPolicy } from './cajero.v4.errors'
@@ -16,7 +17,7 @@ export type CashierV4FlushStop = 'none' | 'no_eligible_drafts' | 'missing_delive
   'delivery_not_allowed' | 'session_unavailable' | 'idempotency_conflict' | 'no_progress' | 'iteration_limit' | 'finished'
 export interface CashierV4FlushResult { confirmedBatches: number; reason: CashierV4FlushStop }
 
-function deltaDelivery(scope: CashierV4DraftScope, response: Extract<CashierV4MutationResult, { action: 'save_batch' | 'recount_save_batch' }>): CashierV4DeliveryState {
+function deltaDelivery(scope: CashierV4DraftScope, response: Extract<CashierV5MutationResult, { action: 'save_batch' | 'recount_save_batch' }>): CashierV4DeliveryState {
   const d = response.panel_delta
   return { conteo_id: scope.conteo_id, groups_revision: scope.groups_revision,
     review_queue: d.review_queue, coverage_queue: d.coverage_queue, daily_queue: d.daily_queue,
@@ -97,8 +98,15 @@ export class CashierV4DraftCoordinator {
     if (record.prepared || record.finished) throw new Error('Resuelve primero la operación preparada de esta sesión.')
     return record
   }
-  captureNormal(scope: CashierV4DraftScope, input: Omit<CashierV4CountItem, 'client_observation_id'>, metadata?: Record<string, string>): CashierV4NormalDraft {
+  captureNormal(scope: CashierV4DraftScope, input: Omit<CashierV5CountItem, 'client_observation_id'>, metadata?: Record<string, string>): CashierV4NormalDraft {
     const record = this.captureRecord(scope, input.contado_at)
+    const panel = this.store.getSnapshot().panel_state
+    const group = panel?.groups.find(group => group.grupo_id === input.grupo_id)
+    if (!group || !validCashierInitialObservation(input) ||
+        (Math.abs(input.stock_fisico - group.stock_teorico) >= 12 &&
+          (input.motivo_diferencia === null || input.observacion_diferencia === null))) {
+      throw new Error('La diferencia requiere un motivo y una explicación válida antes de guardar.')
+    }
     const previous = record.normal.find(draft => draft.grupo_id === input.grupo_id)
     const draft: CashierV4NormalDraft = { ...input, scope, kind: 'normal', metadata,
       client_observation_id: previous?.client_observation_id ?? this.uuid(), contado_at: previous?.contado_at ?? input.contado_at }
@@ -106,8 +114,19 @@ export class CashierV4DraftCoordinator {
     this.storage.write(record)
     return structuredClone(draft)
   }
-  captureRecount(scope: CashierV4DraftScope, input: CashierV4RecountItem & { grupo_id: string }, metadata?: Record<string, string>): CashierV4RecountDraft {
+  captureRecount(scope: CashierV4DraftScope, input: CashierV5RecountItem & { grupo_id: string }, metadata?: Record<string, string>): CashierV4RecountDraft {
     const record = this.captureRecord(scope, input.contado_at)
+    const panel = this.store.getSnapshot().panel_state
+    const group = panel?.groups.find(group => group.grupo_id === input.grupo_id)
+    const original = panel?.review_queue.find(item => item.detalle_id === input.detalle_id && item.grupo_id === input.grupo_id)
+    if (!group || !original || !validCashierRecountObservation(input) ||
+        (original.motivo_diferencia !== null && input.motivo_diferencia !== original.motivo_diferencia) ||
+        (input.motivo_diferencia !== null && original.motivo_diferencia === null &&
+          input.stock_fisico !== group.stock_teorico && input.observacion_reconteo === null) ||
+        (Math.abs(input.stock_fisico - group.stock_teorico) >= 12 &&
+          (input.motivo_diferencia === null || input.observacion_reconteo === null))) {
+      throw new Error('La observación del reconteo es inválida o requiere una explicación.')
+    }
     const previous = record.recount.find(draft => draft.detalle_id === input.detalle_id)
     const draft: CashierV4RecountDraft = { ...input, scope, kind: 'recount', metadata, contado_at: previous?.contado_at ?? input.contado_at }
     record.recount = [...record.recount.filter(item => item.detalle_id !== draft.detalle_id), draft]
@@ -126,15 +145,17 @@ export class CashierV4DraftCoordinator {
   private prepare(record: CashierV4SessionDrafts): CashierV4PreparedOperation | null {
     const items = eligible(record)
     if (!items.normal.length && !items.recount.length) return null
-    const common = { operation_id: this.uuid(), conteo_id: record.scope.conteo_id,
+    const common = { protocol_version: 5 as const, operation_id: this.uuid(), conteo_id: record.scope.conteo_id,
       expected_groups_revision: record.scope.groups_revision, status: 'ready' as const, response: null }
     if (items.recount.length) return { ...common, action: 'recount_save_batch', items: items.recount.slice(0, CASHIER_V4_BATCH_LIMIT)
-      .map(({ detalle_id, stock_fisico, contado_at }) => ({ detalle_id, stock_fisico, contado_at })) }
+      .map(({ detalle_id, stock_fisico, contado_at, motivo_diferencia, observacion_reconteo }) =>
+        ({ detalle_id, stock_fisico, contado_at, motivo_diferencia, observacion_reconteo })) }
     if (items.normal.length) return { ...common, action: 'save_batch', items: items.normal.slice(0, CASHIER_V4_BATCH_LIMIT)
-      .map(({ client_observation_id, grupo_id, stock_fisico, contado_at }) => ({ client_observation_id, grupo_id, stock_fisico, contado_at })) }
+      .map(({ client_observation_id, grupo_id, stock_fisico, contado_at, motivo_diferencia, observacion_diferencia }) =>
+        ({ client_observation_id, grupo_id, stock_fisico, contado_at, motivo_diferencia, observacion_diferencia })) }
     return null
   }
-  private validateConfirmation(p: CashierV4PreparedOperation, response: CashierV4MutationResult) {
+  private validateConfirmation(p: CashierV4PreparedOperation, response: CashierV5MutationResult) {
     const invalid = () => { throw new SologApiError('SOLOG_INVALID_CONTRACT_RESPONSE') }
     if (response.conteo_id !== p.conteo_id || response.action !== p.action) invalid()
     if (p.action === 'finish' || response.action === 'start' || response.action === 'finish') return
@@ -142,12 +163,18 @@ export class CashierV4DraftCoordinator {
     if (p.action === 'save_batch' && response.action === 'save_batch') {
       for (const item of p.items) {
         const saved = response.items.find(saved => saved.client_observation_id === item.client_observation_id)
-        if (!saved || saved.grupo_id !== item.grupo_id || saved.stock_fisico !== item.stock_fisico || Date.parse(saved.contado_at) !== Date.parse(item.contado_at)) invalid()
+        if (!saved || saved.grupo_id !== item.grupo_id || saved.stock_fisico !== item.stock_fisico ||
+          saved.motivo_diferencia !== item.motivo_diferencia || saved.observacion_diferencia !== item.observacion_diferencia ||
+          Date.parse(saved.contado_at) !== Date.parse(item.contado_at)) invalid()
       }
     } else if (p.action === 'recount_save_batch' && response.action === 'recount_save_batch') {
       for (const item of p.items) {
         const saved = response.items.find(saved => saved.detalle_id === item.detalle_id)
-        if (!saved || saved.stock_reconteo !== item.stock_fisico || Date.parse(saved.recontado_at) !== Date.parse(item.contado_at)) invalid()
+        if (!saved || saved.stock_reconteo !== item.stock_fisico || saved.motivo_diferencia !== item.motivo_diferencia ||
+          (saved.stock_reconteo === saved.stock_teorico_reconteo
+            ? saved.observacion_reconteo !== 'Resuelto'
+            : saved.observacion_reconteo !== item.observacion_reconteo) ||
+          Date.parse(saved.recontado_at) !== Date.parse(item.contado_at)) invalid()
       }
     } else invalid()
   }
@@ -161,9 +188,9 @@ export class CashierV4DraftCoordinator {
         // Strip local status/receipt. The business payload is reproduced verbatim on every retry.
         const base = { operation_id: p.operation_id, device_token: this.store.deviceToken,
           conteo_id: p.conteo_id, expected_groups_revision: p.expected_groups_revision }
-        response = p.action === 'finish' ? await mutateCashierV4('finish', base, this.call)
-          : p.action === 'save_batch' ? await mutateCashierV4('save_batch', { ...base, items: p.items }, this.call)
-          : await mutateCashierV4('recount_save_batch', { ...base, items: p.items }, this.call)
+        response = p.action === 'finish' ? await mutateCashierV5('finish', base, this.call)
+          : p.action === 'save_batch' ? await mutateCashierV5('save_batch', { ...base, items: p.items }, this.call)
+          : await mutateCashierV5('recount_save_batch', { ...base, items: p.items }, this.call)
         this.validateConfirmation(p, response)
         p.response = response
         this.storage.write(record) // Receipt before any local adoption/cleanup.
