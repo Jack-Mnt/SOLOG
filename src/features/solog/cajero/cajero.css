@@ -1332,3 +1332,143 @@
   border-radius: var(--radius-control);
   background: var(--color-surface-secondary);
 }
+
+
+/* Observaciones Cajero V5: diálogo secundario a la captura, tablet y escritorio. */
+.cajero-capture-detail__observation-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.cajero-capture-detail__observation-button:focus-visible,
+.cajero-observacion-dialog :is(button, input, textarea):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.cajero-observacion-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 160;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--color-dark-surface) 50%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.cajero-observacion-dialog {
+  display: grid;
+  gap: 0.85rem;
+  width: min(100%, 540px);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-elevated);
+}
+
+.cajero-observacion-dialog__header,
+.cajero-observacion-dialog__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.cajero-observacion-dialog__header h2,
+.cajero-observacion-dialog__original p,
+.cajero-observacion-dialog__hint,
+.cajero-observacion-dialog__resolved {
+  margin: 0;
+}
+
+.cajero-observacion-dialog__header h2 { font-size: 1.1rem; }
+
+.cajero-observacion-dialog__close {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+  font: inherit;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.cajero-observacion-dialog__choices {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.cajero-observacion-dialog__choices legend {
+  margin-bottom: 0.55rem;
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+
+.cajero-observacion-dialog__choices label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 36px;
+  cursor: pointer;
+  font-size: 0.86rem;
+}
+
+.cajero-observacion-dialog__choices input { accent-color: var(--color-primary); }
+
+.cajero-observacion-dialog__textarea {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+
+.cajero-observacion-dialog__textarea textarea {
+  min-width: 0;
+  width: 100%;
+  min-height: 100px;
+  padding: 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
+
+.cajero-observacion-dialog__hint {
+  color: var(--color-text-secondary);
+  font-size: 0.76rem;
+}
+
+.cajero-observacion-dialog__original,
+.cajero-observacion-dialog__resolved {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.cajero-observacion-dialog__original strong { color: var(--color-text-primary); }
+.cajero-observacion-dialog__original p { white-space: pre-wrap; }
+.cajero-observacion-dialog__actions { justify-content: flex-end; }
+@media (max-width: 599px) {
+  .cajero-observacion-backdrop { padding: 0.5rem; }
+  .cajero-observacion-dialog { max-height: calc(100dvh - 1rem); padding: 0.85rem; }
+  .cajero-observacion-dialog__actions .button { flex: 1 1 auto; }
+}
