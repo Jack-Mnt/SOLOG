@@ -104,7 +104,7 @@ export class CashierV4DraftCoordinator {
     const panel = this.store.getSnapshot().panel_state
     const group = panel?.groups.find(group => group.grupo_id === input.grupo_id)
     const normalized = { ...input, motivo_diferencia: input.motivo_diferencia ?? null,
-      observacion_diferencia: input.observacion_diferencia ?? null }
+      observacion_diferencia: input.observacion_diferencia?.trim() ?? null }
     if (!group || !validCashierInitialObservation(normalized) ||
         (Math.abs(input.stock_fisico - group.stock_teorico) >= 12 &&
           (normalized.motivo_diferencia === null || normalized.observacion_diferencia === null))) {
@@ -125,7 +125,7 @@ export class CashierV4DraftCoordinator {
     const original = panel?.review_queue.find(item => item.detalle_id === input.detalle_id && item.grupo_id === input.grupo_id)
     const normalized = { ...input,
       motivo_diferencia: input.motivo_diferencia === undefined ? original?.motivo_diferencia ?? null : input.motivo_diferencia,
-      observacion_reconteo: input.observacion_reconteo ?? null }
+      observacion_reconteo: input.observacion_reconteo?.trim() ?? null }
     if (!group || !original || !validCashierRecountObservation(normalized) ||
         (original.motivo_diferencia !== null && normalized.motivo_diferencia !== original.motivo_diferencia) ||
         (normalized.motivo_diferencia !== null && original.motivo_diferencia === null &&
