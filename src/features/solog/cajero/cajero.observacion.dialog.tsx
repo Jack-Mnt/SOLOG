@@ -30,7 +30,7 @@ export function CajeroObservacionDialog({
   const fixedReason = isRecount && priorReason !== null
   const canApply = isResolved
     ? note.trim().length === 0
-    : reason !== null && hasCashierObservationText(note)
+    : reason !== null && hasCashierObservationText(note) && !(isRecount && note.trim() === 'Resuelto')
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
     root.current?.querySelector<HTMLElement>('input:not(:disabled),textarea:not(:disabled),button:not(:disabled)')?.focus()
