@@ -1,14 +1,15 @@
-import type { CashierV4CountItem, CashierV4RecountItem, CashierV4MutationResult } from './cajero.v4'
+import { validCashierInitialObservation, validCashierRecountObservation } from './cajero.observaciones.v5'
+import type { CashierV5CountItem, CashierV5RecountItem, CashierV5MutationResult } from './cajero.v4'
 import type { CashierV4DeliveryState } from './cajero.v4.store'
-import { parseCashierV4Mutation, validateCashierV4PanelDelta } from './cajero.v4.api'
+import { parseCashierV5Mutation, validateCashierV4PanelDelta } from './cajero.v4.api'
 
 // Separate from V3's buffer/recount namespaces and startup purge. No implicit migration or deletion.
-export const CASHIER_V4_STORAGE_PREFIX = 'solog.cashier-v4.session.v1:'
+export const CASHIER_V4_STORAGE_PREFIX = 'solog.cashier-v5.session.v1:'
 export const CASHIER_V4_BATCH_LIMIT = 500
-export const CASHIER_V4_START_STORAGE_PREFIX = 'solog.cashier-v4.start.v1:'
+export const CASHIER_V4_START_STORAGE_PREFIX = 'solog.cashier-v5.start.v1:'
 export type CashierV4StartIdentity = Pick<CashierV4DraftScope, 'usuario_id' | 'sede_id' | 'dispositivo_id'>
 export interface CashierV4PreparedStart {
-  version: 1
+  version: 2
   identity: CashierV4StartIdentity
   prepared_start: { operation_id: string; status: 'ready' | 'uncertain' | 'in_progress' | 'conflict' }
 }
@@ -19,32 +20,33 @@ export interface CashierV4DraftScope {
   conteo_id: string
   groups_revision: number
 }
-export interface CashierV4NormalDraft extends CashierV4CountItem {
+export interface CashierV4NormalDraft extends CashierV5CountItem {
   kind: 'normal'
   scope: CashierV4DraftScope
   metadata?: Record<string, string>
 }
-export interface CashierV4RecountDraft extends CashierV4RecountItem {
+export interface CashierV4RecountDraft extends CashierV5RecountItem {
   kind: 'recount'
   grupo_id: string
   scope: CashierV4DraftScope
   metadata?: Record<string, string>
 }
 interface PreparedBase {
+  protocol_version: 5
   operation_id: string
   conteo_id: string
   expected_groups_revision: number
   status: 'ready' | 'uncertain' | 'in_progress' | 'conflict' | 'rejected'
   // Durable receipt allows local confirmation to resume after a storage/store failure.
-  response: CashierV4MutationResult | null
+  response: CashierV5MutationResult | null
 }
 export type CashierV4PreparedOperation = PreparedBase & (
-  | { action: 'save_batch'; items: CashierV4CountItem[] }
-  | { action: 'recount_save_batch'; items: CashierV4RecountItem[] }
+  | { action: 'save_batch'; items: CashierV5CountItem[] }
+  | { action: 'recount_save_batch'; items: CashierV5RecountItem[] }
   | { action: 'finish' }
 )
 export interface CashierV4SessionDrafts {
-  version: 1
+  version: 2
   scope: CashierV4DraftScope
   normal: CashierV4NormalDraft[]
   recount: CashierV4RecountDraft[]
@@ -55,7 +57,7 @@ export interface CashierV4SessionDrafts {
 }
 
 function check(condition: unknown): asserts condition {
-  if (!condition) throw new Error('La persistencia Cajero V4 es inválida. Se conserva para revisión.')
+  if (!condition) throw new Error('La persistencia Cajero V5 es inválida. Se conserva para revisión.')
 }
 function object(value: unknown): Record<string, unknown> {
   check(value && typeof value === 'object' && !Array.isArray(value))
@@ -69,6 +71,8 @@ function observation(value: unknown, normal: boolean) {
   if (normal) uuid(item.grupo_id)
   check(typeof item.stock_fisico === 'number' && Number.isFinite(item.stock_fisico) && item.stock_fisico >= 0)
   check(typeof item.contado_at === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(item.contado_at) && Number.isFinite(Date.parse(item.contado_at)))
+  if (normal) check(validCashierInitialObservation(item))
+  else check(validCashierRecountObservation(item))
   if (item.metadata !== undefined) check(Object.values(object(item.metadata)).every(value => typeof value === 'string'))
 }
 function unique(values: unknown[]) { check(new Set(values).size === values.length) }
@@ -79,7 +83,7 @@ export function cashierV4StartStorageKey(identity: CashierV4StartIdentity) {
 }
 function validatePreparedStart(value: unknown): CashierV4PreparedStart {
   const r = object(value), identity = object(r.identity), p = object(r.prepared_start)
-  check(r.version === 1 && Object.keys(r).sort().join(',') === 'identity,prepared_start,version')
+  check(r.version === 2 && Object.keys(r).sort().join(',') === 'identity,prepared_start,version')
   check(Object.keys(identity).sort().join(',') === 'dispositivo_id,sede_id,usuario_id')
   cashierV4StartStorageKey(identity as unknown as CashierV4StartIdentity)
   check(Object.keys(p).sort().join(',') === 'operation_id,status')
@@ -100,12 +104,12 @@ export function cashierV4DraftStorageKey(scope: CashierV4DraftScope) {
 }
 export function emptyCashierV4SessionDrafts(scope: CashierV4DraftScope): CashierV4SessionDrafts {
   validateCashierV4DraftScope(scope)
-  return { version: 1, scope, normal: [], recount: [], delivery_state: null, prepared: null, issue: null, finished: false }
+  return { version: 2, scope, normal: [], recount: [], delivery_state: null, prepared: null, issue: null, finished: false }
 }
 
 export function validateCashierV4SessionDrafts(value: unknown): CashierV4SessionDrafts {
   const record = object(value)
-  check(record.version === 1 && typeof record.finished === 'boolean')
+  check(record.version === 2 && typeof record.finished === 'boolean')
   const scope = validateCashierV4DraftScope(record.scope)
   for (const kind of ['normal', 'recount'] as const) {
     const items = record[kind]
@@ -139,6 +143,7 @@ export function validateCashierV4SessionDrafts(value: unknown): CashierV4Session
   }
   if (record.prepared !== null) {
     const p = object(record.prepared)
+    check(p.protocol_version === 5)
     uuid(p.operation_id)
     check(p.conteo_id === scope.conteo_id && p.expected_groups_revision === scope.groups_revision)
     check(['ready', 'uncertain', 'in_progress', 'conflict', 'rejected'].includes(String(p.status)))
@@ -150,13 +155,14 @@ export function validateCashierV4SessionDrafts(value: unknown): CashierV4Session
       p.items.forEach(item => {
         observation(item, p.action === 'save_batch')
         check(Object.keys(object(item)).sort().join(',') === (p.action === 'save_batch'
-          ? 'client_observation_id,contado_at,grupo_id,stock_fisico' : 'contado_at,detalle_id,stock_fisico'))
+          ? 'client_observation_id,contado_at,grupo_id,motivo_diferencia,observacion_diferencia,stock_fisico'
+          : 'contado_at,detalle_id,motivo_diferencia,observacion_reconteo,stock_fisico'))
       })
       unique(p.items.map(value => object(value)[p.action === 'save_batch' ? 'client_observation_id' : 'detalle_id']))
       if (p.action === 'save_batch') unique(p.items.map(value => object(value).grupo_id))
     }
     if (p.response !== null) {
-      const response = parseCashierV4Mutation(p.response, p.action as CashierV4PreparedOperation['action'])
+      const response = parseCashierV5Mutation(p.response, p.action as CashierV4PreparedOperation['action'])
       check(response.conteo_id === scope.conteo_id)
     }
   }
@@ -186,8 +192,8 @@ export class CashierV4DraftStorage {
     }
     this.storage.setItem(cashierV4StartStorageKey(record.identity), JSON.stringify(record))
   }
-  confirmStart(identity: CashierV4StartIdentity, operationId: string, response: CashierV4MutationResult) {
-    const parsed = parseCashierV4Mutation(response, 'start'), previous = this.readStart(identity)
+  confirmStart(identity: CashierV4StartIdentity, operationId: string, response: CashierV5MutationResult) {
+    const parsed = parseCashierV5Mutation(response, 'start'), previous = this.readStart(identity)
     check(previous?.prepared_start.operation_id === operationId && parsed.panel_state.session.usuario_id === identity.usuario_id &&
       parsed.panel_state.session.sede_id === identity.sede_id)
     this.storage.removeItem(cashierV4StartStorageKey(identity))
@@ -208,7 +214,7 @@ export class CashierV4DraftStorage {
       if (existing.prepared && !record.prepared) check(existing.prepared.response !== null)
       if (existing.prepared && record.prepared) {
         const business = (p: CashierV4PreparedOperation) => JSON.stringify({
-          action: p.action, operation_id: p.operation_id, conteo_id: p.conteo_id,
+          protocol_version: p.protocol_version, action: p.action, operation_id: p.operation_id, conteo_id: p.conteo_id,
           expected_groups_revision: p.expected_groups_revision, ...('items' in p ? { items: p.items } : {}),
         })
         check(business(existing.prepared) === business(record.prepared))
