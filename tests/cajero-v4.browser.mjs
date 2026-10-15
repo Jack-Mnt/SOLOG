@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { createServer } from 'vite'
-import { cashierV4Bootstrap, cashierV4Mutation, cashierV4Panel, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
+import { cashierV4Bootstrap, cashierV5Mutation, cashierV4Panel, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 
 const playwrightModule = process.env.SOLOG_PLAYWRIGHT_MODULE
   ? await import(pathToFileURL(process.env.SOLOG_PLAYWRIGHT_MODULE).href)
@@ -72,7 +72,7 @@ async function scenario({ startAction = 'coverage', preSessionAction = 'coverage
       daily_queue: [], kpis: { ...panelA.kpis, daily_pending: 0 }, next_action: 'coverage' }
     const observation = { kind: 'normal', scope, client_observation_id: ids.observation, grupo_id: ids.coverage,
       stock_fisico: 10, contado_at: b.recovery_sessions[0].iniciado_at }
-    const key = 'solog.cashier-v4.session.v1:' + [scope.usuario_id, scope.sede_id, scope.dispositivo_id, scope.conteo_id, scope.groups_revision].join(':')
+    const key = 'solog.cashier-v5.session.v1:' + [scope.usuario_id, scope.sede_id, scope.dispositivo_id, scope.conteo_id, scope.groups_revision].join(':')
     const record = { version: 1, scope, normal: [observation], recount: [], delivery_state: delivery, prepared: null, issue: null, finished: false }
     await context.addInitScript(({ key, record }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(record)) }, { key, record })
   }
@@ -89,7 +89,7 @@ async function scenario({ startAction = 'coverage', preSessionAction = 'coverage
       stock_fisico: 10, contado_at: panel.session.iniciado_at }
       : { kind: 'normal', scope, client_observation_id: ids.observation, grupo_id: ids.coverage,
         stock_fisico: 10, contado_at: panel.session.iniciado_at }
-    const key = 'solog.cashier-v4.session.v1:' + [scope.usuario_id, scope.sede_id, scope.dispositivo_id, scope.conteo_id, scope.groups_revision].join(':')
+    const key = 'solog.cashier-v5.session.v1:' + [scope.usuario_id, scope.sede_id, scope.dispositivo_id, scope.conteo_id, scope.groups_revision].join(':')
     const record = { version: 1, scope, normal: recount ? [] : [observation], recount: recount ? [observation] : [], delivery_state: delivery, prepared: null, issue: null, finished: false }
     await context.addInitScript(({ key, record }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(record)) }, { key, record })
     b.server_now = new Date(Date.parse(panel.session.expira_at) + 1000).toISOString()
@@ -117,17 +117,19 @@ async function scenario({ startAction = 'coverage', preSessionAction = 'coverage
         precio: 4, valor_diferencia: 4, estado_diferencia: 'Inválido', contado_at: b.server_now, recontado_at: null,
         snapshot_referencia_id: null, primer_snapshot_posterior_id: null, snapshot_posterior_id: null, snapshot_reconteo_id: null,
         stock_posterior: null, stock_teorico_reconteo: null, stock_reconteo: null,
+        motivo_diferencia: null, observacion_diferencia: null, observacion_reconteo: null,
       }, {
         detalle_id: ids.savedDetail, grupo_id: ids.review, grupo: 'Grupo histórico coincide', categoria: 'Abarrotes', stock_teorico: 12, stock_fisico: 10, diferencia: 0,
         precio: 4, valor_diferencia: 0, estado_diferencia: 'Coincide', contado_at: b.server_now, recontado_at: b.server_now,
         snapshot_referencia_id: ids.snapshot, primer_snapshot_posterior_id: ids.snapshot, snapshot_posterior_id: ids.snapshot, snapshot_reconteo_id: ids.snapshot,
         stock_posterior: 10, stock_teorico_reconteo: 10, stock_reconteo: 10,
+        motivo_diferencia: null, observacion_diferencia: null, observacion_reconteo: 'Resuelto',
       }] })
-    assert.equal(rpc, 'rpc_solog_cashier_mutate_v4')
+    assert.equal(rpc, 'rpc_solog_cashier_mutate_v5')
     const action = body.p_action, payload = body.p_payload
     if (expiredWithDraft || expiredWithoutDraft) {
       const localRecord = await page.evaluate(conteoId => Object.keys(localStorage)
-        .filter(key => key.startsWith('solog.cashier-v4.session.v1:'))
+        .filter(key => key.startsWith('solog.cashier-v5.session.v1:'))
         .map(key => JSON.parse(localStorage.getItem(key))).find(record => record.scope.conteo_id === conteoId), payload.conteo_id)
       assert.equal(localRecord.prepared.operation_id, payload.operation_id, 'Operación persistida antes del RPC')
       assert.equal(localRecord.scope.groups_revision, payload.expected_groups_revision)
@@ -135,13 +137,13 @@ async function scenario({ startAction = 'coverage', preSessionAction = 'coverage
     if (action === 'start') {
       startAttempts++
       if (startRefreshError && startAttempts === 1) return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 'P0001', message: 'SOLOG_STOCK_EXPIRED', details: '', hint: '' }) })
-      const result = cashierV4Mutation('start', { next_action: startAction, ronda: round })
+      const result = cashierV5Mutation('start', { next_action: startAction, ronda: round })
       b = cashierV4Bootstrap('active', { next_action: startAction, ronda: round })
       if (startTimeout && startAttempts === 1) return route.abort('timedout')
       if (startTimeout && startAttempts > 1) result.replay = true
       return reply(result)
     }
-    const result = cashierV4Mutation(action, { ronda: round })
+    const result = cashierV5Mutation(action, { ronda: round })
     result.conteo_id = payload.conteo_id
     if (action === 'finish') {
       if (finishFailure && ++finishAttempts === 1) return route.abort('timedout')
@@ -221,11 +223,11 @@ async function capture(page, review = false, daily = false) {
 }
 const nav = page => page.getByRole('navigation', { name: 'Panel Cajero' })
 const localRecords = page => page.evaluate(() => Object.keys(localStorage)
-  .filter(key => key.startsWith('solog.cashier-v4.session.v1:')).map(key => JSON.parse(localStorage.getItem(key))))
+  .filter(key => key.startsWith('solog.cashier-v5.session.v1:')).map(key => JSON.parse(localStorage.getItem(key))))
 const noTechnicalLifecycle = async page => {
   assert.doesNotMatch(await page.locator('body').innerText(), /Recovery|Sesión vencida/i)
 }
-const mutations = calls => calls.filter(call => call.rpc === 'rpc_solog_cashier_mutate_v4')
+const mutations = calls => calls.filter(call => call.rpc === 'rpc_solog_cashier_mutate_v5')
 try {
   await scenario({ initial: 'active', expiredWithoutDraft: true }, async (page, calls) => {
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
@@ -500,7 +502,7 @@ try {
     assert.equal(await nav(page).getByRole('button', { name: 'Historial', exact: true }).count(), 1)
     await page.getByRole('button', { name: 'Finalizar conteo', exact: true }).click()
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
-    assert.deepEqual(calls.filter(c => c.rpc === 'rpc_solog_cashier_mutate_v4').map(c => c.body.p_action), ['start', 'save_batch', 'finish'])
+    assert.deepEqual(calls.filter(c => c.rpc === 'rpc_solog_cashier_mutate_v5').map(c => c.body.p_action), ['start', 'save_batch', 'finish'])
     console.log('PASS pre-session → start coverage → draft → save/delta review → finish')
   })
   await scenario({ startAction: 'review' }, async (page, calls) => {
@@ -561,7 +563,7 @@ try {
   })
   await scenario({ initial: 'active', expiredWithDraft: true }, async (page, calls) => {
     await page.getByRole('button', { name: 'Iniciar conteo', exact: true }).waitFor()
-    const actions = calls.filter(c => c.rpc === 'rpc_solog_cashier_mutate_v4').map(c => c.body.p_action)
+    const actions = calls.filter(c => c.rpc === 'rpc_solog_cashier_mutate_v5').map(c => c.body.p_action)
     assert.deepEqual(actions, ['save_batch', 'finish'])
     assert.equal(await page.getByText('Recovery', { exact: false }).count(), 0)
     assert.equal(await page.getByText('Sesión vencida', { exact: false }).count(), 0)
