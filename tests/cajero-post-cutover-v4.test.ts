@@ -9,7 +9,7 @@ import { CajeroV4 } from '../src/features/solog/cajero/cajero.v4.ui'
 import { SologApiError } from '../src/features/solog/errors'
 import type { CashierV4Rpc } from '../src/features/solog/cajero/cajero.v4.api'
 import { draftHarness, memoryStorage, uuidFor } from './fixtures/cashier-v4-drafts'
-import { cashierV4Bootstrap, cashierV4Mutation, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
+import { cashierV4Bootstrap, cashierV5Mutation, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 
 const identity = { usuario_id: ids.user, sede_id: ids.site, dispositivo_id: ids.device }
 function startHarness(call?: CashierV4Rpc, raw = memoryStorage()) {
@@ -30,9 +30,9 @@ function html(runtime: CashierV4Runtime) {
 describe('13.5A start persistente', () => {
   test('persiste ready antes de RPC; success confirma y limpia', async () => {
     const h = startHarness(async (name, args) => {
-      expect(name).toBe('rpc_solog_cashier_mutate_v4')
+      expect(name).toBe('rpc_solog_cashier_mutate_v5')
       expect(h.storage.readStart(identity)?.prepared_start).toEqual({ operation_id: args.p_payload.operation_id, status: 'ready' })
-      return cashierV4Mutation('start')
+      return cashierV5Mutation('start')
     })
     await h.runtime.start(); expect(h.storage.readStart(identity)).toBeNull()
     expect(h.store.getSnapshot().panel_state?.session.id).toBe(ids.session)
@@ -40,7 +40,7 @@ describe('13.5A start persistente', () => {
   test('escritura fallida NO llama backend', async () => {
     const raw = memoryStorage(); raw.setItem = () => { throw new Error('quota') }
     let calls = 0
-    const h = startHarness(async () => { calls++; return cashierV4Mutation('start') }, raw)
+    const h = startHarness(async () => { calls++; return cashierV5Mutation('start') }, raw)
     await expect(h.runtime.start()).rejects.toThrow('quota'); expect(calls).toBe(0)
   })
   test('timeout → reload → retry/replay conserva UUID, reconstruye token y limpia', async () => {
@@ -48,7 +48,7 @@ describe('13.5A start persistente', () => {
     const h = startHarness(async (_name, args) => { requests.push(structuredClone(args.p_payload)); throw new Error('timeout') })
     await expect(h.runtime.start()).rejects.toThrow('timeout')
     expect(h.storage.readStart(identity)?.prepared_start.status).toBe('uncertain')
-    const reloaded = startHarness(async (_name, args) => { requests.push(structuredClone(args.p_payload)); return { ...cashierV4Mutation('start'), replay: true } }, h.raw)
+    const reloaded = startHarness(async (_name, args) => { requests.push(structuredClone(args.p_payload)); return { ...cashierV5Mutation('start'), replay: true } }, h.raw)
     expect(reloaded.runtime.getSnapshot().preparedStart?.prepared_start.operation_id).toBe(uuidFor(1))
     await reloaded.runtime.start(); expect(requests[1]).toEqual(requests[0])
     expect(reloaded.generated()).toBe(0); expect(reloaded.storage.readStart(identity)).toBeNull()
@@ -62,25 +62,25 @@ describe('13.5A start persistente', () => {
   })
   test('operation in progress conserva ID y permite retry explícito', async () => {
     let calls = 0
-    const h = startHarness(async (_name, args) => { expect(args.p_payload.operation_id).toBe(uuidFor(1)); if (++calls === 1) throw new SologApiError('SOLOG_OPERATION_IN_PROGRESS'); return cashierV4Mutation('start') })
+    const h = startHarness(async (_name, args) => { expect(args.p_payload.operation_id).toBe(uuidFor(1)); if (++calls === 1) throw new SologApiError('SOLOG_OPERATION_IN_PROGRESS'); return cashierV5Mutation('start') })
     await expect(h.runtime.start()).rejects.toThrow(); expect(h.storage.readStart(identity)?.prepared_start.status).toBe('in_progress')
     await h.runtime.start(); expect(h.generated()).toBe(1)
   })
   test('conflict sobrevive reload; no genera UUID alternativo ni llama otra RPC', async () => {
     const h = startHarness(async () => { throw new SologApiError('SOLOG_IDEMPOTENCY_CONFLICT') }); await expect(h.runtime.start()).rejects.toThrow()
     let calls = 0
-    const next = startHarness(async () => { calls++; return cashierV4Mutation('start') }, h.raw)
+    const next = startHarness(async () => { calls++; return cashierV5Mutation('start') }, h.raw)
     await expect(next.runtime.start()).rejects.toThrow(); expect(next.generated()).toBe(0); expect(calls).toBe(0)
     expect(next.storage.readStart(identity)?.prepared_start.status).toBe('conflict')
   })
   test('otra identidad no reutiliza prepared start', async () => {
-    const h = startHarness(async () => cashierV4Mutation('start'))
+    const h = startHarness(async () => cashierV5Mutation('start'))
     const other = { ...identity, dispositivo_id: uuidFor(99) }
-    h.storage.writeStart({ version: 1, identity: other, prepared_start: { operation_id: uuidFor(77), status: 'uncertain' } })
+    h.storage.writeStart({ version: 2, identity: other, prepared_start: { operation_id: uuidFor(77), status: 'uncertain' } })
     await h.runtime.start(); expect(h.generated()).toBe(1); expect(h.storage.readStart(other)?.prepared_start.operation_id).toBe(uuidFor(77))
   })
   test('start corrupto se conserva y bloquea antes de generar UUID/RPC', async () => {
-    let calls = 0; const h = startHarness(async () => { calls++; return cashierV4Mutation('start') })
+    let calls = 0; const h = startHarness(async () => { calls++; return cashierV5Mutation('start') })
     const key = cashierV4StartStorageKey(identity); h.raw.setItem(key, '{broken'); h.runtime.hydrate()
     await expect(h.runtime.start()).rejects.toThrow(); expect(h.raw.getItem(key)).toBe('{broken')
     expect(calls).toBe(0); expect(h.generated()).toBe(0); expect(h.runtime.getSnapshot().error).toBeTruthy()
@@ -194,7 +194,7 @@ describe('13.5A residuos y refresh', () => {
     h.coordinator.captureRecount(h.scope, { grupo_id: ids.review, detalle_id: ids.detail, stock_fisico: 2, contado_at: h.stamp })
     const r = h.storage.read(h.scope); r.finished = true; r.delivery_state = null; h.storage.write(r)
     expect(cashierV4LocalPending(r)).toBe(0)
-    const result = cashierV4Mutation('start'); result.conteo_id = uuidFor(81); result.panel_state.session.id = result.conteo_id
+    const result = cashierV5Mutation('start'); result.conteo_id = uuidFor(81); result.panel_state.session.id = result.conteo_id
     const pre = startHarness(async () => result, h.raw)
     expect(pre.runtime.pendingCount).toBe(0); expect(pre.runtime.recoveryPending).toEqual([])
     await pre.runtime.logoutSafe(async () => {})
