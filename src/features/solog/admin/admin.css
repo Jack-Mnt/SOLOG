@@ -1124,7 +1124,7 @@
   top: 17px;
   transform: none;
 }
-.admin-control-chronology__event > article > header {
+.admin-control-chronology__event > article > header.has-observations {
   flex-wrap: wrap;
 }
 .admin-control-chronology__observation-trigger.icon-button {
