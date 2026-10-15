@@ -52,10 +52,15 @@ export function chronologyViewFixture(p) {
       ? gridFixture(p.site_id,'current_biweekly').period
       : { key: 'previous_counts', from: '2026-07-21', to: '2026-08-31' },
     chronology: current ? [
-      { row_id:'final-1',event_at:'2026-09-18T22:30:00Z',state:'Inconsistente',theoretical:114,initial_difference:-10,found_difference:5 },
-      { row_id:'final-0',event_at:'2026-09-16T22:30:00Z',state:'Confirmada',difference:5,valued_difference:110 },
-      { row_id:'initial-1',event_at:'2026-09-04T22:30:00Z',state:'Recontado',physical:104,difference:-10 },
-      { row_id:'initial-0',event_at:'2026-09-03T22:30:00Z',state:'Coincide',stock:13 },
+      { row_id:'final-1',event_at:'2026-09-18T22:30:00Z',state:'Inconsistente',theoretical:114,initial_difference:-10,found_difference:5,
+        observaciones: { inicial: null, reconteo: { motivo: 'Dañado', texto: 'Se confirmó el daño durante el reconteo', registrada_at: '2026-09-18T22:30:00Z' } } },
+      { row_id:'final-0',event_at:'2026-09-16T22:30:00Z',state:'Confirmada',difference:5,valued_difference:110,
+        observaciones: { inicial: null, reconteo: null } },
+      { row_id:'initial-1',event_at:'2026-09-04T22:30:00Z',state:'Recontado',physical:104,difference:-10,
+        observaciones: { inicial: { motivo: 'Transferencia', texto: 'Se trasladaron doce unidades sin registrar', registrada_at: '2026-09-04T22:30:00Z' }, reconteo: null } },
+      { row_id:'initial-0',event_at:'2026-09-03T22:30:00Z',state:'Coincide',stock:13,
+        observaciones: { inicial: { motivo: 'Otro motivo', texto: 'Se observó una diferencia en la captura original', registrada_at: '2026-09-02T22:30:00Z' },
+          reconteo: { motivo: 'Otro motivo', texto: 'Resuelto', registrada_at: '2026-09-03T22:30:00Z' } } },
     ] : [],
   }
 }
