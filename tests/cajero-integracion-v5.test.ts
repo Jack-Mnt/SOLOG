@@ -4,7 +4,6 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { SologApiError } from '../src/features/solog/errors'
 import { CajeroObservacionDialog } from '../src/features/solog/cajero/cajero.observacion.dialog'
 import { hasUnsavedCaptureEdit } from '../src/features/solog/cajero/cajero.capture.guard'
-import { CashierV4Runtime } from '../src/features/solog/cajero/cajero.v4.runtime'
 import { draftHarness } from './fixtures/cashier-v4-drafts'
 import { cashierV4Bootstrap, cashierV4Ids as ids } from './fixtures/cashier-v4.mjs'
 
