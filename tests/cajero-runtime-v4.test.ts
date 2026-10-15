@@ -274,7 +274,7 @@ describe('runtime productivo V4', () => {
   })
   test('start incierto reutiliza UUID y payload al reintentar', async () => {
     const b = cashierV4Bootstrap('pre_session'), now = Date.parse(b.server_now), requests: unknown[] = []
-    const call: CashierV4Rpc = async (_name, args) => { requests.push(structuredClone(args.p_payload)); if (requests.length === 1) throw new Error('network'); return cashierV4Mutation('start') }
+    const call: CashierV4Rpc = async (_name, args) => { requests.push(structuredClone(args.p_payload)); if (requests.length === 1) throw new Error('network'); return cashierV5Mutation('start') }
     const store = new CashierV4Store(ids.user, 'test-device-token-0000000000000000', call, () => now); store.acceptBootstrap(b)
     const runtime = new CashierV4Runtime(store, new CashierV4DraftStorage(memoryStorage()), call, () => uuidFor(61), () => now)
     await expect(runtime.start()).rejects.toThrow('network')
