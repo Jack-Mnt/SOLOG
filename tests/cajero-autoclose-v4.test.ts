@@ -47,7 +47,8 @@ describe('Cajero V4 — Fase 1 autocierre y recovery transparente', () => {
     expect(h.storage.read(h.scope).normal).toEqual([])
     expect(h.storage.read(h.scope).finished).toBe(true)
     expect(h.requests[0].payload.items).toEqual([{ client_observation_id: draft.client_observation_id,
-      grupo_id: draft.grupo_id, stock_fisico: draft.stock_fisico, contado_at: draft.contado_at }])
+      grupo_id: draft.grupo_id, stock_fisico: draft.stock_fisico, contado_at: draft.contado_at,
+      motivo_diferencia: draft.motivo_diferencia, observacion_diferencia: draft.observacion_diferencia }])
     expect(h.requests[0].payload.operation_id).not.toBe(h.requests[1].payload.operation_id)
     expect(h.runtime.pendingCount).toBe(0)
     expect(h.runtime.canCapture('coverage')).toBe(false)
@@ -58,7 +59,8 @@ describe('Cajero V4 — Fase 1 autocierre y recovery transparente', () => {
     const draft = h.storage.read(h.scope).recount[0]
     await h.runtime.autoCloseExpiredSession()
     expect(h.requests.map(item => item.action)).toEqual(['recount_save_batch', 'finish'])
-    expect(h.requests[0].payload.items).toEqual([{ detalle_id: draft.detalle_id, stock_fisico: draft.stock_fisico, contado_at: draft.contado_at }])
+    expect(h.requests[0].payload.items).toEqual([{ detalle_id: draft.detalle_id, stock_fisico: draft.stock_fisico, contado_at: draft.contado_at,
+      motivo_diferencia: draft.motivo_diferencia, observacion_reconteo: draft.observacion_reconteo }])
     expect(h.runtime.pendingCount).toBe(0)
   })
 
