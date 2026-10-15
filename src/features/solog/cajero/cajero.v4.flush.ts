@@ -309,7 +309,7 @@ export class CashierV4DraftCoordinator {
             delivery.review_queue.some(item => item.detalle_id === draft.detalle_id && item.grupo_id === draft.grupo_id))
           : record.normal.length > 0 || record.recount.length > 0
         if (pending) throw new Error('Quedan drafts entregables o sin autoridad suficiente para resolver.')
-        record.prepared = { action: 'finish', operation_id: this.uuid(), conteo_id: scope.conteo_id,
+        record.prepared = { protocol_version: 5, action: 'finish', operation_id: this.uuid(), conteo_id: scope.conteo_id,
           expected_groups_revision: scope.groups_revision, status: 'ready', response: null }
         this.storage.write(record)
       }
