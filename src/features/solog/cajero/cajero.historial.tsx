@@ -256,6 +256,16 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
                           <div><dt>Reconteo</dt><dd className={item.estado_diferencia === 'Inconsistente' ? 'cajero-history-value--discarded' : undefined}>{item.stock_reconteo ?? '—'}</dd></div>
                         </>
                       ) : null}
+                      {item.observacion_diferencia !== null ? <>
+                        <div><dt>Motivo del conteo inicial</dt><dd>{item.motivo_diferencia}</dd></div>
+                        <div><dt>Observación inicial</dt><dd className="cajero-history-observation">{item.observacion_diferencia}</dd></div>
+                      </> : null}
+                      {item.observacion_diferencia === null && item.motivo_diferencia !== null ? (
+                        <div><dt>Motivo registrado en reconteo</dt><dd>{item.motivo_diferencia}</dd></div>
+                      ) : null}
+                      {item.observacion_reconteo !== null ? (
+                        <div><dt>Observación de reconteo</dt><dd className="cajero-history-observation">{item.observacion_reconteo}</dd></div>
+                      ) : null}
                     </dl>
                   ) : null}
                 </article>
