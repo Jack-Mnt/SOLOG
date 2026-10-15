@@ -21,7 +21,7 @@ Las tres migraciones se aplicaron con éxito, registradas en el historial remoto
 |---|---|---|
 | `20261015052759` | `solog_dashboard_fase1_estructuras_pasivas_v1` | `docs/SOLOG_Backend_Dashboard_Estructuras_Fase1_V1.sql` |
 | `20261015052949` | `solog_dashboard_fase1_cortes_integridad_v1` | `docs/SOLOG_Backend_Dashboard_Correccion_Cortes_Fase1_V1.sql` |
-| Posterior (confirmar versión concreta en `supabase_migrations.schema_migrations`) | `solog_dashboard_fase1_indices_fk_v1` | `docs/SOLOG_Backend_Dashboard_Indices_Fase1_V1.sql` |
+| `20261015053106` | `solog_dashboard_fase1_indices_fk_v1` | `docs/SOLOG_Backend_Dashboard_Indices_Fase1_V1.sql` |
 
 **La fuente ejecutable exacta son los tres archivos SQL ordenados**, no el contrato conceptual previo. El segundo SQL refuerza la validación de `NULL` del primero; el tercero crea cuatro índices adicionales. No se ocultó la corrección ni se reescribió el SQL ya aplicado.
 
