@@ -61,7 +61,10 @@ export function chronologyViewFixture(p) {
       { row_id:'initial-0',event_at:'2026-09-03T22:30:00Z',state:'Coincide',stock:13,
         observaciones: { inicial: { motivo: 'Otro motivo', texto: 'Se observó una diferencia en la captura original', registrada_at: '2026-09-02T22:30:00Z' },
           reconteo: { motivo: 'Otro motivo', texto: 'Resuelto', registrada_at: '2026-09-03T22:30:00Z' } } },
-    ] : [],
+    ] : [
+      { row_id:'previous-0',event_at:'2026-08-20T16:10:00Z',state:'Recontar',physical:9,difference:-3,
+        observaciones: { inicial: { motivo: 'Venta por mayor', texto: 'Entrega registrada al cierre anterior', registrada_at:'2026-08-20T16:10:00Z' }, reconteo: null } },
+    ],
   }
 }
 export function responseFixture(action, payload = {}) { return action === 'bootstrap' ? bootstrapFixture() : action === 'dashboard_cards' ? cardsFixture() : action === 'shift_grid' ? gridFixture(payload.site_id, payload.period) : action === 'daily_detail_bootstrap' ? dailyBootstrapFixture(payload.site_id,payload.origin_date,payload.stock_class) : action === 'daily_detail_page' ? dailyPageOptimizedFixture(payload) : action === 'control_groups' ? groupsFixture(payload) : action === 'control_chronology_view' ? chronologyViewFixture(payload) : exportFixture(payload.site_id,payload.period) }
