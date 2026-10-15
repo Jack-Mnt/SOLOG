@@ -38,7 +38,8 @@ describe('Cajero V4: contrato independiente', () => {
   test('valida las tres colas y conserva metadata de review', () => {
     const panel = validateCashierV4Panel(cashierV4Panel())
     expect(panel.review_queue).toEqual([{ grupo_id: ids.review, detalle_id: ids.detail,
-      ultima_diferencia: -2, contado_at: '2026-09-30T22:00:00Z', priority_class: 'review_for_coverage' }])
+      ultima_diferencia: -2, contado_at: '2026-09-30T22:00:00Z',
+      motivo_diferencia: null, observacion_diferencia: null, priority_class: 'review_for_coverage' }])
     expect(panel.coverage_queue).toEqual([])
     expect(panel.daily_queue).toEqual([ids.daily])
     expect(panel.groups.map(g => g.accion)).toEqual(['recount', 'none', 'daily', 'none'])
