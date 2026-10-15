@@ -577,6 +577,15 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
       priorText={recount ? reviewEntry?.observacion_diferencia ?? null : null}
       isRecount={recount} isResolved={resolved} mandatory={observationRequest.required}
       onApply={onApplyObservation} onCancel={() => setObservationRequest(null)}
+      onClear={() => {
+        if (selected) setNotes(current => ({
+          ...current,
+          [selected]: recount
+            ? { motivo_diferencia: reviewEntry?.motivo_diferencia ?? null, observacion_reconteo: null }
+            : { motivo_diferencia: null, observacion_diferencia: null },
+        }))
+        setObservationRequest(null)
+      }}
       onOmit={omitObservation}
     /> : null}
     {confirmExit ? <div className="cajero-confirmation-backdrop">
