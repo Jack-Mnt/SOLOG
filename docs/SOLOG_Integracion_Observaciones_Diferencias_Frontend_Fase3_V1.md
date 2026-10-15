@@ -1,10 +1,10 @@
 # SOLOG — Integración frontend — Cajero V5 y observaciones — Fase 3 V1
 
-**Estado:** IMPLEMENTADA EN `admin-work`; pruebas ejecutables y smoke humano PENDIENTES DE VALIDACIÓN.  
-**Fecha:** 2026-10-15 (America/Lima).  
-**Nivel:** C — escritura operativa e idempotencia.  
-**Fuente primaria:** `docs/SOLOG_Integracion_Observaciones_Diferencias_V1.md`.  
-**Delta de prevalencia para eliminar legacy:** `docs/SOLOG_Integracion_Observaciones_Diferencias_Frontend_SinLegacy_Delta_V1.md`.  
+**Estado:** IMPLEMENTADA EN `admin-work`; pruebas ejecutables y smoke humano PENDIENTES DE VALIDACIÓN.
+**Fecha:** 2026-10-15 (America/Lima).
+**Nivel:** C — escritura operativa e idempotencia.
+**Fuente primaria:** `docs/SOLOG_Integracion_Observaciones_Diferencias_V1.md`.
+**Delta de prevalencia para eliminar legacy:** `docs/SOLOG_Integracion_Observaciones_Diferencias_Frontend_SinLegacy_Delta_V1.md`.
 **Contrato backend congelado y desplegado:** `docs/SOLOG_Backend_Observaciones_Diferencias_Implementacion_V1.md`, complementado por `docs/SOLOG_Backend_Cajero_ReviewQueue_Observaciones_Delta_V1.md`.
 
 ## 1. Trabajo frontend implementado
@@ -59,8 +59,8 @@ git diff --check
 
 ## 4. Estado y continuidad
 
-**Fase 3:** implementada, pendiente de validaciones y smoke, no cerrada todavía.  
-**Fase 4 Admin Control:** no iniciada. El diseño del popup permanece por aprobar al comenzar Fase 4.  
+**Fase 3:** implementada, pendiente de validaciones y smoke, no cerrada todavía.
+**Fase 4 Admin Control:** no iniciada. El diseño del popup permanece por aprobar al comenzar Fase 4.
 **Corte de RPC V4 y habilitación de producción:** fuera de esta fase, pendiente de aprobación separada y de merge a `master`.
 
 Conservar todas las decisiones congeladas no reemplazadas por el delta sin legacy.
