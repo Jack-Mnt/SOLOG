@@ -6,6 +6,10 @@ import { PaletteSwitcher } from '../../theme/palette-switcher'
 import { SologApiError, type SologErrorCode } from '../errors'
 import { CajeroCalculator } from './cajero.calculadora'
 import { hasUnsavedCaptureEdit } from './cajero.capture.guard'
+import { CajeroObservacionDialog } from './cajero.observacion.dialog'
+import { validCashierInitialObservation, validCashierRecountObservation,
+  type CashierDifferenceReason, type CashierInitialObservation, type CashierRecountObservation,
+} from './cajero.observaciones.v5'
 import { CajeroHistorial } from './cajero.historial'
 import { formatCajeroClock, formatCajeroElapsed, getCajeroStockPresentation, useCajeroServerClock } from './cajero.stock'
 import { calculateCajeroValuationPreview, evaluateCajeroExpression, formatCajeroCurrency, formatCajeroDifference, getCajeroCategoryIcon, getCajeroDifferenceClass } from './cajero.utils'
@@ -382,6 +386,8 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
   const titleId = useId(), confirmTitleId = useId(), dialogRef = useRef<HTMLElement>(null), confirmationRef = useRef<HTMLElement>(null), closeRef = useRef(onClose)
   const [selected, setSelected] = useState(initialGroupId ?? null)
   const [expressions, setExpressions] = useState<Record<string, string>>({})
+  const [notes, setNotes] = useState<Record<string, CashierInitialObservation | CashierRecountObservation>>({})
+  const [observationRequest, setObservationRequest] = useState<{ required: boolean; afterSave?: () => void } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmExit, setConfirmExit] = useState(false)
   const confirmationOpenRef = useRef(false)
@@ -404,12 +410,42 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
   const difference = group && physical !== null ? physical - group.stock_teorico : null
   const valuation = group && difference !== null ? calculateCajeroValuationPreview(difference, group.precio, group.unidades_por_paquete, group.precio_paquete) : null
   const canCapture = runtime.canCapture(action)
+  const recount = action === 'review'
+  const initialObservation: CashierInitialObservation | CashierRecountObservation = recount
+    ? { motivo_diferencia: reviewEntry?.motivo_diferencia ?? null,
+      observacion_reconteo: draft && 'observacion_reconteo' in draft ? draft.observacion_reconteo : null }
+    : { motivo_diferencia: draft?.motivo_diferencia ?? null,
+      observacion_diferencia: draft && 'observacion_diferencia' in draft ? draft.observacion_diferencia : null }
+  const note = selected && notes[selected] ? notes[selected] : initialObservation
+  const savedObservation = recount
+    ? { motivo_diferencia: reviewEntry?.motivo_diferencia ?? null,
+      observacion_reconteo: draft && 'observacion_reconteo' in draft ? draft.observacion_reconteo : null }
+    : { motivo_diferencia: draft?.motivo_diferencia ?? null,
+      observacion_diferencia: draft && 'observacion_diferencia' in draft ? draft.observacion_diferencia : null }
+  const observationEdited = JSON.stringify(note) !== JSON.stringify(savedObservation)
+  const reasonLocked = recount && reviewEntry?.motivo_diferencia !== null && reviewEntry?.motivo_diferencia !== undefined
+  const noteText = 'observacion_reconteo' in note ? note.observacion_reconteo : note.observacion_diferencia
+  const resolved = recount && physical !== null && group !== undefined && physical === group.stock_teorico
+  const missingExplanation = (value: CashierInitialObservation | CashierRecountObservation) => {
+    if (!group || physical === null) return false
+    const delta = Math.abs(physical - group.stock_teorico)
+    if (!recount) {
+      return !validCashierInitialObservation(value) ||
+        (delta >= 12 && (value.motivo_diferencia === null || !('observacion_diferencia' in value) || value.observacion_diferencia === null))
+    }
+    if (resolved) return false
+    const text = 'observacion_reconteo' in value ? value.observacion_reconteo : null
+    return !validCashierRecountObservation({ motivo_diferencia: value.motivo_diferencia, observacion_reconteo: text }) ||
+      (delta >= 12 && (value.motivo_diferencia === null || text === null)) ||
+      (reviewEntry?.motivo_diferencia === null && value.motivo_diferencia !== null && text === null)
+  }
   const activeIndex = group ? groups.findIndex(item => item.grupo_id === group.grupo_id) : -1
   const hasInput = expression.trim().length > 0
   const canNavigateNext = activeIndex >= 0 && (activeIndex < groups.length - 1 || (action !== 'review' && Boolean(onNextCategory)))
   const hasUnsavedEdit = Boolean(group && selected && hasUnsavedCaptureEdit({
     edited: Object.prototype.hasOwnProperty.call(expressions, selected),
     expression, physical, savedPhysical: draft?.stock_fisico ?? null,
+    editedObservation: observationEdited,
   }))
   const requestExit = (destination: () => void) => {
     if (!hasUnsavedEdit) { destination(); return }
@@ -418,18 +454,39 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
     setConfirmExit(true)
   }
   const cancelExit = () => { confirmationOpenRef.current = false; pendingExitRef.current = null; setConfirmExit(false) }
-  const completeExit = (save: boolean) => {
-    if (save) {
-      if (!group || physical === null || !canCapture) return
-      try { runtime.capture(action, group.grupo_id, physical, expression); setError(null) }
-      catch (e) { setError(getCashierV4ErrorPolicy(e).message); cancelExit(); return }
-    } else if (selected) {
-      setExpressions(current => { const next = { ...current }; delete next[selected]; return next })
+  const clearLocalEdit = () => {
+    if (!selected) return
+    setExpressions(current => { const next = { ...current }; delete next[selected]; return next })
+    setNotes(current => { const next = { ...current }; delete next[selected]; return next })
+  }
+  const captureWithNote = (value: CashierInitialObservation | CashierRecountObservation, after: () => void): boolean => {
+    if (!group || physical === null || !canCapture) return false
+    const actual: CashierInitialObservation | CashierRecountObservation = resolved
+      ? { motivo_diferencia: value.motivo_diferencia, observacion_reconteo: null }
+      : value
+    if (missingExplanation(actual)) {
+      setObservationRequest({ required: true, afterSave: after })
+      return false
     }
+    try {
+      runtime.capture(action, group.grupo_id, physical, expression, actual)
+      setError(null)
+      clearLocalEdit()
+      after()
+      return true
+    } catch (e) {
+      setError(getCashierV4ErrorPolicy(e).message)
+      return false
+    }
+  }
+  const completeExit = (save: boolean) => {
     const destination = pendingExitRef.current
-    confirmationOpenRef.current = false
-    pendingExitRef.current = null
-    setConfirmExit(false)
+    if (save) {
+      captureWithNote(note, () => { cancelExit(); destination?.() })
+      return
+    }
+    clearLocalEdit()
+    cancelExit()
     destination?.()
   }
   useEffect(() => { closeRef.current = () => requestExit(onClose) })
@@ -458,11 +515,23 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
   const continueToNext = () => {
     if (!group) return
     if (!hasInput) { if (canNavigateNext) requestExit(navigateNext); return }
-    if (!canCapture || physical === null) return
-    try {
-      runtime.capture(action, group.grupo_id, physical, expression); setError(null)
-      navigateNext()
-    } catch (e) { setError(getCashierV4ErrorPolicy(e).message) }
+    captureWithNote(note, navigateNext)
+  }
+  const onApplyObservation = (reason: CashierDifferenceReason | null, text: string | null) => {
+    if (!selected) return
+    const next: CashierInitialObservation | CashierRecountObservation = recount
+      ? { motivo_diferencia: reasonLocked ? reviewEntry!.motivo_diferencia : reason, observacion_reconteo: text }
+      : { motivo_diferencia: reason, observacion_diferencia: text }
+    setNotes(current => ({ ...current, [selected]: next }))
+    const save = observationRequest?.afterSave
+    setObservationRequest(null)
+    if (save) captureWithNote(next, save)
+  }
+  const omitObservation = () => {
+    clearLocalEdit()
+    cancelExit()
+    setObservationRequest(null)
+    navigateNext()
   }
   return <div className="cajero-capture-backdrop" onMouseDown={e => { if (e.target === e.currentTarget && !confirmExit) requestExit(onClose) }}>
     <section className="cajero-capture-modal" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={dialogRef}>
@@ -474,7 +543,12 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
       <div className={`cajero-capture-modal__body${group ? ' cajero-capture-modal__body--detail' : ''}`}>
         {group ? <div className="cajero-capture-detail"><div className="cajero-capture-detail__information"><section className="cajero-capture-detail__card">
           <div className="cajero-capture-detail__card-heading"><h3>{group.nombre}</h3>
-            <button aria-label="Agregar observación (próximamente)" className="cajero-capture-detail__observation-button" disabled type="button"><MessageSquarePlus aria-hidden="true" size={20} /></button>
+            <button aria-label={noteText !== null ? 'Editar observación' : 'Agregar observación'}
+              className="cajero-capture-detail__observation-button"
+              disabled={!canCapture}
+              aria-haspopup="dialog"
+              onClick={() => setObservationRequest({ required: false })}
+              type="button"><MessageSquarePlus aria-hidden="true" size={20} /></button>
           </div>{group.productos.length > 1 ? <details><summary>Productos incluidos</summary><ul>{group.productos.map(p => <li key={p.c_interno}>{p.producto} - #{p.c_interno}</li>)}</ul></details> : null}
           {reviewEntry && action === 'review' ? <p>Diferencia inicial: {formatCajeroDifference(reviewEntry.ultima_diferencia)}</p> : null}
           <dl><div><dt>Stock TumiSoft</dt><dd>{group.stock_teorico}</dd></div><div><dt>Conteo</dt><dd>{physical ?? '—'}</dd></div>
@@ -495,10 +569,20 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
           })}</div></div>}
       </div>
     </section>
+    {observationRequest && group ? <CajeroObservacionDialog
+      key={selected ?? group.grupo_id}
+      initialReason={note.motivo_diferencia}
+      initialText={noteText}
+      priorReason={recount ? reviewEntry?.motivo_diferencia ?? null : null}
+      priorText={recount ? reviewEntry?.observacion_diferencia ?? null : null}
+      isRecount={recount} isResolved={resolved} mandatory={observationRequest.required}
+      onApply={onApplyObservation} onCancel={() => setObservationRequest(null)}
+      onOmit={omitObservation}
+    /> : null}
     {confirmExit ? <div className="cajero-confirmation-backdrop">
       <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-labelledby={confirmTitleId} ref={confirmationRef}>
         <h2 id={confirmTitleId}>¿Qué deseas hacer con este conteo?</h2>
-        <p>Hay una cantidad sin guardar.</p>
+        <p>Hay una cantidad u observación sin guardar.</p>
         <div className="cajero-confirmation__actions">
           <button className="button button--secondary" onClick={cancelExit} type="button">Cancelar</button>
           <button className="button button--danger" onClick={() => completeExit(false)} type="button">Descartar</button>
