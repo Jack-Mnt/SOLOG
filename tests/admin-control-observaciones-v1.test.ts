@@ -75,6 +75,7 @@ describe('Admin Control — observaciones de la cronología', () => {
       f => { f.chronology[0].observaciones.reconteo.motivo = 'No permitido' },
       f => { f.chronology[3].observaciones.reconteo.motivo = 'Dañado' },
       f => { f.chronology[3].observaciones.inicial.registrada_at = 'fecha inexistente' },
+      f => { f.chronology[0].observaciones.reconteo.texto = 'Resuelto' },
     ]
     for (const mutate of invalids) {
       const fixture = response()
