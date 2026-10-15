@@ -190,6 +190,7 @@ describe('runtime productivo V4', () => {
       detalle_id: ids.detail, grupo_id: ids.coverage, grupo: 'Grupo', categoria: 'Abarrotes', stock_teorico: 1, stock_fisico: 2, diferencia: 1, precio: 4, valor_diferencia: 4,
       estado_diferencia: 'Inválido', contado_at: '2026-10-03T13:00:00Z', recontado_at: null, snapshot_referencia_id: null, primer_snapshot_posterior_id: null,
       snapshot_posterior_id: null, snapshot_reconteo_id: null, stock_posterior: null, stock_teorico_reconteo: null, stock_reconteo: null,
+      motivo_diferencia: null, observacion_diferencia: null, observacion_reconteo: null,
     }] }
     expect(parseCashierHistory(result, 'today').items[0].estado_diferencia).toBe('Inválido')
   })
