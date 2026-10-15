@@ -29,7 +29,7 @@
 | 20261015185332 | `solog_dashboard_fase6_kpi_riesgo_movimiento_calidad_v1` | `SOLOG_Backend_Dashboard_Fase6_Riesgo_KPI_Calidad_Delta_V1.sql` |
 | 20261015185604 | `solog_dashboard_fase6_movimiento_group_lectura_set_based_v1` | `SOLOG_Backend_Dashboard_Fase6_Movimiento_SetBased_Delta_V1.sql` |
 | 20261015185726 | `solog_dashboard_fase6_actividad_dia_calidad_v1` | `SOLOG_Backend_Dashboard_Fase6_Actividad_Dia_Calidad_Delta_V1.sql` |
-| 202610151858+ | `solog_dashboard_fase6_overview_calidad_global_v1` | `SOLOG_Backend_Dashboard_Fase6_Overview_Calidad_Global_Delta_V1.sql` |
+| 20261015185850 | `solog_dashboard_fase6_overview_calidad_global_v1` | `SOLOG_Backend_Dashboard_Fase6_Overview_Calidad_Global_Delta_V1.sql` |
 
 **Prevalencia reproducible:** los 14 archivos SQL constituyen la secuencia desplegada; los `CREATE OR REPLACE` posteriores sustituyen solo cuerpos de funciones concretas. Este informe no sustituye los fuentes SQL. Los archivos del contrato son *documentación*, no código ejecutado.
 
