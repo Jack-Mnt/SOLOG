@@ -4,7 +4,7 @@ import { CashierV4DraftCoordinator } from '../../src/features/solog/cajero/cajer
 import { getCashierV4SessionCapability } from '../../src/features/solog/cajero/cajero.v4.capability'
 import type { CashierV4Rpc } from '../../src/features/solog/cajero/cajero.v4.api'
 import type { CashierV4NextAction } from '../../src/features/solog/cajero/cajero.v4'
-import { cashierV4Bootstrap, cashierV4DeviceToken, cashierV4Ids as ids, cashierV4Mutation, cashierV4Group } from './cashier-v4.mjs'
+import { cashierV4Bootstrap, cashierV4DeviceToken, cashierV4Ids as ids, cashierV5Mutation, cashierV4Group } from './cashier-v4.mjs'
 
 export const uuidFor = (n: number) => '10000000-0000-4000-8000-' + String(n).padStart(12, '0')
 export function memoryStorage(): Storage {
@@ -42,7 +42,7 @@ export function draftHarness(next: CashierV4NextAction = 'review', count?: numbe
   const stamp = initial.panel_state!.session.iniciado_at
   function responseFor(action: string, payload: Record<string, unknown>, forcedNext?: CashierV4NextAction) {
     const cap = getCashierV4SessionCapability(store.getSnapshot(), payload.conteo_id as string)!
-    const result = cashierV4Mutation(action)
+    const result = cashierV5Mutation(action)
     result.conteo_id = payload.conteo_id
     if (action === 'finish') {
       result.finalizado_at = new Date(now + store.serverOffsetMs + 1000).toISOString()
@@ -63,11 +63,16 @@ export function draftHarness(next: CashierV4NextAction = 'review', count?: numbe
     result.saved = sent.length
     result.items = sent.map((item, n) => action === 'save_batch' ? {
       ...item, detalle_id: uuidFor(90000 + n), stock_teorico: 10, diferencia: Number(item.stock_fisico) - 10,
+      motivo_diferencia: item.motivo_diferencia ?? null, observacion_diferencia: item.observacion_diferencia ?? null,
       estado_diferencia: Number(item.stock_fisico) === 10 ? 'Coincide' : 'Recontar',
     } : {
       detalle_id: item.detalle_id, grupo_id: delivery?.review_queue.find(queued => queued.detalle_id === item.detalle_id)?.grupo_id ?? ids.review,
       snapshot_reconteo_id: ids.snapshot, stock_teorico_reconteo: 10, stock_reconteo: item.stock_fisico,
-      diferencia_reconteo: 0, diferencia: 0, estado_diferencia: 'Coincide', valor_diferencia: 0, recontado_at: item.contado_at,
+      motivo_diferencia: item.motivo_diferencia ?? null,
+      observacion_reconteo: Number(item.stock_fisico) === 10 ? 'Resuelto' : item.observacion_reconteo ?? null,
+      diferencia_reconteo: Number(item.stock_fisico) - 10, diferencia: Number(item.stock_fisico) - 10,
+      estado_diferencia: Number(item.stock_fisico) === 10 ? 'Coincide' : 'Confirmada',
+      valor_diferencia: 0, recontado_at: item.contado_at,
     })
     result.panel_delta = { groups_patch: [], review_queue, coverage_queue, daily_queue,
       kpis: { ...(delivery?.kpis ?? initial.panel_state!.kpis), review_pending: review_queue.length,
