@@ -90,7 +90,7 @@ describe('Cajero V5 — motivos, guardia, escritura y recovery', () => {
       motivo_diferencia: null, observacion_reconteo: null,
     })
     const response = await h.coordinator.flush(h.scope)
-    expect(response.reason).toBe('none')
+    expect(response.confirmedBatches).toBe(1)
     expect(h.storage.read(h.scope).recount).toHaveLength(0)
     expect(h.requests[0].action).toBe('recount_save_batch')
     expect(h.requests[0].payload.items).toEqual([{
