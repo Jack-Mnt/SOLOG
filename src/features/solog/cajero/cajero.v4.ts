@@ -1,4 +1,4 @@
-import type { CashierInitialObservation, CashierRecountObservation } from './cajero.observaciones.v5'
+import type { CashierDifferenceReason, CashierInitialObservation, CashierRecountObservation } from './cajero.observaciones.v5'
 
 // Wire contract: docs/SOLOG_Backend_Contrato_Cajero_V4_Delta_Prioridades_V1.md.
 // Foundation only; the productive runtime is connected in a later phase.
@@ -110,6 +110,8 @@ export interface CashierV4ReviewQueueItem {
   detalle_id: string
   ultima_diferencia: number
   contado_at: string
+  motivo_diferencia: CashierDifferenceReason | null
+  observacion_diferencia: string | null
   priority_class: CashierV4ReviewPriorityClass
 }
 export interface CashierV4Queues {
