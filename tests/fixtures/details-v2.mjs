@@ -28,7 +28,8 @@ export function detailFixture(index = 0) {
     case: { ...historyItem(index), tipo_grupo: 'Individual', codigos_internos: [123],
       snapshot_referencia_id: 'snapshot-1', diferencia_inicial: 3, primer_snapshot_posterior_id: 'snapshot-2',
       snapshot_posterior_id: 'snapshot-2', stock_posterior: 12, snapshot_reconteo_id: 'snapshot-2',
-      stock_teorico_reconteo: 12, stock_reconteo: 15, diferencia_reconteo: 3, precio: 8, unidades_por_paquete: null, precio_paquete: null },
+      stock_teorico_reconteo: 12, stock_reconteo: 15, diferencia_reconteo: 3, precio: 8, unidades_por_paquete: null, precio_paquete: null,
+      motivo_diferencia: null, observacion_diferencia: null, observacion_reconteo: null },
     skus: [{ c_interno: 123, producto: 'Producto', marca: null, precio_actual: 8 }],
     chronology: [{ case_id: 'case-' + index, contado_at: detailsNow, estado_diferencia: 'Confirmada', diferencia: 3, recontado_at: detailsNow }] }
 }
