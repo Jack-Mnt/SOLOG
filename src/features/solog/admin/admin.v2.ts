@@ -65,11 +65,25 @@ export interface ControlGroupsResponse extends Envelope {
 }
 export type ControlChronologyPeriod = 'current_biweekly' | 'previous_counts'
 export interface ControlChronologyPayload { site_id: string; group_id: string; period: ControlChronologyPeriod }
+export type ControlChronologyObservation = {
+  motivo: 'Transferencia' | 'Venta por mayor' | 'Dañado' | 'Vencido' | 'Otro motivo' | null
+  texto: string
+  registrada_at: string
+}
+export interface ControlChronologyObservations {
+  inicial: ControlChronologyObservation | null
+  reconteo: ControlChronologyObservation | null
+}
+type ControlChronologyRowBase = {
+  row_id: string
+  event_at: string
+  observaciones: ControlChronologyObservations
+}
 export type ControlChronologyViewRow =
-  | { row_id: string; event_at: string; state: 'Coincide'; stock: number }
-  | { row_id: string; event_at: string; state: 'Recontar' | 'Recontado'; physical: number; difference: number }
-  | { row_id: string; event_at: string; state: 'Confirmada'; difference: number; valued_difference: number }
-  | { row_id: string; event_at: string; state: 'Inconsistente'; theoretical: number; initial_difference: number; found_difference: number }
+  | (ControlChronologyRowBase & { state: 'Coincide'; stock: number })
+  | (ControlChronologyRowBase & { state: 'Recontar' | 'Recontado'; physical: number; difference: number })
+  | (ControlChronologyRowBase & { state: 'Confirmada'; difference: number; valued_difference: number })
+  | (ControlChronologyRowBase & { state: 'Inconsistente'; theoretical: number; initial_difference: number; found_difference: number })
 export interface ControlChronologyViewResponse extends Envelope {
   revisions: { operational: number }
   site_id: string
@@ -143,9 +157,28 @@ function dailyBootstrapViews(value: unknown, counts: unknown, stockClass: unknow
         && unique(rows, 'case_id')
     })
 }
+const chronologyReasons = ['Transferencia', 'Venta por mayor', 'Dañado', 'Vencido', 'Otro motivo']
+function chronologyObservation(value: unknown, initial: boolean) {
+  if (value === null) return true
+  if (!record(value) || !strings(value, ['texto', 'registrada_at']) ||
+      !nullableTime(value.registrada_at) || !value.registrada_at ||
+      value.texto.trim().length < 3 ||
+      !(value.motivo === null || chronologyReasons.includes(String(value.motivo)))) return false
+  if (initial) return value.motivo !== null
+  return value.motivo !== null || value.texto === 'Resuelto'
+}
 function chronologyViewRows(value: unknown) {
   return array(value, r => {
     if (!strings(r, ['row_id', 'event_at']) || !nullableTime(r.event_at)) return false
+    if (!record(r.observaciones) || !('inicial' in r.observaciones) || !('reconteo' in r.observaciones) ||
+        !chronologyObservation(r.observaciones.inicial, true) ||
+        !chronologyObservation(r.observaciones.reconteo, false)) return false
+    const initial = r.observaciones.inicial, recount = r.observaciones.reconteo
+    if (record(initial) && record(recount) && initial.motivo !== recount.motivo && recount.motivo !== null) return false
+    // Snapshot-only events cannot receive human observations; the remote contract
+    // always includes both explicit nulls in these cases.
+    if (r.state === 'Coincide' && r.row_id.endsWith(':coincide-snapshot') &&
+      (initial !== null || recount !== null)) return false
     if (r.state === 'Coincide') return numbers(r, ['stock'])
     if (r.state === 'Recontar' || r.state === 'Recontado') return numbers(r, ['physical', 'difference'])
     if (r.state === 'Confirmada') return numbers(r, ['difference', 'valued_difference'])
