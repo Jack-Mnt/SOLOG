@@ -175,6 +175,7 @@ function chronologyViewRows(value: unknown) {
         !chronologyObservation(r.observaciones.reconteo, false)) return false
     const initial = r.observaciones.inicial, recount = r.observaciones.reconteo
     if (record(initial) && record(recount) && initial.motivo !== recount.motivo && recount.motivo !== null) return false
+    if (record(recount) && recount.texto === 'Resuelto' && r.state !== 'Coincide') return false
     // Snapshot-only events cannot receive human observations; the remote contract
     // always includes both explicit nulls in these cases.
     if (r.state === 'Coincide' && r.row_id.endsWith(':coincide-snapshot') &&
