@@ -1120,6 +1120,10 @@
   font-variant-numeric: tabular-nums;
 }
 
+.admin-control-chronology__event > article.has-observation-open::before {
+  top: 17px;
+  transform: none;
+}
 .admin-control-chronology__event > article > header {
   flex-wrap: wrap;
 }
