@@ -9,7 +9,7 @@ export type CashierV4RouteAccess =
   | { allowed: false; redirect: CashierRoute; reason: 'capture_unavailable' | 'operational_priority' | 'history_unavailable' | 'unknown_route' }
 
 // Post-start authority is the received panel, never a previously displayed pre-session CTA.
-export function cashierV4AfterStartDestination(result: CashierV4StartResult) {
+export function cashierV4AfterStartDestination(result: Pick<CashierV4StartResult, 'panel_state'>) {
   return cashierV4Destination(result.panel_state.next_action)
 }
 
