@@ -1,5 +1,6 @@
+import type { CashierInitialObservation, CashierRecountObservation } from './cajero.observaciones.v5'
 import { CashierHistoryCache, type CashierHistoryPeriod } from './cajero.history'
-import { finishOrphanCashierRecovery, mutateCashierV4, type CashierV4Rpc } from './cajero.v4.api'
+import { finishOrphanCashierRecovery, mutateCashierV5, type CashierV4Rpc } from './cajero.v4.api'
 import { canCashierV4CaptureForSession, canCashierV4DeliverPendingForSession } from './cajero.v4.capability'
 import { CashierV4DraftCoordinator } from './cajero.v4.flush'
 import { cashierV4AfterStartDestination } from './cajero.v4.navigation'
@@ -171,18 +172,27 @@ export class CashierV4Runtime {
       !this.snapshot.records.find(record => !record.finished && record.scope.conteo_id === panel.session.id)?.prepared &&
       canCashierV4CaptureForSession(state, panel.session.id, this.serverNow()))
   }
-  capture(action: Exclude<CashierV4NextAction, 'none'>, grupoId: string, stockFisico: number, expression: string) {
+  capture(action: Exclude<CashierV4NextAction, 'none'>, grupoId: string, stockFisico: number, expression: string,
+    observation: CashierInitialObservation | CashierRecountObservation) {
     if (!this.canCapture(action)) throw new Error('Resuelve los pendientes anteriores o actualiza la sesión antes de capturar.')
     const panel = this.store.getSnapshot().panel_state!, scope = this.coordinator.activeScope()!
     const contado_at = new Date(this.serverNow()).toISOString()
     if (action === 'review') {
       const entry = selectCashierV4ActionableReviewEntries(panel).find(entry => entry.group.grupo_id === grupoId)
       if (!entry) throw new Error('El grupo no pertenece a la prioridad de revisión vigente.')
-      this.coordinator.captureRecount(scope, { detalle_id: entry.queueItem.detalle_id, grupo_id: grupoId, stock_fisico: stockFisico, contado_at }, { expression })
+      this.coordinator.captureRecount(scope, {
+        detalle_id: entry.queueItem.detalle_id, grupo_id: grupoId, stock_fisico: stockFisico, contado_at,
+        motivo_diferencia: observation.motivo_diferencia,
+        observacion_reconteo: 'observacion_reconteo' in observation ? observation.observacion_reconteo : null,
+      }, { expression })
     } else {
       const groups = action === 'coverage' ? selectCashierV4CoverageGroups(panel) : selectCashierV4DailyGroups(panel)
       if (!groups.some(group => group.grupo_id === grupoId)) throw new Error('El grupo no pertenece a la cola vigente.')
-      this.coordinator.captureNormal(scope, { grupo_id: grupoId, stock_fisico: stockFisico, contado_at }, { expression })
+      this.coordinator.captureNormal(scope, {
+        grupo_id: grupoId, stock_fisico: stockFisico, contado_at,
+        motivo_diferencia: observation.motivo_diferencia,
+        observacion_diferencia: 'observacion_diferencia' in observation ? observation.observacion_diferencia : null,
+      }, { expression })
     }
     this.hydrate()
   }
@@ -209,10 +219,10 @@ export class CashierV4Runtime {
     if (!prepared && (!b.start_capability.allowed || state.panel_state?.session.estado === 'activo' || this.pendingCount > 0 || this.hasBlockingRecovery)) {
       throw new Error('No se puede iniciar un conteo con este estado o con pendientes anteriores.')
     }
-    prepared ??= { version: 1, identity, prepared_start: { operation_id: this.uuid(), status: 'ready' } }
+    prepared ??= { version: 2, identity, prepared_start: { operation_id: this.uuid(), status: 'ready' } }
     this.storage.writeStart(prepared) // A failed write prevents any request.
     try {
-      const result = await mutateCashierV4('start', { operation_id: prepared.prepared_start.operation_id, device_token: this.store.deviceToken }, this.call)
+      const result = await mutateCashierV5('start', { operation_id: prepared.prepared_start.operation_id, device_token: this.store.deviceToken }, this.call)
       this.store.acceptMutation(result)
       this.hydrate()
       if (this.snapshot.error) throw this.snapshot.error
