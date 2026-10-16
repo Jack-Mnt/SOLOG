@@ -57,9 +57,9 @@ export function useDashboardMetrics<A extends MetricsAction>(
   }, [store, action, payloadKey, key, enabled, revision])
 
   const retry = useCallback(() => {
-    store.invalidate(action, payload)
+    store.invalidate(action, JSON.parse(payloadKey) as MetricsPayloads[A])
     setRevision(n => n + 1)
-  }, [store, action, payloadKey]) // payloadKey fija el contexto aun cuando el objeto se recrea.
+  }, [store, action, payloadKey])
 
   // Evita fugas de datos de la sede anterior en el render que precede al effect.
   const visible = state.key === key ? state : { key, loading: enabled }
