@@ -1,5 +1,5 @@
 import type { PostgrestError } from '@supabase/supabase-js'
-import { supabase } from '../../../lib/supabase'
+import { supabase } from '../../../../lib/supabase'
 import { createSologConfigurationError, normalizeSologError } from '../../errors'
 import { validateMetricsPayload, validateMetricsResponse } from './admin.dashboard.metrics.contract'
 import type { MetricsAction, MetricsPayloads, MetricsResponses } from './admin.dashboard.metrics.types'
