@@ -62,6 +62,6 @@ export function useDashboardMetrics<A extends MetricsAction>(
   }, [store, action, payloadKey])
 
   // Evita fugas de datos de la sede anterior en el render que precede al effect.
-  const visible = state.key === key ? state : { key, loading: enabled }
+  const visible: QueryState<A> = state.key === key ? state : { key, loading: enabled }
   return { data: visible.data, error: visible.error, loading: visible.loading, retry }
 }
