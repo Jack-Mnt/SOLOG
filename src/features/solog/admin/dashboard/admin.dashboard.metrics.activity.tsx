@@ -73,7 +73,7 @@ export function DashboardActivityPanel({
   // Los días se muestran de antiguo a reciente, dejando hoy a la derecha.
   const dates = Array.from({ length: days }, (_, i) => dateOffset(dateFrom, i))
   const cells = new Map(
-    query.data?.data.cells.map(cell => [`${cell.date}:${cell.turno}`, cell]) ?? [],
+    query.data?.data.cells.map(cell => [`${cell.date}:${cell.turno}`, cell] as const) ?? [],
   )
   const used = dates.length
   const loadMore = () => setDays(previous => Math.min(20, previous + 5))
