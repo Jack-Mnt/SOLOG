@@ -30,9 +30,9 @@ describe('AdminDialog Fase 8 — Drawers', () => {
   })
 
   test('Detalle diario separa Stock positivo/Stock 0 y usa StateViews', async () => {
-    const dashboard = await source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx')
-    const contract = await source('src/features/solog/admin/admin.v2.ts')
-    const migration = await source('supabase/migrations/20260921184418_solog_admin_drawers_8_2b_daily_detail_v1.sql')
+    const dashboard = await source('src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx')
+    const contract = await source('src/features/solog/admin/dashboard/admin.dashboard.metrics.types.ts')
+    const activity = await source('src/features/solog/admin/dashboard/admin.dashboard.metrics.activity.tsx')
 
     expect(dashboard).toContain('drawerMaxWidth={620}')
     expect(dashboard).toContain('Stock positivo')
