@@ -169,7 +169,7 @@ function chronologyObservation(value: unknown, initial: boolean) {
 }
 function chronologyViewRows(value: unknown) {
   return array(value, r => {
-    if (!strings(r, ['row_id', 'event_at']) || !nullableTime(r.event_at)) return false
+    if (typeof r.row_id !== 'string' || !strings(r, ['row_id', 'event_at']) || !nullableTime(r.event_at)) return false
     if (!record(r.observaciones) || !('inicial' in r.observaciones) || !('reconteo' in r.observaciones) ||
         !chronologyObservation(r.observaciones.inicial, true) ||
         !chronologyObservation(r.observaciones.reconteo, false)) return false
