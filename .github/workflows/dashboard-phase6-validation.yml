@@ -1,5 +1,5 @@
 name: Dashboard Fase 6 - Validación puntual
-# Intento 4: comprobar fix del lifecycle StrictMode con 789 tests, lint, build y browser.
+# Intento 5: validar responsive 1440/1024/850/430 y cambio de sede con suite principal verde.
 
 # Ejecutar solo al modificar esta definición de CI. No lanzar builds por cada
 # push de codigo en admin-work ni habilitar Cloudflare despliegues desde Actions.
