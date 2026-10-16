@@ -21,14 +21,14 @@ describe('Admin table normalization — Phase 5 auxiliary migration + local clea
 
   test('las tablas auxiliares conocidas usan la familia explícita', async () => {
     const [dashboard, catalog, groupsDialog, incidents, control] = await Promise.all([
-      source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx'),
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx'),
       source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx'),
       source('src/features/solog/admin/grupos/admin.grupos.members-dialog.tsx'),
       source('src/features/solog/admin/incidencias/admin.incidencias.v2.tsx'),
       source('src/features/solog/admin/control/admin.control.v2.tsx'),
     ])
 
-    expect(dashboard).toContain('className="admin-auxiliary-table admin-dashboard-daily__table"')
+    expect(dashboard).toContain('className="admin-auxiliary-table solog-dash__daily-table"')
     expect(catalog).toContain('className="admin-auxiliary-table admin-catalog__table"')
     expect(groupsDialog).toContain('className="admin-auxiliary-table"')
     expect(incidents).not.toContain('admin-incidents__detail-table')
