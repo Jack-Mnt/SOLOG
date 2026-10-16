@@ -36,18 +36,18 @@ jobs:
       - name: Git diff check desde baseline aprobado
         if: always()
         run: git diff --check 4cb3e9f4b63cc7c2de681ef70b8fa7d1bed47944 HEAD
-      - name: Browser: instalar Chromium aislado
+      - name: 'Browser: instalar Chromium aislado'
         if: always()
         run: |
           npm install --no-save --package-lock=false playwright
           npx playwright install --with-deps chromium
-      - name: Dashboard V1: navegador mock
+      - name: 'Dashboard V1: navegador mock'
         if: always()
         run: |
           export SOLOG_PLAYWRIGHT_MODULE="$(node -p "require.resolve('playwright')")"
           export SOLOG_TEST_BROWSER="$(node -e "console.log(require('playwright').chromium.executablePath())")"
           bun tests/admin-dashboard-v3.browser.mjs
-      - name: Control V2: regresion de navegador mock
+      - name: 'Control V2: regresion de navegador mock'
         if: always()
         run: |
           export SOLOG_PLAYWRIGHT_MODULE="$(node -p "require.resolve('playwright')")"
