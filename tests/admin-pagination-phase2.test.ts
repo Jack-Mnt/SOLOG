@@ -22,17 +22,17 @@ test('Fase 2 pagina solo la tabla principal de Incidencias', async () => {
   expect(page).not.toMatch(/page_size:\s*100/)
 })
 
-test('Fase 2 pagina Dashboard DailyDrawer con bootstrap y páginas remotas de Fase 8.2B', async () => {
-  const page = await source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx')
-
-  expect(page).toContain('useAdminQuery("daily_detail_bootstrap"')
-  expect(page).toContain('"daily_detail_page"')
-  expect(page).toContain('DAILY_DETAIL_PAGE_SIZE = 25')
-  expect(page).not.toContain('paginateAdminRows')
-  expect(page).toContain('const total = stateCounts[selectedState]')
-  expect(page).toContain('currentPage={currentPage}')
-  expect(page).toContain('pageSize={DAILY_DETAIL_PAGE_SIZE}')
-  expect(page).toContain('ariaLabel="Paginación del detalle diario"')
+test('Dashboard V1 pagina observaciones físicas con cursores de 25', async () => {
+  const [drawer, types] = await Promise.all([
+    source('src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx'),
+    source('src/features/solog/admin/dashboard/admin.dashboard.metrics.types.ts'),
+  ])
+  expect(drawer).toContain('PAGE_SIZE = 25')
+  expect(drawer).toContain("useDashboardMetrics(store, 'day_observations'")
+  expect(drawer).toContain('nextCursor')
+  expect(drawer).toContain('Mostrar 25 más')
+  expect(drawer).not.toContain('paginateAdminRows')
+  expect(types).toContain('confirmed_next_cursor: null')
 })
 
 test('Fase 2 reutiliza AdminPagination y no introduce clases visuales nuevas', async () => {
