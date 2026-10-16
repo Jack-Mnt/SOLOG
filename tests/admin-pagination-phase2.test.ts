@@ -35,14 +35,13 @@ test('Dashboard V1 pagina observaciones físicas con cursores de 25', async () =
   expect(types).toContain('confirmed_next_cursor: null')
 })
 
-test('Fase 2 reutiliza AdminPagination y no introduce clases visuales nuevas', async () => {
+test('Grupos e Incidencias conservan AdminPagination; Dashboard usa keyset', async () => {
   const groups = await source('src/features/solog/admin/grupos/admin.grupos.v2.tsx')
   const incidents = await source('src/features/solog/admin/incidencias/admin.incidencias.v2.tsx')
-  const dashboard = await source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx')
-
-  for (const page of [groups, incidents, dashboard]) {
-    expect(page).toContain('<AdminPagination')
-  }
+  const dashboard = await source('src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx')
+  expect(groups).toContain('<AdminPagination')
+  expect(incidents).toContain('<AdminPagination')
+  expect(dashboard).toContain("useDashboardMetrics(store, 'day_observations'")
   expect(groups).not.toContain('admin-control__pagination')
   expect(incidents).not.toContain('admin-control__pagination')
   expect(dashboard).not.toContain('admin-control__pagination')
