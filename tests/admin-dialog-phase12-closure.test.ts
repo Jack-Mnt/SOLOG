@@ -7,7 +7,7 @@ const dialogConsumerPaths = [
   'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
   'src/features/solog/admin/control/admin.control.v2.export-dialog.tsx',
   'src/features/solog/admin/control/admin.control.v2.tsx',
-  'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
+  'src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx',
   'src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx',
   'src/features/solog/admin/grupos/admin.categories.dialog.tsx',
   'src/features/solog/admin/grupos/admin.grupos.members-dialog.tsx',
