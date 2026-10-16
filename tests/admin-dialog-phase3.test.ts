@@ -5,7 +5,7 @@ const dialogConsumerPaths = [
   'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
   'src/features/solog/admin/control/admin.control.v2.export-dialog.tsx',
   'src/features/solog/admin/control/admin.control.v2.tsx',
-  'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
+  'src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx',
   'src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx',
   'src/features/solog/admin/grupos/admin.categories.dialog.tsx',
   'src/features/solog/admin/grupos/admin.grupos.members-dialog.tsx',
@@ -56,9 +56,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
     expect(incidents).toMatch(
       /title=\{`Repeticiones · \$\{typeLabels\[family\.tipo\]\}`\}[\s\S]*?format="drawer"/,
     )
-    expect(dashboard).toMatch(
-      /title=\{`Detalle diario · \$\{siteName\}`\}[\s\S]*?format="drawer"/,
-    )
+    expect(dashboard).toMatch(/format="drawer"[\s\S]*?title=\{`Detalle diario · \$\{dayLabel\(date\)\}`\}/)
   })
 
   test('la navegación global de Drawers vive en Footer', async () => {
@@ -74,7 +72,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
 
     expect(control).not.toContain('admin-control-chronology__toolbar')
     expect(incidents).not.toContain('admin-v2-toolbar')
-    expect(dashboard).toContain('admin-dashboard-daily__footer')
+    expect(dashboard).toContain('onClose={onClose}')
     expect(control).toContain('admin-control-chronology__footer-toggle')
     expect(incidents).toContain('admin-incidents__detail-actions')
   })
