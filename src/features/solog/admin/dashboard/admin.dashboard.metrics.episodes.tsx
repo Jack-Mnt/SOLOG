@@ -5,7 +5,7 @@ import { QueryState } from '../admin.v2.presentation'
 import { useDashboardMetrics } from './admin.dashboard.metrics.hooks'
 import type { DashboardMetricsStore } from './admin.dashboard.metrics.store'
 import type {
-  EpisodeRow, EpisodeScope, EpisodeSort, MetricsQuality, RiskLevel,
+  EpisodeRow, EpisodeScope, EpisodeSort, OpenEpisodeSort, MetricsQuality, RiskLevel,
 } from './admin.dashboard.metrics.types'
 
 const PAGE_SIZE = 25
@@ -208,12 +208,12 @@ export function DashboardEpisodesPanel({ siteId, store }: {
   store: DashboardMetricsStore
 }) {
   const [scope, setScope] = useState<EpisodeScope>('open')
-  const [sort, setSort] = useState<EpisodeSort>('importance')
+  const [sort, setSort] = useState<OpenEpisodeSort>('importance')
 
   const changeScope = (next: EpisodeScope) => {
     if (next === scope) return
     setScope(next)
-    setSort(next === 'closed' ? 'recent' : 'importance')
+    setSort('importance')
   }
 
   return (
@@ -238,7 +238,7 @@ export function DashboardEpisodesPanel({ siteId, store }: {
           : 'Episodios cerrados durante los últimos 45 días, ordenados por cierre más reciente.'}
       </p>
       <EpisodePages key={`${siteId}:${scope}:${sort}`}
-        siteId={siteId} store={store} scope={scope} sort={sort} />
+        siteId={siteId} store={store} scope={scope} sort={scope === 'closed' ? 'recent' : sort} />
     </div>
   )
 }
