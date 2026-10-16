@@ -1,634 +1,123 @@
-import { useState } from "react";
-import {
-  Check,
-  ChevronDown,
-  ChevronUp,
-  CircleCheck,
-  Download,
-  Store,
-  TriangleAlert,
-  ZoomIn,
-} from "lucide-react";
-import { AdminDialog } from "../admin.dialog";
-import { useAdminQuery, useAdminStore } from "../admin.v2.context";
-import type {
-  Biweekly,
-  DashboardCards,
-  DailyDetailBootstrap,
-  DailyDetailPage,
-  DifferenceState,
-} from "../admin.v2";
-import { QueryState, Value } from "../admin.v2.presentation";
-import { AdminBinarySwitch, AdminPagination } from "../admin.primitives";
-import { adminSiteLabel, orderedAdminSites } from "../admin.site-ui";
-import { AdminExportDialog } from "../control/admin.control.v2.export-dialog";
+import { useEffect, useMemo, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { useAdminStore } from '../admin.v2.context'
+import { QueryState } from '../admin.v2.presentation'
+import { orderedAdminSites } from '../admin.site-ui'
+import { DashboardSiteCard } from './admin.dashboard.metrics.cards'
+import { useDashboardMetrics } from './admin.dashboard.metrics.hooks'
+import { DashboardMetricsStore } from './admin.dashboard.metrics.store'
+import type { SiteOverview } from './admin.dashboard.metrics.types'
+import './admin.dashboard.metrics.css'
 
-function dashboardDate(value: string) {
-  const date = new Date(`${value}T12:00:00-05:00`);
-  const parts = new Intl.DateTimeFormat("es-PE", {
-    timeZone: "America/Lima",
-    weekday: "short",
-    day: "2-digit",
-  }).formatToParts(date);
-  const weekday = parts
-    .find((part) => part.type === "weekday")!
-    .value.replace(".", "");
-  return `${weekday[0].toUpperCase()}${weekday.slice(1)} ${parts.find((part) => part.type === "day")!.value}`;
+type AdminIdentity = {
+  id: string
+  rol: 'admin' | 'moderador'
 }
 
-function dashboardTimestamp(value: string) {
-  const date = new Date(value);
-  const day = new Intl.DateTimeFormat("es-PE", {
-    timeZone: "America/Lima",
-    day: "numeric",
-    month: "short",
-  }).format(date);
-  const time = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Lima",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  })
-    .format(date)
-    .toLowerCase();
-  return `${day}, ${time}`;
-}
+const updatedAt = new Intl.DateTimeFormat('es-PE', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+  timeZone: 'America/Lima',
+  hour12: true,
+})
 
-type DailyStockView = "positive" | "zero";
+function DashboardContent({ identity }: { identity: AdminIdentity }) {
+  const metrics = useMemo(
+    () => new DashboardMetricsStore(identity.id, identity.rol),
+    [identity.id, identity.rol],
+  )
+  useEffect(() => () => metrics.dispose(), [metrics])
 
-const DAILY_DETAIL_PAGE_SIZE = 25;
+  const overview = useDashboardMetrics(metrics, 'overview', {})
+  const [expandedSiteId, setExpandedSiteId] = useState<string | null | undefined>(undefined)
 
-const dailyStateViews: Array<{ state: DifferenceState; label: string }> = [
-  { state: "Coincide", label: "Coincide" },
-  { state: "Recontar", label: "Recontar" },
-  { state: "Confirmada", label: "Confirmados" },
-  { state: "Inconsistente", label: "Inconsistentes" },
-];
+  const sites = useMemo(
+    () => orderedAdminSites(
+      (overview.data?.data.sites ?? []).map(site => ({ ...site, nombre: site.site_name })),
+    ),
+    [overview.data],
+  )
 
-function differenceToneClass(value: number | null) {
-  return `admin-difference admin-difference--${value === null ? "zero" : value < 0 ? "negative" : value > 0 ? "positive" : "zero"}`;
-}
+  // undefined = primera sede del orden aprobado; null = usuario colapsó todas.
+  const expandedId = expandedSiteId === undefined
+    ? sites[0]?.site_id ?? null
+    : expandedSiteId === null
+      ? null
+      : sites.some(site => site.site_id === expandedSiteId)
+        ? expandedSiteId
+        : sites[0]?.site_id ?? null
 
-function DailySignedValue({
-  value,
-  money = false,
-}: {
-  value: number | null;
-  money?: boolean;
-}) {
-  return (
-    <span className={differenceToneClass(value)}>
-      {!money && value !== null && value > 0 ? "+" : ""}
-      <Value value={value} money={money} />
-    </span>
-  );
-}
-
-function dailyPageRows<S extends DifferenceState>(
-  data: DailyDetailBootstrap,
-  pageData: DailyDetailPage | undefined,
-  state: S,
-  page: number,
-): DailyDetailBootstrap["views"][S] {
-  if (page === 0) return data.views[state];
-  if (!pageData || pageData.state !== state) {
-    return [] as unknown as DailyDetailBootstrap["views"][S];
+  const refresh = () => {
+    metrics.refresh()
+    overview.retry()
   }
-  return pageData.items as unknown as DailyDetailBootstrap["views"][S];
-}
 
-function DailyDrawer({
-  site,
-  date,
-  close,
-}: {
-  site: string;
-  date: string;
-  close: () => void;
-}) {
-  const admin = useAdminStore();
-  const [page, setPage] = useState(0);
-  const [stockView, setStockView] = useState<DailyStockView>("positive");
-  const [selectedState, setSelectedState] =
-    useState<DifferenceState>("Coincide");
-  const query = useAdminQuery("daily_detail_bootstrap", {
-    site_id: site,
-    origin_date: date,
-    stock_class: stockView,
-  });
-  const data = query.data;
-  const siteName = adminSiteLabel(
-    admin.bootstrap?.allowed_sites.find((item) => item.id === site)?.nombre ??
-      site,
-  );
-  const stateCounts: Record<DifferenceState, number> = data
-    ? data.counts[stockView]
-    : {
-        Coincide: 0,
-        Recontar: 0,
-        Confirmada: 0,
-        Inconsistente: 0,
-      };
-  const total = stateCounts[selectedState];
-  const pageCount = Math.max(1, Math.ceil(total / DAILY_DETAIL_PAGE_SIZE));
-  const currentPage = Math.min(page, pageCount - 1);
-  const pageQuery = useAdminQuery(
-    "daily_detail_page",
-    {
-      site_id: site,
-      origin_date: date,
-      stock_class: stockView,
-      state: selectedState,
-      page: currentPage,
-    },
-    { enabled: currentPage > 0 && !!data },
-  );
-  const pageData = currentPage > 0 ? pageQuery.data : undefined;
-  const selectStockView = (next: DailyStockView) => {
-    setStockView(next);
-    setPage(0);
-  };
-  const selectDailyState = (next: DifferenceState) => {
-    setSelectedState(next);
-    setPage(0);
-  };
+  const toggle = (site: SiteOverview) => {
+    setExpandedSiteId(current => {
+      const selected = current === undefined ? sites[0]?.site_id ?? null : current
+      return selected === site.site_id ? null : site.site_id
+    })
+  }
 
   return (
-    <AdminDialog
-      title={`Detalle diario · ${siteName}`}
-      description={`${dashboardDate(date)} · Estado vigente de los conteos de esta fecha.`}
-      onClose={close}
-      format="drawer"
-      drawerMaxWidth={620}
-      footer={
-        data ? (
-          <div className="admin-dialog__footer-navigation admin-dashboard-daily__footer">
-            <span className="admin-dialog__footer-summary">
-              {total} {total === 1 ? "conteo" : "conteos"}
+    <section className="solog-dash" aria-labelledby="solog-dashboard-sites-heading">
+      <div className="solog-dash__heading">
+        <div>
+          <h2 id="solog-dashboard-sites-heading">Resumen operativo por sede</h2>
+          <p>Cobertura de ronda, precisión, riesgo y diferencias valorizadas.</p>
+        </div>
+        <div className="solog-dash__toolbar">
+          {overview.data && (
+            <span className="solog-dash__site-count">
+              {sites.length} {sites.length === 1 ? 'sede' : 'sedes'}
             </span>
-            <AdminPagination
-              total={total}
-              currentPage={currentPage}
-              pageCount={pageCount}
-              pageSize={DAILY_DETAIL_PAGE_SIZE}
-              onPageChange={setPage}
-              ariaLabel="Paginación del detalle diario"
-            />
-          </div>
-        ) : null
-      }
-    >
-      {!data ? (
-        <QueryState {...query} variant="compact" />
-      ) : (
-        <>
-          <div className="admin-drawer-stock-filter">
-            <AdminBinarySwitch
-              label="Stock"
-              value={stockView}
-              options={[
-                { value: "positive", label: "Stock positivo" },
-                { value: "zero", label: "Stock 0" },
-              ]}
-              onChange={selectStockView}
-            />
-          </div>
-
-          <div className="admin-dashboard-daily__views">
-            <div
-              className="admin-state-views"
-              role="tablist"
-              aria-label="Estado del conteo"
-              onKeyDown={(event) => {
-                if (
-                  ![
-                    "ArrowRight",
-                    "ArrowDown",
-                    "ArrowLeft",
-                    "ArrowUp",
-                    "Home",
-                    "End",
-                  ].includes(event.key)
-                )
-                  return;
-                event.preventDefault();
-                const currentIndex = dailyStateViews.findIndex(
-                  (view) => view.state === selectedState,
-                );
-                const direction =
-                  event.key === "ArrowRight" || event.key === "ArrowDown"
-                    ? 1
-                    : -1;
-                const nextIndex =
-                  event.key === "Home"
-                    ? 0
-                    : event.key === "End"
-                      ? dailyStateViews.length - 1
-                      : (currentIndex + direction + dailyStateViews.length) %
-                        dailyStateViews.length;
-                const next = dailyStateViews[nextIndex];
-                selectDailyState(next.state);
-                event.currentTarget
-                  .querySelector<HTMLButtonElement>(
-                    `[data-daily-state="${next.state}"]`,
-                  )
-                  ?.focus();
-              }}
-            >
-              {dailyStateViews.map((view) => (
-                <button
-                  key={view.state}
-                  type="button"
-                  role="tab"
-                  data-daily-state={view.state}
-                  aria-selected={selectedState === view.state}
-                  aria-controls="admin-dashboard-daily-state-panel"
-                  tabIndex={selectedState === view.state ? 0 : -1}
-                  onClick={() => selectDailyState(view.state)}
-                >
-                  <span>{view.label}</span>
-                  <strong>{stateCounts[view.state]}</strong>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {currentPage > 0 && !pageData ? (
-            <QueryState {...pageQuery} variant="compact" />
-          ) : total > 0 ? (
-            <div
-              id="admin-dashboard-daily-state-panel"
-              role="tabpanel"
-              className="admin-auxiliary-table admin-dashboard-daily__table"
-              aria-label={dailyStateViews.find((view) => view.state === selectedState)?.label}
-            >
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Grupo</th>
-                    {selectedState === "Coincide" && (
-                      <th scope="col" className="admin-table-number">Stock</th>
-                    )}
-                    {selectedState === "Recontar" && (
-                      <>
-                        <th scope="col" className="admin-table-number">Físico</th>
-                        <th scope="col" className="admin-table-number">Diferencia</th>
-                      </>
-                    )}
-                    {selectedState === "Confirmada" && (
-                      <>
-                        <th scope="col" className="admin-table-number">Diferencia</th>
-                        <th scope="col" className="admin-table-number">Valorizado</th>
-                      </>
-                    )}
-                    {selectedState === "Inconsistente" && (
-                      <>
-                        <th scope="col" className="admin-table-number">Teórico</th>
-                        <th scope="col" className="admin-table-number">Diferencias</th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedState === "Coincide" &&
-                    dailyPageRows(data, pageData, "Coincide", currentPage).map((row) => (
-                      <tr key={row.case_id}>
-                        <th scope="row">{row.grupo}</th>
-                        <td className="admin-table-number">
-                          <Value value={row.stock} />
-                        </td>
-                      </tr>
-                    ))}
-                  {selectedState === "Recontar" &&
-                    dailyPageRows(data, pageData, "Recontar", currentPage).map((row) => (
-                      <tr key={row.case_id}>
-                        <th scope="row">{row.grupo}</th>
-                        <td className="admin-table-number">
-                          <Value value={row.physical} />
-                        </td>
-                        <td className="admin-table-number">
-                          <DailySignedValue value={row.difference} />
-                        </td>
-                      </tr>
-                    ))}
-                  {selectedState === "Confirmada" &&
-                    dailyPageRows(data, pageData, "Confirmada", currentPage).map((row) => (
-                      <tr key={row.case_id}>
-                        <th scope="row">{row.grupo}</th>
-                        <td className="admin-table-number">
-                          <DailySignedValue value={row.difference} />
-                        </td>
-                        <td className="admin-table-number">
-                          <DailySignedValue value={row.valued_difference} money />
-                        </td>
-                      </tr>
-                    ))}
-                  {selectedState === "Inconsistente" &&
-                    dailyPageRows(data, pageData, "Inconsistente", currentPage).map((row) => (
-                      <tr key={row.case_id}>
-                        <th scope="row">{row.grupo}</th>
-                        <td className="admin-table-number">
-                          <Value value={row.theoretical} />
-                        </td>
-                        <td className="admin-table-number">
-                          <span className="admin-difference-flow">
-                            <DailySignedValue value={row.initial_difference} />
-                            <span aria-hidden="true">→</span>
-                            <DailySignedValue value={row.found_difference} />
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p
-              id="admin-dashboard-daily-state-panel"
-              className="admin-dashboard-daily__empty"
-              role="status"
-            >
-              No hay conteos para este estado y tipo de stock.
-            </p>
           )}
-        </>
-      )}
-    </AdminDialog>
-  );
-}
-
-function Grid({ site }: { site: string }) {
-  const [period, setPeriod] = useState<Biweekly>("current_biweekly");
-  const [date, setDate] = useState<string | null>(null);
-  const query = useAdminQuery("shift_grid", { site_id: site, period });
-  const data = query.data;
-  return (
-    <section
-      className="admin-dashboard__detail"
-      aria-label="Cobertura por turnos"
-    >
-      <div className="admin-dashboard__section-header">
-        <h3>Detalle quincenal</h3>
-        {data && (
-          <p className="admin-dashboard__period">
-            {dashboardDate(data.period.from)} — {dashboardDate(data.period.to)}
-          </p>
-        )}
-        <div
-          className="dashboard-period-switch"
-          role="group"
-          aria-label="Quincena de turnos"
-        >
-          <button
-            type="button"
-            className={period === "previous_biweekly" ? "is-active" : ""}
-            aria-pressed={period === "previous_biweekly"}
-            onClick={() => {
-              setPeriod("previous_biweekly");
-              setDate(null);
-            }}
-          >
-            Anterior
-          </button>
-
-          <button
-            type="button"
-            className={period === "current_biweekly" ? "is-active" : ""}
-            aria-pressed={period === "current_biweekly"}
-            onClick={() => {
-              setPeriod("current_biweekly");
-              setDate(null);
-            }}
-          >
-            Actual
+          {overview.data && (
+            <time className="solog-dash__updated" dateTime={overview.data.generated_at}>
+              Actualizado: {updatedAt.format(new Date(overview.data.generated_at))}
+            </time>
+          )}
+          <button type="button" className="button button--secondary solog-dash__refresh"
+            onClick={refresh} disabled={overview.loading} aria-label="Actualizar Dashboard">
+            <RefreshCw size={16} aria-hidden="true" />
+            Actualizar
           </button>
         </div>
       </div>
-      {!data ? (
-        <QueryState {...query} variant="compact" />
+
+      {overview.error ? (
+        <QueryState error={overview.error} retry={overview.retry} />
+      ) : !overview.data ? (
+        <QueryState retry={overview.retry} />
+      ) : sites.length === 0 ? (
+        <div className="solog-dash__empty" role="status">
+          No hay sedes activas disponibles para mostrar.
+        </div>
       ) : (
-        <>
-          {!data.data.totals.length ? (
-            <p className="admin-dashboard__empty">Sin datos de turnos</p>
-          ) : (
-            <div className="admin-main-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Turno</th>
-                    {data.data.totals.map((total) => (
-                      <th scope="col" key={total.date}>
-                        {dashboardDate(total.date)}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(
-                    [
-                      ["early", "Madrugada"],
-                      ["day", "Día"],
-                      ["night", "Noche"],
-                    ] as const
-                  ).map(([shift, label]) => (
-                    <tr key={shift}>
-                      <th scope="row">{label}</th>
-                      {data.data.totals.map((total) => {
-                        const cell = data.data.shifts.find(
-                          (s) => s.date === total.date && s.shift === shift,
-                        );
-                        return (
-                          <td
-                            key={total.date}
-                            title={
-                              cell
-                                ? `${cell.numerator}/${cell.denominator} · ${dashboardTimestamp(cell.calculated_at)}`
-                                : "Corte no disponible"
-                            }
-                          >
-                            {cell ? `${cell.percentage}%` : "—"}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                  <tr>
-                    <th scope="row">Total</th>
-                    {data.data.totals.map((total) => (
-                      <td
-                        key={total.date}
-                        className="admin-dashboard__percentage-cell"
-                        title={`${total.numerator}/${total.denominator}`}
-                      >
-                        <button
-                          className="admin__percentage-action"
-                          aria-label={`Abrir día ${total.date}`}
-                          onClick={() => setDate(total.date)}
-                        >
-                          {total.percentage}%
-                          <ZoomIn size={16} aria-hidden="true" />
-                        </button>
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
-      )}
-      {date && data && (
-        <DailyDrawer
-          key={`${site}|${date}`}
-          site={site}
-          date={date}
-          close={() => setDate(null)}
-        />
+        <div className="solog-dash__list">
+          {sites.map(site => (
+            <DashboardSiteCard key={site.site_id} site={site}
+              expanded={expandedId === site.site_id}
+              onToggle={() => toggle(site)} />
+          ))}
+        </div>
       )}
     </section>
-  );
+  )
 }
-function SiteCard({
-  site,
-  expanded,
-  toggle,
-}: {
-  site: DashboardCards["sites"][number];
-  expanded: boolean;
-  toggle: () => void;
-}) {
-  const [exportOpen, setExportOpen] = useState(false);
-  const complete = site.period_coverage.complete;
-  const percent = complete
-    ? site.daily_coverage.percent
-    : site.period_coverage.percent;
-  const counted = complete
-    ? site.daily_coverage.counted_today
-    : site.period_coverage.counted;
-  const total = complete
-    ? site.daily_coverage.total
-    : site.period_coverage.total;
-  const name = adminSiteLabel(site.site);
-  return (
-    <article
-      className="admin-v2-card admin-dashboard__card"
-      aria-label={`Sede ${name}`}
-    >
-      <header>
-        <h2>
-          <Store size={24} aria-hidden="true" />
-          {name}
-        </h2>
-        {complete && (
-          <span className="admin-dashboard__complete">
-            <Check size={13} aria-hidden="true" />
-            Quincena completada
-          </span>
-        )}
-        <button
-          className="icon-button"
-          aria-label={`${expanded ? "Ocultar" : "Ver"} turnos de ${name}`}
-          aria-expanded={expanded}
-          aria-controls={`dashboard-turns-${site.site_id}`}
-          onClick={toggle}
-        >
-          {expanded ? <ChevronUp /> : <ChevronDown />}
-        </button>
-      </header>
-      <div className="admin-dashboard__summary">
-        <div className="admin-dashboard__coverage">
-          <span className="admin-dashboard__label">
-            {complete ? "Cobertura diaria" : "Cobertura quincenal"}
-          </span>
-          {total > 0 ? (
-            <>
-              <strong>
-                <span>{percent} %</span> {counted} / {total}
-              </strong>
-              <progress
-                aria-label={
-                  complete ? "Cobertura diaria" : "Cobertura quincenal"
-                }
-                max={100}
-                value={percent}
-              />
-            </>
-          ) : (
-            <p className="admin-dashboard__empty">Sin cobertura registrada</p>
-          )}
-        </div>
-        <div className="admin-dashboard__recounts">
-          <span className="admin-dashboard__label">Por recontar</span>
-          <strong
-            className={
-              site.pending_recount > 0
-                ? "admin-dashboard__warning"
-                : "admin-dashboard__zero"
-            }
-          >
-            {site.pending_recount > 0 ? (
-              <TriangleAlert size={16} aria-hidden="true" />
-            ) : (
-              <CircleCheck size={16} aria-hidden="true" />
-            )}
-            {site.pending_recount} <span>pendientes</span>
-          </strong>
-        </div>
-        <div className="admin-dashboard__snapshot">
-          <span className="admin-dashboard__label">Snapshot</span>
-          {site.snapshot ? (
-            <time dateTime={site.snapshot.confirmado_at}>
-              {dashboardTimestamp(site.snapshot.confirmado_at)}
-            </time>
-          ) : (
-            <span>Ausente</span>
-          )}
-        </div>
-        <button
-          className="admin-button__actions"
-          onClick={() => setExportOpen(true)}
-        >
-          <Download size={15} aria-hidden="true" />
-          Descargar ajuste
-        </button>
-      </div>
-      <div id={`dashboard-turns-${site.site_id}`}>
-        {expanded && <Grid site={site.site_id} />}
-      </div>
 
-      {exportOpen && (
-        <AdminExportDialog
-          siteId={site.site_id}
-          onClose={() => setExportOpen(false)}
-        />
-      )}
-    </article>
-  );
-}
+/**
+ * Mantiene el export que utiliza el Shell Admin y sustituye por completo
+ * las tarjetas, KPI, Grid y Drawer antiguos, sin alterar las rutas ni Control.
+ */
 export function AdminDashboardV2() {
-  const query = useAdminQuery("dashboard_cards", {});
-  const [expandedSite, setExpandedSite] = useState<string | null>(null);
-  return query.data ? (
-    <>
-      <section className="admin-dashboard" aria-label="Resumen por sede">
-        {orderedAdminSites(
-          query.data.sites.map((site) => ({ ...site, nombre: site.site })),
-        ).map((site) => (
-          <SiteCard
-            key={site.site_id}
-            site={site}
-            expanded={expandedSite === site.site_id}
-            toggle={() =>
-              setExpandedSite((current) =>
-                current === site.site_id ? null : site.site_id,
-              )
-            }
-          />
-        ))}
-      </section>
-      {!query.data.sites.length && <p>No hay sedes disponibles.</p>}
-    </>
-  ) : (
-    <QueryState {...query} />
-  );
+  const admin = useAdminStore()
+  const identity = admin.bootstrap?.identity
+
+  if (!identity) {
+    return <div className="solog-dash__empty" role="status">Validando acceso administrativo…</div>
+  }
+  return (
+    <DashboardContent key={`${identity.id}:${identity.rol}`} identity={identity} />
+  )
 }
