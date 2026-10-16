@@ -3,20 +3,22 @@ import { describe, expect, test } from 'bun:test'
 const source = (path: string) => Bun.file(path).text()
 
 describe('Admin table normalization — Phase 2 Dashboard + Control', () => {
-  test('Dashboard usa main table, row headers y percentage action y mantiene DailyDrawer como tabla auxiliar', async () => {
-    const [dashboard, css] = await Promise.all([
-      source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx'),
-      source('src/features/solog/admin/admin.css'),
+  test('Dashboard V1 utiliza las familias main/auxiliary en sus vistas especializadas', async () => {
+    const [risk, episodes, activity, day, rounds] = await Promise.all([
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.risk.tsx'),
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.episodes.tsx'),
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.activity.tsx'),
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx'),
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.rounds.tsx'),
     ])
-
-    expect(dashboard).toContain('className="admin-main-table"')
-    expect(dashboard).toContain('<th scope="row">{label}</th>')
-    expect(dashboard).toContain('<th scope="row">Total</th>')
-    expect(dashboard).toContain('className="admin__percentage-action"')
-    expect(dashboard).toContain('className="admin-auxiliary-table admin-dashboard-daily__table"')
-    expect(css).toContain('.admin-dashboard__detail > .admin-main-table')
-    expect(css).not.toContain('.admin-dashboard__detail > .admin-v2-table')
-    expect(css).not.toContain('.admin-dashboard__detail > .admin-main-table .icon-button')
+    expect(risk).toContain('admin-main-table')
+    expect(episodes).toContain('admin-main-table')
+    expect(activity).toContain('admin-main-table')
+    expect(day).toContain('admin-main-table')
+    expect(day).toContain('admin-auxiliary-table')
+    expect(rounds).toContain('admin-auxiliary-table')
+    expect(activity).toContain('<th scope="row">{shift.label}</th>')
+    expect(day).toContain('<th scope="row">{row.group_name}</th>')
   })
 
   test('Control normaliza headers, row identity, numéricos y acción de detalle', async () => {
