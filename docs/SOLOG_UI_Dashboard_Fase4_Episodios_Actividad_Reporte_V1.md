@@ -1,12 +1,12 @@
 # SOLOG — UI Dashboard — Fase 4: Episodios y Actividad — Reporte V1
 
-**Estado:** IMPLEMENTADO Y VERSIONADO EN `admin-work`, **NO VALIDADO TÉCNICAMENTE**. La batería completa sigue aplazada a la Fase 6 por decisión expresa del usuario.  
-**Fecha:** 2026-10-16 (America/Lima).  
-**Nivel:** B, frontend funcional acotado a Dashboard.  
-**Fuente primaria UI:** `docs/SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V2.md` — congelada.  
-**Contrato de datos:** `docs/SOLOG_Backend_Dashboard_RPC_Contrato_Desplegado_V1.md` — congelado.  
-**Referencia visual:** `docs/prototipos/SOLOG_UI_Dashboard_Prototipo_Final_V1.html` — no productiva, sin datos mock integrados.  
-**Baseline remoto inicial de esta fase:** `2be21aa496a5f54afedd5d6efc7b9a416598c201`.  
+**Estado:** IMPLEMENTADO Y VERSIONADO EN `admin-work`, **NO VALIDADO TÉCNICAMENTE**. La batería completa sigue aplazada a la Fase 6 por decisión expresa del usuario.
+**Fecha:** 2026-10-16 (America/Lima).
+**Nivel:** B, frontend funcional acotado a Dashboard.
+**Fuente primaria UI:** `docs/SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V2.md` — congelada.
+**Contrato de datos:** `docs/SOLOG_Backend_Dashboard_RPC_Contrato_Desplegado_V1.md` — congelado.
+**Referencia visual:** `docs/prototipos/SOLOG_UI_Dashboard_Prototipo_Final_V1.html` — no productiva, sin datos mock integrados.
+**Baseline remoto inicial de esta fase:** `2be21aa496a5f54afedd5d6efc7b9a416598c201`.
 **Rama:** `admin-work`. No se tocó `master` ni backend.
 
 ## 1. Archivos y cambios
