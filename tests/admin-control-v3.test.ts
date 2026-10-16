@@ -36,7 +36,7 @@ test('V10 dataset completo, payload mínimo y caché por sede/período/custom si
     { action: 'control_groups', payload: context },
     { action: 'control_groups', payload: { ...context, period: 'current_biweekly' } },
     { action: 'control_groups', payload: { ...context, site_id: 'site-b' } },
-    { action: 'control_groups', payload: { ...context, period: 'custom', date_from: '2026-09-01', date_to: '2026-09-05' } },
+    { action: 'control_groups', payload: { ...context, period: 'custom', date_from: '2026-10-01', date_to: '2026-10-05' } },
   ])
   store.dispose()
 })
