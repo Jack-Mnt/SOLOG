@@ -186,7 +186,7 @@ describe('AdminDialog Fase 9.5 — kinds', () => {
         ...taskConsumers,
         ...managementConsumers,
         'src/features/solog/admin/control/admin.control.v2.tsx',
-        'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
+        'src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx',
       ]),
     ]
     const sources = await Promise.all(consumerPaths.map(source))
