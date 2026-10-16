@@ -1,0 +1,156 @@
+/* Dashboard — Drawer de día único (Fase 5). Reutiliza AdminDialog y tokens SOLOG. */
+.solog-dash__daily-drawer .admin-dialog__body {
+  min-width: 0;
+}
+.solog-dash__daily {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-width: 0;
+}
+.solog-dash__daily-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.solog-dash__daily-summary-card {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-secondary);
+}
+.solog-dash__daily-summary-card h3 {
+  margin: 0 0 4px;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+}
+.solog-dash__daily-stat {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+}
+.solog-dash__daily-stat + .solog-dash__daily-stat {
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+}
+.solog-dash__daily-stat > span {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.solog-dash__daily-stat strong {
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 750;
+}
+.solog-dash__daily-section {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  gap: 12px;
+}
+.solog-dash__daily-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.solog-dash__daily-section-heading h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+}
+.solog-dash__daily-section-heading p {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.solog-dash__daily-table {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.solog-dash__daily-table table {
+  width: 100%;
+  white-space: nowrap;
+}
+.solog-dash__daily-table tbody th {
+  font-weight: 600;
+}
+.solog-dash__daily-state {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-small);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+}
+.solog-dash__daily-state--success {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+.solog-dash__daily-state--warning {
+  color: var(--color-text-primary);
+  background: var(--color-warning-soft);
+}
+.solog-dash__daily-state--danger {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+.solog-dash__daily-help {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+.solog-dash__daily-help svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--color-primary);
+}
+.solog-dash__daily-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.solog-dash__daily-pagination .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 767px) {
+  .solog-dash__daily {
+    gap: 16px;
+  }
+  .solog-dash__daily-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .solog-dash__daily-summary-card {
+    padding: 12px;
+  }
+  .solog-dash__daily-pagination .button {
+    width: 100%;
+  }
+}
