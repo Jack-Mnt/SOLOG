@@ -43,7 +43,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
       'src/features/solog/admin/incidencias/admin.incidencias.v2.tsx',
     )
     const dashboard = await source(
-      'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
+      'src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx',
     )
 
     expect(control).toMatch(
@@ -67,7 +67,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
       'src/features/solog/admin/incidencias/admin.incidencias.v2.tsx',
     )
     const dashboard = await source(
-      'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
+      'src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx',
     )
 
     expect(control).not.toContain('admin-control-chronology__toolbar')
