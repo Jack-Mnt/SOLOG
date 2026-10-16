@@ -61,7 +61,7 @@
 .solog-dash .solog-dash__site-card {
   padding: 16px;
   margin: 0;
-  overflow: clip;
+  overflow: visible;
   border-radius: var(--radius-panel);
   background: var(--color-surface);
   box-shadow: var(--shadow-default);
