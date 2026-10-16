@@ -125,7 +125,8 @@ test('8.2B cronología compacta conserva caché por grupo/período y lazy indepe
   })
 
   expect(current.chronology.length).toBeGreaterThan(0)
-  expect(previous.chronology).toEqual([])
+  expect(previous.chronology).toHaveLength(1)
+  expect(previous.chronology[0].observaciones.inicial?.motivo).toBe('Venta por mayor')
   expect(calls.filter(call => call.action === 'control_chronology_view')).toHaveLength(2)
   store.dispose()
 })
