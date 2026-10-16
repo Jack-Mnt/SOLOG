@@ -9,6 +9,7 @@ import { DashboardRiskPanel } from './admin.dashboard.metrics.risk'
 import { DashboardRoundsPanel } from './admin.dashboard.metrics.rounds'
 import { DashboardEpisodesPanel } from './admin.dashboard.metrics.episodes'
 import { DashboardActivityPanel } from './admin.dashboard.metrics.activity'
+import { DashboardDayDrawer } from './admin.dashboard.metrics.day'
 
 type DashboardTab = 'risk' | 'rounds' | 'episodes' | 'activity'
 const DASHBOARD_TABS: readonly {
@@ -195,7 +196,7 @@ function ValuationMetric({ site }: { site: SiteOverview }) {
   )
 }
 
-/** Armazón accesible de las vistas; su contenido real se integra en Fases 3–4. */
+/** Cuatro vistas analíticas; un único Drawer opcional por sede y fecha física. */
 export function DashboardSiteDetail({ site, store }: { site: SiteOverview; store: DashboardMetricsStore }) {
   const [active, setActive] = useState<DashboardTab>('risk')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -255,21 +256,18 @@ export function DashboardSiteDetail({ site, store }: { site: SiteOverview; store
             ) : tab.id === 'episodes' ? (
               <DashboardEpisodesPanel siteId={site.site_id} store={store} />
             ) : (
-              <>
-                <DashboardActivityPanel siteId={site.site_id} store={store}
-                  onSelectDate={setSelectedDate} />
-                {selectedDate && (
-                  <div className="solog-dash__data-note" role="status">
-                    <Info size={16} aria-hidden="true" />
-                    Fecha seleccionada: {dateLabel(selectedDate)}.
-                    El Drawer con el detalle diario se incorporará en la Fase 5.
-                  </div>
-                )}
-              </>
+              <DashboardActivityPanel siteId={site.site_id} store={store}
+                onSelectDate={setSelectedDate} />
             )
           )}
         </section>
       ))}
+      {selectedDate !== null && (
+        <DashboardDayDrawer key={`${site.site_id}:${selectedDate}`}
+          siteId={site.site_id} siteName={site.site_name}
+          date={selectedDate} store={store}
+          onClose={() => setSelectedDate(null)} />
+      )}
     </div>
   )
 }
