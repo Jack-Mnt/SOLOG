@@ -1,12 +1,12 @@
 # SOLOG — UI Dashboard — Fase 3: Riesgo y Rondas — Reporte V1
 
-**Estado:** IMPLEMENTADA EN `admin-work`; **VALIDACIÓN TÉCNICA FORMAL PENDIENTE (FASE 6)**.  
-**Fecha:** 2026-10-16 — America/Lima.  
-**Clasificación:** Nivel B, frontend acotado.  
-**Fuente primaria UI:** `docs/SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V2.md` — APROBADA/CONGELADA.  
-**Contrato RPC:** `docs/SOLOG_Backend_Dashboard_RPC_Contrato_Desplegado_V1.md` — CONGELADO.  
-**Design System:** `src/foundations.css`, primitivas, tablas, tokens, estados y geometrías Admin existentes.  
-**Rama:** `admin-work`; `master` intacta.  
+**Estado:** IMPLEMENTADA EN `admin-work`; **VALIDACIÓN TÉCNICA FORMAL PENDIENTE (FASE 6)**.
+**Fecha:** 2026-10-16 — America/Lima.
+**Clasificación:** Nivel B, frontend acotado.
+**Fuente primaria UI:** `docs/SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V2.md` — APROBADA/CONGELADA.
+**Contrato RPC:** `docs/SOLOG_Backend_Dashboard_RPC_Contrato_Desplegado_V1.md` — CONGELADO.
+**Design System:** `src/foundations.css`, primitivas, tablas, tokens, estados y geometrías Admin existentes.
+**Rama:** `admin-work`; `master` intacta.
 **Baseline al inicio de esta fase:** `b15a339ed866c6623fc188aae01e71061ad4a74d`.
 
 ## 1. Cambios registrados
