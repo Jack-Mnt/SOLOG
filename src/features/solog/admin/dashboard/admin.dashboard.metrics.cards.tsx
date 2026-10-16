@@ -282,7 +282,9 @@ export function DashboardSiteCard({
         <ValuationMetric site={site} />
       </div>
 
-      {expanded && <div id={contentId}><DashboardSiteDetail site={site} /></div>}
+      <div id={contentId} hidden={!expanded}>
+        {expanded && <DashboardSiteDetail site={site} />}
+      </div>
     </article>
   )
 }
