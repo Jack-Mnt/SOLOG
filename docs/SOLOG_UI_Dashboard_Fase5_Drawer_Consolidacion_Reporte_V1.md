@@ -1,13 +1,13 @@
 # SOLOG — UI Dashboard — Fase 5: Drawer diario y consolidación V1
 
-**Estado:** IMPLEMENTACIÓN FRONTEND REGISTRADA — **NO VALIDADA TÉCNICAMENTE** (Fase 6 pendiente).  
-**Rama:** `admin-work`; `master` intacta.  
-**Fecha:** 2026-10-16, America/Lima.  
-**Baseline remoto al iniciar:** `df5a6633475956aeec3059871fc33dfc06598280`.  
-**Fuente primaria UI:** `docs/SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V2.md` — congelada.  
-**Contrato técnico RPC:** `docs/SOLOG_Backend_Dashboard_RPC_Contrato_Desplegado_V1.md` — congelado.  
-**Diseño:** `src/foundations.css`, `src/features/solog/admin/admin.css`, `AdminDialog` y primitivas Admin reutilizadas.  
-**Referencia exploratoria:** `docs/prototipos/SOLOG_UI_Dashboard_Prototipo_Final_V1.html` — NO productiva.  
+**Estado:** IMPLEMENTACIÓN FRONTEND REGISTRADA — **NO VALIDADA TÉCNICAMENTE** (Fase 6 pendiente).
+**Rama:** `admin-work`; `master` intacta.
+**Fecha:** 2026-10-16, America/Lima.
+**Baseline remoto al iniciar:** `df5a6633475956aeec3059871fc33dfc06598280`.
+**Fuente primaria UI:** `docs/SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V2.md` — congelada.
+**Contrato técnico RPC:** `docs/SOLOG_Backend_Dashboard_RPC_Contrato_Desplegado_V1.md` — congelado.
+**Diseño:** `src/foundations.css`, `src/features/solog/admin/admin.css`, `AdminDialog` y primitivas Admin reutilizadas.
+**Referencia exploratoria:** `docs/prototipos/SOLOG_UI_Dashboard_Prototipo_Final_V1.html` — NO productiva.
 
 ## 1. Archivos y cambios
 
