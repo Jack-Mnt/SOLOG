@@ -185,7 +185,15 @@ export async function runDashboardMetricsBrowser() {
     await page.goto('http://127.0.0.1:5208/admin')
     await page.getByRole('heading', { name: 'Resumen operativo por sede' }).waitFor()
     const cutervo = page.getByRole('article', { name: 'Resumen de Cutervo' })
-    await cutervo.waitFor()
+    try {
+      await cutervo.waitFor({ timeout: 7000 })
+    } catch (error) {
+      console.error('DASHBOARD_DIAGNOSTIC', JSON.stringify({
+        bodyText: (await page.locator('body').innerText()).slice(0, 2600),
+        calls, errors,
+      }, null, 2))
+      throw error
+    }
     assert.equal(await page.locator('.solog-dash__site-card').count(), 5)
     assert.equal(count('overview'), 1)
 
