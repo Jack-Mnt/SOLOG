@@ -69,7 +69,7 @@ function DayObservations({
   useEffect(() => {
     if (!query.data) return
     const page = query.data.data
-    setPages(previous => {
+    queueMicrotask(() => setPages(previous => {
       if (cursor === null) {
         return { rows: page.rows, nextCursor: page.next_cursor, consumedCursors: [] }
       }
@@ -87,7 +87,7 @@ function DayObservations({
         rows: merged, nextCursor: page.next_cursor,
         consumedCursors: [...(previous?.consumedCursors ?? []), cursor],
       }
-    })
+    }))
   }, [query.data, cursor])
 
   const visible = pages ?? (cursor === null && query.data ? {
