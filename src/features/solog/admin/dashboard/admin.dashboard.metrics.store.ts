@@ -76,8 +76,7 @@ export class DashboardMetricsStore {
 
   /** Invalida una consulta o todas las consultas del mismo tipo; no afecta Control. */
   invalidate<A extends MetricsAction>(action?: A, payload?: MetricsPayloads[A]): void {
-    this.epoch++
-    if (!action) { this.entries.clear(); return }
+    if (!action) { this.epoch++; this.entries.clear(); return }
     if (payload) { this.entries.delete(this.key(action, payload)); return }
     for (const key of this.entries.keys()) {
       const parsed: unknown = JSON.parse(key)
