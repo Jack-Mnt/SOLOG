@@ -85,7 +85,7 @@ describe('AdminDialog Fase 9.3 — foundation format / size / kind', () => {
       'src/features/solog/admin/control/admin.control.v2.tsx',
     )
     const dashboard = await source(
-      'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
+      'src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx',
     )
     const incidents = await source(
       'src/features/solog/admin/incidencias/admin.incidencias.v2.tsx',
