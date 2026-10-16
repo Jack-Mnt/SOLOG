@@ -25,6 +25,7 @@ export class DashboardMetricsStore {
   private readonly entries = new Map<string, MetricsEntry>()
   private epoch = 0
   private active = true
+  private mountedGeneration = 0
 
   constructor(
     readonly userId: string,
@@ -85,6 +86,19 @@ export class DashboardMetricsStore {
   }
 
   refresh(): void { this.invalidate() }
+
+  /**
+   * Permite cleanup simulado por React.StrictMode: setup/cleanup/setup se
+   * produce de forma síncrona. Solo el desmontaje definitivo dispone el store.
+   */
+  mount(): () => void {
+    const generation = ++this.mountedGeneration
+    return () => {
+      queueMicrotask(() => {
+        if (this.mountedGeneration === generation) this.dispose()
+      })
+    }
+  }
 
   dispose(): void {
     this.active = false
