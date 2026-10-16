@@ -1,0 +1,197 @@
+/* Dashboard Fase 4 — Episodios + Actividad.
+   Extensiones locales de la composición, con tokens y primitivas SOLOG. */
+.solog-dash__episodes-results {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.solog-dash__view-context {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.solog-dash__episodes-view .admin-binary-field {
+  min-width: 0;
+}
+.solog-dash__episodes-view .admin-sort {
+  z-index: 2;
+}
+.solog-dash__episodes-view .admin-main-table {
+  max-width: 100%;
+}
+.solog-dash__episodes-view .admin-main-table tbody th,
+.solog-dash__episodes-view .admin-main-table tbody td {
+  vertical-align: middle;
+}
+.solog-dash__episodes-view .solog-dash__view-actions {
+  align-items: flex-end;
+}
+.solog-dash__activity-view {
+  min-width: 0;
+}
+.solog-dash__activity-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  scrollbar-width: thin;
+}
+.solog-dash__activity-scroll .solog-dash__activity-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+.solog-dash__activity-table th,
+.solog-dash__activity-table td {
+  padding: 8px;
+  min-width: 150px;
+  text-align: center;
+  vertical-align: middle;
+}
+.solog-dash__activity-table th:first-child {
+  min-width: 116px;
+  width: 116px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--color-surface);
+  text-align: left;
+  border-right: 1px solid var(--color-border);
+}
+.solog-dash__activity-table thead th:first-child {
+  z-index: 4;
+  background: var(--color-surface-secondary);
+}
+.solog-dash__activity-table thead th {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.solog-dash__activity-table tbody th {
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+.solog-dash__activity-date {
+  display: grid;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-small);
+  color: var(--color-text-primary);
+  background: transparent;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.solog-dash__activity-date small {
+  color: var(--color-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+.solog-dash__activity-date:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  border-color: var(--color-border);
+}
+.solog-dash__activity-cell {
+  padding: 6px;
+}
+.solog-dash__activity-action {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 130px;
+  min-height: 84px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.solog-dash__activity-action strong {
+  font-size: 0.875rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+.solog-dash__activity-action span,
+.solog-dash__activity-action small {
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+}
+.solog-dash__activity-action:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+.solog-dash__activity-action--closed {
+  background: var(--color-success-soft);
+}
+.solog-dash__activity-action--closed strong {
+  color: var(--color-success);
+}
+.solog-dash__activity-action--in_progress {
+  background: var(--color-primary-soft);
+}
+.solog-dash__activity-action--in_progress strong {
+  color: var(--color-primary);
+}
+.solog-dash__activity-action--no_tasks {
+  background: var(--color-surface-secondary);
+}
+.solog-dash__activity-action--no_data {
+  background: var(--color-surface);
+  border-style: dashed;
+}
+.solog-dash__activity-action--no_data strong {
+  color: var(--color-text-secondary);
+}
+.solog-dash__activity-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.solog-dash__activity-footer .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
+@media (max-width: 767px) {
+  .solog-dash__activity-table th:first-child {
+    min-width: 98px;
+    width: 98px;
+  }
+  .solog-dash__activity-table th,
+  .solog-dash__activity-table td {
+    min-width: 136px;
+  }
+  .solog-dash__activity-action {
+    min-width: 118px;
+  }
+  .solog-dash__activity-footer .button {
+    flex: 1 1 100%;
+  }
+}
