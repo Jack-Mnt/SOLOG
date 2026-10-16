@@ -1,0 +1,564 @@
+/* Dashboard RPC V1 — estilos exclusivamente locales.
+   Token source: src/foundations.css + clases globales Admin vigentes.
+   No añadir una paleta, sombras o primitives paralelas. */
+.solog-dash {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.solog-dash__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  min-width: 0;
+}
+
+.solog-dash__heading h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+}
+
+.solog-dash__heading p {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.solog-dash__toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.solog-dash__site-count,
+.solog-dash__updated {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.solog-dash__refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
+
+.solog-dash__list {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.solog-dash .solog-dash__site-card {
+  padding: 16px;
+  margin: 0;
+  overflow: clip;
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-default);
+}
+
+.solog-dash .solog-dash__site-card--expanded {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-elevated);
+}
+
+.solog-dash .solog-dash__site-card > .solog-dash__site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.solog-dash__site-header h3 {
+  min-width: 0;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.solog-dash__site-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 36px;
+  border: 0;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.solog-dash__site-trigger:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.solog-dash__site-trigger > svg:last-child {
+  flex: none;
+  color: var(--color-primary);
+  transition: transform var(--transition-fast);
+}
+
+.solog-dash__site-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.solog-dash__site-identity svg {
+  flex: none;
+  color: var(--color-primary);
+}
+
+.solog-dash__round-pill {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+  padding: 6px 10px;
+  border-radius: var(--radius-small);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.solog-dash__metric-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.3fr) minmax(0, 0.85fr) minmax(0, 1.25fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.solog-dash__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 156px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+}
+
+.solog-dash__metric-heading {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  min-height: 19px;
+}
+
+.solog-dash__metric-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.solog-dash__metric-meta {
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+}
+
+.solog-dash__metric-lead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 10px;
+  row-gap: 2px;
+  min-width: 0;
+}
+
+.solog-dash__main-number {
+  color: var(--color-text-primary);
+  font-size: clamp(1.25rem, 2.5vw, 1.6rem);
+  line-height: 1.15;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.solog-dash__fraction {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.solog-dash__metric progress {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: 8px;
+  border: 0;
+  border-radius: 99px;
+  background: var(--color-border);
+  color: var(--color-primary);
+  accent-color: var(--color-primary);
+  overflow: hidden;
+}
+
+.solog-dash__metric progress::-webkit-progress-bar {
+  background: var(--color-border);
+  border-radius: 99px;
+}
+
+.solog-dash__metric progress::-webkit-progress-value {
+  background: var(--color-primary);
+  border-radius: 99px;
+}
+
+.solog-dash__metric progress::-moz-progress-bar {
+  background: var(--color-primary);
+  border-radius: 99px;
+}
+
+.solog-dash__progress-empty {
+  width: 100%;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--color-border);
+}
+
+.solog-dash__metric-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: auto;
+  color: var(--color-text-secondary);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.solog-dash__quality {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 0.6875rem;
+}
+
+.solog-dash__quality svg {
+  flex: none;
+}
+
+.solog-dash__accuracy-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--color-border);
+}
+
+.solog-dash__accuracy-segment {
+  display: block;
+  min-width: 0;
+}
+
+.solog-dash__accuracy-segment--green,
+.solog-dash__legend-dot--green {
+  background: var(--color-success);
+}
+
+.solog-dash__accuracy-segment--yellow,
+.solog-dash__legend-dot--yellow {
+  background: var(--color-warning);
+}
+
+.solog-dash__accuracy-segment--red,
+.solog-dash__legend-dot--red {
+  background: var(--color-danger);
+}
+
+.solog-dash__accuracy-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  color: var(--color-text-secondary);
+  font-size: 0.6875rem;
+}
+
+.solog-dash__legend-item {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  gap: 4px;
+}
+
+.solog-dash__legend-dot {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+}
+
+.solog-dash__risk-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+.solog-dash__risk-pair > div {
+  display: grid;
+  gap: 4px;
+}
+
+.solog-dash__risk-count {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.solog-dash__risk-count--high {
+  color: var(--color-warning);
+}
+
+.solog-dash__risk-count--critical {
+  color: var(--color-danger);
+}
+
+.solog-dash__risk-pair > div > span {
+  color: var(--color-text-secondary);
+  font-size: 0.6875rem;
+}
+
+.solog-dash__valuation-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.solog-dash__valuation-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.solog-dash__valuation-name {
+  display: grid;
+  gap: 2px;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.solog-dash__valuation-name small {
+  font-size: 0.6875rem;
+  font-weight: 400;
+}
+
+.solog-dash__valuation-amount {
+  min-width: 0;
+  text-align: right;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.solog-dash__valuation-amount--positive {
+  color: var(--color-success);
+}
+
+.solog-dash__valuation-amount--negative {
+  color: var(--color-danger);
+}
+
+.solog-dash__valuation-row > .solog-dash__quality {
+  grid-column: 1 / -1;
+}
+
+.solog-dash__detail {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.solog-dash__detail-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.solog-dash__detail-heading h3 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1.15rem;
+}
+
+.solog-dash__eyebrow {
+  margin: 0 0 4px;
+  color: var(--color-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.solog-dash__detail-subtitle {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.solog-dash__tabs-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: thin;
+}
+
+.solog-dash__tabs {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  min-width: 100%;
+  border-bottom: 1px solid var(--color-border);
+  gap: 8px;
+}
+
+.solog-dash__tabs [role="tab"] {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  min-height: 38px;
+  margin-bottom: -1px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--color-text-secondary);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+}
+
+.solog-dash__tabs [role="tab"]:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.solog-dash__tabs [role="tab"][aria-selected="true"] {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.solog-dash__tab-panel {
+  outline-offset: 3px;
+  min-width: 0;
+}
+
+.solog-dash__not-ready {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+  min-height: 110px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+}
+
+.solog-dash__not-ready > svg {
+  color: var(--color-info);
+  flex: none;
+}
+
+.solog-dash__not-ready strong {
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+}
+
+.solog-dash__not-ready p {
+  margin: 6px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.solog-dash__empty {
+  padding: 24px;
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 1279px) {
+  .solog-dash__metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .solog-dash .solog-dash__site-card {
+    padding: 12px;
+  }
+
+  .solog-dash__heading {
+    align-items: stretch;
+  }
+
+  .solog-dash__heading h2 {
+    font-size: 1rem;
+  }
+
+  .solog-dash__toolbar {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .solog-dash__metric-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .solog-dash__metric {
+    min-height: 130px;
+    padding: 10px 12px;
+  }
+
+  .solog-dash__tabs {
+    min-width: max-content;
+  }
+
+  .solog-dash__site-header .solog-dash__round-pill {
+    margin-top: 4px;
+  }
+}
