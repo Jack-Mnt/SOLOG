@@ -9,7 +9,6 @@ const nonnegative = (v: unknown): v is number => typeof v === 'number' && Number
 const integer = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v)
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const nFinite = (v: unknown): boolean => v === null || finite(v)
-const nInteger = (v: unknown): boolean => v === null || integer(v)
 const nNonnegative = (v: unknown): boolean => v === null || nonnegative(v)
 const bool = (v: unknown): v is boolean => typeof v === 'boolean'
 const isoTime = (v: unknown): v is string => isText(v) && Number.isFinite(Date.parse(v))
