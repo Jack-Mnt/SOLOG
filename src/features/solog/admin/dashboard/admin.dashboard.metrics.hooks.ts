@@ -52,7 +52,7 @@ export function useDashboardMetrics<A extends MetricsAction>(
         }
       })
     } catch (error) {
-      if (current) setState({ key, error: errorMessage(error), loading: false })
+      if (current) publish({ key, error: errorMessage(error), loading: false })
     }
     return () => { current = false }
   }, [store, action, payloadKey, key, enabled, revision])
@@ -61,7 +61,7 @@ export function useDashboardMetrics<A extends MetricsAction>(
     store.invalidate(action, JSON.parse(payloadKey) as MetricsPayloads[A])
     setState({ key, loading: true })
     setRevision(n => n + 1)
-  }, [store, action, payloadKey])
+  }, [store, action, payloadKey, key])
 
   // Evita fugas de datos de la sede anterior en el render que precede al effect.
   const visible: QueryState<A> = state.key === key ? state : { key, loading: enabled }
