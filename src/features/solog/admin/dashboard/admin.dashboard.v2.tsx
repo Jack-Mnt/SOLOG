@@ -8,6 +8,7 @@ import { useDashboardMetrics } from './admin.dashboard.metrics.hooks'
 import { DashboardMetricsStore } from './admin.dashboard.metrics.store'
 import type { SiteOverview } from './admin.dashboard.metrics.types'
 import './admin.dashboard.metrics.css'
+import './admin.dashboard.metrics.views.css'
 
 type AdminIdentity = {
   id: string
@@ -96,7 +97,7 @@ function DashboardContent({ identity }: { identity: AdminIdentity }) {
       ) : (
         <div className="solog-dash__list">
           {sites.map(site => (
-            <DashboardSiteCard key={site.site_id} site={site}
+            <DashboardSiteCard key={site.site_id} site={site} store={metrics}
               expanded={expandedId === site.site_id}
               onToggle={() => toggle(site)} />
           ))}
