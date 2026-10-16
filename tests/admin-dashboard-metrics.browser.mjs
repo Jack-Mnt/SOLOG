@@ -241,6 +241,32 @@ export async function runDashboardMetricsBrowser() {
 
     await page.keyboard.press('Escape')
     await drawer.waitFor({ state: 'detached' })
+
+    // Responsive de la composición real y scroll exclusivamente dentro de tablas.
+    const viewports = []
+    for (const width of [1440, 1024, 850, 430]) {
+      await page.setViewportSize({ width, height: 900 })
+      const dimensions = await page.evaluate(() => ({
+        viewport: document.documentElement.clientWidth,
+        doc: document.documentElement.scrollWidth,
+        body: document.body.scrollWidth,
+        matrix: document.querySelector('.solog-dash__activity-scroll')?.scrollWidth ?? 0,
+        matrixClient: document.querySelector('.solog-dash__activity-scroll')?.clientWidth ?? 0,
+      }))
+      viewports.push({ width, ...dimensions })
+      assert.ok(dimensions.doc <= dimensions.viewport + 2,
+        'Overflow horizontal de página (' + width + 'px): ' + JSON.stringify(dimensions))
+      assert.ok(dimensions.body <= dimensions.viewport + 2,
+        'Overflow horizontal del body (' + width + 'px): ' + JSON.stringify(dimensions))
+    }
+    await page.setViewportSize({ width: 1440, height: 960 })
+    const huaca = page.getByRole('article', { name: 'Resumen de Huaca' })
+    await huaca.getByRole('button', { name: /Huaca/ }).click()
+    await huaca.getByRole('tab', { name: 'Riesgo' }).waitFor()
+    assert.equal(await cutervo.getByRole('tab').count(), 0)
+    await huaca.getByRole('button', { name: /Huaca/ }).click()
+    assert.equal(await huaca.getByRole('tab').count(), 0)
+
     assert.deepEqual(errors, [])
     console.log(JSON.stringify({
       status: 'Dashboard V1 browser mock: PASS',
@@ -249,6 +275,7 @@ export async function runDashboardMetricsBrowser() {
           .map(action => [action, count(action)]),
       ),
       productionCalls: 0,
+      viewports,
     }, null, 2))
   } finally {
     await browser.close()
