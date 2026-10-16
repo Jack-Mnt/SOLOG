@@ -27,7 +27,7 @@ test('V10 dataset completo, payload mínimo y caché por sede/período/custom si
     { ...context, period: 'current_biweekly' as const },
     context,
     { ...context, site_id: 'site-b' },
-    { ...context, period: 'custom' as const, date_from: '2026-09-01', date_to: '2026-09-05' },
+    { ...context, period: 'custom' as const, date_from: '2026-10-01', date_to: '2026-10-05' },
     context,
   ]) {
     expect((await store.load('control_groups', payload)).items).toHaveLength(101)
@@ -207,7 +207,8 @@ test('Control retiró llamadas legacy, usa RPC dedicada y comparte modal de expo
   expect(operational).toMatch(/action === 'control_groups' \|\| action === 'control_chronology_view'/)
   const api = await Bun.file('src/features/solog/api.ts').text()
   expect(api).not.toMatch(/rpc_solog_control(?:'|_detalle'|_export')/)
-  for (const path of ['dashboard/admin.dashboard.v2.tsx', 'control/admin.control.v2.tsx']) {
-    expect(await Bun.file('src/features/solog/admin/' + path).text()).toContain('AdminExportDialog')
-  }
+  const control = await Bun.file('src/features/solog/admin/control/admin.control.v2.tsx').text()
+  const dashboard = await Bun.file('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx').text()
+  expect(control).toContain('AdminExportDialog')
+  expect(dashboard).not.toContain('AdminExportDialog')
 })
