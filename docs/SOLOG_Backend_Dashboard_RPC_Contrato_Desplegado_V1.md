@@ -2,15 +2,15 @@
 
 | Campo | Estado |
 |---|---|
-| Contrato | **DESPLEGADO EN SUPABASE**; pendiente aprobación final del usuario para congelarlo como fuente de consumo del frontend |
-| Versión de transporte | `contract_version: 1` |
+| Contrato | **CONGELADO — FUENTE PRIMARIA DE TRANSPORTE RPC DASHBOARD V1**. Implementación desplegada en Supabase; aprobada explícitamente por el usuario el 15-10-2026 |
+| Versión de transporte | `contract_version: 1` — cambios posteriores solo mediante delta aprobado; lo no reemplazado continúa vigente |
 | Backend | `fvtohxvcvsflzmftgfzs` |
 | Rama documental | `admin-work` |
 | Fuente funcional primaria | `docs/SOLOG_Backend_Dashboard_Metricas_Persistencia_V1.md` (congelada) |
 | Delta funcional prevalente | `docs/SOLOG_Cambio_Dashboard_Movimiento_Actividad_V1.md` (congelado, solo sus sustituciones) |
 | Estado del contrato técnico anterior | `docs/SOLOG_Backend_Dashboard_Metricas_Contrato_Tecnico_V1.md` es referencia/propuesta histórica en cuanto a *formas de transporte*; **esta versión desplegada prevalece para payloads, respuestas y errores**. No reemplaza reglas funcionales congeladas |
 | Implementación ejecutable | SQL de Fase 6 versionado en `docs/SOLOG_Backend_Dashboard_Fase6_*.sql` y sus migraciones remotas; el último `CREATE OR REPLACE` prevalece por función |
-| Frontend | **NO AUTORIZADO todavía**. Codex deberá recibir este contrato únicamente después de su aprobación |
+| Frontend | **AUTORIZADA SOLO LA PLANIFICACIÓN**: Codex puede inspeccionar `admin-work`, fijar baseline y preparar plan técnico. **Implementación prohibida** hasta que el usuario apruebe el plan |
 
 ## 1. RPC, identidad y seguridad
 
@@ -152,4 +152,4 @@ La invocación `service_role` **no evita por sí misma** la verificación de `au
 - Implementación y helpers desplegados en Supabase, acciones y JSON contrastados mediante SQL, y control de acceso simulado sobre identidades de rol con rollback.
 - **No existe usuario admin/moderador activo** a fecha de implementación; la prueba real autenticada desde navegador debe completarse cuando el usuario autorice su activación. No modificar usuarios por iniciativa del implementador.
 - El frontend no debe leer `inventario` directamente, suponer que calidad `no_data` equivale a cero, recalcular riesgo ni mezclar hora física y turno de sesión.
-- El preflight frontend, baseline y plan de Codex se harán **después** de que este contrato sea aceptado/congelado. Los deltas posteriores preservarán toda decisión no sustituida explícitamente.
+- **Congelación aprobada el 15-10-2026:** el preflight frontend, baseline y plan de Codex quedan habilitados como siguiente etapa, sin permiso de implementar. Tras aprobarse el plan, las fases de implementación requerirán validaciones técnicas y smoke humano. Los deltas posteriores preservarán toda decisión no sustituida explícitamente.
