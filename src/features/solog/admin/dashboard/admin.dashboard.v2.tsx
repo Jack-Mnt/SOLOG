@@ -10,6 +10,7 @@ import type { SiteOverview } from './admin.dashboard.metrics.types'
 import './admin.dashboard.metrics.css'
 import './admin.dashboard.metrics.views.css'
 import './admin.dashboard.metrics.activity-episodes.css'
+import './admin.dashboard.metrics.day.css'
 
 type AdminIdentity = {
   id: string
