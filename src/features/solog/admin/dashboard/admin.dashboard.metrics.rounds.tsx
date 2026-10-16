@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CalendarClock, CircleHelp, Info } from 'lucide-react'
+import { CircleHelp } from 'lucide-react'
 import { QueryState } from '../admin.v2.presentation'
 import { useDashboardMetrics } from './admin.dashboard.metrics.hooks'
 import type { DashboardMetricsStore } from './admin.dashboard.metrics.store'
@@ -316,7 +316,7 @@ export function DashboardRoundsPanel({
           <h4>Rondas de conteo</h4>
           <p>Cobertura, hitos desde el inicio y cortes históricos inmutables.</p>
         </div>
-        {query.quality === 'partial' && <span className="solog-dash__quality-tag solog-dash__quality-tag--partial">Datos parciales</span>}
+        {query.data.quality === 'partial' && <span className="solog-dash__quality-tag solog-dash__quality-tag--partial">Datos parciales</span>}
       </div>
       <RoundCurrent data={query.data.data} />
       <HistoricalGraph history={query.data.data.history} />
