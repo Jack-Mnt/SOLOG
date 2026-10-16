@@ -73,7 +73,7 @@ export function DashboardRiskPanel({
     const received = query.data
     if (!received) return
     const page = received.data
-    setPages(previous => {
+    queueMicrotask(() => setPages(previous => {
       if (cursor === null) {
         return {
           rows: page.rows, total: page.total, nextCursor: page.next_cursor,
@@ -94,7 +94,7 @@ export function DashboardRiskPanel({
         rows: merged, total: page.total, nextCursor: page.next_cursor,
         quality: received.quality, seen: [...(previous?.seen ?? []), cursor],
       }
-    })
+    }))
   }, [query.data, cursor])
 
   const changeSort = (value: MetricsSort) => {
