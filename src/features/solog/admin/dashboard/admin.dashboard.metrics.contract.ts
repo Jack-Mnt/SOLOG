@@ -90,8 +90,8 @@ const site = (v: unknown): boolean => all(v, {
     green: nonnegative, yellow: nonnegative, red: nonnegative, exempt_zero_zero: nonnegative,
     without_evidence: nonnegative, universe: nonnegative, denominator: nonnegative,
     green_percent: nFinite, yellow_percent: nFinite, red_percent: nFinite, quality,
-  }) && x.green + x.yellow + x.red + x.exempt_zero_zero + x.without_evidence === x.universe &&
-    x.denominator === x.green + x.yellow + x.red,
+  }) && Number(x.green) + Number(x.yellow) + Number(x.red) + Number(x.exempt_zero_zero) + Number(x.without_evidence) === x.universe &&
+    Number(x.denominator) === Number(x.green) + Number(x.yellow) + Number(x.red),
   surplus: money, shortage: money,
   risk: (x) => all(x, { high: nonnegative, very_high: nonnegative, quality }),
 })
