@@ -74,7 +74,7 @@ function EpisodePages({ store, siteId, scope, sort }: {
   useEffect(() => {
     if (!query.data) return
     const page = query.data.data
-    setAccumulated(previous => {
+    queueMicrotask(() => setAccumulated(previous => {
       if (cursor === null) {
         return {
           rows: page.rows, total: page.total, nextCursor: page.next_cursor,
@@ -95,7 +95,7 @@ function EpisodePages({ store, siteId, scope, sort }: {
         consumed: [...(previous?.consumed ?? []), cursor],
         quality: query.data!.quality,
       }
-    })
+    }))
   }, [query.data, cursor])
 
   const firstPage = cursor === null && query.data
