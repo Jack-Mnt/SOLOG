@@ -1,5 +1,5 @@
 name: Dashboard Fase 6 - Validación puntual
-# Intento 6: verificacion final con lifecycle StrictMode sin warning ESLint.
+# Intento 7: release candidate Fase6, cleanup del store encapsulado y lint sin advertencias.
 
 # Ejecutar solo al modificar esta definición de CI. No lanzar builds por cada
 # push de codigo en admin-work ni habilitar Cloudflare despliegues desde Actions.
