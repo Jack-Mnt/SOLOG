@@ -1,5 +1,5 @@
 name: Dashboard Fase 6 - Validación puntual
-# Intento 2: verificar correcciones de bootstrap, lint, TypeScript y suites legadas.
+# Intento 3: validar ajuste restante de suites, lint y diagnosticar Dashboard browser.
 
 # Ejecutar solo al modificar esta definición de CI. No lanzar builds por cada
 # push de codigo en admin-work ni habilitar Cloudflare despliegues desde Actions.
