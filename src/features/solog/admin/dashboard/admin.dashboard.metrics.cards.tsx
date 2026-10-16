@@ -15,12 +15,11 @@ const DASHBOARD_TABS: readonly {
   id: DashboardTab
   label: string
   Icon: typeof TrendingUp
-  phase: string
 }[] = [
-  { id: 'risk', label: 'Riesgo', Icon: TrendingUp, phase: '3' },
-  { id: 'rounds', label: 'Rondas', Icon: Layers, phase: '3' },
-  { id: 'episodes', label: 'Episodios', Icon: Clock3, phase: '4' },
-  { id: 'activity', label: 'Actividad', Icon: CalendarDays, phase: '4' },
+  { id: 'risk', label: 'Riesgo', Icon: TrendingUp },
+  { id: 'rounds', label: 'Rondas', Icon: Layers },
+  { id: 'episodes', label: 'Episodios', Icon: Clock3 },
+  { id: 'activity', label: 'Actividad', Icon: CalendarDays },
 ]
 
 const intFormat = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 })
