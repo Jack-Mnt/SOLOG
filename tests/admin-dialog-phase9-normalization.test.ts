@@ -7,7 +7,7 @@ const dialogConsumerPaths = [
   'src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx',
   'src/features/solog/admin/control/admin.control.v2.export-dialog.tsx',
   'src/features/solog/admin/control/admin.control.v2.tsx',
-  'src/features/solog/admin/dashboard/admin.dashboard.v2.tsx',
+  'src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx',
   'src/features/solog/admin/dispositivos/admin.dispositivos.v2.tsx',
   'src/features/solog/admin/grupos/admin.categories.dialog.tsx',
   'src/features/solog/admin/grupos/admin.grupos.members-dialog.tsx',
@@ -97,7 +97,7 @@ describe('AdminDialog Fase 9.3 — foundation format / size / kind', () => {
     expect(control).toContain('format="drawer"')
     expect(control).toContain('drawerMaxWidth={560}')
     expect(dashboard).toContain('format="drawer"')
-    expect(dashboard).toContain('drawerMaxWidth={620}')
+    expect(dashboard).toContain('drawerMaxWidth={820}')
     expect(incidents).toContain('format="drawer"')
     expect(incidents).toContain('drawerMaxWidth={520}')
 
