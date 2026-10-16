@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { useAdminStore } from '../admin.v2.context'
+import { useAdminQuery } from '../admin.v2.context'
 import { QueryState } from '../admin.v2.presentation'
 import { orderedAdminSites } from '../admin.site-ui'
 import { DashboardSiteCard } from './admin.dashboard.metrics.cards'
@@ -114,11 +114,13 @@ function DashboardContent({ identity }: { identity: AdminIdentity }) {
  * las tarjetas, KPI, Grid y Drawer antiguos, sin alterar las rutas ni Control.
  */
 export function AdminDashboardV2() {
-  const admin = useAdminStore()
-  const identity = admin.bootstrap?.identity
+  const bootstrap = useAdminQuery('bootstrap', {})
+  const identity = bootstrap.data?.identity
 
   if (!identity) {
-    return <div className="solog-dash__empty" role="status">Validando acceso administrativo…</div>
+    return bootstrap.error
+      ? <QueryState error={bootstrap.error} retry={bootstrap.retry} />
+      : <QueryState retry={bootstrap.retry} />
   }
   return (
     <DashboardContent key={`${identity.id}:${identity.rol}`} identity={identity} />
