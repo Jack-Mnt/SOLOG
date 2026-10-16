@@ -4,6 +4,9 @@ import {
   Store, TrendingUp,
 } from 'lucide-react'
 import type { MetricsQuality, SiteOverview } from './admin.dashboard.metrics.types'
+import type { DashboardMetricsStore } from './admin.dashboard.metrics.store'
+import { DashboardRiskPanel } from './admin.dashboard.metrics.risk'
+import { DashboardRoundsPanel } from './admin.dashboard.metrics.rounds'
 
 type DashboardTab = 'risk' | 'rounds' | 'episodes' | 'activity'
 const DASHBOARD_TABS: readonly {
@@ -192,7 +195,7 @@ function ValuationMetric({ site }: { site: SiteOverview }) {
 }
 
 /** Armazón accesible de las vistas; su contenido real se integra en Fases 3–4. */
-export function DashboardSiteDetail({ site }: { site: SiteOverview }) {
+export function DashboardSiteDetail({ site, store }: { site: SiteOverview; store: DashboardMetricsStore }) {
   const [active, setActive] = useState<DashboardTab>('risk')
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const baseId = useId()
@@ -243,13 +246,19 @@ export function DashboardSiteDetail({ site }: { site: SiteOverview }) {
           aria-labelledby={`${baseId}-tab-${tab.id}`}
           tabIndex={0} hidden={active !== tab.id} className="solog-dash__tab-panel">
           {active === tab.id && (
-            <div className="solog-dash__not-ready" role="status">
-              <Info size={18} aria-hidden="true" />
-              <div>
-                <strong>{tab.label}</strong>
-                <p>La vista de {tab.label.toLowerCase()} se integrará con datos reales en la Fase {tab.phase}.</p>
+            tab.id === 'risk' ? (
+              <DashboardRiskPanel siteId={site.site_id} store={store} />
+            ) : tab.id === 'rounds' ? (
+              <DashboardRoundsPanel siteId={site.site_id} store={store} />
+            ) : (
+              <div className="solog-dash__not-ready" role="status">
+                <Info size={18} aria-hidden="true" />
+                <div>
+                  <strong>{tab.label}</strong>
+                  <p>La vista de {tab.label.toLowerCase()} se integrará con datos reales en la Fase {tab.phase}.</p>
+                </div>
               </div>
-            </div>
+            )
           )}
         </section>
       ))}
@@ -258,8 +267,8 @@ export function DashboardSiteDetail({ site }: { site: SiteOverview }) {
 }
 
 export function DashboardSiteCard({
-  site, expanded, onToggle,
-}: { site: SiteOverview; expanded: boolean; onToggle: () => void }) {
+  site, expanded, onToggle, store,
+}: { site: SiteOverview; expanded: boolean; onToggle: () => void; store: DashboardMetricsStore }) {
   const contentId = `dashboard-site-detail-${site.site_id}`
   return (
     <article className={`admin-v2-card solog-dash__site-card${expanded ? ' solog-dash__site-card--expanded' : ''}`}
@@ -286,7 +295,7 @@ export function DashboardSiteCard({
       </div>
 
       <div id={contentId} hidden={!expanded}>
-        {expanded && <DashboardSiteDetail site={site} />}
+        {expanded && <DashboardSiteDetail site={site} store={store} />}
       </div>
     </article>
   )
