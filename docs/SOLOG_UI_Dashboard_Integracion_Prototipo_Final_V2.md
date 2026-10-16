@@ -1,16 +1,16 @@
 # SOLOG — UI Dashboard — Integración del prototipo final V2
 
-**Estado:** **APROBADO Y CONGELADO — FUENTE PRIMARIA UI DASHBOARD V2.** Implementación iniciada (Fase 0), no validada todavía.  
-**Nivel:** B — sustitución funcional y visual acotada al módulo Dashboard del Admin.  
-**Ejecutor:** ChatGPT, directamente en esta conversación, con las herramientas de acceso a GitHub y las verificaciones disponibles. **No se delegará en Codex.**  
-**Repositorio/rama:** `Jack-Mnt/SOLOG` / `admin-work`. `master` queda fuera de alcance.  
-**Baseline remoto referencial comprobado:** `4cb3e9f4b63cc7c2de681ef70b8fa7d1bed47944`. Se debe actualizar antes de comenzar; el working tree local del usuario **no es visible** desde esta conversación.  
-**Fuente primaria UI:** este archivo, **aprobado y congelado el 15-10-2026**. Cambios posteriores mediante delta explícito.  
-**Fuente primaria técnica de transporte RPC ya congelada:** `docs/SOLOG_Backend_Dashboard_RPC_Contrato_Desplegado_V1.md`.  
-**Fuentes funcionales vigentes:** `docs/SOLOG_Backend_Dashboard_Metricas_Persistencia_V1.md` y delta `docs/SOLOG_Cambio_Dashboard_Movimiento_Actividad_V1.md` (prevalece exclusivamente en lo que sustituye).  
-**Referencias UI transversales vigentes:** `docs/SOLOG_UI_Admin_Responsive_Shell_Controles_V1.md`, Design System, primitivas, tablas y overlays compartidos.  
-**Referencia visual:** `SOLOG_UI_Dashboard_Prototipo_Final_V1.html`, creado en esta conversación, interpretado **sin** los KPI ni controles heredados del Dashboard anterior.  
-**Documento precedente:** `SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V1.md` — **REEMPLAZADO** para plan y ejecución. Se mantiene histórico.  
+**Estado:** **APROBADO Y CONGELADO — FUENTE PRIMARIA UI DASHBOARD V2.** Implementación iniciada (Fase 0), no validada todavía.
+**Nivel:** B — sustitución funcional y visual acotada al módulo Dashboard del Admin.
+**Ejecutor:** ChatGPT, directamente en esta conversación, con las herramientas de acceso a GitHub y las verificaciones disponibles. **No se delegará en Codex.**
+**Repositorio/rama:** `Jack-Mnt/SOLOG` / `admin-work`. `master` queda fuera de alcance.
+**Baseline remoto referencial comprobado:** `4cb3e9f4b63cc7c2de681ef70b8fa7d1bed47944`. Se debe actualizar antes de comenzar; el working tree local del usuario **no es visible** desde esta conversación.
+**Fuente primaria UI:** este archivo, **aprobado y congelado el 15-10-2026**. Cambios posteriores mediante delta explícito.
+**Fuente primaria técnica de transporte RPC ya congelada:** `docs/SOLOG_Backend_Dashboard_RPC_Contrato_Desplegado_V1.md`.
+**Fuentes funcionales vigentes:** `docs/SOLOG_Backend_Dashboard_Metricas_Persistencia_V1.md` y delta `docs/SOLOG_Cambio_Dashboard_Movimiento_Actividad_V1.md` (prevalece exclusivamente en lo que sustituye).
+**Referencias UI transversales vigentes:** `docs/SOLOG_UI_Admin_Responsive_Shell_Controles_V1.md`, Design System, primitivas, tablas y overlays compartidos.
+**Referencia visual:** `SOLOG_UI_Dashboard_Prototipo_Final_V1.html`, creado en esta conversación, interpretado **sin** los KPI ni controles heredados del Dashboard anterior.
+**Documento precedente:** `SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V1.md` — **REEMPLAZADO** para plan y ejecución. Se mantiene histórico.
 **Precedencia:** reglas funcionales congeladas > contrato backend congelado para payloads y respuestas > esta V2 para presentación y ejecución > prototipo HTML ilustrativo > implementación UI anterior. Si surge incompatibilidad concreta, detener el tramo afectado y resolver mediante delta aprobado; no reinterpretar silenciosamente.
 
 ## 1. Decisiones aceptadas y alcance
