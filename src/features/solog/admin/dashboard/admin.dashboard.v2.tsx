@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useAdminQuery } from '../admin.v2.context'
 import { QueryState } from '../admin.v2.presentation'
@@ -32,15 +32,15 @@ function DashboardContent({ identity }: { identity: AdminIdentity }) {
   // StrictMode ejecuta setup/cleanup/setup sin desmontar el componente.
   // Diferir dispose a una microtarea permite cancelar el cleanup simulado;
   // en un desmontaje real el store se libera y descarta respuestas pendientes.
-  const lifecycle = useRef(0)
+  const lifecycle = useMemo(() => ({ generation: 0 }), [metrics])
   useEffect(() => {
-    const generation = ++lifecycle.current
+    const generation = ++lifecycle.generation
     return () => {
       queueMicrotask(() => {
-        if (lifecycle.current === generation) metrics.dispose()
+        if (lifecycle.generation === generation) metrics.dispose()
       })
     }
-  }, [metrics])
+  }, [metrics, lifecycle])
 
   const overview = useDashboardMetrics(metrics, 'overview', {})
   const [expandedSiteId, setExpandedSiteId] = useState<string | null | undefined>(undefined)
