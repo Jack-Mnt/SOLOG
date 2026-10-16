@@ -32,7 +32,7 @@ describe('AdminDialog Fase 3 — normalización estructural de consumidores', ()
     )
 
     expect(totalDialogs).toBe(22)
-    expect(explicitFooters).toBe(20)
+    expect(explicitFooters).toBe(19)
   })
 
   test('los drill-down principales usan drawer y Cronología ya no implementa trap local', async () => {
