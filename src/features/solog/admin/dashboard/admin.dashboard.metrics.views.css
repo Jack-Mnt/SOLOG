@@ -1,0 +1,348 @@
+/* Dashboard Fase 3 — Riesgo y Rondas.
+   Solo reglas del módulo; colores, radios, sombra y controles del Design System. */
+
+.solog-dash__view {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.solog-dash__view-heading,
+.solog-dash__round-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+.solog-dash__view-heading h4,
+.solog-dash__round-title h4 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.solog-dash__view-heading p,
+.solog-dash__round-title p,
+.solog-dash__round-section p {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.solog-dash__view-actions,
+.solog-dash__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.solog-dash__pagination {
+  justify-content: space-between;
+}
+
+.solog-dash__result-count {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.solog-dash__results-table,
+.solog-dash__round-history-table {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.solog-dash__results-table table,
+.solog-dash__round-history-table table {
+  white-space: nowrap;
+}
+
+.solog-dash__results-table th:first-child,
+.solog-dash__round-history-table th:first-child {
+  min-width: 180px;
+}
+
+.solog-dash__results-table tbody th,
+.solog-dash__round-history-table tbody th {
+  font-weight: 600;
+}
+
+.solog-dash__signed,
+.solog-dash__movement,
+.solog-dash__risk-level {
+  font-variant-numeric: tabular-nums;
+}
+
+.solog-dash__signed--positive {
+  color: var(--color-success);
+}
+.solog-dash__signed--negative {
+  color: var(--color-danger);
+}
+.solog-dash__signed--zero {
+  color: var(--color-text-secondary);
+}
+
+.solog-dash__risk-level {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  min-height: 24px;
+  border-radius: var(--radius-small);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.solog-dash__risk-level--low {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+.solog-dash__risk-level--medium {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+}
+.solog-dash__risk-level--high {
+  color: var(--color-text-primary);
+  background: var(--color-warning-soft);
+}
+.solog-dash__risk-level--critical {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+.solog-dash__movement {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.solog-dash__movement--insufficient {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+.solog-dash__movement--partial {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.solog-dash__data-note,
+.solog-dash__data-error,
+.solog-dash__footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+.solog-dash__data-note {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+}
+.solog-dash__data-note svg,
+.solog-dash__footnote svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--color-primary);
+}
+.solog-dash__data-error {
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-control);
+  background: var(--color-danger-soft);
+}
+.solog-dash__data-error p {
+  margin: 0;
+  flex: 1 1 240px;
+}
+.solog-dash__pagination .button,
+.solog-dash__data-error .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.solog-dash__round-card {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+.solog-dash__round-title {
+  align-items: flex-start;
+}
+.solog-dash__round-title h5 {
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  margin: 0;
+}
+.solog-dash__quality-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  min-height: 24px;
+  border-radius: var(--radius-small);
+  border: 1px solid var(--color-border);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+}
+.solog-dash__quality-tag--complete {
+  color: var(--color-success);
+  border-color: var(--color-border);
+  background: var(--color-success-soft);
+}
+.solog-dash__quality-tag--partial {
+  color: var(--color-text-primary);
+  background: var(--color-warning-soft);
+}
+.solog-dash__quality-tag--no_data {
+  color: var(--color-text-secondary);
+}
+
+.solog-dash__round-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.solog-dash__round-switch .button[aria-pressed="true"] {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+.solog-dash__round-summary,
+.solog-dash__milestones,
+.solog-dash__shift-rows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.solog-dash__round-summary > div,
+.solog-dash__milestone,
+.solog-dash__shift-rows > div {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 12px;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+}
+.solog-dash__round-summary span,
+.solog-dash__milestone-label,
+.solog-dash__shift-rows span {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.solog-dash__round-summary strong,
+.solog-dash__milestone-value,
+.solog-dash__shift-rows strong {
+  color: var(--color-text-primary);
+  font-size: 1.1rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.solog-dash__round-summary small,
+.solog-dash__milestone small,
+.solog-dash__shift-rows small {
+  color: var(--color-text-secondary);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+.solog-dash__milestone-value--missing {
+  color: var(--color-text-secondary);
+}
+.solog-dash__round-section {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.solog-dash__round-section h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+}
+.solog-dash__history-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+.solog-dash__history-svg {
+  display: block;
+  max-width: none;
+  height: auto;
+}
+.solog-dash__graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+}
+.solog-dash__graph-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.solog-dash__legend-line {
+  width: 18px;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: 4px;
+}
+.solog-dash__footnote {
+  margin: 0;
+}
+
+@media (max-width: 1023px) {
+  .solog-dash__round-summary,
+  .solog-dash__milestones,
+  .solog-dash__shift-rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .solog-dash__round-card {
+    padding: 12px;
+  }
+
+  .solog-dash__round-summary,
+  .solog-dash__milestones,
+  .solog-dash__shift-rows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .solog-dash__view-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .solog-dash__result-count {
+    font-size: 0.6875rem;
+  }
+}
