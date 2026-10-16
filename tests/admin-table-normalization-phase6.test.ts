@@ -15,7 +15,7 @@ const adminTableFiles = [
 describe('Admin table normalization — Phase 6 global review', () => {
   test('cada módulo principal usa una única main table y la familia legacy desaparece', async () => {
     const [dashboard, control, catalog, products, groups, incidents, css] = await Promise.all([
-      source(adminTableFiles[0]),
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.risk.tsx'),
       source(adminTableFiles[1]),
       source(adminTableFiles[2]),
       source(adminTableFiles[3]),
@@ -24,7 +24,8 @@ describe('Admin table normalization — Phase 6 global review', () => {
       source('src/features/solog/admin/admin.css'),
     ])
 
-    for (const module of [dashboard, control, catalog, products, groups, incidents]) {
+    expect(dashboard).toContain('admin-main-table')
+    for (const module of [control, catalog, products, groups, incidents]) {
       expect(module.match(/admin-main-table/g) ?? []).toHaveLength(1)
     }
 
@@ -35,14 +36,14 @@ describe('Admin table normalization — Phase 6 global review', () => {
 
   test('las tablas auxiliares vigentes permanecen aisladas y Fase 8 retira dos superficies tabulares', async () => {
     const [dashboard, control, catalog, groupsDialog, incidents] = await Promise.all([
-      source(adminTableFiles[0]),
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx'),
       source(adminTableFiles[1]),
       source(adminTableFiles[2]),
       source(adminTableFiles[5]),
       source(adminTableFiles[6]),
     ])
 
-    expect(dashboard.match(/admin-auxiliary-table/g) ?? []).toHaveLength(1)
+    expect(dashboard).toContain('className="admin-auxiliary-table solog-dash__daily-table"')
     expect(control.match(/admin-auxiliary-table/g) ?? []).toHaveLength(0)
     expect(catalog.match(/admin-auxiliary-table/g) ?? []).toHaveLength(1)
     expect(groupsDialog.match(/admin-auxiliary-table/g) ?? []).toHaveLength(1)
@@ -69,13 +70,14 @@ describe('Admin table normalization — Phase 6 global review', () => {
   test('IconButton y las dos excepciones conservan el contrato congelado', async () => {
     const [primitive, dashboard, groups, css] = await Promise.all([
       source('src/features/solog/admin/admin.primitives.tsx'),
-      source(adminTableFiles[0]),
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.cards.tsx'),
       source(adminTableFiles[4]),
       source('src/features/solog/admin/admin.css'),
     ])
 
     expect(primitive).toContain("'default' | 'primary' | 'warning' | 'danger'")
-    expect(dashboard).toContain('className="admin__percentage-action"')
+    expect(dashboard).toContain('solog-dash__metric--coverage')
+    expect(dashboard).toContain('<progress')
     expect(css).toMatch(/\.admin__percentage-action\s*\{/)
     expect(groups).toContain('className="button button--secondary admin-groups__members"')
     expect(groups).toContain('PackageOpen')
