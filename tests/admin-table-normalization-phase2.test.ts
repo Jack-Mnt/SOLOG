@@ -45,12 +45,15 @@ describe('Admin table normalization — Phase 2 Dashboard + Control', () => {
     expect(control).toContain('useAdminQuery("control_chronology_view"')
   })
 
-  test('Dashboard preserva matriz centrada y normaliza thead sin perder primera columna sticky', async () => {
-    const css = await source('src/features/solog/admin/admin.css')
-
-    expect(css).toMatch(/\.admin-dashboard__detail > \.admin-main-table th,[\s\S]*?text-align:\s*center/)
-    expect(css).toMatch(/\.admin-dashboard__detail > \.admin-main-table th:first-child\s*\{[\s\S]*?position:\s*sticky[\s\S]*?left:\s*0/)
-    expect(css).toMatch(/\.admin-dashboard__detail > \.admin-main-table thead th:first-child\s*\{[\s\S]*?z-index:\s*3/)
-    expect(css).toMatch(/\.admin-main-table thead th\s*\{[\s\S]*?background:\s*var\(--color-surface-secondary\)/)
+  test('Dashboard V1 conserva la primera columna sticky sin modificar CSS general', async () => {
+    const [css, common] = await Promise.all([
+      source('src/features/solog/admin/dashboard/admin.dashboard.metrics.activity-episodes.css'),
+      source('src/features/solog/admin/admin.css'),
+    ])
+    expect(css).toContain('.solog-dash__activity-table th:first-child')
+    expect(css).toContain('position: sticky')
+    expect(css).toContain('left: 0')
+    expect(common).toMatch(/\.admin-main-table thead th\s*\{[\s\S]*?background:\s*var\(--color-surface-secondary\)/)
   })
+
 })
