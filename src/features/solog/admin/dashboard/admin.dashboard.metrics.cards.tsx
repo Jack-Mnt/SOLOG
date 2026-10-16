@@ -196,7 +196,6 @@ export function DashboardSiteDetail({ site }: { site: SiteOverview }) {
   const [active, setActive] = useState<DashboardTab>('risk')
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const baseId = useId()
-  const current = DASHBOARD_TABS.find(tab => tab.id === active)!
 
   function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const last = DASHBOARD_TABS.length - 1
@@ -239,17 +238,21 @@ export function DashboardSiteDetail({ site }: { site: SiteOverview }) {
           ))}
         </div>
       </div>
-      <section id={`${baseId}-panel-${active}`} role="tabpanel"
-        aria-labelledby={`${baseId}-tab-${active}`}
-        tabIndex={0} className="solog-dash__tab-panel">
-        <div className="solog-dash__not-ready" role="status">
-          <Info size={18} aria-hidden="true" />
-          <div>
-            <strong>{current.label}</strong>
-            <p>La vista de {current.label.toLowerCase()} se integrará con datos reales en la Fase {current.phase}.</p>
-          </div>
-        </div>
-      </section>
+      {DASHBOARD_TABS.map(tab => (
+        <section key={tab.id} id={`${baseId}-panel-${tab.id}`} role="tabpanel"
+          aria-labelledby={`${baseId}-tab-${tab.id}`}
+          tabIndex={0} hidden={active !== tab.id} className="solog-dash__tab-panel">
+          {active === tab.id && (
+            <div className="solog-dash__not-ready" role="status">
+              <Info size={18} aria-hidden="true" />
+              <div>
+                <strong>{tab.label}</strong>
+                <p>La vista de {tab.label.toLowerCase()} se integrará con datos reales en la Fase {tab.phase}.</p>
+              </div>
+            </div>
+          )}
+        </section>
+      ))}
     </div>
   )
 }
