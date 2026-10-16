@@ -29,18 +29,7 @@ function DashboardContent({ identity }: { identity: AdminIdentity }) {
     () => new DashboardMetricsStore(identity.id, identity.rol),
     [identity.id, identity.rol],
   )
-  // StrictMode ejecuta setup/cleanup/setup sin desmontar el componente.
-  // Diferir dispose a una microtarea permite cancelar el cleanup simulado;
-  // en un desmontaje real el store se libera y descarta respuestas pendientes.
-  const lifecycle = useMemo(() => ({ generation: 0 }), [metrics])
-  useEffect(() => {
-    const generation = ++lifecycle.generation
-    return () => {
-      queueMicrotask(() => {
-        if (lifecycle.generation === generation) metrics.dispose()
-      })
-    }
-  }, [metrics, lifecycle])
+  useEffect(() => metrics.mount(), [metrics])
 
   const overview = useDashboardMetrics(metrics, 'overview', {})
   const [expandedSiteId, setExpandedSiteId] = useState<string | null | undefined>(undefined)
