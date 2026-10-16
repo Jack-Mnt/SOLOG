@@ -31,17 +31,18 @@ export function useDashboardMetrics<A extends MetricsAction>(
 
   useEffect(() => {
     let current = true
+    const publish = (next: QueryState<A>) => queueMicrotask(() => { if (current) setState(next) })
     if (!enabled) {
-      setState({ key, loading: false })
+      publish({ key, loading: false })
       return () => { current = false }
     }
     const parsed = JSON.parse(payloadKey) as MetricsPayloads[A]
     const cached = store.peek(action, parsed)
     if (cached) {
-      setState({ key, data: cached, loading: false })
+      publish({ key, data: cached, loading: false })
       return () => { current = false }
     }
-    setState({ key, loading: true })
+    publish({ key, loading: true })
     try {
       void store.load(action, parsed).then((data) => {
         if (current) setState({ key, data, loading: false })
@@ -58,6 +59,7 @@ export function useDashboardMetrics<A extends MetricsAction>(
 
   const retry = useCallback(() => {
     store.invalidate(action, JSON.parse(payloadKey) as MetricsPayloads[A])
+    setState({ key, loading: true })
     setRevision(n => n + 1)
   }, [store, action, payloadKey])
 
