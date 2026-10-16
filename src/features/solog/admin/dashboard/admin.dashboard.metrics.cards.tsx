@@ -7,6 +7,8 @@ import type { MetricsQuality, SiteOverview } from './admin.dashboard.metrics.typ
 import type { DashboardMetricsStore } from './admin.dashboard.metrics.store'
 import { DashboardRiskPanel } from './admin.dashboard.metrics.risk'
 import { DashboardRoundsPanel } from './admin.dashboard.metrics.rounds'
+import { DashboardEpisodesPanel } from './admin.dashboard.metrics.episodes'
+import { DashboardActivityPanel } from './admin.dashboard.metrics.activity'
 
 type DashboardTab = 'risk' | 'rounds' | 'episodes' | 'activity'
 const DASHBOARD_TABS: readonly {
@@ -197,6 +199,7 @@ function ValuationMetric({ site }: { site: SiteOverview }) {
 /** Armazón accesible de las vistas; su contenido real se integra en Fases 3–4. */
 export function DashboardSiteDetail({ site, store }: { site: SiteOverview; store: DashboardMetricsStore }) {
   const [active, setActive] = useState<DashboardTab>('risk')
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const baseId = useId()
 
@@ -250,14 +253,20 @@ export function DashboardSiteDetail({ site, store }: { site: SiteOverview; store
               <DashboardRiskPanel siteId={site.site_id} store={store} />
             ) : tab.id === 'rounds' ? (
               <DashboardRoundsPanel siteId={site.site_id} store={store} />
+            ) : tab.id === 'episodes' ? (
+              <DashboardEpisodesPanel siteId={site.site_id} store={store} />
             ) : (
-              <div className="solog-dash__not-ready" role="status">
-                <Info size={18} aria-hidden="true" />
-                <div>
-                  <strong>{tab.label}</strong>
-                  <p>La vista de {tab.label.toLowerCase()} se integrará con datos reales en la Fase {tab.phase}.</p>
-                </div>
-              </div>
+              <>
+                <DashboardActivityPanel siteId={site.site_id} store={store}
+                  onSelectDate={setSelectedDate} />
+                {selectedDate && (
+                  <div className="solog-dash__data-note" role="status">
+                    <Info size={16} aria-hidden="true" />
+                    Fecha seleccionada: {dateLabel(selectedDate)}.
+                    El Drawer con el detalle diario se incorporará en la Fase 5.
+                  </div>
+                )}
+              </>
             )
           )}
         </section>
