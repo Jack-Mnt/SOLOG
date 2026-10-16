@@ -35,7 +35,11 @@ test('ReadNotice elimina Cargando aislado y conserva error contextual', async ()
 test('dialogs, drawers y sublecturas usan variante compacta', async () => {
   const catalog = await source('src/features/solog/admin/catalogo/admin.catalogo.page.v4.tsx')
   const control = await source('src/features/solog/admin/control/admin.control.v2.tsx')
-  const dashboard = await source('src/features/solog/admin/dashboard/admin.dashboard.v2.tsx')
+  const dashboard = await Promise.all([
+    source('src/features/solog/admin/dashboard/admin.dashboard.metrics.day.tsx'),
+    source('src/features/solog/admin/dashboard/admin.dashboard.metrics.risk.tsx'),
+    source('src/features/solog/admin/dashboard/admin.dashboard.metrics.rounds.tsx'),
+  ]).then(parts => parts.join('\n'))
   const categories = await source('src/features/solog/admin/grupos/admin.categories.dialog.tsx')
   const groups = await source('src/features/solog/admin/grupos/admin.grupos.v2.tsx')
   const incidents = await source('src/features/solog/admin/incidencias/admin.incidencias.v2.tsx')
