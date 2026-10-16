@@ -1,4 +1,4 @@
-// Dashboard + Control browser simulation against current Admin contracts.
+// Control browser simulation against current Admin V2 contracts. Dashboard V1 has its own harness.
 // Every non-local request is intercepted; production traffic is blocked.
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
@@ -117,60 +117,7 @@ export async function runAdminV2Browser() {
   page.on('pageerror', error => errors.push(error.message))
 
   try {
-    const controlOnly = process.env.SOLOG_CONTROL_UI_ONLY === '1'
-    await page.goto('http://127.0.0.1:5208/admin' + (controlOnly ? '/control' : ''))
-
-    if (!controlOnly) {
-      await page.getByRole('heading', { name: 'Sede A', exact: true }).waitFor()
-      assert.equal(count('bootstrap'), 1)
-      assert.equal(count('dashboard_cards'), 1)
-
-      await page.getByRole('button', { name: 'Ver turnos de Sede A' }).click()
-      await page.getByRole('button', { name: 'Abrir día 2026-09-03' }).waitFor()
-      assert.equal(count('shift_grid'), 1)
-      assert.equal(count('daily_detail_bootstrap'), 0)
-
-      await page.getByRole('button', { name: 'Abrir día 2026-09-03' }).click()
-      const dailyDrawer = page.getByRole('dialog')
-      await dailyDrawer.getByRole('heading', { name: 'Detalle diario · Sede A' }).waitFor()
-      await dailyDrawer.getByRole('tab', { name: /Coincide/ }).waitFor()
-      await dailyDrawer.getByText('Grupo coincide 0', { exact: true }).waitFor()
-      assert.equal(count('daily_detail_bootstrap'), 1)
-      assert.deepEqual(calls.find(call => call.action === 'daily_detail_bootstrap').payload, {
-        site_id: 'site-a',
-        origin_date: '2026-09-03',
-        stock_class: 'positive',
-      })
-
-      await dailyDrawer.getByRole('button', { name: 'Siguiente', exact: true }).click()
-      await dailyDrawer.getByText('Grupo página', { exact: true }).waitFor()
-      assert.equal(count('daily_detail_page'), 1)
-      assert.deepEqual(calls.find(call => call.action === 'daily_detail_page').payload, {
-        site_id: 'site-a',
-        origin_date: '2026-09-03',
-        stock_class: 'positive',
-        state: 'Coincide',
-        page: 1,
-      })
-
-      await dailyDrawer.getByRole('tab', { name: /Confirmados/ }).click()
-      await dailyDrawer.getByText('Grupo confirmado 0', { exact: true }).waitFor()
-      await dailyDrawer.getByRole('button', { name: 'Cerrar', exact: true }).click()
-
-      await page.getByRole('button', { name: 'Abrir día 2026-09-03' }).click()
-      await page.getByRole('dialog').getByText('Grupo coincide 0', { exact: true }).waitFor()
-      assert.equal(count('daily_detail_bootstrap'), 1, 'Daily bootstrap stays cached by scope')
-      await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click()
-
-      const siteA = page.getByRole('article', { name: 'Sede Sede A' })
-      await siteA.getByRole('button', { name: 'Descargar ajuste', exact: true }).click()
-      const dashboardExportDialog = page.getByRole('dialog')
-      await dashboardExportDialog.getByRole('radiogroup', { name: 'Quincena' }).waitFor()
-      assert.equal(count('export'), 0)
-      await dashboardExportDialog.getByRole('button', { name: 'Cerrar', exact: true }).click()
-    }
-
-    await page.getByRole('button', { name: 'Control', exact: true }).click()
+    await page.goto('http://127.0.0.1:5208/admin/control')
     const control = page.locator('.admin-control')
     await control.getByText('Grupo 49', { exact: true }).waitFor()
     assert.equal(count('control_groups'), 1)
@@ -294,12 +241,12 @@ export async function runAdminV2Browser() {
     assert.deepEqual(errors, [])
 
     console.log(JSON.stringify({
-      status: controlOnly ? 'PASS Control browser actual' : 'PASS Dashboard + Control browser actual',
+      status: 'PASS Control browser actual',
       rpcCalls: calls.length,
       responseBytes: bytes,
       productionCalls: 0,
       actions: Object.fromEntries(
-        ['bootstrap', 'dashboard_cards', 'shift_grid', 'daily_detail_bootstrap', 'daily_detail_page', 'control_groups', 'control_chronology_view', 'export']
+        ['bootstrap', 'control_groups', 'control_chronology_view', 'export']
           .map(action => [action, count(action)]),
       ),
     }, null, 2))
