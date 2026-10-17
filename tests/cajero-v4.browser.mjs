@@ -19,13 +19,19 @@ const user = { id: ids.user, email: 'cashier@example.test', role: 'authenticated
 const jwt = [{ alg: 'HS256', typ: 'JWT' }, { sub: user.id, aud: 'authenticated', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 }]
   .map(part => Buffer.from(JSON.stringify(part)).toString('base64url')).join('.') + '.test'
 
-async function scenario({ startAction = 'coverage', preSessionAction = 'coverage', coverageComplete = false, blockedCoverage = false, round = 1, initial = 'pre_session', recovery = false, richCoverage = false, multiCategory = false, expiredWithDraft = false, expiredWithoutDraft = false, autocloseError = null, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
+async function scenario({ startAction = 'coverage', preSessionAction = 'coverage', coverageComplete = false, blockedCoverage = false, round = 1, initial = 'pre_session', recovery = false, richCoverage = false, multiCategory = false, reviewWithPriorReason = false, expiredWithDraft = false, expiredWithoutDraft = false, autocloseError = null, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const calls = [], errors = []
   let startAttempts = 0, finishAttempts = 0, batchAttempts = 0
   let confirmedBatch = null
   let b = cashierV4Bootstrap(initial, { next_action: initial === 'pre_session' ? preSessionAction : startAction, ronda: round })
   if (recovery) b = cashierV4Bootstrap('active_recovery', { next_action: 'coverage' })
+  if (reviewWithPriorReason && b.panel_state?.review_queue?.length) {
+    Object.assign(b.panel_state.review_queue[0], {
+      motivo_diferencia: 'Transferencia',
+      observacion_diferencia: 'Traslado registrado durante el conteo inicial',
+    })
+  }
   const initialKpis = b.panel_state?.kpis ?? b.pre_session_summary?.kpis
   if (coverageComplete && initialKpis) {
     initialKpis.coverage_counted = initialKpis.coverage_total
@@ -393,9 +399,44 @@ try {
     const dialog = page.getByRole('dialog'), before = calls.length
     assert.deepEqual(await dialog.locator('.cajero-calculator__keys button').allTextContents(),
       ['7', '8', '9', '×6', '×', '4', '5', '6', '×12', '1', '2', '3', '×15', '+', 'C', '0', '', '×24'])
-    const observationButton = dialog.getByRole('button', { name: 'Agregar observación (próximamente)', exact: true })
-    assert.equal(await observationButton.isDisabled(), true)
+    const observationButton = dialog.getByRole('button', { name: 'Agregar observación', exact: true })
+    assert.equal(await observationButton.isEnabled(), true)
     assert.equal(await observationButton.locator('svg').count(), 1)
+    await observationButton.click()
+    const upper = page.getByRole('dialog', { name: 'Motivo y observación' })
+    const closeUpper = upper.getByRole('button', { name: 'Cerrar observación' })
+    await closeUpper.waitFor()
+    assert.equal(await closeUpper.evaluate(element => document.activeElement === element), true,
+      'Al abrir, el foco inicial debe estar en Cerrar observación')
+    await page.keyboard.press('Tab')
+    const firstReason = upper.getByRole('radio', { name: 'Transferencia' })
+    assert.equal(await firstReason.evaluate(element => document.activeElement === element), true,
+      'Tab entra al grupo de radios una sola vez')
+    await page.keyboard.press('ArrowDown')
+    const secondReason = upper.getByRole('radio', { name: 'Venta por mayor' })
+    assert.equal(await secondReason.isChecked(), true, 'Las flechas seleccionan un motivo nativamente')
+    await page.keyboard.press('Space')
+    await page.keyboard.press('Tab')
+    const reasonText = upper.getByRole('textbox', { name: 'Explicación' })
+    assert.equal(await reasonText.evaluate(element => document.activeElement === element), true,
+      'Tab sale del grupo de radios hacia el textarea')
+    await page.keyboard.press('Shift+Tab')
+    assert.equal(await secondReason.evaluate(element => document.activeElement === element), true,
+      'Shift+Tab regresa al motivo seleccionado')
+    await page.keyboard.press('Shift+Tab')
+    assert.equal(await closeUpper.evaluate(element => document.activeElement === element), true)
+    await page.keyboard.press('Shift+Tab')
+    const cancelUpper = upper.getByRole('button', { name: 'Cancelar' })
+    assert.equal(await cancelUpper.evaluate(element => document.activeElement === element), true,
+      'Shift+Tab desde el primer control debe ciclar al último control habilitado')
+    await page.keyboard.press('Tab')
+    assert.equal(await closeUpper.evaluate(element => document.activeElement === element), true)
+    await page.keyboard.press('Escape')
+    await upper.waitFor({ state: 'detached' })
+    assert.equal(await dialog.count(), 1, 'Escape en observaciones no debe cerrar captura')
+    assert.equal(await observationButton.evaluate(element => document.activeElement === element), true,
+      'Cerrar el diálogo debe devolver el foco a su activador')
+    assert.equal(calls.length, before, 'Editar o cerrar notas no ejecuta RPC')
     const button = name => dialog.getByRole('button', { name, exact: true })
     const result = dialog.locator('.cajero-calculator__display strong')
     await button('2').click(); await button('Multiplicar por 6').click()
@@ -425,6 +466,60 @@ try {
     await button('Cerrar').click()
     assert.equal(calls.length, before, 'Capturar y reabrir un draft no consulta RPC')
     console.log('PASS calculadora compartida: teclas, atajos, teclado y draft local')
+  })
+  await scenario({ initial: 'active' }, async (page, calls) => {
+    await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
+    await page.getByRole('button', { name: /Abarrotes.*0\/1 contados/ }).click()
+    const capture = page.getByRole('dialog')
+    await capture.getByRole('button', { name: /Grupo coverage/ }).click()
+    const before = calls.length
+    await capture.getByRole('button', { name: '2', exact: true }).click()
+    await capture.getByRole('button', { name: '2', exact: true }).click()
+    await capture.getByRole('button', { name: 'Continuar', exact: true }).click()
+    const required = page.getByRole('dialog', { name: 'Explica esta diferencia' })
+    await required.waitFor()
+    assert.equal(await required.getByRole('button', { name: 'Limpiar' }).count(), 0)
+    assert.equal(await required.getByRole('button', { name: 'Omitir producto' }).count(), 1)
+    const requiredClose = required.getByRole('button', { name: 'Cerrar observación' })
+    assert.equal(await requiredClose.evaluate(element => document.activeElement === element), true)
+    await page.keyboard.press('Shift+Tab')
+    assert.equal(await required.getByRole('button', { name: 'Cancelar' })
+      .evaluate(element => document.activeElement === element), true)
+    await page.keyboard.press('Escape')
+    await required.waitFor({ state: 'detached' })
+    assert.equal(await capture.count(), 1, 'Escape cierra solo el diálogo obligatorio')
+    assert.equal(await capture.getByRole('button', { name: 'Continuar', exact: true })
+      .evaluate(element => document.activeElement === element), true)
+    await capture.getByRole('button', { name: 'Continuar', exact: true }).click()
+    await required.getByRole('button', { name: 'Omitir producto' }).click()
+    await required.waitFor({ state: 'detached' })
+    await capture.getByText('0/1 contados', { exact: true }).waitFor()
+    assert.equal(calls.length, before, 'Omitir no debe crear una mutación')
+    console.log('PASS modal obligatorio: trap inverso, Escape anidado, foco y omisión')
+  })
+  await scenario({ initial: 'active', startAction: 'review', reviewWithPriorReason: true }, async (page, calls) => {
+    await page.getByRole('button', { name: /^Revisar Grupo recount,/ }).click()
+    const capture = page.getByRole('dialog')
+    const opener = capture.getByRole('button', { name: 'Agregar observación' })
+    const before = calls.length
+    await opener.click()
+    const upper = page.getByRole('dialog', { name: 'Motivo y observación' })
+    await upper.waitFor()
+    assert.equal(await upper.locator('input[type="radio"]:enabled').count(), 0,
+      'El motivo previo no es editable durante un reconteo')
+    await page.keyboard.press('Tab')
+    const note = upper.getByRole('textbox', { name: 'Explicación' })
+    assert.equal(await note.evaluate(element => document.activeElement === element), true,
+      'Al estar bloqueados los radios, Tab debe ir directamente a Explicación')
+    await page.keyboard.press('Shift+Tab')
+    assert.equal(await upper.getByRole('button', { name: 'Cerrar observación' })
+      .evaluate(element => document.activeElement === element), true)
+    await page.keyboard.press('Escape')
+    await upper.waitFor({ state: 'detached' })
+    assert.equal(await capture.count(), 1)
+    assert.equal(await opener.evaluate(element => document.activeElement === element), true)
+    assert.equal(calls.length, before)
+    console.log('PASS motivo bloqueado de reconteo: Tab omite radios y restaura foco')
   })
   await scenario({ startTimeout: true }, async (page, calls) => {
     assert.equal(await page.getByRole('button', { name: 'Actualizar', exact: true }).count(), 0)
