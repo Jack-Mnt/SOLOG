@@ -388,6 +388,9 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
   const [expressions, setExpressions] = useState<Record<string, string>>({})
   const [notes, setNotes] = useState<Record<string, CashierInitialObservation | CashierRecountObservation>>({})
   const [observationRequest, setObservationRequest] = useState<{ required: boolean; afterSave?: () => void } | null>(null)
+  // El trap global de captura se suspende mientras un diálogo secundario controla el teclado.
+  const observationOpenRef = useRef(false)
+  useEffect(() => { observationOpenRef.current = observationRequest !== null }, [observationRequest])
   const [error, setError] = useState<string | null>(null)
   const [confirmExit, setConfirmExit] = useState(false)
   const confirmationOpenRef = useRef(false)
@@ -494,6 +497,8 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
     const previousFocus = document.activeElement as HTMLElement | null, overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'; dialogRef.current?.querySelector<HTMLElement>('button')?.focus()
     const keys = (e: KeyboardEvent) => {
+      // El diálogo secundario es la única capa que debe procesar Tab y Escape.
+      if (observationOpenRef.current) return
       if (e.key === 'Escape') { e.preventDefault(); if (confirmationOpenRef.current) { confirmationOpenRef.current = false; pendingExitRef.current = null; setConfirmExit(false) } else closeRef.current(); return }
       if (e.key !== 'Tab') return
       const nodes = [...((confirmationOpenRef.current ? confirmationRef.current : dialogRef.current)?.querySelectorAll<HTMLElement>('button:not(:disabled),[tabindex="0"]') ?? [])]
