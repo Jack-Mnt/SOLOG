@@ -27,33 +27,58 @@ export function CajeroObservacionDialog({
   const [reason, setReason] = useState<CashierDifferenceReason | null>(priorReason ?? initialReason)
   const [note, setNote] = useState(isResolved ? '' : initialText ?? '')
   const root = useRef<HTMLElement>(null)
+  const closeButton = useRef<HTMLButtonElement>(null)
   const fixedReason = isRecount && priorReason !== null
   const canApply = isResolved
     ? note.trim().length === 0
     : reason !== null && hasCashierObservationText(note) && !(isRecount && note.trim() === 'Resuelto')
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null
-    root.current?.querySelector<HTMLElement>('input:not(:disabled),textarea:not(:disabled),button:not(:disabled)')?.focus()
-    return () => previous?.focus()
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    closeButton.current?.focus()
+    return () => { if (opener?.isConnected) opener.focus() }
   }, [])
+
   const keyboard = (e: KeyboardEvent<HTMLElement>) => {
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onCancel(); return }
+    // La ventana de captura no debe recibir teclas del diálogo superior.
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      onCancel()
+      return
+    }
     if (e.key !== 'Tab') return
     e.stopPropagation()
-    const nodes = [...(root.current?.querySelectorAll<HTMLElement>(
-      'button:not(:disabled),input:not(:disabled),textarea:not(:disabled),[tabindex="0"]',
-    ) ?? [])]
+
+    const dialog = root.current
+    if (!dialog) return
+    // Un conjunto nativo de radios equivale a un solo tab stop:
+    // Tab entra/sale del grupo, flechas cambian la opción y Espacio la selecciona.
+    const radios = [...dialog.querySelectorAll<HTMLInputElement>('input[type="radio"]:not(:disabled)')]
+    const tabbableRadio = radios.find(radio => radio.checked) ?? radios[0]
+    const nodes = [...dialog.querySelectorAll<HTMLElement>(
+      'button:not(:disabled),input:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])',
+    )].filter(node => {
+      if (node instanceof HTMLInputElement && node.type === 'radio') return node === tabbableRadio
+      return node.tabIndex >= 0 && node.getClientRects().length > 0
+    })
     const first = nodes[0], last = nodes.at(-1)
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus() }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus() }
+    if (!first || !last) { e.preventDefault(); dialog.focus(); return }
+    const active = document.activeElement
+    if (e.shiftKey && (active === first || !dialog.contains(active))) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && (active === last || !dialog.contains(active))) {
+      e.preventDefault()
+      first.focus()
+    }
   }
   return <div className="cajero-observacion-backdrop">
     <section ref={root} className="cajero-observacion-dialog" role="dialog" aria-modal="true"
-      aria-labelledby={titleId} onKeyDown={keyboard}>
+      aria-labelledby={titleId} tabIndex={-1} onKeyDown={keyboard}>
       <div className="cajero-observacion-dialog__header">
         <h2 id={titleId}>{mandatory ? 'Explica esta diferencia' : 'Motivo y observación'}</h2>
         <button type="button" aria-label="Cerrar observación" className="cajero-observacion-dialog__close"
-          onClick={onCancel}>×</button>
+          ref={closeButton} onClick={onCancel}>×</button>
       </div>
       {priorText !== null && isRecount ? <div className="cajero-observacion-dialog__original">
         <strong>Observación del conteo original</strong>
