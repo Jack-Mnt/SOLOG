@@ -1,5 +1,5 @@
 name: Dashboard Fase 6 - Validación puntual
-# Smoke delta V1: validar ronda no_data real, fechas N/D inactivas y KPI Sin datos.
+# Smoke delta V1, revisión 2: corregida sintaxis JSX; ejecutar suite y navegadores.
 
 # Ejecutar solo al modificar esta definición de CI. No lanzar builds por cada
 # push de codigo en admin-work ni habilitar Cloudflare despliegues desde Actions.
