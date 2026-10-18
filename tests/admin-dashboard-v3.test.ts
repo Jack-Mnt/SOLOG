@@ -55,6 +55,47 @@ describe('Dashboard V1 — sustitución sin API legada', () => {
     })).toThrow()
   })
 
+  test('Rondas admite contribuciones {} solo en cortes históricos no_data reales', () => {
+    const payload = { site_id: site }
+    const item = {
+      round: 2,
+      round_from: '2026-10-08T05:00:00+00:00',
+      round_to: '2026-10-16T05:00:00+00:00',
+      period_from: '2026-10-01',
+      period_to: '2026-10-15',
+      coverage: { counted: null, required: null, percent: null },
+      milestones: { '50': null, '90': null, '100': null },
+      historical_accuracy: {
+        green: null, red: null, exempt: null,
+        without_evidence: null, denominator: null, percent: null,
+      },
+      shift_contributions: {},
+      closed_at: '2026-10-16T05:00:00+00:00',
+      quality: 'no_data',
+      cut_version: 1,
+    }
+    const response = {
+      contract_version: 1, generated_at: '2026-10-17T10:00:00-05:00',
+      action: 'rounds', source: 'metrics_dashboard_v1', quality: 'partial',
+      data: { site_id: site, current: null, period_rounds: [], history: [item] },
+    }
+    expect(validateMetricsResponse('rounds', payload, response).data.history[0].shift_contributions)
+      .toEqual({})
+    expect(() => validateMetricsResponse('rounds', payload, {
+      ...response,
+      data: { ...response.data, history: [{ ...item, quality: 'complete' }] },
+    })).toThrow()
+    expect(() => validateMetricsResponse('rounds', payload, {
+      ...response,
+      data: { ...response.data, history: [{ ...item, quality: 'partial' }] },
+    })).toThrow()
+    const { shift_contributions: _omitted, ...withoutField } = item
+    expect(() => validateMetricsResponse('rounds', payload, {
+      ...response,
+      data: { ...response.data, history: [withoutField] },
+    })).toThrow()
+  })
+
   test('day exige confirmaciones completas y no acepta shape/versión incompatibles', () => {
     const payload = { site_id: site, date: '2026-10-16' }
     const example = {
