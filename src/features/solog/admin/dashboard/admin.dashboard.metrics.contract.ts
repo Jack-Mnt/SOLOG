@@ -42,7 +42,10 @@ const round = (v: unknown): boolean => all(v, {
   round: (x) => x === 1 || x === 2, coverage,
   milestones: (x) => all(x, { '50': nTime, '90': nTime, '100': nTime }),
   historical_accuracy: historicalAccuracy,
-  shift_contributions: (x) => all(x, { early: nNonnegative, day: nNonnegative, night: nNonnegative }),
+  // El helper desplegado serializa {} para cortes históricos sin datos.
+  // Admitir esa forma SOLO cuando el RoundItem es no_data, sin imputar ceros.
+  shift_contributions: (x) => all(x, { early: nNonnegative, day: nNonnegative, night: nNonnegative }) ||
+    (isObject(x) && isObject(v) && v.quality === 'no_data' && Object.keys(x).length === 0),
   closed_at: nTime, quality, cut_version: nNonnegative,
 })
 const riskRow = (v: unknown): boolean => all(v, {
