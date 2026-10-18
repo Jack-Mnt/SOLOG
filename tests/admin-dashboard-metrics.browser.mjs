@@ -15,21 +15,34 @@ const range = (from, to) => {
     day <= end; day.setUTCDate(day.getUTCDate() + 1)) out.push(day.toISOString().slice(0, 10))
   return out
 }
+function daysAgo(today, offset) {
+  const date = new Date(today + 'T00:00:00Z')
+  date.setUTCDate(date.getUTCDate() - offset)
+  return date.toISOString().slice(0, 10)
+}
+
 function fixture(action, p) {
   const wrap = (data, quality = 'complete') => ({
     contract_version: 1, generated_at: stamp, action, source: 'metrics_dashboard_v1', quality, data,
   })
   if (action === 'overview') return wrap({ sites: siteNames.map((name, i) => ({
     site_id: siteIds[i], site_name: name,
-    round: { period_from: '2026-10-16', round: 1, counted: 1, required: 2, percent: 50, quality: 'complete' },
-    accuracy: {
+    round: i === 1
+      ? { period_from: '2026-10-16', round: 1, counted: null, required: null, percent: null, quality: 'no_data' }
+      : { period_from: '2026-10-16', round: 1, counted: 1, required: 2, percent: 50, quality: 'complete' },
+    accuracy: i === 1 ? {
+      green: 0, yellow: 0, red: 0, exempt_zero_zero: 0, without_evidence: 2,
+      universe: 2, denominator: 0,
+      green_percent: null, yellow_percent: null, red_percent: null,
+      quality: 'no_data',
+    } : {
       green: 1, yellow: 0, red: 1, exempt_zero_zero: 0, without_evidence: 0,
       universe: 2, denominator: 2, green_percent: 50, yellow_percent: 0, red_percent: 50,
       quality: 'complete',
     },
-    surplus: { groups: 1, value: 12.5, quality: 'complete' },
-    shortage: { groups: 1, value: -15, quality: 'complete' },
-    risk: { high: 1, very_high: 0, quality: 'complete' },
+    surplus: { groups: i === 1 ? 0 : 1, value: i === 1 ? null : 12.5, quality: i === 1 ? 'no_data' : 'complete' },
+    shortage: { groups: i === 1 ? 0 : 1, value: i === 1 ? null : -15, quality: i === 1 ? 'no_data' : 'complete' },
+    risk: { high: i === 1 ? 0 : 1, very_high: 0, quality: i === 1 ? 'no_data' : 'complete' },
   })) })
   if (action === 'risk') {
     const base = p.cursor ? 7 : 1
@@ -62,7 +75,20 @@ function fixture(action, p) {
       milestones: { 50: '2026-10-01T11:00:00-05:00', 90: '2026-10-02T12:00:00-05:00', 100: '2026-10-03T14:00:00-05:00' },
       historical_accuracy: { green: 1, red: 1, exempt: 0, without_evidence: 0, denominator: 2, percent: 50 },
     }
-    return wrap({ site_id: p.site_id, current: base, period_rounds: [base], history: [closed] })
+    const noDataHistory = {
+      ...closed,
+      round: 2,
+      round_from: '2026-10-08T05:00:00+00:00',
+      round_to: '2026-10-16T05:00:00+00:00',
+      quality: 'no_data',
+      coverage: { counted: null, required: null, percent: null },
+      historical_accuracy: {
+        green: null, red: null, exempt: null, without_evidence: null,
+        denominator: null, percent: null,
+      },
+      shift_contributions: {}, // Forma observada en el helper real de Supabase.
+    }
+    return wrap({ site_id: p.site_id, current: base, period_rounds: [base], history: [noDataHistory, closed] }, 'partial')
   }
   if (action === 'episodes') {
     const closed = p.scope === 'closed'
@@ -79,16 +105,23 @@ function fixture(action, p) {
       }],
     })
   }
-  if (action === 'activity') return wrap({
-    site_id: p.site_id, date_from: p.date_from, date_to: p.date_to,
-    cells: range(p.date_from, p.date_to).flatMap(date =>
-      ['early', 'day', 'night'].map(turno => ({
-        date, turno, status: 'closed',
-        completed: 1, required: 2, percent: 50,
-        breakdown: { round_coverage: 1, review_for_coverage: 0, review_regular: 0, shift_coverage: 0 },
-        quality: 'complete',
-      }))),
-  })
+  if (action === 'activity') {
+    const previous = daysAgo(p.date_to, 1)
+    const blank = daysAgo(p.date_to, 2)
+    return wrap({
+      site_id: p.site_id, date_from: p.date_from, date_to: p.date_to,
+      cells: range(p.date_from, p.date_to).flatMap(date =>
+        ['early', 'day', 'night'].map(turno => {
+          const noData = date === blank || date === previous && turno !== 'night'
+          return {
+            date, turno, status: noData ? 'no_data' : 'closed',
+            completed: noData ? null : 1, required: noData ? null : 2, percent: noData ? null : 50,
+            breakdown: { round_coverage: noData ? 0 : 1, review_for_coverage: 0, review_regular: 0, shift_coverage: 0 },
+            quality: noData ? 'no_data' : 'complete',
+          }
+        })),
+    }, 'partial')
+  }
   if (action === 'day') return wrap({
     site_id: p.site_id, date: p.date,
     physical_activity: { groups_observed: 2, counts: 2, recounts: 1 },
@@ -196,6 +229,9 @@ export async function runDashboardMetricsBrowser() {
     }
     assert.equal(await page.locator('.solog-dash__site-card').count(), 5)
     assert.equal(count('overview'), 1)
+    const huacaSummary = page.getByRole('article', { name: 'Resumen de Huaca' })
+    assert.equal(await huacaSummary.locator('.solog-dash__metric-unavailable').count(), 5)
+    assert.equal(await cutervo.locator('.solog-dash__metric-unavailable').count(), 0)
 
     await cutervo.getByRole('heading', { name: 'Ranking de riesgo' }).waitFor()
     assert.equal(count('risk'), 1)
@@ -207,6 +243,7 @@ export async function runDashboardMetricsBrowser() {
     await cutervo.getByRole('heading', { name: 'Rondas de conteo' }).waitFor()
     await cutervo.getByText('1 h 30 min', { exact: true }).waitFor()
     assert.equal(count('rounds'), 1)
+    assert.equal(await cutervo.locator('.solog-dash__round-history-table tbody tr').count(), 2)
 
     await cutervo.getByRole('tab', { name: 'Episodios' }).click()
     await cutervo.getByRole('heading', { name: 'Episodios de diferencias' }).waitFor()
@@ -218,6 +255,10 @@ export async function runDashboardMetricsBrowser() {
     const matrix = cutervo.getByRole('region', { name: 'Matriz de actividad por fecha y turno' })
     await matrix.waitFor()
     assert.equal(await matrix.locator('thead th').count(), 6)
+    assert.equal(await matrix.locator('thead button:disabled').count(), 1)
+    assert.equal(await matrix.locator('tbody button:disabled').count(), 3)
+    assert.ok(await matrix.locator('.solog-dash__activity-action--no_data:not(:disabled)').count() >= 2)
+    assert.equal(count('day'), 0)
     for (const n of [10, 15, 20]) {
       await cutervo.getByRole('button', { name: 'Cargar 5 días anteriores' }).click()
       await page.waitForFunction(
