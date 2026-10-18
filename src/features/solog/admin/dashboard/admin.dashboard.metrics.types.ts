@@ -79,7 +79,7 @@ export interface DashboardRound {
   coverage: MetricCoverage
   milestones: { '50': string | null; '90': string | null; '100': string | null }
   historical_accuracy: HistoricalAccuracy | null
-  shift_contributions: Record<ShiftName, number | null>
+  shift_contributions: Partial<Record<ShiftName, number | null>> // {} solo en cortes no_data
   closed_at: string | null
   quality: MetricsQuality
   cut_version: number | null
