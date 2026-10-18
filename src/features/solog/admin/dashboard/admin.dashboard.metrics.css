@@ -187,6 +187,22 @@
   min-width: 0;
 }
 
+.solog-dash__metric-unavailable {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.solog-dash__metric-unavailable svg {
+  flex: none;
+  color: var(--color-text-secondary);
+}
+
 .solog-dash__main-number {
   color: var(--color-text-primary);
   font-size: clamp(1.25rem, 2.5vw, 1.6rem);
