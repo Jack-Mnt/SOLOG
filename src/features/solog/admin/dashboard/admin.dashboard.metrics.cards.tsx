@@ -61,6 +61,14 @@ function QualityNotice({ value }: { value: MetricsQuality }) {
   )
 }
 
+/** Indisponibilidad explícita para cifras principales; no sustituye ceros reales. */
+function UnavailableMetric() {
+  return <span className="solog-dash__metric-unavailable">
+    <Info size={16} aria-hidden="true" />
+    Sin datos
+  </span>
+}
+
 function Metric({
   title, description, children, className = '',
 }: {
@@ -87,11 +95,13 @@ function CoverageMetric({ site }: { site: SiteOverview }) {
     <Metric title="Cobertura de ronda" description={`Ronda ${site.round.round}`}
       className="solog-dash__metric--coverage">
       <div className="solog-dash__metric-lead">
-        <strong className="solog-dash__main-number">{percentLabel(percent)}</strong>
+        {percent === null
+          ? <UnavailableMetric />
+          : <strong className="solog-dash__main-number">{percentLabel(percent)}</strong>}
         <span className="solog-dash__fraction" aria-label={
           haveEvidence ? `${counted} de ${required} grupos` : 'Cantidad de grupos no disponible'
         }>
-          {haveEvidence ? `${numberLabel(counted)} / ${numberLabel(required)}` : 'N/D'}
+          {haveEvidence ? `${numberLabel(counted)} / ${numberLabel(required)}` : ''}
         </span>
       </div>
       {percent !== null && required !== null && required > 0 ? (
@@ -102,7 +112,7 @@ function CoverageMetric({ site }: { site: SiteOverview }) {
       )}
       <div className="solog-dash__metric-footer">
         <span>{required === 0 && quality === 'complete' ? 'Sin grupos exigibles' : `Desde ${dateLabel(site.round.period_from)}`}</span>
-        <QualityNotice value={quality} />
+        {(quality !== 'no_data' || percent !== null) && <QualityNotice value={quality} />
       </div>
     </Metric>
   )
@@ -118,7 +128,9 @@ function AccuracyMetric({ site }: { site: SiteOverview }) {
   return (
     <Metric title="Precisión actual" className="solog-dash__metric--accuracy">
       <div className="solog-dash__metric-lead">
-        <strong className="solog-dash__main-number">{percentLabel(a.green_percent)}</strong>
+        {a.green_percent === null
+          ? <UnavailableMetric />
+          : <strong className="solog-dash__main-number">{percentLabel(a.green_percent)}</strong>}
         <span className="solog-dash__fraction">Verde · {numberLabel(a.green)} grupos</span>
       </div>
       {a.denominator > 0 ? (
@@ -140,7 +152,8 @@ function AccuracyMetric({ site }: { site: SiteOverview }) {
       </div>
       <div className="solog-dash__metric-footer">
         <span>{numberLabel(a.exempt_zero_zero)} exentos 0/0 · {numberLabel(a.without_evidence)} sin evidencia</span>
-        <QualityNotice value={a.quality} />
+        {(a.quality !== 'no_data' || a.green_percent !== null) &&
+          <QualityNotice value={a.quality} />}
       </div>
     </Metric>
   )
@@ -150,23 +163,25 @@ function RiskMetric({ site }: { site: SiteOverview }) {
   const available = site.risk.quality !== 'no_data'
   return (
     <Metric title="Riesgo" className="solog-dash__metric--risk">
-      <div className="solog-dash__risk-pair">
-        <div>
-          <strong className="solog-dash__risk-count solog-dash__risk-count--high">
-            {available ? numberLabel(site.risk.high) : 'N/D'}
-          </strong>
-          <span>Alto</span>
+      {available ? (
+        <div className="solog-dash__risk-pair">
+          <div>
+            <strong className="solog-dash__risk-count solog-dash__risk-count--high">
+              {numberLabel(site.risk.high)}
+            </strong>
+            <span>Alto</span>
+          </div>
+          <div>
+            <strong className="solog-dash__risk-count solog-dash__risk-count--critical">
+              {numberLabel(site.risk.very_high)}
+            </strong>
+            <span>Muy alto</span>
+          </div>
         </div>
-        <div>
-          <strong className="solog-dash__risk-count solog-dash__risk-count--critical">
-            {available ? numberLabel(site.risk.very_high) : 'N/D'}
-          </strong>
-          <span>Muy alto</span>
-        </div>
-      </div>
+      ) : <UnavailableMetric />}
       <div className="solog-dash__metric-footer">
         <span>Grupos confirmados</span>
-        <QualityNotice value={site.risk.quality} />
+        {available && <QualityNotice value={site.risk.quality} />}
       </div>
     </Metric>
   )
@@ -183,12 +198,12 @@ function ValuationMetric({ site }: { site: SiteOverview }) {
           <div key={label} className="solog-dash__valuation-row">
             <span className="solog-dash__valuation-name">
               {label}
-              <small>{item.quality === 'no_data' ? 'N/D' : `${numberLabel(item.groups)} grupos`}</small>
+              <small>{numberLabel(item.groups)} grupos</small>
             </span>
             <strong className={`solog-dash__valuation-amount solog-dash__valuation-amount--${tone}`}>
-              {currencyLabel(item.value)}
+              {item.value === null ? <UnavailableMetric /> : currencyLabel(item.value)}
             </strong>
-            <QualityNotice value={item.quality} />
+            {item.quality !== 'no_data' && <QualityNotice value={item.quality} />}
           </div>
         ))}
       </div>
