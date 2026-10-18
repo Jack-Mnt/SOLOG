@@ -89,7 +89,7 @@ describe('Dashboard V1 — sustitución sin API legada', () => {
       ...response,
       data: { ...response.data, history: [{ ...item, quality: 'partial' }] },
     })).toThrow()
-    const { shift_contributions: _omitted, ...withoutField } = item
+    const withoutField = Object.fromEntries(Object.entries(item).filter(([key]) => key !== 'shift_contributions'))
     expect(() => validateMetricsResponse('rounds', payload, {
       ...response,
       data: { ...response.data, history: [withoutField] },
