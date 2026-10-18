@@ -75,6 +75,12 @@ export function DashboardActivityPanel({
   const cells = new Map(
     query.data?.data.cells.map(cell => [`${cell.date}:${cell.turno}`, cell] as const) ?? [],
   )
+  // Una fecha con sus tres turnos no_data no dispone de detalle.
+  // Si uno tiene datos verificables, el Drawer conserva alcance de fecha completa.
+  const datesWithEvidence = new Set(dates.filter(date => SHIFTS.some(({ id }) => {
+    const cell = cells.get(`${date}:${id}`)
+    return cell !== undefined && cell.status !== 'no_data' && cell.quality !== 'no_data'
+  })))
   const used = dates.length
   const loadMore = () => setDays(previous => Math.min(20, previous + 5))
 
@@ -83,7 +89,7 @@ export function DashboardActivityPanel({
       <div className="solog-dash__view-heading">
         <div>
           <h4>Actividad por fecha y turno</h4>
-          <p>Las columnas son días de Lima. Pulsa cualquier celda para consultar el detalle de esa fecha completa.</p>
+          <p>Las columnas son días de Lima. Selecciona una fecha con datos para consultar su detalle completo.</p>
         </div>
         <span className="solog-dash__result-count">
           {used} de 20 días · {dateDisplay(dateFrom)} — {dateDisplay(today)}
@@ -116,8 +122,11 @@ export function DashboardActivityPanel({
                   {dates.map(date => (
                     <th scope="col" key={date}>
                       <button type="button" className="solog-dash__activity-date"
+                        disabled={!datesWithEvidence.has(date)}
                         onClick={() => onSelectDate(date)}
-                        aria-label={`Ver detalle del ${ariaDate(date)}`}>
+                        aria-label={datesWithEvidence.has(date)
+                          ? `Ver detalle del ${ariaDate(date)}`
+                          : `Sin datos del ${ariaDate(date)}; detalle no disponible`}>
                         <span>{dateDisplay(date)}</span>
                         {date === today && <small>Hoy</small>}
                       </button>
@@ -135,12 +144,14 @@ export function DashboardActivityPanel({
                       const quality = cell?.quality ?? 'no_data'
                       const label = cellLabel(cell)
                       const percentage = cellPercent(cell)
+                      const canOpenDate = datesWithEvidence.has(date)
                       return (
                         <td key={date} className="solog-dash__activity-cell">
                           <button type="button"
                             className={`solog-dash__activity-action solog-dash__activity-action--${status}`}
+                            disabled={!canOpenDate}
                             onClick={() => onSelectDate(date)}
-                            aria-label={`${shift.label}, ${ariaDate(date)}: ${label}; ${statusLabel(status)}; ${quality === 'partial' ? 'datos parciales' : quality === 'no_data' ? 'sin datos verificables' : 'datos completos'}. Abrir fecha.`}
+                            aria-label={`${shift.label}, ${ariaDate(date)}: ${label}; ${statusLabel(status)}; ${quality === 'partial' ? 'datos parciales' : quality === 'no_data' ? 'sin datos verificables' : 'datos completos'}. ${canOpenDate ? 'Abrir fecha.' : 'Detalle no disponible.'}`}
                             title={`${statusLabel(status)} · ${percentage ?? 'N/D'} · ${quality === 'partial' ? 'Parcial' : quality === 'no_data' ? 'N/D' : 'Completa'}`}>
                             <strong>{label}</strong>
                             <span>{statusLabel(status)}</span>
@@ -170,7 +181,7 @@ export function DashboardActivityPanel({
           <p className="solog-dash__footnote">
             <CalendarDays size={15} aria-hidden="true" />
             Sin tareas (0/0 verificado) es distinto de N/D (ausencia de fila analítica).
-            La fecha seleccionada abre el día completo, independientemente del turno.
+            Solo las fechas con información permiten abrir el detalle completo del día.
           </p>
         </>
       )}
