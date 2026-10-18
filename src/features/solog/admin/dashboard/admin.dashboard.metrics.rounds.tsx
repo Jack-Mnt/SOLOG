@@ -150,7 +150,7 @@ function RoundCurrent({ data }: { data: DashboardRounds }) {
           {shiftNames.map(([shift, label]) => (
             <div key={shift}>
               <span>{label}</span>
-              <strong>{value(selected.shift_contributions[shift])}</strong>
+              <strong>{value(selected.shift_contributions[shift] ?? null)}</strong>
               <small>grupos acreditados</small>
             </div>
           ))}
