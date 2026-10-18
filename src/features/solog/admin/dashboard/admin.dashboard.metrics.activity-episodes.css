@@ -102,7 +102,7 @@
   font-size: 0.6875rem;
   font-weight: 700;
 }
-.solog-dash__activity-date:hover {
+.solog-dash__activity-date:hover:not(:disabled) {
   color: var(--color-primary);
   background: var(--color-primary-subtle);
   border-color: var(--color-border);
@@ -140,10 +140,24 @@
   font-size: 0.6875rem;
   color: var(--color-text-secondary);
 }
-.solog-dash__activity-action:hover {
+.solog-dash__activity-action:hover:not(:disabled) {
   border-color: var(--color-primary);
   background: var(--color-primary-subtle);
 }
+/* Deshabilitado nativo, sin affordance de apertura ni efectos hover. */
+.solog-dash__activity-date:disabled,
+.solog-dash__activity-action:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+.solog-dash__activity-date:disabled {
+  color: var(--color-text-secondary);
+}
+.solog-dash__activity-action:disabled {
+  border-style: dashed;
+  background: var(--color-surface);
+}
+
 .solog-dash__activity-action--closed {
   background: var(--color-success-soft);
 }
