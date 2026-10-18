@@ -112,7 +112,7 @@ function CoverageMetric({ site }: { site: SiteOverview }) {
       )}
       <div className="solog-dash__metric-footer">
         <span>{required === 0 && quality === 'complete' ? 'Sin grupos exigibles' : `Desde ${dateLabel(site.round.period_from)}`}</span>
-        {(quality !== 'no_data' || percent !== null) && <QualityNotice value={quality} />
+        {(quality !== 'no_data' || percent !== null) && <QualityNotice value={quality} />}
       </div>
     </Metric>
   )
