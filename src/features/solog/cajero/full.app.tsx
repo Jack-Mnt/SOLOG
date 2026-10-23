@@ -11,6 +11,7 @@ import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
 import { FullRuntime } from './full.runtime'
 import type { FullGroup } from './full.contract'
+import { actionFor, actionable, stockType, type FullWorkAction, type FullStockType } from './full.presentation'
 import './cajero.css'
 import './full.css'
 
@@ -34,12 +35,8 @@ const explain = (error: unknown) => {
 const dateTime = (value?: string) => value
   ? new Date(value).toLocaleString('es-PE', { timeZone: 'America/Lima', dateStyle: 'short', timeStyle: 'short' })
   : 'Sin actualización'
-const rank: Record<string, number> = {
-  round_coverage: 0, review_for_coverage: 1, review_regular: 2, shift_coverage: 3, none: 4,
-}
-export const stockType = (n: number) => n > 0 ? 'positive' : n < 0 ? 'negative' : 'zero'
-type WorkAction = 'coverage' | 'recount' | 'daily'
-type StockType = 'positive' | 'zero' | 'negative'
+type WorkAction = FullWorkAction
+type StockType = FullStockType
 type Observation = { reason: CashierDifferenceReason | null; text: string | null }
 const routes: { action: WorkAction; route: CashierRoute; title: string; label: string; icon: typeof Home }[] = [
   { action: 'coverage', route: '/cajero/conteo', title: 'Conteo', label: 'Conteo', icon: ClipboardList },
@@ -47,12 +44,6 @@ const routes: { action: WorkAction; route: CashierRoute; title: string; label: s
   { action: 'daily', route: '/cajero/diario', title: 'Cobertura de turno', label: 'Conteo diario', icon: CalendarClock },
 ]
 const routeFor = (action: WorkAction) => routes.find(r => r.action === action)!.route
-export const actionFor = (group: FullGroup): WorkAction =>
-  group.action === 'recount' ? 'recount' : group.action === 'daily' ? 'daily' : 'coverage'
-export const actionable = (groups: FullGroup[]) => {
-  const current = Math.min(...groups.filter(g => g.action !== 'none').map(g => rank[g.priority_class] ?? 4))
-  return groups.filter(g => g.action !== 'none' && (rank[g.priority_class] ?? 4) === current)
-}
 
 function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
   groups: FullGroup[]
