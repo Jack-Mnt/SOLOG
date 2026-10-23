@@ -10,6 +10,7 @@ import { PaletteSwitcher } from '../../theme/palette-switcher'
 import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
 import { FullRuntime } from './full.runtime'
+import { cashierStartGate } from './full.start-gate'
 import type { FullGroup } from './full.contract'
 import { actionFor, actionable, stockType, type FullWorkAction, type FullStockType } from './full.presentation'
 import './cajero.css'
@@ -261,6 +262,9 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const canCapture = runtime.clock.canCapture(session) && !working && !view.busy
   const remaining = session ? Math.max(0, Math.ceil((Date.parse(session.session_expires_at) - now) / 1000)) : 0
   const stockFresh = runtime.clock.trusted && Boolean(stockState?.is_fresh && now >= Date.parse(stockState.snapshot_captured_at) && now < Date.parse(stockState.stock_expires_at))
+  const startGate = cashierStartGate(now, runtime.clock.trusted, stockState?.snapshot_confirmed_at)
+  const startGateSeconds = Math.ceil(startGate.remainingMs / 1000)
+  const startGateCountdown = `${Math.floor(startGateSeconds / 60)}:${String(startGateSeconds % 60).padStart(2, '0')}`
   const available = useMemo(() => actionable(view.groups), [view.groups])
   const route = routes.find(item => item.route === pathname)
   const currentAction = route?.action ?? null
@@ -318,6 +322,22 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       document.removeEventListener('visibilitychange', resume)
     }
   }, [runtime])
+  // Refrescar V6 solo durante la ventana HH:59 → HH+1:02.
+  // Nunca sustituir con este sondeo la autorización final del backend.
+  useEffect(() => {
+    if (session || working || view.busy ||
+      (startGate.phase !== 'minute_59' && startGate.phase !== 'waiting_new_snapshot')) return
+    let inflight = false
+    const poll = () => {
+      if (inflight) return
+      inflight = true
+      void runtime.refresh().catch(() => {
+        // Un sondeo fallido no borra el último estado; V6 revalidará el inicio.
+      }).finally(() => { inflight = false })
+    }
+    const interval = window.setInterval(poll, 8_000)
+    return () => window.clearInterval(interval)
+  }, [runtime, session, working, view.busy, startGate.phase])
   useEffect(() => {
     if (!Number.isFinite(now) || working || view.busy || !runtime.clock.trusted) return
     const expired = [session, ...(view.bootstrap?.recovery_sessions ?? [])].find(s =>
@@ -328,6 +348,19 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     void runtime.finish(expired.session_id).catch(e => { if (!cancelled) setError(explain(e)) })
     return () => { cancelled = true }
   }, [runtime, session, view.bootstrap, now, working, view.busy])
+  const startGuarded = () => {
+    // Volver a comprobar en el propio clic para no iniciar con un render anterior
+    // al cambio de minuto, incluso si el botón seguía habilitado.
+    const latestStock = runtime.getSnapshot().bootstrap?.stock
+    const gate = cashierStartGate(runtime.clock.now(), runtime.clock.trusted, latestStock?.snapshot_confirmed_at)
+    if (gate.blocked) {
+      setError(gate.phase === 'minute_59'
+        ? 'Actualización horaria en curso. El inicio está bloqueado durante el minuto 59.'
+        : 'Esperando el nuevo stock. Si no llega, el respaldo se habilita desde el minuto 02.')
+      return
+    }
+    void run(() => runtime.start())
+  }
   const workLink = (r: CashierRoute) => {
     setCategory(null); setReviewGroup(null)
     navigateTo(r)
@@ -388,12 +421,14 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
               <h2>{stockFresh ? 'Inventario cargado' : 'Inventario desactualizado'}</h2>
               <p>Última actualización: {dateTime(stockState?.snapshot_captured_at)}</p>
               {session ? <p>Captura hasta {dateTime(session.session_expires_at)} · {Math.floor(remaining / 60)} min restantes</p>
+                : startGate.phase === 'minute_59' ? <p role="status">Actualizando inventario. Inicio bloqueado durante el minuto 59 · {startGateCountdown} restantes para habilitar el respaldo.</p>
+                : startGate.phase === 'waiting_new_snapshot' ? <p role="status">Esperando el nuevo snapshot. Si no llega, el stock anterior podrá utilizarse desde el minuto 02, si continúa vigente · {startGateCountdown}.</p>
                 : view.bootstrap?.capabilities.block_reason ? <p>{explain(view.bootstrap.capabilities.block_reason)}</p> : null}
             </div>
           </div>
           <div className="cajero-stock-card__actions">
-            {!session ? <button type="button" className="button" disabled={!view.bootstrap?.capabilities.can_start_session || !stockFresh || working || view.busy}
-              onClick={() => void run(() => runtime.start())}><Play size={19}/> Iniciar conteo</button>
+            {!session ? <button type="button" className="button" disabled={startGate.blocked || !view.bootstrap?.capabilities.can_start_session || !stockFresh || working || view.busy}
+              onClick={startGuarded}><Play size={19}/>{startGate.phase === 'minute_59' ? 'Actualizando inventario' : startGate.phase === 'waiting_new_snapshot' ? 'Esperando stock actualizado' : 'Iniciar conteo'}</button>
               : <button type="button" className="button button--danger" disabled={working || view.busy}
                 onClick={() => void run(() => runtime.finish())}><Square size={19}/> Finalizar conteo</button>}
           </div>
