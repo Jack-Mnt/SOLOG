@@ -1,4 +1,5 @@
 import { isUuid, parseFullEnvelope, type FullAction, type FullEnvelope, type FullGroup, type FullMutation, type FullSession, type FullState } from './full.contract'
+import { cashierStartGate } from './full.start-gate'
 
 export type FullRpc = (name: 'rpc_solog_cashier_bootstrap_v6' | 'rpc_solog_cashier_mutate_v7', args: Record<string, unknown>) => Promise<unknown>
 export type FullLock = <T>(run: () => Promise<T>) => Promise<T>
@@ -90,7 +91,14 @@ export class FullRuntime {
   async start() {
     await this.gate(async () => { this.journal = this.read(); this.publish({ busy: true }); try {
       await this.refreshInside()
-      if (!this.journal.pending.some(x => x.action === 'start' && x.status === 'pending')) { if (!this.view.bootstrap?.capabilities.can_start_session) throw new Error(this.view.bootstrap?.capabilities.block_reason ?? 'FULL_START_BLOCKED'); this.enqueue('start', null, {}) }
+      if (!this.journal.pending.some(x => x.action === 'start' && x.status === 'pending')) {
+        // Verificación posterior a bootstrap: cubre clics de HH:58:59 que
+        // crucen al minuto 59 durante la llamada V6, sin bloquear reintentos.
+        const gate = cashierStartGate(this.clock.now(), this.clock.trusted, this.view.bootstrap?.stock?.snapshot_confirmed_at)
+        if (gate.blocked) throw new Error('FULL_HOURLY_START_GATE')
+        if (!this.view.bootstrap?.capabilities.can_start_session) throw new Error(this.view.bootstrap?.capabilities.block_reason ?? 'FULL_START_BLOCKED')
+        this.enqueue('start', null, {})
+      }
       await this.flushInside(); await this.refreshInside()
     } finally { this.publish({ busy: false }) } })
   }
