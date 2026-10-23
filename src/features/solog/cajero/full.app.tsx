@@ -323,6 +323,15 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const record = async (g: FullGroup, value: number, note: Observation) => {
     await runtime.observe(g.group_id, value, note.reason, note.text)
   }
+  const exportPending = () => {
+    const blob = new Blob([JSON.stringify(runtime.inspectPending(), null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'SOLOG_pendientes.json'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
   const navRoutes: CashierRoute[] = actionRoute ? ['/cajero', actionRoute, '/cajero/historial'] : ['/cajero', '/cajero/historial']
 
   return <div className="cajero-shell">
@@ -356,6 +365,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         <p>{view.pending} operaciones pendientes y {view.rejected} que necesitan revisión. Permanecen en este dispositivo.</p>
         <button className="button button--secondary" type="button" disabled={working || view.busy}
           onClick={() => void run(() => runtime.retry())}><RefreshCw size={18}/> Reintentar pendientes</button>
+        <button className="button button--secondary" type="button" onClick={exportPending}>Exportar pendientes</button>
       </div> : null}
       {pathname === '/cajero/historial' && loadHistory ? <CajeroHistorial session={history}/> : !route ? <section className="cajero-module cajero-home">
         <div className="cajero-home__heading"><h1>Inicio</h1></div>
