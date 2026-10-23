@@ -1,6 +1,6 @@
 # SOLOG — UX Cajero — Protección de inicio por snapshot horario — V1
 
-**Estado:** APROBADO Y CONGELADO para implementación frontend; validaciones y smoke pendientes.
+**Estado:** APROBADO, CONGELADO E IMPLEMENTADO en frontend; validaciones ejecutables y smoke pendientes.
 **Clasificación:** Nivel B — cambio funcional acotado en el inicio de sesiones.
 **Rama:** `admin-work`; `master` fuera de alcance.
 **Fuente primaria del delta:** este archivo. Prevalece **solo** en el control temporal de inicio. Se conservan sin cambios la restauración parcial documentada en `SOLOG_Correccion_Cajero_Restauracion_Interfaz_Full_Parcial_V1.md`, los contratos vigentes V6/V7 y el Motor.
@@ -41,3 +41,11 @@ Sin cambios en Supabase, RPCs, políticas, cron, motor, prioridades, turnos, sna
 ## Validación y cierre
 
 Tests dirigidos para cada borde temporal; lint, typecheck, build, `git diff --check`; smoke humano justo antes/durante/después del minuto de actualización y sin nuevo snapshot. No declarar comprobado lo que no se ejecute.
+
+## Evidencia de implementación
+
+- `src/features/solog/cajero/full.start-gate.ts`: cálculo puro con reloj confiable y zona `America/Lima`; compara la fecha absoluta de confirmación del snapshot con el inicio del ciclo y falla cerrado sin reloj confiable.
+- `src/features/solog/cajero/full.app.tsx`: bloqueo y mensaje del botón, revalidación temporal dentro del callback, sondeo acotado de bootstrap V6 cada 8 segundos solo durante el intervalo de actualización sin sesión activa. El sondeo termina al detectar el snapshot o finalizar la espera.
+- `tests/cajero-full-inicio-snapshot-horario.test.ts`: 8 casos sobre el segundo exacto de bloqueo, nuevo stock, respaldo, cambio de día/turno y fallo del reloj.
+- Inspección de diff de GitHub frente a `240af97e`: únicamente archivos del delta, sin conflictos ni espacios finales añadidos.
+- **Pendiente:** ejecutar en máquina de desarrollo `bun test tests/cajero-full-inicio-snapshot-horario.test.ts`, `bun run lint`, `bun run build`, `git diff --check` y smoke visual de la ventana real. No se declara validado hasta recibir resultados.
