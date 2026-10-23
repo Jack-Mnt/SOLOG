@@ -244,6 +244,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const view = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot, runtime.getSnapshot)
   const pathname = usePathname()
   const [now, setNow] = useState(0)
+  const [serverOffsetMs, setServerOffsetMs] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [working, setWorking] = useState(false)
   const [stockOpen, setStockOpen] = useState(false)
@@ -269,11 +270,11 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const modalGroups = category ? stockGroups.filter(g => g.category_id === category) : reviewGroup
     ? stockGroups.filter(g => g.group_id === reviewGroup) : []
   const history = useMemo(() => ({
-    serverOffsetMs: Number.isFinite(runtime.clock.now()) ? runtime.clock.now() - Date.now() : 0,
+    serverOffsetMs,
     cacheRevision: view.revision,
     getCachedHistory: () => null,
     loadHistory: (period: CashierHistoryPeriod) => loadHistory!(period),
-  }), [runtime, view.revision, loadHistory])
+  }), [serverOffsetMs, view.revision, loadHistory])
   const actionRoute = available[0] ? routeFor(actionFor(available[0])) : null
   useEffect(() => {
     if (view.bootstrap && route && (!session || pathname !== actionRoute)) navigateTo('/cajero')
@@ -287,11 +288,22 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   }
   useEffect(() => {
     let live = true
-    const refresh = () => { void runtime.refresh().catch(e => { if (live) setError(explain(e)) }) }
-    const online = () => { autoClosed.current.clear(); void runtime.flush().catch(e => { if (live) setError(explain(e)) }) }
+    const syncClockOffset = () => {
+      const serverNow = runtime.clock.now()
+      if (live && runtime.clock.trusted && Number.isFinite(serverNow)) {
+        setServerOffsetMs(serverNow - Date.now())
+      }
+    }
+    const refresh = () => {
+      void runtime.refresh().then(syncClockOffset).catch(e => { if (live) setError(explain(e)) })
+    }
+    const online = () => {
+      autoClosed.current.clear()
+      void runtime.flush().then(syncClockOffset).catch(e => { if (live) setError(explain(e)) })
+    }
     refresh()
     const tick = window.setInterval(() => { if (live) setNow(runtime.clock.now()) }, 250)
-    const resume = () => { setNow(runtime.clock.now()); if (!document.hidden) refresh() }
+    const resume = () => { setNow(runtime.clock.now()); syncClockOffset(); if (!document.hidden) refresh() }
     const storage = (e: StorageEvent) => { if (e.key === runtime.key) refresh() }
     window.addEventListener('online', online)
     window.addEventListener('focus', resume)
