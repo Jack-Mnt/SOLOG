@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LogOut, MessageSquarePlus, Package, Play, RefreshCw, SearchCheck, Send, Square, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LogOut, MessageSquarePlus, Play, RefreshCw, SearchCheck, Square, X } from 'lucide-react'
 import type { CashierRoute } from '../../../lib/router'
 import { navigateTo, usePathname } from '../../../lib/router'
 import { CajeroCalculator } from './cajero.calculadora'
@@ -54,10 +54,9 @@ const actionable = (groups: FullGroup[]) => {
   return groups.filter(g => g.action !== 'none' && (rank[g.priority_class] ?? 4) === current)
 }
 
-function CaptureDialog({ groups, initialId, runtime, onClose, disabled, onRecord }: {
+function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
   groups: FullGroup[]
   initialId: string | null
-  runtime: FullRuntime
   onClose: () => void
   disabled: boolean
   onRecord: (group: FullGroup, physical: number, observation: Observation) => Promise<void>
@@ -136,7 +135,7 @@ function CaptureDialog({ groups, initialId, runtime, onClose, disabled, onRecord
   }
   async function record(value: Observation, after: () => void) {
     if (!group || physical === null || locked) return
-    if (required(value)) { setObservation({ required: true, after: () => { void record(value, after) } }); return }
+    if (required(value)) { setObservation({ required: true, after }); return }
     setSaving(true)
     setError(null)
     try {
@@ -224,7 +223,7 @@ function CaptureDialog({ groups, initialId, runtime, onClose, disabled, onRecord
           void (async () => {
             if (physical === null || locked) return
             setSaving(true)
-            try { await onRecord(group, physical, value); clear(); after() }
+            try { await onRecord(group, physical, group.action === 'recount' && difference === 0 ? { reason: null, text: null } : value); clear(); after() }
             catch (e) { setError(explain(e)) }
             finally { setSaving(false) }
           })()
@@ -263,7 +262,6 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   })
   const [category, setCategory] = useState<string | null>(null)
   const [reviewGroup, setReviewGroup] = useState<string | null>(null)
-  const [differenceSigns, setDifferenceSigns] = useState({ positive: true, negative: true })
   const [logoutOpen, setLogoutOpen] = useState(false)
   const autoClosed = useRef(new Set<string>())
   const session = view.session
@@ -329,7 +327,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     navigateTo(r)
   }
   const record = async (g: FullGroup, value: number, note: Observation) => {
-    await run(() => runtime.observe(g.group_id, value, note.reason, note.text))
+    await runtime.observe(g.group_id, value, note.reason, note.text)
   }
   const navRoutes: CashierRoute[] = ['/cajero', ...(actionRoute ? [actionRoute] : []), '/cajero/historial'] as CashierRoute[]
 
@@ -428,7 +426,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       </section>}
       {(category !== null || reviewGroup !== null) && modalGroups.length > 0 ? <CaptureDialog
         key={(session?.session_id ?? '') + ':' + (category ?? reviewGroup ?? '')}
-        groups={modalGroups} initialId={reviewGroup} runtime={runtime} disabled={!canCapture}
+        groups={modalGroups} initialId={reviewGroup} disabled={!canCapture}
         onClose={() => { setCategory(null); setReviewGroup(null) }}
         onRecord={record}/> : null}
       {view.bootstrap?.recovery_sessions.map(s => <div className="cajero-alert cajero-alert--warning" key={s.session_id}>
