@@ -1,95 +1,459 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { FullRuntime } from './full.runtime'
-import { CASHIER_DIFFERENCE_REASONS } from './cajero.observaciones.v5'
-import { CajeroCalculator } from './cajero.calculadora'
-import { evaluateCajeroExpression } from './cajero.utils'
-import { CajeroHistorial } from './cajero.historial'
-import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LogOut, MessageSquarePlus, Package, Play, RefreshCw, SearchCheck, Send, Square, X } from 'lucide-react'
+import type { CashierRoute } from '../../../lib/router'
 import { navigateTo, usePathname } from '../../../lib/router'
+import { CajeroCalculator } from './cajero.calculadora'
+import { CajeroObservacionDialog } from './cajero.observacion.dialog'
+import { CajeroHistorial } from './cajero.historial'
+import { getCajeroCategoryIcon, evaluateCajeroExpression, calculateCajeroValuationPreview, formatCajeroCurrency, formatCajeroDifference, getCajeroDifferenceClass } from './cajero.utils'
+import { PaletteSwitcher } from '../../theme/palette-switcher'
+import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
+import type { CashierDifferenceReason } from './cajero.observaciones.v5'
+import { FullRuntime } from './full.runtime'
+import type { FullGroup } from './full.contract'
 import './cajero.css'
 import './full.css'
 
 const messages: Record<string, string> = {
-  STOCK_EXPIRED: 'El stock tiene más de dos horas. Espera una nueva actualización.', SNAPSHOT_REQUIRED: 'Todavía no hay stock disponible.',
-  NEW_SESSIONS_PAUSED: 'El inicio de conteos está temporalmente pausado.', SESSION_ALREADY_ACTIVE: 'Ya hay una sesión de conteo activa en esta sede.',
+  STOCK_EXPIRED: 'El stock tiene más de dos horas. Espera una nueva actualización.',
+  SNAPSHOT_REQUIRED: 'Todavía no hay stock disponible.',
+  NEW_SESSIONS_PAUSED: 'El inicio de conteos está temporalmente pausado.',
+  SESSION_ALREADY_ACTIVE: 'Ya hay una sesión de conteo activa en esta sede.',
   FULL_PENDING_DELIVERY_REQUIRES_RECONCILIATION: 'Hay operaciones sin confirmar. Reinténtalas antes de cerrar.',
   FULL_REASON_REQUIRED: 'Selecciona un motivo y escribe una observación de al menos tres caracteres.',
   SESSION_CAPTURE_CLOSED: 'El tiempo de captura terminó. Se conservan los envíos pendientes.',
   STRUCTURE_SNAPSHOT_REQUIRED: 'El catálogo o los grupos cambiaron. Espera un stock actualizado.',
-  DEVICE_UNAUTHORIZED: 'Este dispositivo aún no está autorizado.', USER_UNAUTHORIZED: 'El usuario no tiene acceso al conteo.',
-  FULL_GROUP_ALREADY_PENDING: 'Este grupo ya tiene un conteo pendiente de confirmación.',
+  DEVICE_UNAUTHORIZED: 'Este dispositivo aún no está autorizado.',
+  USER_UNAUTHORIZED: 'El usuario no tiene acceso al conteo.',
+  FULL_GROUP_ALREADY_PENDING: 'Este grupo tiene un registro pendiente de confirmación.',
 }
-const explain = (error: unknown) => { const code = error instanceof Error ? error.message : String(error); return messages[code] ?? code }
-const time = (value: string | undefined) => value ? new Date(value).toLocaleString('es-PE', { timeZone: 'America/Lima' }) : 'Sin actualización'
-const rank: Record<string, number> = { round_coverage: 0, review_for_coverage: 1, review_regular: 2, shift_coverage: 3, none: 4 }
-export function FullCashierPanel({ runtime, onLogout, loadHistory }: { runtime: FullRuntime; onLogout: () => Promise<void>; loadHistory?: (period: CashierHistoryPeriod) => Promise<CashierHistory> }) {
+const explain = (error: unknown) => {
+  const code = error instanceof Error ? error.message : String(error)
+  return messages[code] ?? code
+}
+const dateTime = (value?: string) => value
+  ? new Date(value).toLocaleString('es-PE', { timeZone: 'America/Lima', dateStyle: 'short', timeStyle: 'short' })
+  : 'Sin actualización'
+const rank: Record<string, number> = {
+  round_coverage: 0, review_for_coverage: 1, review_regular: 2, shift_coverage: 3, none: 4,
+}
+const stockType = (n: number) => n > 0 ? 'positive' : n < 0 ? 'negative' : 'zero'
+type WorkAction = 'coverage' | 'recount' | 'daily'
+type StockType = 'positive' | 'zero' | 'negative'
+type Observation = { reason: CashierDifferenceReason | null; text: string | null }
+const routes: { action: WorkAction; route: CashierRoute; title: string; label: string; icon: typeof Home }[] = [
+  { action: 'coverage', route: '/cajero/conteo', title: 'Conteo', label: 'Conteo', icon: ClipboardList },
+  { action: 'recount', route: '/cajero/revisar', title: 'Revisar', label: 'Revisar', icon: SearchCheck },
+  { action: 'daily', route: '/cajero/diario', title: 'Cobertura de turno', label: 'Conteo diario', icon: CalendarClock },
+]
+const routeFor = (action: WorkAction) => routes.find(r => r.action === action)!.route
+const actionFor = (group: FullGroup): WorkAction =>
+  group.action === 'recount' ? 'recount' : group.action === 'daily' ? 'daily' : 'coverage'
+const actionable = (groups: FullGroup[]) => {
+  const current = Math.min(...groups.filter(g => g.action !== 'none').map(g => rank[g.priority_class] ?? 4))
+  return groups.filter(g => g.action !== 'none' && (rank[g.priority_class] ?? 4) === current)
+}
+
+function CaptureDialog({ groups, initialId, runtime, onClose, disabled, onRecord }: {
+  groups: FullGroup[]
+  initialId: string | null
+  runtime: FullRuntime
+  onClose: () => void
+  disabled: boolean
+  onRecord: (group: FullGroup, physical: number, observation: Observation) => Promise<void>
+}) {
+  const titleId = useId()
+  const confirmationId = useId()
+  const root = useRef<HTMLElement>(null)
+  const confirmRoot = useRef<HTMLElement>(null)
+  const [selected, setSelected] = useState<string | null>(initialId)
+  const [expressions, setExpressions] = useState<Record<string, string>>({})
+  const [notes, setNotes] = useState<Record<string, Observation>>({})
+  const [observation, setObservation] = useState<{ required: boolean; after?: () => void } | null>(null)
+  const [confirm, setConfirm] = useState<(() => void) | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const group = groups.find(g => g.group_id === selected)
+  const index = group ? groups.findIndex(g => g.group_id === group.group_id) : -1
+  const expression = selected ? expressions[selected] ?? '' : ''
+  const currentNote = selected ? notes[selected] ?? { reason: null, text: null } : { reason: null, text: null }
+  const evaluated = evaluateCajeroExpression(expression)
+  const physical = evaluated.status === 'valid' ? evaluated.value : null
+  const difference = group && physical !== null ? physical - group.stock_theoretical : null
+  const valuation = group && difference !== null
+    ? calculateCajeroValuationPreview(difference, group.price, group.units_per_package, group.package_price)
+    : null
+  const dirty = Boolean(group && (expression.trim() !== '' || currentNote.reason !== null || currentNote.text !== null))
+  const locked = saving || disabled
+
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    root.current?.querySelector<HTMLElement>('button')?.focus()
+    return () => { if (previous?.isConnected) previous.focus() }
+  }, [])
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (observation !== null) return
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        if (confirm) setConfirm(null)
+        else requestExit(onClose)
+        return
+      }
+      if (event.key !== 'Tab') return
+      const modal = confirm ? confirmRoot.current : root.current
+      if (!modal) return
+      const controls = [...modal.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),[tabindex="0"]')]
+      const first = controls[0], last = controls.at(-1)
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  })
+  useEffect(() => { if (confirm) confirmRoot.current?.querySelector<HTMLElement>('button')?.focus() }, [confirm])
+  const clear = () => {
+    if (!selected) return
+    setExpressions(old => { const next = { ...old }; delete next[selected]; return next })
+    setNotes(old => { const next = { ...old }; delete next[selected]; return next })
+  }
+  function requestExit(go: () => void) {
+    if (saving) return
+    if (!dirty) { go(); return }
+    setConfirm(() => go)
+  }
+  const select = (id: string | null) => { clear(); setSelected(id); setError(null) }
+  const next = () => {
+    const nextGroup = groups[index + 1]
+    select(nextGroup?.group_id ?? null)
+  }
+  const required = (value: Observation) => {
+    if (difference === null) return false
+    if (group?.action === 'recount' && difference === 0) return false
+    return Math.abs(difference) >= 12 && (value.reason === null || !value.text || value.text.trim().length < 3)
+      || value.reason !== null && (!value.text || value.text.trim().length < 3)
+      || value.reason === null && value.text !== null
+  }
+  async function record(value: Observation, after: () => void) {
+    if (!group || physical === null || locked) return
+    if (required(value)) { setObservation({ required: true, after: () => { void record(value, after) } }); return }
+    setSaving(true)
+    setError(null)
+    try {
+      const resolved = group.action === 'recount' && difference === 0
+      await onRecord(group, physical, resolved ? { reason: null, text: null } : value)
+      clear()
+      after()
+    } catch (e) { setError(explain(e)) }
+    finally { setSaving(false) }
+  }
+  const continueToNext = () => {
+    if (physical === null) { requestExit(next); return }
+    void record(currentNote, next)
+  }
+  return <div className="cajero-capture-backdrop" onMouseDown={e => {
+    if (e.target === e.currentTarget && !observation && !confirm) requestExit(onClose)
+  }}>
+    <section ref={root} className="cajero-capture-modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <header className="cajero-capture-modal__header">
+        <button type="button" className="cajero-capture-modal__icon-button" aria-label="Regresar a la lista" onClick={() => requestExit(() => select(null))}><ArrowLeft size={22}/></button>
+        <h2 id={titleId}>{group?.category_name ?? 'Grupos'}</h2>
+        <strong>{groups.length} grupos</strong>
+        <button type="button" className="cajero-capture-modal__icon-button" aria-label="Cerrar" onClick={() => requestExit(onClose)}><X size={22}/></button>
+      </header>
+      <div className="cajero-capture-modal__progress">
+        <span aria-hidden="true"><span style={{ width: '0%' }}/></span>
+        <strong aria-label="Progreso pendiente de contrato">—</strong>
+      </div>
+      <div className={'cajero-capture-modal__body' + (group ? ' cajero-capture-modal__body--detail' : '')}>
+        {group ? <div className="cajero-capture-detail">
+          <div className="cajero-capture-detail__information">
+            <section className="cajero-capture-detail__card">
+              <div className="cajero-capture-detail__card-heading">
+                <h3>{group.group_name}</h3>
+                <button type="button" className="cajero-capture-detail__observation-button"
+                  aria-label="Agregar observación" disabled={locked}
+                  onClick={() => setObservation({ required: false })}><MessageSquarePlus size={20}/></button>
+              </div>
+              {group.members.length > 1 ? <details><summary>Productos incluidos</summary><ul>{group.members.map(p =>
+                <li key={p.c_interno}>{p.product} - #{p.c_interno}</li>)}</ul></details> : null}
+              {group.action === 'recount' ? <p className="full-contract-pending">Motivo y diferencia inicial: pendiente de contrato de lectura.</p> : null}
+              <dl>
+                <div><dt>Stock TumiSoft</dt><dd>{group.stock_theoretical}</dd></div>
+                <div><dt>Conteo</dt><dd>{physical ?? '—'}</dd></div>
+                <div><dt>Diferencia</dt><dd className={getCajeroDifferenceClass(difference)}>{formatCajeroDifference(difference)}</dd></div>
+                <div><dt>Valorizado</dt><dd>{valuation === null ? '—' : formatCajeroCurrency(valuation)}</dd></div>
+              </dl>
+            </section>
+          </div>
+          {error ? <div role="alert" className="cajero-alert cajero-alert--error">{error}</div> : null}
+          <CajeroCalculator expression={expression} disabled={locked}
+            onChange={value => setExpressions(old => ({ ...old, [group.group_id]: value }))}/>
+          <nav className="cajero-capture-detail__navigation" aria-label="Navegación entre grupos">
+            <button type="button" className="button button--secondary" disabled={saving || index <= 0}
+              onClick={() => requestExit(() => select(groups[index - 1]?.group_id ?? null))}>Anterior</button>
+            <button type="button" className="button button--secondary" disabled={saving} onClick={() => requestExit(() => select(null))}>Regresar</button>
+            <button type="button" className="button" disabled={locked || (expression.trim() !== '' && physical === null)} onClick={continueToNext}>
+              {expression.trim() ? 'Continuar' : 'Siguiente'}
+            </button>
+          </nav>
+        </div> : <div className="cajero-capture-summary">
+          <div className="cajero-capture-summary__head"><span>Nombre</span><span>Stock TumiSoft</span><span>Diferencia</span><span/></div>
+          <div className="cajero-capture-summary__rows">{groups.map(item =>
+            <button type="button" key={item.group_id} disabled={locked} onClick={() => setSelected(item.group_id)}>
+              <strong>{item.group_name}</strong><span>{item.stock_theoretical}</span><span>—</span><span>›</span>
+            </button>)}</div>
+        </div>}
+      </div>
+    </section>
+    {observation && group ? <CajeroObservacionDialog key={group.group_id}
+      initialReason={currentNote.reason} initialText={currentNote.text}
+      priorReason={null} priorText={null}
+      isRecount={group.action === 'recount'} isResolved={group.action === 'recount' && difference === 0}
+      mandatory={observation.required}
+      onCancel={() => setObservation(null)}
+      onClear={() => { setNotes(old => ({ ...old, [group.group_id]: { reason: null, text: null } })); setObservation(null) }}
+      onOmit={() => { setObservation(null); if (confirm) setConfirm(null); next() }}
+      onApply={(reason, text) => {
+        const value: Observation = { reason, text }
+        setNotes(old => ({ ...old, [group.group_id]: value }))
+        const after = observation.after
+        setObservation(null)
+        if (after) {
+          // La validación de cantidad continúa después de aplicar la explicación.
+          void (async () => {
+            if (physical === null || locked) return
+            setSaving(true)
+            try { await onRecord(group, physical, value); clear(); after() }
+            catch (e) { setError(explain(e)) }
+            finally { setSaving(false) }
+          })()
+        }
+      }}
+    /> : null}
+    {confirm ? <div className="cajero-confirmation-backdrop">
+      <section ref={confirmRoot} role="dialog" aria-modal="true" aria-labelledby={confirmationId} className="cajero-confirmation">
+        <h2 id={confirmationId}>¿Qué deseas hacer con este conteo?</h2>
+        <p>Hay una cantidad u observación sin guardar.</p>
+        <div className="cajero-confirmation__actions">
+          <button type="button" className="button button--secondary" onClick={() => setConfirm(null)}>Cancelar</button>
+          <button type="button" className="button button--danger" onClick={() => { clear(); const go = confirm; setConfirm(null); go() }}>Descartar</button>
+          <button type="button" className="button" disabled={locked || physical === null}
+            onClick={() => { const go = confirm; setConfirm(null); void record(currentNote, go) }}>Guardar</button>
+        </div>
+      </section>
+    </div> : null}
+  </div>
+}
+
+export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
+  runtime: FullRuntime
+  onLogout: () => Promise<void>
+  loadHistory?: (period: CashierHistoryPeriod) => Promise<CashierHistory>
+}) {
   const view = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot, runtime.getSnapshot)
-  const [now, setNow] = useState(0), [error, setError] = useState<string | null>(null), [search, setSearch] = useState('')
-  const [selected, setSelected] = useState<string | null>(null), [physical, setPhysical] = useState(''), [reason, setReason] = useState(''), [note, setNote] = useState('')
-  const [working, setWorking] = useState(false), [page, setPage] = useState(0)
-  const [calculator, setCalculator] = useState(false), pathname = usePathname()
+  const pathname = usePathname()
+  const [now, setNow] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+  const [working, setWorking] = useState(false)
+  const [stockOpen, setStockOpen] = useState(false)
+  const [stock, setStock] = useState<StockType>(() => {
+    const param = new URLSearchParams(window.location.search).get('stock')
+    return param === 'zero' || param === 'negative' ? param : 'positive'
+  })
+  const [category, setCategory] = useState<string | null>(null)
+  const [reviewGroup, setReviewGroup] = useState<string | null>(null)
+  const [differenceSigns, setDifferenceSigns] = useState({ positive: true, negative: true })
+  const [logoutOpen, setLogoutOpen] = useState(false)
   const autoClosed = useRef(new Set<string>())
-  const session = view.session, group = view.groups.find(x => x.group_id === selected)
-  const stockFresh = runtime.clock.trusted && !!view.bootstrap?.stock?.is_fresh && now >= Date.parse(view.bootstrap.stock.snapshot_captured_at) && now < Date.parse(view.bootstrap.stock.stock_expires_at)
+  const session = view.session
+  const stockState = view.bootstrap?.stock
   const canCapture = runtime.clock.canCapture(session) && !working && !view.busy
-  const priority = Math.min(...view.groups.filter(g => g.action !== 'none').map(g => rank[g.priority_class] ?? 4))
-  const candidates = useMemo(() => view.groups.filter(g => g.action !== 'none' && (g.group_name + ' ' + g.category_name + ' ' + g.members.map(p => p.product).join(' ')).toLocaleLowerCase().includes(search.toLocaleLowerCase())), [view.groups, search])
   const remaining = session ? Math.max(0, Math.ceil((Date.parse(session.session_expires_at) - now) / 1000)) : 0
-  const evaluated = evaluateCajeroExpression(physical)
-  const historyController = useMemo(() => ({ serverOffsetMs: runtime.clock.now() - Date.now(), cacheRevision: view.revision, getCachedHistory: () => null, loadHistory: (period: CashierHistoryPeriod) => loadHistory!(period) }), [runtime, view.revision, loadHistory])
-  async function run(action: () => Promise<void>) { setWorking(true); setError(null); try { await action() } catch (e) { setError(explain(e)) } finally { setWorking(false) } }
+  const stockFresh = runtime.clock.trusted && Boolean(stockState?.is_fresh && now >= Date.parse(stockState.snapshot_captured_at) && now < Date.parse(stockState.stock_expires_at))
+  const available = useMemo(() => actionable(view.groups), [view.groups])
+  const route = routes.find(item => item.route === pathname)
+  const currentAction = route?.action ?? null
+  const currentGroups = currentAction ? available.filter(g => actionFor(g) === currentAction) : []
+  const stockGroups = currentAction === 'coverage' ? currentGroups.filter(g => stockType(g.stock_theoretical) === stock) : currentGroups
+  const categories = [...new Map(stockGroups.map(g => [g.category_id, { id: g.category_id, name: g.category_name }])).values()]
+  const modalGroups = category ? stockGroups.filter(g => g.category_id === category) : reviewGroup
+    ? stockGroups.filter(g => g.group_id === reviewGroup) : []
+  const history = useMemo(() => ({
+    serverOffsetMs: Number.isFinite(runtime.clock.now()) ? runtime.clock.now() - Date.now() : 0,
+    cacheRevision: view.revision,
+    getCachedHistory: () => null,
+    loadHistory: (period: CashierHistoryPeriod) => loadHistory!(period),
+  }), [runtime, view.revision, loadHistory])
+  const actionRoute = available[0] ? routeFor(actionFor(available[0])) : null
+  const icons: Record<string, typeof Home> = { '/cajero': Home, '/cajero/historial': History }
+  for (const item of routes) icons[item.route] = item.icon
+
+  async function run(fn: () => Promise<void>) {
+    setWorking(true); setError(null)
+    try { await fn() } catch (e) { setError(explain(e)) } finally { setWorking(false) }
+  }
   useEffect(() => {
     let live = true
     const refresh = () => { void runtime.refresh().catch(e => { if (live) setError(explain(e)) }) }
     const online = () => { autoClosed.current.clear(); void runtime.flush().catch(e => { if (live) setError(explain(e)) }) }
-    refresh(); const tick = window.setInterval(() => { if (live) setNow(runtime.clock.now()) }, 250)
+    refresh()
+    const tick = window.setInterval(() => { if (live) setNow(runtime.clock.now()) }, 250)
     const resume = () => { setNow(runtime.clock.now()); if (!document.hidden) refresh() }
     const storage = (e: StorageEvent) => { if (e.key === runtime.key) refresh() }
-    window.addEventListener('online', online); window.addEventListener('focus', resume); window.addEventListener('storage', storage); document.addEventListener('visibilitychange', resume)
-    return () => { live = false; window.clearInterval(tick); window.removeEventListener('online', online); window.removeEventListener('focus', resume); window.removeEventListener('storage', storage); document.removeEventListener('visibilitychange', resume) }
+    window.addEventListener('online', online)
+    window.addEventListener('focus', resume)
+    window.addEventListener('storage', storage)
+    document.addEventListener('visibilitychange', resume)
+    return () => {
+      live = false
+      window.clearInterval(tick)
+      window.removeEventListener('online', online)
+      window.removeEventListener('focus', resume)
+      window.removeEventListener('storage', storage)
+      document.removeEventListener('visibilitychange', resume)
+    }
   }, [runtime])
   useEffect(() => {
     if (!Number.isFinite(now) || working || view.busy || !runtime.clock.trusted) return
-    const expired = [session, ...(view.bootstrap?.recovery_sessions ?? [])].find(s => s && now >= Date.parse(s.session_expires_at) && !autoClosed.current.has(s.session_id))
+    const expired = [session, ...(view.bootstrap?.recovery_sessions ?? [])].find(s =>
+      s && now >= Date.parse(s.session_expires_at) && !autoClosed.current.has(s.session_id))
     if (!expired) return
     autoClosed.current.add(expired.session_id)
     let cancelled = false
     void runtime.finish(expired.session_id).catch(e => { if (!cancelled) setError(explain(e)) })
     return () => { cancelled = true }
   }, [runtime, session, view.bootstrap, now, working, view.busy])
-  async function capture() {
-    if (!group) return
-    const quantity = evaluated.value
-    if (evaluated.status !== 'valid' || quantity === null) return
-    await run(async () => { await runtime.observe(group.group_id, quantity, reason || null, reason ? note.trim() : null); setSelected(null); setPhysical(''); setReason(''); setNote('') })
+  const workLink = (r: CashierRoute) => {
+    setCategory(null); setReviewGroup(null)
+    navigateTo(r)
   }
-  const exportPending = () => { const blob = new Blob([JSON.stringify(runtime.inspectPending(), null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'SOLOG_pendientes.json'; link.click(); URL.revokeObjectURL(url) }
-  return <main className="full-shell">
-    <header className="full-header"><div><span className="full-eyebrow">SOLOG</span><h1>Conteo de inventario</h1></div><button onClick={() => void onLogout()}>Cerrar sesión de usuario</button></header>
-    {loadHistory && <nav className="full-actions"><button onClick={() => navigateTo('/cajero')}>Conteo</button><button onClick={() => navigateTo('/cajero/historial')}>Historial</button></nav>}
-    {loadHistory && pathname === '/cajero/historial' ? <CajeroHistorial session={historyController}/> : <>
-    <section className="full-stock"><div><strong>Último stock recibido</strong><p data-testid="stock-time">{time(view.bootstrap?.stock?.snapshot_captured_at)}</p></div><div><strong>{session ? 'Captura disponible hasta' : 'Estado'}</strong><p data-testid="session-deadline">{session ? time(session.session_expires_at) : view.bootstrap?.stock?.is_fresh ? 'Stock disponible' : 'Esperando stock actualizado'}</p></div>{session && <div aria-live="off"><strong>Tiempo restante</strong><p data-testid="countdown">{Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}</p></div>}</section>
-    {(error || view.error) && <p className="full-error" role="alert">{error ?? explain(view.error)}</p>}
-    {!canCapture && session && <p className="full-warning">La captura está cerrada. Los conteos pendientes permanecen guardados y pueden entregarse dentro del plazo permitido.</p>}
-    {physical && !canCapture && <p className="full-warning">El valor escrito no se envió ni se convirtió automáticamente en un conteo.</p>}
-    <nav className="full-actions">
-      {!session && <button className="full-primary" disabled={!view.bootstrap?.capabilities.can_start_session || !stockFresh || working || view.busy} onClick={() => void run(() => runtime.start())}>Iniciar conteo</button>}
-      <button disabled={working || view.busy} onClick={() => void run(() => runtime.retry())}>Reintentar pendientes ({view.pending + view.rejected})</button>
-      <button disabled={working || view.busy} onClick={() => void run(() => runtime.refresh())}>Actualizar estado</button>
-      {session && <button disabled={working || view.busy} onClick={() => void run(() => runtime.finish())}>Finalizar conteo</button>}
-      {(view.pending > 0 || view.rejected > 0) && <button onClick={exportPending}>Exportar pendientes</button>}
-    </nav>
-    {!session && view.bootstrap?.capabilities.block_reason && <p>{explain(view.bootstrap.capabilities.block_reason)}</p>}
-    {view.rejected > 0 && <p className="full-error">{view.rejected} operaciones requieren revisión. No se han eliminado ni marcado como confirmadas.</p>}
-    {(view.bootstrap?.recovery_sessions ?? []).map(recovery => <section className="full-warning" key={recovery.session_id}>Sesión pendiente de cierre · entrega hasta {time(recovery.pending_delivery_until)} <button disabled={working || view.busy} onClick={() => void run(() => runtime.finish(recovery.session_id))}>Reconciliar y cerrar</button></section>)}
-    {session && <>
-      <p>Stock de referencia de esta sesión: {time(session.reference_snapshot_captured_at)} · {candidates.length} grupos pendientes.</p>
-      <input className="full-search" aria-label="Buscar producto o categoría" placeholder="Buscar producto o categoría" value={search} onChange={e => { setSearch(e.target.value); setPage(0) }} />
-      <section className="full-groups">{candidates.slice(page * 60, (page + 1) * 60).map(item => <button key={item.group_id} className={'full-group' + (selected === item.group_id ? ' is-selected' : '')} disabled={!canCapture || (rank[item.priority_class] ?? 4) !== priority} onClick={() => { setSelected(item.group_id); setPhysical(''); setReason(''); setNote('') }}><strong>{item.group_name}</strong><span>{item.category_name} · {item.action === 'recount' ? 'Reconteo' : 'Conteo'}</span></button>)}</section>
-      {candidates.length > 60 && <nav className="full-actions"><button disabled={page === 0} onClick={() => setPage(page - 1)}>Anterior</button><span>Página {page + 1} de {Math.ceil(candidates.length / 60)}</span><button disabled={(page + 1) * 60 >= candidates.length} onClick={() => setPage(page + 1)}>Siguiente</button></nav>}
-      {group && <section className="full-capture"><h2>{group.group_name}</h2><p>{group.members.map(p => p.product).join(' · ')}</p><button onClick={() => setCalculator(!calculator)}>{calculator ? 'Entrada directa' : 'Calculadora'}</button>{calculator ? <CajeroCalculator expression={physical} disabled={!canCapture} onChange={setPhysical}/> : <label>Cantidad física<input aria-label="Cantidad física" type="number" min="0" max="2147483647" step="1" value={physical} disabled={!canCapture} onChange={e => setPhysical(e.target.value)} /></label>}<label>Motivo<select aria-label="Motivo" value={reason} disabled={!canCapture} onChange={e => setReason(e.target.value)}><option value="">Sin observación</option>{CASHIER_DIFFERENCE_REASONS.map(value => <option key={value}>{value}</option>)}</select></label>{reason && <label>Observación<textarea maxLength={1024} aria-label="Observación" value={note} disabled={!canCapture} onChange={e => setNote(e.target.value)} /></label>}<button className="full-primary" disabled={!canCapture || evaluated.status !== 'valid' || !Number.isSafeInteger(evaluated.value)} onClick={() => void capture()}>Guardar conteo</button></section>}
-    </>}
-    </>}
-    <footer>Las operaciones solo se muestran como confirmadas después de recibir y guardar la respuesta del servidor.</footer>
-  </main>
+  const record = async (g: FullGroup, value: number, note: Observation) => {
+    await run(() => runtime.observe(g.group_id, value, note.reason, note.text))
+  }
+  const navRoutes: CashierRoute[] = ['/cajero', ...(actionRoute ? [actionRoute] : []), '/cajero/historial'] as CashierRoute[]
+
+  return <div className="cajero-shell">
+    <header className="cajero-header">
+      <div className="cajero-header__topline">
+        <button className="cajero-header__brand" type="button" aria-label="Ir a Inicio" onClick={() => workLink('/cajero')}>
+          <img src="/Logo_SOLOG.png" alt="SOLOG"/>
+        </button>
+        <div className="cajero-header__actions">
+          <div className="cajero-stock-indicator">
+            <button className={'cajero-stock-indicator__trigger' + (!stockFresh ? ' cajero-stock-indicator__trigger--expired' : '')}
+              type="button" aria-label="Estado del inventario" aria-expanded={stockOpen} onClick={() => setStockOpen(v => !v)}>
+              <span className="cajero-stock-indicator__dot"/>
+              <Database size={19} aria-hidden="true"/>
+            </button>
+            {stockOpen ? <section className="cajero-stock-indicator__popover" role="dialog" aria-label="Estado del inventario">
+              <strong>{stockFresh ? 'Inventario vigente' : 'Inventario desactualizado'}</strong>
+              <p>Actualizado {dateTime(stockState?.snapshot_captured_at)}</p>
+              <p>Vigencia hasta {dateTime(stockState?.stock_expires_at)}</p>
+              {session ? <p>Sesión hasta {dateTime(session.session_expires_at)}</p> : null}
+            </section> : null}
+          </div>
+          <button className="cajero-header__logout" type="button" disabled={working || view.busy}
+            onClick={() => setLogoutOpen(true)}><LogOut size={20}/><span>Salir</span></button>
+        </div>
+      </div>
+    </header>
+    <main className="cajero-main">
+      {error || view.error ? <div className="cajero-alert cajero-alert--error" role="alert">{error ?? explain(view.error)}</div> : null}
+      {view.pending || view.rejected ? <div className="cajero-alert cajero-alert--warning" role="status">
+        <p>{view.pending} operaciones pendientes y {view.rejected} que necesitan revisión. Permanecen en este dispositivo.</p>
+        <button className="button button--secondary" type="button" disabled={working || view.busy}
+          onClick={() => void run(() => runtime.retry())}><RefreshCw size={18}/> Reintentar pendientes</button>
+      </div> : null}
+      {pathname === '/cajero/historial' && loadHistory ? <CajeroHistorial session={history}/> : !route ? <section className="cajero-module cajero-home">
+        <div className="cajero-home__heading"><h1>Inicio</h1></div>
+        <section className={'cajero-stock-card' + (stockFresh ? ' cajero-stock-card--updated' : ' cajero-stock-card--stale')}>
+          <div className="cajero-stock-card__status">
+            <span className="cajero-stock-card__icon">{stockFresh ? <Database size={23}/> : <AlertTriangle size={23}/>}</span>
+            <div className="cajero-stock-card__copy">
+              <h2>{stockFresh ? 'Inventario cargado' : 'Inventario desactualizado'}</h2>
+              <p>Última actualización: {dateTime(stockState?.snapshot_captured_at)}</p>
+              {session ? <p>Captura hasta {dateTime(session.session_expires_at)} · {Math.floor(remaining / 60)} min restantes</p>
+                : view.bootstrap?.capabilities.block_reason ? <p>{explain(view.bootstrap.capabilities.block_reason)}</p> : null}
+            </div>
+          </div>
+          <div className="cajero-stock-card__actions">
+            {!session ? <button type="button" className="button" disabled={!view.bootstrap?.capabilities.can_start_session || !stockFresh || working || view.busy}
+              onClick={() => void run(() => runtime.start())}><Play size={19}/> Iniciar conteo</button>
+              : <button type="button" className="button button--danger" disabled={working || view.busy}
+                onClick={() => void run(() => runtime.finish())}><Square size={19}/> Finalizar conteo</button>}
+          </div>
+        </section>
+        {session && actionRoute ? <section className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Trabajo habilitado">
+          <button type="button" className="cajero-home-metric cajero-home-metric--action" onClick={() => workLink(actionRoute)}>
+            <SearchCheck size={23}/><span>Continuar trabajo habilitado</span>
+            <div className="cajero-home-metric__value"><strong>{available.length}</strong><small>grupos disponibles</small></div>
+          </button>
+        </section> : null}
+        {session ? <div className="cajero-home-appearance"><div><Home size={20}/><h2>Sesión activa</h2></div>
+          <span className="full-session-time">Referencia: {dateTime(session.reference_snapshot_captured_at)}</span></div> : null}
+        <section className="cajero-home-appearance"><div><Home size={20}/><h2>Apariencia</h2></div><PaletteSwitcher variant="home"/></section>
+      </section> : <section className="cajero-module cajero-operational">
+        <div className="cajero-module__heading cajero-operational__heading cajero-operational__heading--with-action">
+          <div><h1>{route.title}</h1><p>{currentAction === 'recount' ? 'Verifica la realidad' : 'Registra la realidad'}</p></div>
+          {currentAction === 'recount' ? <div className="cajero-segmented-control cajero-segmented-control--symbols" role="group" aria-label="Filtrar por diferencia inicial">
+            <span className="full-contract-pending">Filtro por diferencia inicial pendiente de contrato</span>
+          </div> : null}
+        </div>
+        {currentAction === 'coverage' ? <section className="cajero-selection-level cajero-selection-level--stock">
+          <h2>Tipo de stock</h2><div className="cajero-selection-grid">
+            {([['positive', 'Stock positivo'], ['zero', 'Stock 0'], ['negative', 'Stock negativo']] as const).map(([key, label]) =>
+              <button type="button" key={key} className={stock === key ? 'is-active' : ''} aria-pressed={stock === key}
+                onClick={() => { setStock(key); setCategory(null) }}>
+                <ClipboardList size={23}/><span><strong>{label}</strong><small>{currentGroups.filter(g => stockType(g.stock_theoretical) === key).length} grupos</small></span>
+              </button>)}
+          </div></section> : null}
+        {currentAction === 'recount' ? <section className="cajero-review-list">
+          <div className="cajero-review-list__head"><span>Nombre</span><span>Reconteo</span><span>Estado</span><span/></div>
+          <div className="cajero-review-list__rows">
+            {currentGroups.map(g => <button type="button" key={g.group_id} disabled={!canCapture}
+              onClick={() => setReviewGroup(g.group_id)}><strong>{g.group_name}</strong><span>Verificar</span><span>Disponible</span><span>›</span></button>)}
+          </div>
+        </section> : <section className="cajero-selection-level">
+          <h2>Categorías</h2><div className="cajero-selection-grid">
+            {categories.map(c => {
+              const count = stockGroups.filter(g => g.category_id === c.id).length
+              const Icon = getCajeroCategoryIcon(c.name)
+              return <button type="button" key={c.id} disabled={!canCapture} onClick={() => setCategory(c.id)}>
+                <Icon size={24}/><span><strong>{c.name}</strong><small>{count} grupos disponibles</small></span>
+              </button>
+            })}
+          </div>
+        </section>}
+      </section>}
+      {(category !== null || reviewGroup !== null) && modalGroups.length > 0 ? <CaptureDialog
+        key={(session?.session_id ?? '') + ':' + (category ?? reviewGroup ?? '')}
+        groups={modalGroups} initialId={reviewGroup} runtime={runtime} disabled={!canCapture}
+        onClose={() => { setCategory(null); setReviewGroup(null) }}
+        onRecord={record}/> : null}
+      {view.bootstrap?.recovery_sessions.map(s => <div className="cajero-alert cajero-alert--warning" key={s.session_id}>
+        <p>Sesión en recuperación. Entrega disponible hasta {dateTime(s.pending_delivery_until)}.</p>
+        <button type="button" className="button button--secondary" disabled={working || view.busy}
+          onClick={() => void run(() => runtime.finish(s.session_id))}>Reconciliar y cerrar</button>
+      </div>)}
+    </main>
+    <nav className="cajero-nav" aria-label="Panel Cajero"><div className="cajero-nav__inner">
+      {navRoutes.map(r => {
+        const Icon = icons[r]
+        return <button type="button" key={r} className={'cajero-nav__item' + (pathname === r ? ' is-active' : '')}
+          aria-current={pathname === r ? 'page' : undefined} onClick={() => workLink(r)}>
+          <Icon size={22}/><span>{r === '/cajero' ? 'Inicio' : r === '/cajero/historial' ? 'Historial' : routes.find(x => x.route === r)?.label}</span>
+        </button>
+      })}
+    </div></nav>
+    {logoutOpen ? <div className="cajero-confirmation-backdrop">
+      <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-label="Cerrar sesión">
+        <h2>¿Cerrar sesión?</h2><p>Las operaciones sin confirmar permanecerán guardadas en este dispositivo.</p>
+        <div className="cajero-confirmation__actions">
+          <button type="button" className="button button--secondary" onClick={() => setLogoutOpen(false)}>Cancelar</button>
+          <button type="button" className="button button--danger" onClick={() => void onLogout()}><LogOut size={18}/> Salir</button>
+        </div>
+      </section>
+    </div> : null}
+  </div>
 }
