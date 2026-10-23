@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { cashierStartGate } from '../src/features/solog/cajero/full.start-gate'
+import { FullRuntime, type FullRpc } from '../src/features/solog/cajero/full.runtime'
 
 const time = (local: string) => Date.parse(local)
 const gate = (local: string, confirmedAt: string | null = null, trusted = true) =>
@@ -72,5 +73,74 @@ describe('Cajero Full — protección frontend de inicio por snapshot horario', 
     expect(gate('2026-10-23T09:00:30-05:00', null, false).phase).toBe('untrusted')
     expect(cashierStartGate(Number.NaN, true, null).blocked).toBe(true)
     expect(gate('2026-10-23T09:00:21-05:00', '2026-10-23T09:00:22-05:00').blocked).toBe(true)
+  })
+})
+
+describe('Cajero Full — protección de runtime durante el inicio remoto', () => {
+  const userId = '12345678-1234-4123-8123-1234567890ab'
+  const snapshotId = '12345678-1234-4123-8123-1234567890ac'
+  const requestId = '12345678-1234-4123-8123-1234567890ad'
+  const iso = (value: string) => new Date(value).toISOString()
+
+  function setup(serverNow: string, captureAt: string, confirmedAt: string) {
+    let mutationCalls = 0
+    const memory = new Map<string, string>()
+    const storage = {
+      getItem: (key: string) => memory.get(key) ?? null,
+      setItem: (key: string, value: string) => { memory.set(key, value) },
+    }
+    const captured = Date.parse(captureAt)
+    const rpc: FullRpc = async name => {
+      if (name === 'rpc_solog_cashier_mutate_v7') {
+        mutationCalls++
+        // Simulación de red inestable: la operación debe permanecer en outbox.
+        throw new Error('network unavailable')
+      }
+      return {
+        ok: true, code: 'CASHIER_STATE', contract_version: 2,
+        request_id: requestId, server_now: iso(serverNow), retryable: false,
+        data: {
+          timezone: 'America/Lima',
+          stock: {
+            snapshot_id: snapshotId,
+            snapshot_captured_at: iso(captureAt),
+            snapshot_confirmed_at: iso(confirmedAt),
+            stock_expires_at: new Date(captured + 7_200_000).toISOString(),
+            is_fresh: true, is_fallback: Date.parse(serverNow) - captured >= 3_600_000,
+            catalog_version: 1, groups_revision: 1,
+          },
+          session: null, recovery_sessions: [], groups: [],
+          confirmed_observation_ids: [], recovery_manifests: [],
+          capabilities: { can_start_session: true, can_capture_in_current_session: false, block_reason: null },
+        },
+      }
+    }
+    const runtime = new FullRuntime(userId, 'a'.repeat(64), storage, rpc, {
+      lock: async action => action(),
+    })
+    return { runtime, getMutationCalls: () => mutationCalls }
+  }
+
+  test('si bootstrap termina durante el minuto 59, no prepara ni envía un inicio', async () => {
+    const { runtime, getMutationCalls } = setup(
+      '2026-10-23T08:59:30-05:00',
+      '2026-10-23T08:59:00-05:00',
+      '2026-10-23T08:59:22-05:00',
+    )
+    await expect(runtime.start()).rejects.toThrow('FULL_HOURLY_START_GATE')
+    expect(runtime.inspectPending()).toEqual([])
+    expect(getMutationCalls()).toBe(0)
+  })
+
+  test('tras HH+1:02 el inicio de respaldo pasa la guardia sin perder el outbox', async () => {
+    const { runtime, getMutationCalls } = setup(
+      '2026-10-23T09:02:00-05:00',
+      '2026-10-23T07:59:00-05:00',
+      '2026-10-23T07:59:22-05:00',
+    )
+    await runtime.start()
+    expect(getMutationCalls()).toBe(1)
+    expect(runtime.inspectPending()).toHaveLength(1)
+    expect(runtime.inspectPending()[0].action).toBe('start')
   })
 })
