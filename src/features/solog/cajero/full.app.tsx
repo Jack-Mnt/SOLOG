@@ -37,7 +37,7 @@ const dateTime = (value?: string) => value
 const rank: Record<string, number> = {
   round_coverage: 0, review_for_coverage: 1, review_regular: 2, shift_coverage: 3, none: 4,
 }
-const stockType = (n: number) => n > 0 ? 'positive' : n < 0 ? 'negative' : 'zero'
+export const stockType = (n: number) => n > 0 ? 'positive' : n < 0 ? 'negative' : 'zero'
 type WorkAction = 'coverage' | 'recount' | 'daily'
 type StockType = 'positive' | 'zero' | 'negative'
 type Observation = { reason: CashierDifferenceReason | null; text: string | null }
@@ -47,9 +47,9 @@ const routes: { action: WorkAction; route: CashierRoute; title: string; label: s
   { action: 'daily', route: '/cajero/diario', title: 'Cobertura de turno', label: 'Conteo diario', icon: CalendarClock },
 ]
 const routeFor = (action: WorkAction) => routes.find(r => r.action === action)!.route
-const actionFor = (group: FullGroup): WorkAction =>
+export const actionFor = (group: FullGroup): WorkAction =>
   group.action === 'recount' ? 'recount' : group.action === 'daily' ? 'daily' : 'coverage'
-const actionable = (groups: FullGroup[]) => {
+export const actionable = (groups: FullGroup[]) => {
   const current = Math.min(...groups.filter(g => g.action !== 'none').map(g => rank[g.priority_class] ?? 4))
   return groups.filter(g => g.action !== 'none' && (rank[g.priority_class] ?? 4) === current)
 }
@@ -212,7 +212,7 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
       mandatory={observation.required}
       onCancel={() => setObservation(null)}
       onClear={() => { setNotes(old => ({ ...old, [group.group_id]: { reason: null, text: null } })); setObservation(null) }}
-      onOmit={() => { setObservation(null); if (confirm) setConfirm(null); next() }}
+      onOmit={() => { clear(); setObservation(null); if (confirm) setConfirm(null); next() }}
       onApply={(reason, text) => {
         const value: Observation = { reason, text }
         setNotes(old => ({ ...old, [group.group_id]: value }))
@@ -284,6 +284,9 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     loadHistory: (period: CashierHistoryPeriod) => loadHistory!(period),
   }), [runtime, view.revision, loadHistory])
   const actionRoute = available[0] ? routeFor(actionFor(available[0])) : null
+  useEffect(() => {
+    if (view.bootstrap && route && (!session || pathname !== actionRoute)) navigateTo('/cajero')
+  }, [view.bootstrap, session, route, pathname, actionRoute])
   const icons: Record<string, typeof Home> = { '/cajero': Home, '/cajero/historial': History }
   for (const item of routes) icons[item.route] = item.icon
 
@@ -329,7 +332,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const record = async (g: FullGroup, value: number, note: Observation) => {
     await runtime.observe(g.group_id, value, note.reason, note.text)
   }
-  const navRoutes: CashierRoute[] = ['/cajero', ...(actionRoute ? [actionRoute] : []), '/cajero/historial'] as CashierRoute[]
+  const navRoutes: CashierRoute[] = actionRoute ? ['/cajero', actionRoute, '/cajero/historial'] : ['/cajero', '/cajero/historial']
 
   return <div className="cajero-shell">
     <header className="cajero-header">
