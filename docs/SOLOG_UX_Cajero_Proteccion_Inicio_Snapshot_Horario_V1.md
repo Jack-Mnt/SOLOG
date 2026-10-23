@@ -45,7 +45,8 @@ Tests dirigidos para cada borde temporal; lint, typecheck, build, `git diff --ch
 ## Evidencia de implementación
 
 - `src/features/solog/cajero/full.start-gate.ts`: cálculo puro con reloj confiable y zona `America/Lima`; compara la fecha absoluta de confirmación del snapshot con el inicio del ciclo y falla cerrado sin reloj confiable.
-- `src/features/solog/cajero/full.app.tsx`: bloqueo y mensaje del botón, revalidación temporal dentro del callback, sondeo acotado de bootstrap V6 cada 8 segundos solo durante el intervalo de actualización sin sesión activa. El sondeo termina al detectar el snapshot o finalizar la espera.
-- `tests/cajero-full-inicio-snapshot-horario.test.ts`: 8 casos sobre el segundo exacto de bloqueo, nuevo stock, respaldo, cambio de día/turno y fallo del reloj.
+- `src/features/solog/cajero/full.app.tsx`: bloqueo y mensaje del botón, revalidación temporal dentro del callback, sondeo acotado de bootstrap V6 cada 8 segundos solo durante el intervalo de actualización sin sesión activa. Se detiene al pasar a la fase habilitada o al finalizar la espera. Durante el minuto 59 se mantiene el bloqueo y el sondeo aunque ya haya llegado el snapshot.
+- `src/features/solog/cajero/full.runtime.ts`: segunda guardia **tras** el bootstrap remoto, inmediatamente antes de encolar una nueva operación `start`; evita el caso en que una llamada iniciada a HH:58:59 termina en HH:59. No interfiere con el replay de una operación de inicio ya preparada.
+- `tests/cajero-full-inicio-snapshot-horario.test.ts`: 10 pruebas: 8 casos de límite temporal y 2 pruebas de integración del runtime sobre bloqueo post-bootstrap y preservación del outbox en respaldo.
 - Inspección de diff de GitHub frente a `240af97e`: únicamente archivos del delta, sin conflictos ni espacios finales añadidos.
 - **Pendiente:** ejecutar en máquina de desarrollo `bun test tests/cajero-full-inicio-snapshot-horario.test.ts`, `bun run lint`, `bun run build`, `git diff --check` y smoke visual de la ventana real. No se declara validado hasta recibir resultados.
