@@ -28,6 +28,7 @@ const messages: Record<string, string> = {
   DEVICE_UNAUTHORIZED: 'Este dispositivo aún no está autorizado.',
   USER_UNAUTHORIZED: 'El usuario no tiene acceso al conteo.',
   FULL_GROUP_ALREADY_PENDING: 'Este grupo tiene un registro pendiente de confirmación.',
+  FULL_HOURLY_START_GATE: 'Inicio temporalmente bloqueado por la actualización horaria del inventario.',
 }
 const explain = (error: unknown) => {
   const code = error instanceof Error ? error.message : String(error)
