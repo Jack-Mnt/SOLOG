@@ -1,6 +1,6 @@
 # SOLOG — Corrección Dashboard — Reporte de smoke: Rondas, Actividad y KPI V1
 
-**Estado:** CORRECCIONES IMPLEMENTADAS Y VALIDADAS TÉCNICAMENTE; **SMOKE REAL PENDIENTE**.
+**Estado:** CORRECCIONES IMPLEMENTADAS, VALIDADAS TÉCNICAMENTE Y APROBADAS MEDIANTE SMOKE HUMANO; **BLOQUE DASHBOARD CERRADO**.
 **Fecha:** 2026-10-17, America/Lima.
 **Rama:** `admin-work`. `master` sin cambios.
 **Fuente primaria UI:** `docs/SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V2.md`.
@@ -68,11 +68,25 @@ Se contrastó la RPC desplegada mediante una consulta no destructiva a `inventar
 
 La primera ejecución del delta ([run 39083480337](https://github.com/Jack-Mnt/SOLOG/actions/runs/39083480337)) falló por una llave JSX omitida al editar cobertura. Se corrigió el mismo archivo y se repitió **toda** la batería: segundo run verde. No quedan errores técnicos reportados por el run final.
 
-## 6. Estado del smoke
+## 6. Smoke humano — aprobado
 
-**Pendiente de confirmación humana en Preview**, con sesión admin real y datos Supabase actuales:
-1. Cutervo → Rondas carga, muestra ronda actual e histórico `N/D`, sin error de contrato.
-2. Actividad → fecha con tres turnos N/D no abre Drawer desde encabezado ni celdas; fecha con datos sí lo abre.
-3. Tarjetas Huaca/Divino sin evidencias → importes/precisión/riesgo con icono Sin datos; Cutervo mantiene sus valores reales, en especial cero válido.
+**Validación humana confirmada explícitamente por el usuario el 2026-10-17:** tras recibir las correcciones y validar los casos en su entorno, indicó «Correcto, todo en orden».
 
-No fusionar con `master` ni cerrar Fase 7 hasta aceptación expresa del usuario.
+La aprobación comprende los tres hallazgos pendientes de la Fase 7:
+
+1. **Cutervo → Rondas:** carga de rondas e histórico sin error de incompatibilidad del contrato V1.
+2. **Actividad:** fecha sin evidencia en los tres turnos no abre Drawer; fecha con actividad verificable sí lo permite.
+3. **KPI principales:** los valores indisponibles muestran icono + «Sin datos»; los ceros e importes verificables conservan su valor.
+
+El usuario ya había dado conformidad al resto de la interfaz en su revisión visual anterior («Todo me parece correcto, excepto por esto»). Con la confirmación posterior de los tres puntos, el smoke funcional/visual del Dashboard se considera **aprobado**, sin necesidad de reabrir las fases técnicas ya validadas.
+
+## 7. Cierre explícito del bloque Dashboard
+
+**Estado final:** **CERRADO** (Fases 0–7; incluye el delta de los tres hallazgos del smoke).
+
+- **HEAD productivo de código validado en `admin-work`:** `d78d81c961976b9f3f3f6871cfb9a0950b15bba7`; CI completo exitoso, 790 tests aprobados, lint/build/diff y navegadores Dashboard + Control correctos.
+- **Fuente primaria UI vigente:** `docs/SOLOG_UI_Dashboard_Integracion_Prototipo_Final_V2.md`, complementada solo en su alcance por `docs/SOLOG_Correccion_Dashboard_Smoke_Hallazgos_V1.md`. El contrato Backend V1 permanece congelado y desplegado.
+- **Históricos de ejecución:** reportes Fases 3–6 y este reporte conservan la evidencia; no reemplazan la fuente primaria ni reabren decisiones.
+- **Implementación backend:** ninguna modificación en esta corrección.
+- **Rama `master`:** no modificada. **No se ha solicitado ni realizado un merge o despliegue a producción.**
+- Cualquier mejora posterior constituye un delta independiente, y debe conservar lo aprobado mientras no exista incompatibilidad concreta.
