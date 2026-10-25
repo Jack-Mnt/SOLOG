@@ -68,16 +68,18 @@ Para un `finish` **nuevo**:
 - Aplicada la migración `20261025201355` exitosamente.
 - Inspeccionadas ambas definiciones desplegadas después de migrar: extensión recovery y doble guardia de `finish` presentes.
 - Lectura directa de `full_cashier_state_v2` para **2 usuarios Cajero**: el campo nuevo es un array vacío y conserva `recovery_manifests`, `groups` y `capabilities`.
+- Prueba **sintética y transaccional con rollback**: sesión histórica expirada, retorno temporal a `recovery` y un grupo runtime de cobertura asociado a su snapshot y revisión originales. Se verificó `session_id`, `groups_revision`, clase `round_coverage`, un grupo elegible y predicado de entrega falso pasado `pending_delivery_until`. Primer intento rechazado por la constraint de `finalizado_at`; ajustada la simulación a `finalizado_at=NULL`, segunda prueba correcta. El bloque de excepción revirtió todos los cambios.
+- Comprobación posterior de residuos: 0 sesiones `recovery`, 1 `expirado`, 2 `finalizado`, 0 filas en `solog_session_runtime_groups`.
 - Al probar, había 3 sesiones Full históricas (1 expirada, 2 finalizadas), **0 activas y 0 en recovery**, sin runtime groups actualmente conservados. Por tanto, la lectura de recovery poblada y el flujo V7 de cierre **todavía no se han validado extremo a extremo**.
 - Consultados Advisors de seguridad y rendimiento tras la migración; contienen advertencias generales del proyecto que **no se atribuyen** a esta migración sin comparación previa. No se cambiaron permisos ni tablas.
 
 ## 5. Validaciones que siguen pendientes antes del plan frontend
 
-1. Crear en entorno seguro una sesión Full con grupos realmente congelados; dejarla pasar a `recovery` y comprobar `recovery_delivery_states` poblado, prioridades y aislamiento.
+1. Validar V6 mediante la entrada pública con usuario/dispositivo autorizados y sesión Full real en `recovery`; la prueba sintética de lectura ya pasó, pero no acredita autenticación de extremo a extremo.
 2. Enviar batches de normales/reconteos con prioridad cambiante; comprobar refresh V6 y replay exacto, recepción única y no duplicación.
 3. Probar `finish` en sesión activa, en recovery, fuera de ventana, con manifest incorrecto y como replay de cierre previamente confirmado, incluyendo resultado ambiguo por red.
 4. Evaluar cancelaciones, errores definitivos, clientes concurrentes y la retención de runtime groups hasta la ventana límite.
-5. Sólo después declarar contrato validado, actualizar tipos/tests frontend y preparar baseline/plan de Codex. **Codex no debe tocar backend**.
+5. Sólo después declarar contrato validado para la integración completa, actualizar tipos/tests frontend y preparar baseline/plan de Codex. **Codex no debe tocar backend**.
 
 ## 6. Fuentes y precedencia
 
