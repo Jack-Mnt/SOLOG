@@ -138,7 +138,7 @@ describe('Cajero Full — protección de runtime durante el inicio remoto', () =
       '2026-10-23T07:59:00-05:00',
       '2026-10-23T07:59:22-05:00',
     )
-    await runtime.start()
+    await expect(runtime.start()).rejects.toThrow('FULL_DELIVERY_UNCERTAIN')
     expect(getMutationCalls()).toBe(1)
     expect(runtime.inspectPending()).toHaveLength(1)
     expect(runtime.inspectPending()[0].action).toBe('start')
