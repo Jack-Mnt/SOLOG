@@ -1,6 +1,6 @@
 # SOLOG — Lógica Cajero — Registro agrupado y cierre automático Full V1
 
-**Estado:** APROBADO Y CONGELADO — definición funcional. Preflight backend realizado; **contratos de integración pendientes de resolver/validar antes del plan frontend**. No implementado.
+**Estado:** APROBADO Y CONGELADO — definición funcional. Contrato backend aditivo desplegado y frontend integrado en `admin-work`; **validación técnica, E2E de recovery/replay y smoke humano pendientes**. La evidencia de ejecución está en `docs/SOLOG_Integracion_Cajero_Borradores_Registro_Autocierre_Full_V1.md` y `docs/SOLOG_Backend_Cajero_Full_Recovery_Finish_V1.md`.
 **Fecha:** 2026-10-25.
 **Proyecto:** SOLOG. **Rama:** `admin-work`; `master` fuera de alcance.
 **Clasificación:** **Nivel C** — persistencia local, idempotencia, secuenciación y ciclo de vida de sesiones.
