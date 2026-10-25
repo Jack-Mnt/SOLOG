@@ -383,11 +383,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     if (!expired) return
     // Reintentos limitados a uno cada 30 segundos. Reconciliar en reconexión.
     autoClosed.current.set(expired.session_id, now + 30_000)
-    let cancelled = false
-    void runtime.finish(expired.session_id).catch(e => {
-      if (!cancelled) setError(explain(e))
-    })
-    return () => { cancelled = true }
+    void runtime.finish(expired.session_id).catch(e => setError(explain(e)))
   }, [runtime, session, view.bootstrap, now, working, view.busy])
   const startGuarded = () => {
     // Volver a comprobar en el propio clic para no iniciar con un render anterior
@@ -466,8 +462,8 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       {error || view.error ? <div className="cajero-alert cajero-alert--error" role="alert">{error ?? explain(view.error)}</div> : null}
       {hasUnresolved ? <div className="cajero-alert cajero-alert--warning" role="status">
         <p>{view.drafts} borradores locales, {view.pending} operaciones pendientes y {view.rejected} rechazadas. Los registros permanecen en este dispositivo.</p>
-        <button className="button button--secondary" type="button" disabled={working || view.busy}
-          onClick={() => void run(() => runtime.retry())}><RefreshCw size={18}/> Reintentar pendientes</button>
+        <button className="button button--secondary" type="button" disabled={working || view.busy || view.pending === 0 || view.rejected > 0}
+          onClick={() => void run(() => runtime.retry())}><RefreshCw size={18}/> Reintentar operaciones</button>
         <button className="button button--secondary" type="button" onClick={exportPending}>Exportar pendientes</button>
       </div> : null}
       {pathname === '/cajero/historial' && loadHistory ? <CajeroHistorial session={history}/> : !route ? <section className="cajero-module cajero-home">
