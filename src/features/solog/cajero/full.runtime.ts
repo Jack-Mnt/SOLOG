@@ -62,7 +62,9 @@ export class FullRuntime {
     const raw = this.storage.getItem(this.key)
     if (!raw) return emptyJournal(this.userId, this.deviceToken)
     if (raw.length > 8 * 1024 * 1024) throw new Error('FULL_OUTBOX_TOO_LARGE')
-    const value = JSON.parse(raw) as Journal & { version: number; drafts?: Record<string, FullDraft[]> }
+    const value = JSON.parse(raw) as Omit<Journal, 'version' | 'drafts'> & {
+      version: number; drafts?: Record<string, FullDraft[]>
+    }
     if (![1, 2].includes(value.version) || value.userId !== this.userId || value.deviceToken !== this.deviceToken ||
       !Array.isArray(value.pending) || !value.confirmed || !value.panels ||
       (value.version === 2 && (!value.drafts || typeof value.drafts !== 'object'))) throw new Error('FULL_OUTBOX_INVALID')
