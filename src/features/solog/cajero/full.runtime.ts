@@ -146,6 +146,12 @@ export class FullRuntime {
         ...(next.confirmed[recovery.session_id] ?? []), ...recovery.observation_ids,
       ])]
     }
+    // Conciliación de confirmaciones servidoras cuando se perdió el receipt local.
+    for (const [sid, drafts] of Object.entries(next.drafts)) {
+      const confirmed = new Set(next.confirmed[sid] ?? [])
+      next.drafts[sid] = drafts.filter(d => !confirmed.has(d.clientObservationId))
+      if (!next.drafts[sid].length) delete next.drafts[sid]
+    }
     this.persist(next)
     this.publish({ bootstrap: state, session: state.session, groups: state.groups, error: null })
   }
@@ -236,13 +242,16 @@ export class FullRuntime {
       this.journal = this.read(); this.publish({ busy: true })
       try {
         await this.refreshInside()
-        if (Object.values(this.journal.drafts).some(d => d.length) || this.journal.pending.length ||
-          this.view.bootstrap?.recovery_sessions.length) throw new Error('FULL_OLD_SESSION_REQUIRES_RECONCILIATION')
-        const gate = cashierStartGate(this.clock.now(), this.clock.trusted, this.view.bootstrap?.stock?.snapshot_confirmed_at)
-        if (gate.blocked) throw new Error('FULL_HOURLY_START_GATE')
-        if (!this.view.bootstrap?.capabilities.can_start_session)
-          throw new Error(this.view.bootstrap?.capabilities.block_reason ?? 'FULL_START_BLOCKED')
-        this.enqueue('start', null, {})
+        const preparedStart = this.journal.pending.find(p => p.action === 'start' && p.status === 'pending')
+        if (!preparedStart) {
+          if (Object.values(this.journal.drafts).some(d => d.length) || this.journal.pending.length ||
+            this.view.bootstrap?.recovery_sessions.length) throw new Error('FULL_OLD_SESSION_REQUIRES_RECONCILIATION')
+          const gate = cashierStartGate(this.clock.now(), this.clock.trusted, this.view.bootstrap?.stock?.snapshot_confirmed_at)
+          if (gate.blocked) throw new Error('FULL_HOURLY_START_GATE')
+          if (!this.view.bootstrap?.capabilities.can_start_session)
+            throw new Error(this.view.bootstrap?.capabilities.block_reason ?? 'FULL_START_BLOCKED')
+          this.enqueue('start', null, {})
+        }
         await this.flushInside()
         await this.refreshInside()
       } finally { this.publish({ busy: false }) }
@@ -264,8 +273,9 @@ export class FullRuntime {
       const existing = this.journal.drafts[session.session_id]?.find(d => d.groupId === groupId)
       if (this.pendingFor(session.session_id).some(p => {
         const items = JSON.parse(p.exactPayload).items ?? []
-        return items.some((x: { client_observation_id: string }) => x.client_observation_id === existing?.clientObservationId ||
-          x.client_observation_id === groupId)
+        return items.some((x: { client_observation_id: string; grupo_id?: string; detalle_id?: string }) =>
+          x.client_observation_id === existing?.clientObservationId ||
+          x.grupo_id === groupId || (group.action === 'recount' && x.detalle_id === group.recount_detail_id))
       })) throw new Error('FULL_GROUP_ALREADY_PENDING')
       if (group.action === 'recount' && !isUuid(group.recount_detail_id)) throw new Error('FULL_RECOUNT_DETAIL_MISSING')
       const now = this.clock.now()
