@@ -7,7 +7,6 @@ const userId = uuid('1234567890ab'), sid = uuid('1234567890ac')
 const snapshotId = uuid('1234567890ad'), categoryId = uuid('1234567890ae')
 const groupA = uuid('1234567890af'), groupB = uuid('1234567890b0')
 const requestId = uuid('1234567890b1')
-const from = (s: string) => new Date(s).toISOString()
 const started = Date.parse('2026-10-23T09:05:00-05:00')
 const captured = Date.parse('2026-10-23T08:59:00-05:00')
 const expiration = Date.parse('2026-10-23T09:59:00-05:00')
@@ -22,7 +21,8 @@ const makeGroup = (id: string, priority: string): FullGroup => ({
 })
 
 function harness(options: { failOnce?: boolean; reject?: boolean; twoPriorities?: boolean } = {}) {
-  let now = started, monotonic = 0, requests: { action: string; payload: Record<string, unknown> }[] = []
+  let now = started, monotonic = 0
+  const requests: { action: string; payload: Record<string, unknown> }[] = []
   const confirmed = new Set<string>(), accepted = new Map<string, unknown>(), memory = new Map<string, string>()
   let startedSession = false, finished = false, failed = false
   const groups = [makeGroup(groupA, 'round_coverage'),
