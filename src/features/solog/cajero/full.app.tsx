@@ -9,7 +9,7 @@ import { getCajeroCategoryIcon, evaluateCajeroExpression, calculateCajeroValuati
 import { PaletteSwitcher } from '../../theme/palette-switcher'
 import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
-import { FullRuntime } from './full.runtime'
+import { FullRuntime, type FullDraft } from './full.runtime'
 import { cashierStartGate } from './full.start-gate'
 import type { FullGroup } from './full.contract'
 import { actionFor, actionable, stockType, type FullWorkAction, type FullStockType } from './full.presentation'
@@ -21,7 +21,6 @@ const messages: Record<string, string> = {
   SNAPSHOT_REQUIRED: 'Todavía no hay stock disponible.',
   NEW_SESSIONS_PAUSED: 'El inicio de conteos está temporalmente pausado.',
   SESSION_ALREADY_ACTIVE: 'Ya hay una sesión de conteo activa en esta sede.',
-  FULL_PENDING_DELIVERY_REQUIRES_RECONCILIATION: 'Hay operaciones sin confirmar. Reinténtalas antes de cerrar.',
   FULL_REASON_REQUIRED: 'Selecciona un motivo y escribe una observación de al menos tres caracteres.',
   SESSION_CAPTURE_CLOSED: 'El tiempo de captura terminó. Se conservan los envíos pendientes.',
   STRUCTURE_SNAPSHOT_REQUIRED: 'El catálogo o los grupos cambiaron. Espera un stock actualizado.',
@@ -29,6 +28,14 @@ const messages: Record<string, string> = {
   USER_UNAUTHORIZED: 'El usuario no tiene acceso al conteo.',
   FULL_GROUP_ALREADY_PENDING: 'Este grupo tiene un registro pendiente de confirmación.',
   FULL_HOURLY_START_GATE: 'Inicio temporalmente bloqueado por la actualización horaria del inventario.',
+  FULL_DELIVERY_UNCERTAIN: 'No se confirmó el envío; los registros permanecen guardados para reintento seguro.',
+  FULL_DELIVERY_RETRYABLE: 'Servidor temporalmente no disponible. Se reintentará sin duplicar registros.',
+  FULL_REJECTED_REQUIRES_REVIEW: 'Hay un rechazo definitivo. Requiere revisión antes de finalizar.',
+  FULL_DRAFTS_NOT_ELIGIBLE: 'Algunos borradores todavía no son elegibles según la prioridad del servidor.',
+  FULL_OLD_SESSION_REQUIRES_RECONCILIATION: 'Primero deben registrarse y cerrarse los conteos de la sesión anterior.',
+  FULL_PENDING_DELIVERY_REQUIRES_RECONCILIATION: 'Existen borradores u operaciones sin confirmar; no se puede finalizar.',
+  FULL_RECOUNT_DETAIL_MISSING: 'Falta el detalle de reconteo necesario para guardar.',
+  FULL_CONFIRMATION_MANIFEST_MISMATCH: 'La confirmación del servidor no coincide. Los registros quedan retenidos para revisión.',
 }
 const explain = (error: unknown) => {
   const code = error instanceof Error ? error.message : String(error)
@@ -47,20 +54,28 @@ const routes: { action: WorkAction; route: CashierRoute; title: string; label: s
 ]
 const routeFor = (action: WorkAction) => routes.find(r => r.action === action)!.route
 
-function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
+function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFor }: {
   groups: FullGroup[]
   initialId: string | null
   onClose: () => void
   disabled: boolean
-  onRecord: (group: FullGroup, physical: number, observation: Observation) => Promise<void>
+  onRecord: (group: FullGroup, physical: number, observation: Observation, expression: string) => Promise<void>
+  draftFor: (groupId: string) => FullDraft | null
 }) {
   const titleId = useId()
   const confirmationId = useId()
   const root = useRef<HTMLElement>(null)
   const confirmRoot = useRef<HTMLElement>(null)
   const [selected, setSelected] = useState<string | null>(initialId)
-  const [expressions, setExpressions] = useState<Record<string, string>>({})
-  const [notes, setNotes] = useState<Record<string, Observation>>({})
+  const [expressions, setExpressions] = useState<Record<string, string>>(() => Object.fromEntries(
+    groups.map(g => [g.group_id, draftFor(g.group_id)?.expression ?? '']),
+  ))
+  const [notes, setNotes] = useState<Record<string, Observation>>(() => Object.fromEntries(
+    groups.map(g => {
+      const draft = draftFor(g.group_id)
+      return [g.group_id, { reason: (draft?.reason ?? null) as CashierDifferenceReason | null, text: draft?.note ?? null }]
+    }),
+  ))
   const [observation, setObservation] = useState<{ required: boolean; after?: () => void } | null>(null)
   const [confirm, setConfirm] = useState<(() => void) | null>(null)
   const [saving, setSaving] = useState(false)
@@ -75,7 +90,11 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
   const valuation = group && difference !== null
     ? calculateCajeroValuationPreview(difference, group.price, group.units_per_package, group.package_price)
     : null
-  const dirty = Boolean(group && (expression.trim() !== '' || currentNote.reason !== null || currentNote.text !== null))
+  const saved = selected ? draftFor(selected) : null
+  const dirty = Boolean(group && (saved
+    ? (physical !== saved.physical || currentNote.reason !== saved.reason ||
+      currentNote.text !== saved.note || (expression !== saved.expression))
+    : (expression.trim() !== '' || currentNote.reason !== null || currentNote.text !== null)))
   const locked = saving || disabled
 
   useEffect(() => {
@@ -114,7 +133,17 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
     if (!dirty) { go(); return }
     setConfirm(() => go)
   }
-  const select = (id: string | null) => { clear(); setSelected(id); setError(null) }
+  const select = (id: string | null) => {
+    clear()
+    if (id) {
+      const draft = draftFor(id)
+      setExpressions(old => ({ ...old, [id]: draft?.expression ?? '' }))
+      setNotes(old => ({ ...old, [id]: {
+        reason: (draft?.reason ?? null) as CashierDifferenceReason | null, text: draft?.note ?? null,
+      } }))
+    }
+    setSelected(id); setError(null)
+  }
   const next = () => {
     const nextGroup = groups[index + 1]
     select(nextGroup?.group_id ?? null)
@@ -133,7 +162,7 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
     setError(null)
     try {
       const resolved = group.action === 'recount' && difference === 0
-      await onRecord(group, physical, resolved ? { reason: null, text: null } : value)
+      await onRecord(group, physical, resolved ? { reason: null, text: null } : value, expression)
       clear()
       after()
     } catch (e) { setError(explain(e)) }
@@ -150,12 +179,12 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
       <header className="cajero-capture-modal__header">
         <button type="button" className="cajero-capture-modal__icon-button" aria-label="Regresar a la lista" onClick={() => requestExit(() => select(null))}><ArrowLeft size={22}/></button>
         <h2 id={titleId}>{group?.category_name ?? 'Grupos'}</h2>
-        <strong>{groups.length} grupos</strong>
+        <strong>{groups.filter(g => draftFor(g.group_id)).length}/{groups.length} contados</strong>
         <button type="button" className="cajero-capture-modal__icon-button" aria-label="Cerrar" onClick={() => requestExit(onClose)}><X size={22}/></button>
       </header>
       <div className="cajero-capture-modal__progress">
-        <span aria-hidden="true"><span style={{ width: '0%' }}/></span>
-        <strong aria-label="Progreso pendiente de contrato">—</strong>
+        <span aria-hidden="true"><span style={{ width: `${groups.length ? Math.round(groups.filter(g => draftFor(g.group_id)).length * 100 / groups.length) : 0}%` }}/></span>
+        <strong>{groups.length ? Math.round(groups.filter(g => draftFor(g.group_id)).length * 100 / groups.length) : 0}%</strong>
       </div>
       <div className={'cajero-capture-modal__body' + (group ? ' cajero-capture-modal__body--detail' : '')}>
         {group ? <div className="cajero-capture-detail">
@@ -191,10 +220,15 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
           </nav>
         </div> : <div className="cajero-capture-summary">
           <div className="cajero-capture-summary__head"><span>Nombre</span><span>Stock TumiSoft</span><span>Diferencia</span><span/></div>
-          <div className="cajero-capture-summary__rows">{groups.map(item =>
-            <button type="button" key={item.group_id} disabled={locked} onClick={() => setSelected(item.group_id)}>
-              <strong>{item.group_name}</strong><span>{item.stock_theoretical}</span><span>—</span><span>›</span>
-            </button>)}</div>
+          <div className="cajero-capture-summary__rows">{groups.map(item => {
+            const draft = draftFor(item.group_id)
+            const difference = draft ? draft.physical - item.stock_theoretical : null
+            return <button type="button" key={item.group_id} className={draft ? 'is-counted' : undefined}
+              disabled={locked} onClick={() => select(item.group_id)}>
+              <strong>{item.group_name}</strong><span>{item.stock_theoretical}</span>
+              <span className={getCajeroDifferenceClass(difference)}>{formatCajeroDifference(difference)}</span><span>›</span>
+            </button>
+          })}</div>
         </div>}
       </div>
     </section>
@@ -216,7 +250,7 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord }: {
           void (async () => {
             if (physical === null || locked) return
             setSaving(true)
-            try { await onRecord(group, physical, group.action === 'recount' && difference === 0 ? { reason: null, text: null } : value); clear(); after() }
+            try { await onRecord(group, physical, group.action === 'recount' && difference === 0 ? { reason: null, text: null } : value, expression); clear(); after() }
             catch (e) { setError(explain(e)) }
             finally { setSaving(false) }
           })()
