@@ -490,9 +490,11 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         {session ? <section className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Registro de conteos">
           <article className="cajero-home-metric cajero-home-metric--pending">
             <Send size={23} aria-hidden="true"/><span>Pendientes de registro</span>
-            <div className="cajero-home-metric__value"><strong>{activeDrafts}</strong><small>borradores</small></div>
-            <button type="button" className="button button--secondary" disabled={working || view.busy || (!activeDrafts && !view.pending)}
-              onClick={register}><Send size={18} aria-hidden="true"/> Registrar conteo</button>
+            <div className="cajero-home-metric__send-row">
+              <div className="cajero-home-metric__value"><strong>{activeDrafts}</strong><small>borradores</small></div>
+              <button type="button" className="button button--secondary" disabled={working || view.busy || (!activeDrafts && !view.pending)}
+                onClick={register}><Send size={18} aria-hidden="true"/> Registrar conteo</button>
+            </div>
           </article>
         </section> : null}
         {session && actionRoute ? <section className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Trabajo habilitado">
