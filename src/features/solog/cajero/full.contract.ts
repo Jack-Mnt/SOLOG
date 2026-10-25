@@ -13,11 +13,20 @@ export interface FullGroup {
   price: number; units_per_package: number | null; package_price: number | null
   action: 'recount' | 'coverage' | 'daily' | 'none'; priority_class: string; recount_detail_id: string | null
 }
+export interface FullRecoveryDeliveryState {
+  session_id: string; groups_revision: number
+  current_priority_class: 'round_coverage' | 'review_for_coverage' | 'review_regular' | 'shift_coverage' | 'none'
+  eligible_groups: {
+    group_id: string; action: 'coverage' | 'daily' | 'recount'; priority_class: string
+    recount_detail_id: string | null; reference_snapshot_id: string
+  }[]
+}
 export interface FullState {
   timezone: 'America/Lima'
   stock: null | { snapshot_id: string; snapshot_captured_at: string; snapshot_confirmed_at: string; stock_expires_at: string; is_fresh: boolean; is_fallback: boolean; catalog_version: number; groups_revision: number }
   session: FullSession | null; recovery_sessions: FullSession[]; groups: FullGroup[]
   confirmed_observation_ids: string[]; recovery_manifests: { session_id: string; observation_ids: string[] }[]
+  recovery_delivery_states?: FullRecoveryDeliveryState[]
   capabilities: { can_start_session: boolean; can_capture_in_current_session: boolean; block_reason: string | null }
 }
 export interface FullMutation {
@@ -67,6 +76,28 @@ export function parseFullEnvelope(value: unknown): FullEnvelope {
     check(d.session !== null || groups.length === 0)
     if (d.session !== null) { const s = object(d.session); check(groups.every(g => g.reference_snapshot_id === s.reference_snapshot_id && g.groups_revision === s.groups_revision)) }
     for (const entry of list(d.recovery_manifests)) { const m = object(entry); check(isUuid(m.session_id)); uniqueIds(m.observation_ids) }
+    // Contrato aditivo de recovery ya desplegado; las fixtures anteriores
+    // pueden no incluirlo, pero si se entrega, debe ser estructuralmente válido.
+    if (d.recovery_delivery_states !== undefined) {
+      const seen = new Set<string>()
+      const allowed = ['round_coverage', 'review_for_coverage', 'review_regular', 'shift_coverage', 'none']
+      for (const entry of list(d.recovery_delivery_states)) {
+        const item = object(entry)
+        check(isUuid(item.session_id) && !seen.has(item.session_id))
+        seen.add(item.session_id)
+        integer(item.groups_revision); check(Number(item.groups_revision) > 0)
+        check(allowed.includes(String(item.current_priority_class)))
+        const ids = new Set<string>()
+        for (const raw of list(item.eligible_groups)) {
+          const group = object(raw)
+          check(isUuid(group.group_id) && isUuid(group.reference_snapshot_id))
+          check(!ids.has(String(group.group_id))); ids.add(String(group.group_id))
+          check(['coverage', 'daily', 'recount'].includes(String(group.action)))
+          text(group.priority_class)
+          check(group.recount_detail_id === null || isUuid(group.recount_detail_id))
+        }
+      }
+    }
     const c = object(d.capabilities); boolean(c.can_start_session); boolean(c.can_capture_in_current_session); check(c.block_reason === null || typeof c.block_reason === 'string')
     if (d.stock !== null) { const s = object(d.stock); check(isUuid(s.snapshot_id)); for (const field of ['snapshot_captured_at', 'snapshot_confirmed_at', 'stock_expires_at']) date(s[field]); boolean(s.is_fresh); boolean(s.is_fallback); integer(s.catalog_version); integer(s.groups_revision) }
   } else {
