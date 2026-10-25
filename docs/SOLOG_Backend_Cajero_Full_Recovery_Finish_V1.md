@@ -1,6 +1,6 @@
 # SOLOG — Backend Cajero Full — Recovery y cierre seguro V1
 
-**Estado:** DESPLEGADO (2026-10-25) y verificado por inspección/lecturas; **integración completa y smoke aún pendientes**.
+**Estado:** DESPLEGADO (2026-10-25); **smoke funcional humano V6/V7 validado (8/8)**; pruebas de replay y recovery autenticadas pendientes.
 **Nivel:** C — backend / consistencia operativa.
 **Rama documental:** `admin-work`. **Proyecto Supabase:** `PuertoRicoOnline` (`fvtohxvcvsflzmftgfzs`).
 **Migración aplicada:** `20261025201355_solog_cajero_full_recovery_finish_v1`.
@@ -72,8 +72,11 @@ Para un `finish` **nuevo**:
 - Comprobación posterior de residuos: 0 sesiones `recovery`, 1 `expirado`, 2 `finalizado`, 0 filas en `solog_session_runtime_groups`.
 - Al probar, había 3 sesiones Full históricas (1 expirada, 2 finalizadas), **0 activas y 0 en recovery**, sin runtime groups actualmente conservados. Por tanto, la lectura de recovery poblada y el flujo V7 de cierre **todavía no se han validado extremo a extremo**.
 - Consultados Advisors de seguridad y rendimiento tras la migración; contienen advertencias generales del proyecto que **no se atribuyen** a esta migración sin comparación previa. No se cambiaron permisos ni tablas.
+- **Smoke humano reportado por el usuario (8/8)**: snapshot vigente; inicio autorizado; sesión y grupos/stock correctos; observación confirmada; recarga sin pérdida ni duplicación visible; finalización; Historial; sin errores ni pendientes. Este resultado acredita el flujo básico, no el replay/recovery extremo a extremo.
+- **Revisión remota de integridad posterior al smoke, solo lectura**: 5 sesiones Full (4 finalizadas, 0 activas, 0 recovery, 1 histórica expirada); 18 registros en `full_cashier_operations` (5 `start`, 9 `save_batch`, 4 `finish`); 9 observaciones confirmadas; 0 conflictos. Validaciones dirigidas: 0 observaciones sin receipt persistido, 0 operaciones `SESSION_FINISHED` cuya sesión no estuviera finalizada, 0 UUID duplicados en operaciones, 0 UUID duplicados en observaciones. Los agregados abarcan toda la base, **no constituyen trazabilidad individual del smoke**.
+- Revisado el handler de excepciones desplegado: el nuevo `SESSION_DELIVERY_CLOSED` está incluido en el mapeo a error estructurado V7; no es una excepción SQL sin gestionar.
 
-## 5. Validaciones que siguen pendientes antes del plan frontend
+## 5. Validaciones técnicas que siguen pendientes antes de autorizar implementación frontend
 
 1. Validar V6 mediante la entrada pública con usuario/dispositivo autorizados y sesión Full real en `recovery`; la prueba sintética de lectura ya pasó, pero no acredita autenticación de extremo a extremo.
 2. Enviar batches de normales/reconteos con prioridad cambiante; comprobar refresh V6 y replay exacto, recepción única y no duplicación.
