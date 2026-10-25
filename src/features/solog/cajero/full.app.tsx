@@ -291,7 +291,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const [category, setCategory] = useState<string | null>(null)
   const [reviewGroup, setReviewGroup] = useState<string | null>(null)
   const [logoutOpen, setLogoutOpen] = useState(false)
-  const autoClosed = useRef(new Set<string>())
+  const autoClosed = useRef(new Map<string, number>())
   const session = view.session
   const stockState = view.bootstrap?.stock
   const canCapture = runtime.clock.canCapture(session) && !working && !view.busy
@@ -375,12 +375,18 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   }, [runtime, session, working, view.busy, startGate.phase])
   useEffect(() => {
     if (!Number.isFinite(now) || working || view.busy || !runtime.clock.trusted) return
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     const expired = [session, ...(view.bootstrap?.recovery_sessions ?? [])].find(s =>
-      s && now >= Date.parse(s.session_expires_at) && !autoClosed.current.has(s.session_id))
+      s && now >= Date.parse(s.session_expires_at) &&
+        now < Date.parse(s.pending_delivery_until) &&
+        now >= (autoClosed.current.get(s.session_id) ?? 0))
     if (!expired) return
-    autoClosed.current.add(expired.session_id)
+    // Reintentos limitados a uno cada 30 segundos. Reconciliar en reconexión.
+    autoClosed.current.set(expired.session_id, now + 30_000)
     let cancelled = false
-    void runtime.finish(expired.session_id).catch(e => { if (!cancelled) setError(explain(e)) })
+    void runtime.finish(expired.session_id).catch(e => {
+      if (!cancelled) setError(explain(e))
+    })
     return () => { cancelled = true }
   }, [runtime, session, view.bootstrap, now, working, view.busy])
   const startGuarded = () => {
@@ -400,8 +406,22 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     setCategory(null); setReviewGroup(null)
     navigateTo(r)
   }
-  const record = async (g: FullGroup, value: number, note: Observation) => {
-    await runtime.observe(g.group_id, value, note.reason, note.text)
+  const record = async (g: FullGroup, value: number, note: Observation, expression: string) => {
+    await runtime.observe(g.group_id, value, note.reason, note.text, expression)
+  }
+  const register = () => void run(() => runtime.sendPending())
+  const logoutSafe = () => {
+    void (async () => {
+      setWorking(true); setError(null)
+      try {
+        if (runtime.getSnapshot().session) await runtime.finish()
+        const state = runtime.getSnapshot()
+        if (state.session || state.drafts || state.pending || state.rejected ||
+          state.bootstrap?.recovery_sessions.length) throw new Error('FULL_OLD_SESSION_REQUIRES_RECONCILIATION')
+        await onLogout()
+      } catch (e) { setError(explain(e)) }
+      finally { setWorking(false); setLogoutOpen(false) }
+    })()
   }
   const exportPending = () => {
     const blob = new Blob([JSON.stringify(runtime.inspectPending(), null, 2)], { type: 'application/json' })
@@ -413,6 +433,9 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     URL.revokeObjectURL(url)
   }
   const navRoutes: CashierRoute[] = actionRoute ? ['/cajero', actionRoute, '/cajero/historial'] : ['/cajero', '/cajero/historial']
+  const activeDrafts = session ? runtime.getDrafts(session.session_id).length : 0
+  const hasUnresolved = view.drafts > 0 || view.pending > 0 || view.rejected > 0 ||
+    Boolean(view.bootstrap?.recovery_sessions.length)
 
   return <div className="cajero-shell">
     <header className="cajero-header">
@@ -441,8 +464,8 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     </header>
     <main className="cajero-main">
       {error || view.error ? <div className="cajero-alert cajero-alert--error" role="alert">{error ?? explain(view.error)}</div> : null}
-      {view.pending || view.rejected ? <div className="cajero-alert cajero-alert--warning" role="status">
-        <p>{view.pending} operaciones pendientes y {view.rejected} que necesitan revisión. Permanecen en este dispositivo.</p>
+      {hasUnresolved ? <div className="cajero-alert cajero-alert--warning" role="status">
+        <p>{view.drafts} borradores locales, {view.pending} operaciones pendientes y {view.rejected} rechazadas. Los registros permanecen en este dispositivo.</p>
         <button className="button button--secondary" type="button" disabled={working || view.busy}
           onClick={() => void run(() => runtime.retry())}><RefreshCw size={18}/> Reintentar pendientes</button>
         <button className="button button--secondary" type="button" onClick={exportPending}>Exportar pendientes</button>
@@ -462,12 +485,20 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
             </div>
           </div>
           <div className="cajero-stock-card__actions">
-            {!session ? <button type="button" className="button" disabled={startGate.blocked || !view.bootstrap?.capabilities.can_start_session || !stockFresh || working || view.busy}
+            {!session ? <button type="button" className="button" disabled={hasUnresolved || startGate.blocked || !view.bootstrap?.capabilities.can_start_session || !stockFresh || working || view.busy}
               onClick={startGuarded}><Play size={19}/>{startGate.phase === 'minute_59' ? 'Actualizando inventario' : startGate.phase === 'waiting_new_snapshot' ? 'Esperando stock actualizado' : 'Iniciar conteo'}</button>
               : <button type="button" className="button button--danger" disabled={working || view.busy}
                 onClick={() => void run(() => runtime.finish())}><Square size={19}/> Finalizar conteo</button>}
           </div>
         </section>
+        {session ? <section className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Registro de conteos">
+          <article className="cajero-home-metric cajero-home-metric--pending">
+            <Send size={23} aria-hidden="true"/><span>Pendientes de registro</span>
+            <div className="cajero-home-metric__value"><strong>{activeDrafts}</strong><small>borradores</small></div>
+            <button type="button" className="button button--secondary" disabled={working || view.busy || (!activeDrafts && !view.pending)}
+              onClick={register}><Send size={18} aria-hidden="true"/> Registrar conteo</button>
+          </article>
+        </section> : null}
         {session && actionRoute ? <section className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Trabajo habilitado">
           <button type="button" className="cajero-home-metric cajero-home-metric--action" onClick={() => workLink(actionRoute)}>
             <SearchCheck size={23}/><span>Continuar trabajo habilitado</span>
@@ -480,6 +511,9 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       </section> : <section className="cajero-module cajero-operational">
         <div className="cajero-module__heading cajero-operational__heading cajero-operational__heading--with-action">
           <div><h1>{route.title}</h1><p>{currentAction === 'recount' ? 'Verifica la realidad' : 'Registra la realidad'}</p></div>
+          {currentAction !== 'recount' ? <button type="button" className="button button--secondary"
+            disabled={working || view.busy || (!activeDrafts && !view.pending)}
+            onClick={register}><Send size={18} aria-hidden="true"/> Registrar conteo</button> : null}
           {currentAction === 'recount' ? <div className="cajero-segmented-control cajero-segmented-control--symbols" role="group" aria-label="Filtrar por diferencia inicial">
             <span className="full-contract-pending">Filtro por diferencia inicial pendiente de contrato</span>
           </div> : null}
@@ -514,11 +548,11 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         key={(session?.session_id ?? '') + ':' + (category ?? reviewGroup ?? '')}
         groups={modalGroups} initialId={reviewGroup} disabled={!canCapture}
         onClose={() => { setCategory(null); setReviewGroup(null) }}
-        onRecord={record}/> : null}
+        draftFor={groupId => runtime.getDraft(groupId)} onRecord={record}/> : null}
       {view.bootstrap?.recovery_sessions.map(s => <div className="cajero-alert cajero-alert--warning" key={s.session_id}>
         <p>Sesión en recuperación. Entrega disponible hasta {dateTime(s.pending_delivery_until)}.</p>
         <button type="button" className="button button--secondary" disabled={working || view.busy}
-          onClick={() => void run(() => runtime.finish(s.session_id))}>Reconciliar y cerrar</button>
+          onClick={() => void run(() => runtime.finish(s.session_id))}>Reintentar cierre seguro</button>
       </div>)}
     </main>
     <nav className="cajero-nav" aria-label="Panel Cajero"><div className="cajero-nav__inner">
@@ -535,7 +569,8 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         <h2>¿Cerrar sesión?</h2><p>Las operaciones sin confirmar permanecerán guardadas en este dispositivo.</p>
         <div className="cajero-confirmation__actions">
           <button type="button" className="button button--secondary" onClick={() => setLogoutOpen(false)}>Cancelar</button>
-          <button type="button" className="button button--danger" onClick={() => void onLogout()}><LogOut size={18}/> Salir</button>
+          <button type="button" className="button button--danger" disabled={working || view.busy}
+            onClick={logoutSafe}><LogOut size={18}/> Salir</button>
         </div>
       </section>
     </div> : null}
