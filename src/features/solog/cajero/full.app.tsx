@@ -93,7 +93,7 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
   const saved = selected ? draftFor(selected) : null
   const dirty = Boolean(group && (saved
     ? (physical !== saved.physical || currentNote.reason !== saved.reason ||
-      currentNote.text !== saved.note || (expression !== saved.expression))
+      currentNote.text !== saved.note)
     : (expression.trim() !== '' || currentNote.reason !== null || currentNote.text !== null)))
   const locked = saving || disabled
 
