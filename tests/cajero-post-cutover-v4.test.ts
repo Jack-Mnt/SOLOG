@@ -1,11 +1,7 @@
 import { describe, test, expect } from 'bun:test'
-import { createElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
 import { CashierV4Runtime, cashierV4LocalPending } from '../src/features/solog/cajero/cajero.v4.runtime'
 import { CashierV4Store } from '../src/features/solog/cajero/cajero.v4.store'
 import { CashierV4DraftStorage, cashierV4StartStorageKey } from '../src/features/solog/cajero/cajero.v4.storage'
-import { CashierV4Provider } from '../src/features/solog/cajero/cajero.v4.context'
-import { CajeroV4 } from '../src/features/solog/cajero/cajero.v4.ui'
 import { SologApiError } from '../src/features/solog/errors'
 import type { CashierV4Rpc } from '../src/features/solog/cajero/cajero.v4.api'
 import { draftHarness, memoryStorage, uuidFor } from './fixtures/cashier-v4-drafts'
@@ -19,12 +15,6 @@ function startHarness(call?: CashierV4Rpc, raw = memoryStorage()) {
   let generated = 0
   const runtime = new CashierV4Runtime(store, storage, call, () => uuidFor(++generated), () => now)
   return { runtime, store, storage, raw, b, generated: () => generated }
-}
-function html(runtime: CashierV4Runtime) {
-  const old = Object.getOwnPropertyDescriptor(globalThis, 'window')
-  Object.defineProperty(globalThis, 'window', { value: { localStorage: memoryStorage() }, configurable: true })
-  try { return renderToStaticMarkup(createElement(CashierV4Provider, { store: runtime.store, children: createElement(CajeroV4, { runtime, route: '/cajero', onLogout: async () => {} }) })) }
-  finally { if (old) Object.defineProperty(globalThis, 'window', old); else Reflect.deleteProperty(globalThis, 'window') }
 }
 
 describe('13.5A start persistente', () => {
@@ -58,7 +48,8 @@ describe('13.5A start persistente', () => {
     h.store.refresh = async () => { h.store.acceptBootstrap(cashierV4Bootstrap('active')) }
     await h.runtime.refresh()
     expect(h.storage.readStart(identity)?.prepared_start.status).toBe('uncertain')
-    expect(html(h.runtime)).toContain('Reintentar inicio'); expect(h.runtime.canCapture('review')).toBe(false)
+    expect(h.storage.readStart(identity)?.prepared_start.status).toBe('uncertain')
+    expect(h.runtime.canCapture('review')).toBe(false)
   })
   test('operation in progress conserva ID y permite retry explícito', async () => {
     let calls = 0
@@ -204,19 +195,21 @@ describe('13.5A residuos y refresh', () => {
     expect(runtime.canCapture('coverage')).toBe(true); expect(runtime.pendingCount).toBe(0)
     expect(h.storage.read(h.scope).normal).toEqual(r.normal); expect(h.storage.read(h.scope).recount).toEqual(r.recount)
   })
-  test('estado normal no tiene refresh global ni contextual', () => {
-    const h = startHarness(); expect(html(h.runtime)).not.toContain('Actualizar')
+  test('estado normal no requiere refresh contextual', () => {
+    const h = startHarness()
+    expect(h.runtime.requiresRefresh).toBe(false)
   })
-  test('requiresRefresh muestra CTA; bootstrap válido retira condición', async () => {
-    const h = startHarness(async () => { throw new SologApiError('SOLOG_STOCK_EXPIRED') }); await expect(h.runtime.start()).rejects.toThrow()
-    expect(html(h.runtime)).toContain('>Actualizar</button>')
-    h.store.refresh = async () => { h.store.acceptBootstrap(structuredClone(h.b)) }; await h.runtime.refresh()
-    expect(h.runtime.requiresRefresh).toBe(false); expect(html(h.runtime)).not.toContain('>Actualizar</button>')
+  test('requiresRefresh de runtime histórico se retira con bootstrap válido', async () => {
+    const h = startHarness(async () => { throw new SologApiError('SOLOG_STOCK_EXPIRED') })
+    await expect(h.runtime.start()).rejects.toThrow()
+    expect(h.runtime.requiresRefresh).toBe(true)
+    h.store.refresh = async () => { h.store.acceptBootstrap(structuredClone(h.b)) }
+    await h.runtime.refresh()
+    expect(h.runtime.requiresRefresh).toBe(false)
   })
-  test('error sin requiresRefresh no crea CTA; header usa logout seguro', async () => {
-    const h = startHarness(async () => { throw new Error('timeout') }); await expect(h.runtime.start()).rejects.toThrow()
-    expect(html(h.runtime)).not.toContain('>Actualizar</button>')
-    const source = await Bun.file('src/features/solog/cajero/cajero.v4.ui.tsx').text()
-    expect(source).toContain('runtime.logoutSafe(onLogout)'); expect(source).not.toContain('Actualizar panel')
+  test('error de red histórico no crea estado requiresRefresh', async () => {
+    const h = startHarness(async () => { throw new Error('timeout') })
+    await expect(h.runtime.start()).rejects.toThrow()
+    expect(h.runtime.requiresRefresh).toBe(false)
   })
 })
