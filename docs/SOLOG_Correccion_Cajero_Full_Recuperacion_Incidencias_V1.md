@@ -1,6 +1,6 @@
 # SOLOG — Corrección Cajero Full: recuperación, incidencias y carga V1
 
-**Estado:** IMPLEMENTADO EN `admin-work` — validación técnica de los nuevos commits y smoke de este flujo pendientes.
+**Estado:** IMPLEMENTADO EN `admin-work` — **tests dirigidos, lint y build validados localmente por el usuario**; smoke del nuevo flujo y E2E de recovery pendientes.
 **Fecha:** 2026-10-26. **Clasificación:** Nivel C (recuperación y persistencia) con ajustes puntuales Nivel A/B.
 **Fuente primaria funcional vigente:** `docs/SOLOG_Logica_Cajero_Registro_Cierre_Automatico_Full_V1.md`, aprobada y congelada. Este archivo es un **delta técnico**: solo reemplaza los comportamientos defectuosos identificados abajo.
 **Contrato backend vigente y ya desplegado:** `docs/SOLOG_Backend_Cajero_Full_Recovery_Finish_V1.md`. No se realizaron cambios en Supabase.
@@ -16,7 +16,7 @@ Preflight en código: `full.app.tsx` no importaba `Send`; autocierre dependía e
 ## 2. Correcciones implementadas
 
 ### 2.1 Desbloqueo de compilación
-`full.app.tsx` importa el icono `Send` usado en Inicio, Conteo y Conteo diario. **Build aún no ejecutado sobre los commits de esta corrección.**
+`full.app.tsx` importa el icono `Send` usado en Inicio, Conteo y Conteo diario. **Build validado localmente por el usuario tras la corrección.**
 
 ### 2.2 Reanudación idempotente desde journal
 `FullRuntime.resumePrepared()` inspecciona operaciones `pending` **persistidas**, incluso `start` sin sesión asignada y `finish` de una sesión ya ausente de bootstrap. Procesa scopes serializados bajo el lock de Full; para cada scope transmite el mismo `operation_id` y `exactPayload`, reconcilia receipts y vuelve a consultar V6. Los rechazados conocidos no se reintentan ni bloquean automáticamente el procesamiento de un scope diferente.
@@ -49,9 +49,9 @@ Se actualizaron `tests/global-loading-cajero-phase3.test.ts` y `tests/global-loa
 
 ## 4. Validación y pendientes
 
-**Comprobado mediante lectura remota:** las modificaciones y las nuevas aserciones existen en `admin-work`; el backend no fue modificado. **No se ha ejecutado** Bun, TypeScript, ESLint, build, Git diff local ni prueba de navegador después de estos commits, porque el acceso al repositorio por conector GitHub no dispone de ejecutor de comandos ni se puede clonar en el contenedor actual. No afirmar que los tests añadidos pasan ni que el build está verde.
+**Comprobado mediante lectura remota:** las modificaciones y las nuevas aserciones existen en `admin-work`; el backend no fue modificado. **Resultado reportado por el usuario (2026-10-26):** tras ajustar la expectativa de `retry()` del test de rechazos definitivos (commit `640e197fc052aa98cbaf505f6efa3fcf1c5196ca`), las tres validaciones solicitadas quedaron **en verde**: `bun test tests/cajero-full-registro-autocierre.test.ts`, `bun run lint` y `bun run build`. El usuario no aportó salida detallada; no se atribuye esta evidencia a la suite global, a browser/Playwright ni a E2E autenticado. Tampoco se ha acreditado una nueva ejecución de `git diff --check` después de estos commits.
 
-Validar desde máquina de desarrollo:
+Validaciones complementarias y repetición cuando corresponda:
 
 ```powershell
 git switch admin-work
