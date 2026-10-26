@@ -31,7 +31,7 @@ El panel muestra resumen de hasta 12 incidencias y total adicional, con botón d
 **Limitación aceptada dentro del alcance:** el diagnóstico es archivo local, no un canal de soporte automatizado. No se añade operación backend ni se modifica el Motor.
 
 ### 2.4 Loading y pruebas históricas
-`FullCashierPanel` usa `PanelLoader variant="contained"` durante el bootstrap inicial, preservando el Shell/cabecera/navegación en las actualizaciones posteriores. Las aserciones de loading de las fases 3/4 pasan a verificar el entry Full vigente, sin reactivar V4. Los tests unitarios V4 no se eliminan indiscriminadamente; su fallo previo necesita resultado exacto si persiste después de ejecutar la suite.
+`FullCashierPanel` usa `PanelLoader variant="contained"` durante el bootstrap inicial, preservando el Shell/cabecera/navegación en las actualizaciones posteriores. Las aserciones de loading de las fases 3/4 pasan a verificar el entry Full vigente, sin reactivar V4. Los tests unitarios V4 no se eliminan indiscriminadamente: `tests/cajero-post-cutover-v4.test.ts` conserva aserciones de runtime histórico, pero deja de renderizar `CajeroV4` y de verificar CTA de una UI ya sustituida. Las garantías vigentes de Shell, loading y navegación se validan con Full. Cualquier fallo restante debe diagnosticarse con su salida exacta.
 
 ## 3. Pruebas añadidas / actualizadas
 
