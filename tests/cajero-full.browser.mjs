@@ -165,7 +165,9 @@ const server = await createServer({ server: { host: '127.0.0.1', port: 5212, str
 await server.listen()
 const browser = await chromium.launch({
   headless: true,
-  ...(process.env.SOLOG_TEST_BROWSER ? { executablePath: process.env.SOLOG_TEST_BROWSER } : {}),
+  ...(process.env.SOLOG_TEST_BROWSER
+    ? { executablePath: process.env.SOLOG_TEST_BROWSER }
+    : { channel: 'chrome' }),
 })
 const target = 'http://127.0.0.1:5212/cajero'
 
@@ -216,6 +218,11 @@ async function scenario(options, run) {
 }
 
 const journal = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)), journalKey)
+async function eventually(predicate, message, timeout = 12000) {
+  const deadline = Date.now() + timeout
+  while (!predicate() && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50))
+  assert.ok(predicate(), message)
+}
 async function waitPending(page, count) {
   await page.waitForFunction(({ key, count }) => {
     const record = JSON.parse(localStorage.getItem(key) || '{}')
@@ -296,7 +303,7 @@ try {
       const j = JSON.parse(localStorage.getItem(key) || '{}')
       return (j.pending || []).length === 0 && (j.drafts?.['12345678-1234-4123-8123-1234567890ac']?.length ?? 0) === 0
     }, journalKey)
-    await page.waitForFunction(() => document.querySelector('.cajero-home') !== null)
+    await eventually(() => fake.finished, 'El autocierre de recovery no se confirmó')
     assert.equal(fake.finished, true)
     assert.equal(fake.observations.size, 1)
     assert.deepEqual(fake.calls.map(c => c.action), ['save_batch', 'finish'])
