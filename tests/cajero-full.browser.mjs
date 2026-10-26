@@ -308,6 +308,12 @@ async function scenario(options, run) {
     try {
       const response = fake.mutate(args.p_action, args.p_payload)
       if (response === null) return route.abort('failed')
+      // Barrera exclusiva del test multitab: mantener la primera confirmación remota
+      // sin respuesta mientras la segunda pestaña pulsa Registrar conteo.
+      if (fake.holdFirstBatch && args.p_action === 'save_batch' && !fake.firstBatchHeld) {
+        fake.firstBatchHeld = true
+        await new Promise(resolve => { fake.releaseHeldBatch = resolve })
+      }
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify(response) })
     } catch (e) {
       failures.push(String(e))
@@ -693,11 +699,18 @@ try {
       await saveGroup(a, 'Grupo A')
       await saveGroup(b, 'Grupo B')
       assert.equal((await journal(a)).drafts[sid].length, 2)
-      // Se lanzan dos clics sin esperar la respuesta del primero.
-      await Promise.all([
-        a.getByRole('button', { name: 'Registrar conteo', exact: true }).click(),
-        b.getByRole('button', { name: 'Registrar conteo', exact: true }).click(),
-      ])
+      // El primer batch queda aplicado en el backend simulado, pero sin respuesta.
+      // La segunda pestaña pulsa mientras la primera aún posee el lock.
+      fake.holdFirstBatch = true
+      const firstClick = a.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+      try {
+        await eventually(() => typeof fake.releaseHeldBatch === 'function',
+          'La primera pestaña no llegó al backend simulado')
+        await b.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+      } finally {
+        fake.releaseHeldBatch?.()
+      }
+      await firstClick
       await eventually(() => fake.observations.size === 2, 'No se confirmaron ambos grupos')
       await a.waitForFunction(key => {
         const j = JSON.parse(localStorage.getItem(key))
