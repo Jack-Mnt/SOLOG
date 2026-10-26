@@ -350,7 +350,7 @@ export class FullRuntime {
         if (!preparedStart) {
           if (Object.values(this.journal.drafts).some(d => d.length) || this.journal.pending.length ||
             this.view.bootstrap?.recovery_sessions.length) throw new Error('FULL_OLD_SESSION_REQUIRES_RECONCILIATION')
-          const gate = cashierStartGate(this.clock.now(), this.clock.trusted, this.view.bootstrap?.stock?.snapshot_confirmed_at)
+          const gate = cashierStartGate(this.clock.now(), this.clock.trusted, this.view.bootstrap?.stock?.snapshot_confirmed_at, this.view.bootstrap?.stock?.snapshot_captured_at)
           if (gate.blocked) throw new Error('FULL_HOURLY_START_GATE')
           if (!this.view.bootstrap?.capabilities.can_start_session)
             throw new Error(this.view.bootstrap?.capabilities.block_reason ?? 'FULL_START_BLOCKED')
