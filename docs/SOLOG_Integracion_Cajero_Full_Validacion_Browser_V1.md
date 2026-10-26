@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero Full — Validación Browser V1
 
-**Estado:** Primera y segunda baterías Playwright **VALIDADAS LOCALMENTE (9/9)** en `admin-work` el 2026-10-26. Tercera batería: **1/2 aprobado**, 1 caso falló por sincronización prematura del arnés; corregido en `c80acff8`, **pendiente de reejecución**.
+**Estado:** Tres baterías Playwright **VALIDADAS LOCALMENTE (11/11)** en `admin-work` el 2026-10-26, con **0 solicitudes externas** según salida del usuario. Quedan pruebas de límites de captura/identidad/colisión simultánea y E2E autenticado aislado; **bloque integral aún abierto**.
 **Fecha:** 2026-10-26. **Clasificación:** Nivel C por las garantías de recuperación/idempotencia que comprueba; los cambios realizados son exclusivamente de infraestructura de pruebas.
 
 ## Autoridad y alcance
@@ -49,9 +49,9 @@ Se aplican fixtures de usuario, dispositivo y snapshot **ficticios**. Se prueba 
 
 El fixture se limita a un backend simulado con respuestas V6/V7 de prueba. Las garantías del reloj de servidor, persistencia remota y autorización real solo se acreditan en tests autenticados controlados.
 
-## Tercera batería — escenarios concurrentes pendientes de ejecución
+## Tercera batería — escenarios concurrentes validados
 
-**Estado y evidencia real:** el usuario ejecutó la tercera batería el 2026-10-26 con resultado **10 PASS / 1 FAIL / 0 solicitudes externas**. Pasó el caso de recovery A con sesión B activa. Falló la primera versión del caso de segundo batch por **wait prematuro**: la espera de `pending.length === 1` podía corresponder al primer lote, antes de que se aplicara el segundo. No hubo evidencia de fallo del runtime en esa ejecución. Se corrigió el arnés en `c80acff8` para esperar expresamente **dos observaciones remotas** y una única operación pendiente de **grupo B**, con exactamente una confirmación local y un borrador pendiente. **No se ha ejecutado aún esa corrección.** Los dos casos nuevos son:
+**Estado y evidencia real:** en la primera ejecución de la tercera batería se obtuvo **10 PASS / 1 FAIL / 0 solicitudes externas** por sincronización prematura del test del segundo batch, no por fallo demostrado de runtime. Se corrigió la espera en `c80acff8` para distinguir la única operación pendiente del segundo lote mediante sus identificadores y confirmaciones. **El usuario reejecutó después de esa corrección (2026-10-26), obteniendo 11 PASS / 0 FAIL / 0 solicitudes externas.** Por tanto los dos casos nuevos están validados:
 
 | Caso | Criterio de aceptación |
 |---|---|
@@ -74,11 +74,11 @@ git diff --check
 
 El navegador por defecto es Chrome. Se admite `SOLOG_TEST_BROWSER` con ruta absoluta a un ejecutable Chromium/Chrome alternativo. Si no hay Chrome, debe instalarse un navegador Playwright o configurarse explícitamente un ejecutable disponible, sin cambiar la lógica de pruebas.
 
-**Criterios de aceptación:** los nueve escenarios ya acreditados deben mantenerse en verde y los dos nuevos deben emitir `PASS`, con resumen final **11 escenarios Full browser simulados; 0 solicitudes externas**. Una falla en cualquier caso debe salir con código distinto de 0: diagnosticarla, no relajar aserciones ni tratarla como éxito.
+**Criterios de aceptación (cumplidos para tres baterías):** los once escenarios emitieron `PASS`, con resumen final `PASS: 11 escenarios Full browser simulados; 0 solicitudes externas.` No se relajaron aserciones de idempotencia ni se modificó runtime/UI/backend para obtener verde. La evidencia proviene de ejecución local reportada por el usuario; no acredita Supabase autenticado.
 
 ## Pendientes — siguientes fases
 
-- **9 escenarios browser simulados validados**; **2 casos adicionales de tercera batería pendientes de ejecución**: segundo batch ambiguo y sesión A recovery/B activa. Restan validaciones específicas en el instante exacto del vencimiento de captura y aislamiento por cambios de usuario/dispositivo, además de un caso de colisión real de envíos simultáneos entre pestañas.
+- **11 escenarios browser simulados validados.** Pendientes de cobertura puntual: frontera exacta de expiración de captura, aislamiento frente a cambio de usuario/dispositivo y una colisión forzada de envíos simultáneos entre pestañas. El ensayo ya aprobado de dos pestañas cubre borradores compartidos y envío único secuencial, no una carrera forzada en dos botones.
 - Hacer la validación autenticada con RPC públicas V6/V7, usuario/dispositivo y datos específicamente aislados. Nunca simular autorización de backend con bypass en ambiente productivo.
 - Revisión global y smoke final según evidencia. No cerrar el bloque solo por tests browser simulados.
 
