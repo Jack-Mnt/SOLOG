@@ -302,7 +302,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const canCapture = runtime.clock.canCapture(session) && !working && !view.busy
   const remaining = session ? Math.max(0, Math.ceil((Date.parse(session.session_expires_at) - now) / 1000)) : 0
   const stockFresh = runtime.clock.trusted && Boolean(stockState?.is_fresh && now >= Date.parse(stockState.snapshot_captured_at) && now < Date.parse(stockState.stock_expires_at))
-  const startGate = cashierStartGate(now, runtime.clock.trusted, stockState?.snapshot_confirmed_at)
+  const startGate = cashierStartGate(now, runtime.clock.trusted, stockState?.snapshot_confirmed_at, stockState?.snapshot_captured_at)
   const startGateSeconds = Math.ceil(startGate.remainingMs / 1000)
   const startGateCountdown = `${Math.floor(startGateSeconds / 60)}:${String(startGateSeconds % 60).padStart(2, '0')}`
   const available = useMemo(() => actionable(view.groups), [view.groups])
@@ -409,7 +409,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     // Volver a comprobar en el propio clic para no iniciar con un render anterior
     // al cambio de minuto, incluso si el botón seguía habilitado.
     const latestStock = runtime.getSnapshot().bootstrap?.stock
-    const gate = cashierStartGate(runtime.clock.now(), runtime.clock.trusted, latestStock?.snapshot_confirmed_at)
+    const gate = cashierStartGate(runtime.clock.now(), runtime.clock.trusted, latestStock?.snapshot_confirmed_at, latestStock?.snapshot_captured_at)
     if (gate.blocked) {
       setError(gate.phase === 'minute_59'
         ? 'Actualización horaria en curso. El inicio está bloqueado durante el minuto 59.'
