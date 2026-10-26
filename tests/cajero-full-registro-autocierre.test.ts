@@ -173,7 +173,11 @@ describe('Cajero Full — borradores y registro agrupado V7', () => {
     await expect(h.runtime.sendPending()).rejects.toThrow('PRIORITY_CONFLICT')
     expect(h.runtime.getSnapshot().rejected).toBe(1)
     const count = h.requests().length
-    await expect(h.runtime.retry()).rejects.toThrow('FULL_REJECTED_REQUIRES_REVIEW')
+    // retry solo reanuda operaciones pending; nunca reenvía un rechazo definitivo.
+    await h.runtime.retry()
+    expect(h.runtime.getSnapshot().rejected).toBe(1)
+    expect(h.runtime.inspectPending()[0].status).toBe('rejected')
+    expect(h.requests()).toHaveLength(count)
     await expect(h.runtime.finish()).rejects.toThrow('FULL_REJECTED_REQUIRES_REVIEW')
     expect(h.requests()).toHaveLength(count)
   })
