@@ -22,7 +22,7 @@ const makeGroup = (id: string, priority: string): FullGroup => ({
 
 function harness(options: {
   failOnce?: boolean; reject?: boolean; twoPriorities?: boolean
-  failAfterAcceptOnce?: 'save_batch' | 'finish'; groupCount?: number; failOnBatchNumber?: number
+  failAfterAcceptOnce?: 'start' | 'save_batch' | 'finish'; groupCount?: number; failOnBatchNumber?: number
 } = {}) {
   let now = started, monotonic = 0
   const requests: { action: string; payload: Record<string, unknown> }[] = []
@@ -216,6 +216,17 @@ describe('Cajero Full — borradores y registro agrupado V7', () => {
     expect(h.runtime.getSnapshot().pending).toBe(0)
     expect(h.runtime.getSnapshot().rejected).toBe(0)
     expect((first?.payload.items as { client_observation_id: string }[])[0].client_observation_id).toBe(observationId)
+  })
+
+  test('start aceptado sin respuesta conserva operación y reanuda con el mismo UUID', async () => {
+    const h = harness({ failAfterAcceptOnce: 'start' })
+    await expect(h.runtime.start()).rejects.toThrow('FULL_DELIVERY_UNCERTAIN')
+    const original = structuredClone(h.requests().at(-1))
+    expect(h.runtime.inspectPending()[0].action).toBe('start')
+    await h.runtime.resumePrepared()
+    expect(h.requests().at(-1)).toEqual(original)
+    expect(h.runtime.inspectPending()).toHaveLength(0)
+    expect(h.runtime.getSnapshot().session?.session_id).toBe(sid)
   })
 
   test('finish confirmado sin respuesta se recupera aunque bootstrap ya no muestre sesión', async () => {
