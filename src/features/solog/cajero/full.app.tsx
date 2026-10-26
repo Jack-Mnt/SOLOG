@@ -296,6 +296,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [incidentToDiscard, setIncidentToDiscard] = useState<FullIncident | null>(null)
   const autoClosed = useRef(new Map<string, number>())
+  const lastPreparedRetry = useRef(Number.NEGATIVE_INFINITY)
   const session = view.session
   const stockState = view.bootstrap?.stock
   const canCapture = runtime.clock.canCapture(session) && !working && !view.busy
@@ -337,9 +338,16 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         setServerOffsetMs(serverNow - Date.now())
       }
     }
+    const resumePrepared = () => {
+      if (!navigator.onLine || !runtime.getSnapshot().pending || runtime.getSnapshot().busy) return Promise.resolve()
+      const stamp = performance.now()
+      if (stamp - lastPreparedRetry.current < 30_000) return Promise.resolve()
+      lastPreparedRetry.current = stamp
+      return runtime.resumePrepared()
+    }
     const refresh = () => {
       void runtime.refresh()
-        .then(() => runtime.resumePrepared())
+        .then(resumePrepared)
         .then(syncClockOffset)
         .catch(e => { if (live) setError(explain(e)) })
     }
@@ -349,6 +357,10 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     }
     refresh()
     const tick = window.setInterval(() => { if (live) setNow(runtime.clock.now()) }, 250)
+    // Reconciliación limitada a un intento por 30 s; también cuando bootstrap ya no muestra la sesión.
+    const preparedRetry = window.setInterval(() => {
+      if (live) void resumePrepared().catch(e => { if (live) setError(explain(e)) })
+    }, 30_000)
     const resume = () => { setNow(runtime.clock.now()); syncClockOffset(); if (!document.hidden) refresh() }
     const storage = (e: StorageEvent) => { if (e.key === runtime.key) refresh() }
     window.addEventListener('online', online)
@@ -358,6 +370,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     return () => {
       live = false
       window.clearInterval(tick)
+      window.clearInterval(preparedRetry)
       window.removeEventListener('online', online)
       window.removeEventListener('focus', resume)
       window.removeEventListener('storage', storage)
