@@ -32,13 +32,14 @@ const limaClock = new Intl.DateTimeFormat('en-GB', {
  * HH+1:00:00–HH+1:01:59: permitir solo snapshot confirmado después de HH:59.
  * HH+1:02:00+: permitir iniciar con el stock que autorice V6, incluido respaldo.
  *
- * Se compara la fecha absoluta de confirmación, no solo la hora del reloj,
- * para no aceptar un snapshot antiguo del mismo minuto de otro día.
+ * Se comparan captura y confirmación absolutas. Una confirmación tardía
+ * de stock capturado antes de HH:59 no equivale al snapshot del ciclo nuevo.
  */
 export function cashierStartGate(
   serverNowMs: number,
   trustedClock: boolean,
   snapshotConfirmedAt: string | null | undefined,
+  snapshotCapturedAt: string | null | undefined,
 ): CashierStartGate {
   if (!trustedClock || !Number.isFinite(serverNowMs) || serverNowMs <= 0) {
     return { phase: 'untrusted', blocked: true, cycleStartMs: null, remainingMs: 0 }
@@ -64,7 +65,10 @@ export function cashierStartGate(
   }
 
   const confirmedMs = snapshotConfirmedAt ? Date.parse(snapshotConfirmedAt) : Number.NaN
-  if (Number.isFinite(confirmedMs) && confirmedMs >= cycleStartMs && confirmedMs <= serverNowMs) {
+  const capturedMs = snapshotCapturedAt ? Date.parse(snapshotCapturedAt) : Number.NaN
+  if (Number.isFinite(confirmedMs) && Number.isFinite(capturedMs) &&
+    capturedMs >= cycleStartMs && capturedMs <= confirmedMs &&
+    confirmedMs >= cycleStartMs && confirmedMs <= serverNowMs) {
     return { phase: 'new_snapshot_ready', blocked: false, cycleStartMs, remainingMs }
   }
   return { phase: 'waiting_new_snapshot', blocked: true, cycleStartMs, remainingMs }
