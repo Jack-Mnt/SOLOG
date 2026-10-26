@@ -3,8 +3,8 @@ import { cashierStartGate } from '../src/features/solog/cajero/full.start-gate'
 import { FullRuntime, type FullRpc } from '../src/features/solog/cajero/full.runtime'
 
 const time = (local: string) => Date.parse(local)
-const gate = (local: string, confirmedAt: string | null = null, trusted = true) =>
-  cashierStartGate(time(local), trusted, confirmedAt)
+const gate = (local: string, confirmedAt: string | null = null, trusted = true, capturedAt: string | null = confirmedAt) =>
+  cashierStartGate(time(local), trusted, confirmedAt, capturedAt)
 
 describe('Cajero Full — protección frontend de inicio por snapshot horario', () => {
   test('antes del minuto 59 no introduce bloqueo nuevo', () => {
@@ -45,6 +45,16 @@ describe('Cajero Full — protección frontend de inicio por snapshot horario', 
     expect(gate('2026-10-23T09:00:22-05:00', newSnapshot).phase).toBe('new_snapshot_ready')
   })
 
+  test('no admite un snapshot antiguo confirmado tarde como actualización del ciclo actual', () => {
+    const lateConfirmation = '2026-10-23T09:00:22-05:00'
+    const oldCapture = '2026-10-23T07:59:12-05:00'
+    const newCapture = '2026-10-23T08:59:12-05:00'
+    const at = '2026-10-23T09:00:23-05:00'
+    expect(gate(at, lateConfirmation, true, oldCapture).phase).toBe('waiting_new_snapshot')
+    expect(gate(at, lateConfirmation, true, newCapture).phase).toBe('new_snapshot_ready')
+    expect(gate(at, lateConfirmation, true, null).blocked).toBe(true)
+  })
+
   test('exactamente tres minutos desde HH:59 desbloquea el respaldo', () => {
     const previous = '2026-10-23T07:59:22-05:00'
     const t = gate('2026-10-23T09:02:00-05:00', previous)
@@ -71,7 +81,7 @@ describe('Cajero Full — protección frontend de inicio por snapshot horario', 
 
   test('fail closed sin reloj sincronizado; una confirmación futura no sirve', () => {
     expect(gate('2026-10-23T09:00:30-05:00', null, false).phase).toBe('untrusted')
-    expect(cashierStartGate(Number.NaN, true, null).blocked).toBe(true)
+    expect(cashierStartGate(Number.NaN, true, null, null).blocked).toBe(true)
     expect(gate('2026-10-23T09:00:21-05:00', '2026-10-23T09:00:22-05:00').blocked).toBe(true)
   })
 })
