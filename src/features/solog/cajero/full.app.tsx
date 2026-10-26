@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LogOut, MessageSquarePlus, Play, RefreshCw, SearchCheck, Square, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LogOut, MessageSquarePlus, Play, RefreshCw, SearchCheck, Send, Square, X } from 'lucide-react'
 import type { CashierRoute } from '../../../lib/router'
 import { navigateTo, usePathname } from '../../../lib/router'
 import { CajeroCalculator } from './cajero.calculadora'
