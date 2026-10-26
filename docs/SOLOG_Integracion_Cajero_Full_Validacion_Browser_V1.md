@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero Full — Validación Browser V1
 
-**Estado:** Primera batería Playwright IMPLEMENTADA en `admin-work`; **SIN EJECUCIÓN LOCAL ACREDITADA**.
+**Estado:** Primera batería Playwright **VALIDADA LOCALMENTE (4/4)** en `admin-work` según ejecución del usuario el 2026-10-26. Segunda batería ampliada pendiente de ejecución.
 **Fecha:** 2026-10-26. **Clasificación:** Nivel C por las garantías de recuperación/idempotencia que comprueba; los cambios realizados son exclusivamente de infraestructura de pruebas.
 
 ## Autoridad y alcance
@@ -18,7 +18,7 @@ Quedan fuera: `master`, migraciones, Supabase, Motor, V4/V5, cambios de UI, refa
 - El `playwright.config.mjs` vigente apunta a `tests/browser/recovery-harness.html`, recurso no presente en la rama; la primera batería utiliza **un entry independiente**, sin modificar la configuración general.
 - `src/features/solog/cajero/cajero.app.tsx` monta `FullCashierPanel` y utiliza V6/V7; el arnés reemplaza `/src/lib/supabase.ts` a nivel de red exclusivamente en el contexto de pruebas.
 - `FullRuntime` usa `navigator.locks` y `localStorage` con clave por usuario/dispositivo. Los ensayos multitab usan páginas dentro del mismo contexto para que compartan ambos mecanismos.
-- El smoke real previo 8/8 y los tests/lint/build reportados verdes **no equivalen a la ejecución de esta nueva batería browser**.
+- El smoke real previo 8/8 y los tests/lint/build se validaron por separado. **Evidencia nueva:** el usuario ejecutó `node tests/cajero-full.browser.mjs` tras fast-forward de `8bb0c80` a `1074777` y obtuvo los cuatro mensajes `PASS` y resumen `PASS: 4 escenarios Full browser simulados; 0 solicitudes externas.` No hubo evidencias de fallos ni bloqueos en esa ejecución. Este resultado valida el arnés simulado, no RPC públicas autenticadas.
 
 ## Primera batería
 
@@ -47,7 +47,7 @@ git diff --check
 
 El navegador por defecto es Chrome. Se admite `SOLOG_TEST_BROWSER` con ruta absoluta a un ejecutable Chromium/Chrome alternativo. Si no hay Chrome, debe instalarse un navegador Playwright o configurarse explícitamente un ejecutable disponible, sin cambiar la lógica de pruebas.
 
-**Criterios de aceptación:** los cuatro escenarios muestran `PASS`, cero solicitudes externas, cero errores de ejecución JS, preservación exacta de los replay y cero observaciones duplicadas. Al fallar un escenario, el proceso sale con código distinto de 0 y se investiga antes de tocar producto.
+**Criterios de aceptación (cumplidos en la primera batería):** cuatro escenarios `PASS`, cero solicitudes externas, cero errores JS reportados por el arnés, conservación exacta de replay y cero duplicaciones de observaciones en la simulación. Si una ampliación falla, el proceso debe salir con código distinto de 0; no relajar aserciones ni reinterpretar una falla como éxito.
 
 ## Pendientes — siguientes fases
 
