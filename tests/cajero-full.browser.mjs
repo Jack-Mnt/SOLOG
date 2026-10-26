@@ -293,6 +293,8 @@ try {
     await page.getByRole('button', { name: 'Finalizar conteo' }).click()
     await waitPending(page, 1)
     assert.equal(fake.finished, true)
+    // El finish ya aceptado se reproduce con su UUID original incluso después de +2 h.
+    fake.now = fake.expires + 7200000 + 60_000
     await page.reload()
     await waitPending(page, 0)
     const finishes = fake.calls.filter(x => x.action === 'finish')
