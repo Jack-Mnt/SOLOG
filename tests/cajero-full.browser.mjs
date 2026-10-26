@@ -553,11 +553,22 @@ try {
       localStorage.setItem(key, JSON.stringify(data))
     }, { key: journalKey, groupId: groupB, sessionId: sid })
     await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
-    await waitPending(page, 1)
-    assert.equal(fake.observations.size, 2, 'El segundo lote fue aplicado en backend simulado')
+    // Un pending = 1 también ocurre transitoriamente ANTES de enviar el primer batch.
+    // Esperar el segundo receipt remoto aplicado, seguido de su outbox local preparado.
+    await eventually(() => fake.observations.size === 2,
+      'El segundo lote no se aplicó en backend simulado')
+    await page.waitForFunction(({ key, sessionId, secondGroup }) => {
+      const record = JSON.parse(localStorage.getItem(key) || '{}')
+      const pending = record.pending ?? []
+      return pending.length === 1 && pending[0].action === 'save_batch' &&
+        JSON.parse(pending[0].exactPayload).items?.[0]?.grupo_id === secondGroup &&
+        (record.confirmed?.[sessionId]?.length ?? 0) === 1 &&
+        (record.drafts?.[sessionId]?.length ?? 0) === 1
+    }, { key: journalKey, sessionId: sid, secondGroup: groupB })
     const persisted = await journal(page)
     assert.equal(persisted.drafts[sid]?.length, 1, 'Solo segundo borrador incierto')
     assert.equal(persisted.confirmed[sid].length, 1, 'Primer lote confirmado localmente')
+    assert.equal(fake.observations.size, 2, 'El segundo lote fue aplicado en backend simulado')
     await page.getByRole('button', { name: 'Reintentar operaciones' }).click()
     await waitPending(page, 0)
     const calls = fake.calls.filter(c => c.action === 'save_batch')
