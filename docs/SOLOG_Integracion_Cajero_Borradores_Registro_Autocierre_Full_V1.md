@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero — Borradores, registro y autocierre Full V1
 
-**Estado:** implementación frontend en `admin-work` — **SIN VALIDACIÓN TÉCNICA LOCAL NI SMOKE HUMANO**; no cerrado.
+**Estado:** implementación frontend en `admin-work`; **validación local de tests dirigidos, lint y build reportada en verde (2026-10-26)** tras delta `docs/SOLOG_Correccion_Cajero_Full_Recuperacion_Incidencias_V1.md`. Smoke humano del nuevo flujo, suite global y E2E de recovery pendientes; no cerrado.
 **Nivel:** C. **Fecha:** 2026-10-25.
 
 ## 1. Precedencia
@@ -46,7 +46,7 @@ Se conserva la compatibilidad de lectura del journal antiguo `solog.full2` y **n
 
 ## 4. Validaciones pendientes y bloqueos conocidos
 
-- **No se ejecutaron en este entorno**: tests Bun, lint, typecheck, build, browser/Playwright ni smoke humano. La implementación requiere correcciones guiadas por resultados de ejecución antes de considerarse validada.
+- **Actualización de validación (2026-10-26):** el usuario ejecutó el test dirigido `cajero-full-registro-autocierre.test.ts`, lint y build: todos reportados en verde tras la corrección de la aserción de retry (`640e197f`). La suite global, browser/Playwright, smoke humano del nuevo flujo y E2E autenticado siguen pendientes. Esta evidencia está detallada en el delta técnico vigente.
 - El backend tiene smoke básico V6/V7 8/8 reportado previamente, pero **no** pruebas autenticadas completas de recovery + replay con lotes ni cierre ambiguo; estas siguen siendo condición para el cierre integral.
 - Motivos originales/contexto de reconteos y KPIs autoritativos permanecen en sus bloques independientes. No inventar esos campos.
 - Faltan pruebas de múltiples pestañas y recuperación con reconteos reales; revisar secuencia y estado en navegador.
