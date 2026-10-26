@@ -20,13 +20,19 @@ const makeGroup = (id: string, priority: string): FullGroup => ({
   priority_class: priority, recount_detail_id: null,
 })
 
-function harness(options: { failOnce?: boolean; reject?: boolean; twoPriorities?: boolean } = {}) {
+function harness(options: {
+  failOnce?: boolean; reject?: boolean; twoPriorities?: boolean
+  failAfterAcceptOnce?: 'save_batch' | 'finish'; groupCount?: number; failOnBatchNumber?: number
+} = {}) {
   let now = started, monotonic = 0
   const requests: { action: string; payload: Record<string, unknown> }[] = []
   const confirmed = new Set<string>(), accepted = new Map<string, unknown>(), memory = new Map<string, string>()
-  let startedSession = false, finished = false, failed = false
-  const groups = [makeGroup(groupA, 'round_coverage'),
-    makeGroup(groupB, options.twoPriorities ? 'shift_coverage' : 'round_coverage')]
+  let startedSession = false, finished = false, failed = false, postAcceptanceFailed = false, batchCalls = 0
+  const groups = options.groupCount === undefined
+    ? [makeGroup(groupA, 'round_coverage'),
+      makeGroup(groupB, options.twoPriorities ? 'shift_coverage' : 'round_coverage')]
+    : Array.from({ length: options.groupCount }, (_, i) =>
+      makeGroup(uuid(String(i + 1).padStart(12, '0')), 'round_coverage'))
   const session = (): FullSession => ({
     session_id: sid, status: finished ? 'finished' : now >= expiration ? 'recovery' : 'active',
     session_started_at: iso(started), reference_snapshot_id: snapshotId,
@@ -76,6 +82,9 @@ function harness(options: { failOnce?: boolean; reject?: boolean; twoPriorities?
       contract_version: 2, server_now: iso(now), data: null, errors: [],
     }
     if (action === 'save_batch' && options.failOnce && !failed) { failed = true; throw new Error('timeout') }
+    if (action === 'save_batch' && options.failOnBatchNumber && ++batchCalls === options.failOnBatchNumber) {
+      throw new Error('timeout on batch')
+    }
     if (action === 'start') startedSession = true
     const items = (payload.items ?? []) as { client_observation_id: string; grupo_id?: string }[]
     for (const i of items) {
@@ -96,6 +105,10 @@ function harness(options: { failOnce?: boolean; reject?: boolean; twoPriorities?
       })),
     }
     accepted.set(op, mutation)
+    if (action === options.failAfterAcceptOnce && !postAcceptanceFailed) {
+      postAcceptanceFailed = true
+      throw new Error('response lost after remote confirmation')
+    }
     return response(action === 'start' ? 'SESSION_STARTED' : action === 'finish' ? 'SESSION_FINISHED' : 'OBSERVATIONS_CONFIRMED', mutation)
   }
   const storage = {
@@ -106,7 +119,7 @@ function harness(options: { failOnce?: boolean; reject?: boolean; twoPriorities?
     clock: new ServerClock(() => monotonic, () => monotonic), lock: async fn => fn(),
   })
   const advance = (ms: number) => { now += ms; monotonic += ms }
-  return { runtime, storage, requests: () => requests, advance, memory }
+  return { runtime, storage, requests: () => requests, advance, memory, groups }
 }
 
 describe('Cajero Full — borradores y registro agrupado V7', () => {
@@ -190,4 +203,129 @@ describe('Cajero Full — borradores y registro agrupado V7', () => {
     expect(again.getSnapshot().drafts).toBe(0)
     expect(again.inspectPending()).toEqual([])
   })
+  test('timeout posterior a confirmación remota conserva UUID y reconcilia receipt en replay', async () => {
+    const h = harness({ failAfterAcceptOnce: 'save_batch' })
+    await h.runtime.start()
+    await h.runtime.observe(groupA, 10, null, null)
+    await expect(h.runtime.sendPending()).rejects.toThrow('FULL_DELIVERY_UNCERTAIN')
+    const first = structuredClone(h.requests().at(-1))
+    const observationId = h.runtime.getDraft(groupA)!.clientObservationId
+    await h.runtime.resumePrepared()
+    expect(h.requests().at(-1)).toEqual(first)
+    expect(h.runtime.getDraft(groupA)).toBeNull()
+    expect(h.runtime.getSnapshot().pending).toBe(0)
+    expect(h.runtime.getSnapshot().rejected).toBe(0)
+    expect((first?.payload.items as { client_observation_id: string }[])[0].client_observation_id).toBe(observationId)
+  })
+
+  test('finish confirmado sin respuesta se recupera aunque bootstrap ya no muestre sesión', async () => {
+    const h = harness({ failAfterAcceptOnce: 'finish' })
+    await h.runtime.start()
+    await h.runtime.observe(groupA, 10, null, null)
+    await expect(h.runtime.finish()).rejects.toThrow('FULL_DELIVERY_UNCERTAIN')
+    const first = structuredClone(h.requests().at(-1))
+    expect(h.runtime.inspectPending().at(-1)?.action).toBe('finish')
+    await h.runtime.refresh()
+    expect(h.runtime.getSnapshot().session).toBeNull()
+    await h.runtime.resumePrepared()
+    expect(h.requests().at(-1)).toEqual(first)
+    expect(h.runtime.inspectPending()).toHaveLength(0)
+  })
+
+  test('registro obedece prioridad refrescada después de cada lote', async () => {
+    const h = harness({ twoPriorities: true })
+    await h.runtime.start()
+    await h.runtime.observe(groupA, 10, null, null)
+    await h.runtime.observe(groupB, 10, null, null)
+    await h.runtime.sendPending()
+    const batches = h.requests().filter(x => x.action === 'save_batch')
+    expect(batches).toHaveLength(2)
+    expect((batches[0].payload.items as { grupo_id: string }[]).map(x => x.grupo_id)).toEqual([groupA])
+    expect((batches[1].payload.items as { grupo_id: string }[]).map(x => x.grupo_id)).toEqual([groupB])
+  })
+
+  test('más de 500 borradores genera batches de 500 y 1, nunca uno de 501', async () => {
+    const h = harness({ groupCount: 501 })
+    await h.runtime.start()
+    for (const group of h.groups) await h.runtime.observe(group.group_id, 10, null, null)
+    await h.runtime.sendPending()
+    expect(h.requests().filter(x => x.action === 'save_batch')
+      .map(x => (x.payload.items as unknown[]).length)).toEqual([500, 1])
+    expect(h.runtime.getDrafts()).toHaveLength(0)
+  })
+
+  test('segundo lote incierto no duplica el primero y conserva payload de retry', async () => {
+    const h = harness({ twoPriorities: true, failOnBatchNumber: 2 })
+    await h.runtime.start()
+    await h.runtime.observe(groupA, 10, null, null)
+    await h.runtime.observe(groupB, 10, null, null)
+    await expect(h.runtime.sendPending()).rejects.toThrow('FULL_DELIVERY_UNCERTAIN')
+    expect(h.runtime.getDraft(groupA)).toBeNull()
+    expect(h.runtime.getDraft(groupB)).not.toBeNull()
+    const second = structuredClone(h.requests().at(-1))
+    await h.runtime.resumePrepared()
+    expect(h.requests().at(-1)).toEqual(second)
+    await h.runtime.sendPending()
+    expect(h.requests().filter(x => x.action === 'save_batch')).toHaveLength(3)
+    expect(h.runtime.getDrafts()).toHaveLength(0)
+  })
+
+  test('diagnóstico nunca exporta el device token y conserva borradores y operaciones', async () => {
+    const h = harness({ reject: true })
+    await h.runtime.start()
+    await h.runtime.observe(groupA, 10, null, null)
+    await expect(h.runtime.sendPending()).rejects.toThrow('PRIORITY_CONFLICT')
+    const diag = h.runtime.exportDiagnostics()
+    const text = JSON.stringify(diag)
+    expect(text).not.toContain('device_token')
+    expect(text).not.toContain('a'.repeat(64))
+    expect(diag.operations).toHaveLength(1)
+    expect(diag.drafts[sid]).toHaveLength(1)
+    expect(h.runtime.inspectPending()[0].exactPayload).toContain('device_token')
+  })
+
+  test('descarte confirmado solo afecta borradores libres y rechazos demostrablemente no aplicados', async () => {
+    const h = harness({ reject: true })
+    await h.runtime.start()
+    await h.runtime.observe(groupA, 10, null, null)
+    const draftId = h.runtime.getDraft(groupA)!.clientObservationId
+    await h.runtime.discardDraft(sid, draftId)
+    expect(h.runtime.getDrafts()).toHaveLength(0)
+    await h.runtime.observe(groupA, 10, null, null)
+    await expect(h.runtime.sendPending()).rejects.toThrow('PRIORITY_CONFLICT')
+    const pending = h.runtime.inspectPending()[0]
+    const draft = h.runtime.getDraft(groupA)!
+    await expect(h.runtime.discardDraft(sid, draft.clientObservationId))
+      .rejects.toThrow('FULL_INCIDENT_DISCARD_BLOCKED')
+    expect(h.runtime.canDiscardIncident(h.runtime.getIncidents().find(x => x.kind === 'draft')!)).toBe(false)
+    await h.runtime.discardRejectedOperation(pending.operationId)
+    expect(h.runtime.inspectPending()).toHaveLength(0)
+    expect(h.runtime.getDrafts()).toHaveLength(1)
+    await h.runtime.discardDraft(sid, draft.clientObservationId)
+    expect(h.runtime.getDrafts()).toHaveLength(0)
+  })
+
+  test('migración V1 con pending, panels y confirmed previos no elimina evidencia', async () => {
+    const h = harness()
+    const op = uuid('1234567890b9')
+    const old = {
+      version: 1, userId, deviceToken: 'a'.repeat(64),
+      pending: [{
+        operationId: op, action: 'save_batch', sessionId: sid,
+        exactPayload: JSON.stringify({ device_token: 'a'.repeat(64), operation_id: op, session_id: sid, items: [] }),
+        status: 'pending', code: null,
+      }],
+      confirmed: { [sid]: [uuid('1234567890ba')] },
+      panels: { [sid]: [makeGroup(groupA, 'round_coverage')] },
+    }
+    h.storage.setItem(h.runtime.key, JSON.stringify(old))
+    const reloaded = new FullRuntime(userId, 'a'.repeat(64), h.storage, async () => { throw Error('No RPC') }, {
+      lock: async fn => fn(),
+    })
+    expect(reloaded.inspectPending()).toHaveLength(1)
+    expect(reloaded.inspectPending()[0].operationId).toBe(op)
+    expect(reloaded.exportDiagnostics().confirmed[sid]).toEqual(old.confirmed[sid])
+    expect(reloaded.getDrafts(sid)).toEqual([])
+  })
+
 })
