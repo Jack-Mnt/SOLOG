@@ -14,6 +14,8 @@ const snapshot = '12345678-1234-4123-8123-1234567890ad'
 const category = '12345678-1234-4123-8123-1234567890ae'
 const groupA = '12345678-1234-4123-8123-1234567890af'
 const groupB = '12345678-1234-4123-8123-1234567890b0'
+const sidB = '12345678-1234-4123-8123-1234567890c1'
+const snapshotB = '12345678-1234-4123-8123-1234567890c2'
 const deviceToken = 'a'.repeat(64)
 const journalKey = 'solog.full2.' + userId + '.' + deviceToken
 const iso = n => new Date(n).toISOString()
@@ -21,11 +23,13 @@ const serverStart = Date.parse('2026-10-26T09:15:00.000Z')
 
 class SimulatedFull {
   constructor({ recovery = false, lostResponse = null, priorityChange = false, recount = false,
-    rejectSave = false, timeOffsetMinutes = null } = {}) {
+    rejectSave = false, timeOffsetMinutes = null, lostResponseNth = 1 } = {}) {
     this.now = serverStart + (timeOffsetMinutes ?? (recovery ? 51 : 0)) * 60_000
     this.rejectSave = rejectSave
     this.expires = serverStart + 50 * 60_000
     this.lostResponse = lostResponse
+    this.lostResponseNth = lostResponseNth
+    this.appliedPerAction = new Map()
     this.lost = false
     this.finished = false
     this.observations = new Set()
@@ -152,11 +156,100 @@ class SimulatedFull {
     }
     const code = action === 'finish' ? 'SESSION_FINISHED' : 'OBSERVATIONS_CONFIRMED'
     this.receipts.set(key, { fingerprint, code, data: result })
-    if (!this.lost && this.lostResponse === action) {
+    const index = (this.appliedPerAction.get(action) ?? 0) + 1
+    this.appliedPerAction.set(action, index)
+    if (!this.lost && this.lostResponse === action && index === this.lostResponseNth) {
       this.lost = true
       return null // La mutación se aplicó; se pierde exclusivamente su respuesta.
     }
     return this.envelope(code, result)
+  }
+}
+
+// Dos sesiones distintas y simultáneas: A en recuperación, B capturando.
+class SimulatedCoexistingFull extends SimulatedFull {
+  constructor() {
+    super({ recovery: true })
+    this.groupsB = [{ ...this.groups[1], reference_snapshot_id: snapshotB }]
+    this.observationsB = new Set()
+  }
+  sessionB() {
+    const start = this.expires + 1000
+    const expires = start + 3600000
+    const reference = this.expires - 300000
+    return {
+      ...this.session(), session_id: sidB, status: 'active',
+      session_started_at: iso(start), reference_snapshot_id: snapshotB,
+      reference_snapshot_captured_at: iso(reference),
+      reference_stock_expires_at: iso(reference + 7200000),
+      capture_interval_number: 2, capture_interval_starts_at: iso(start),
+      capture_interval_ends_at: iso(expires), session_expires_at: iso(expires),
+      pending_delivery_until: iso(expires + 7200000),
+      capture_allowed: true, pending_delivery_allowed: true,
+    }
+  }
+  bootstrap() {
+    const base = super.bootstrap().data
+    const reference = this.expires - 300000
+    return this.envelope('CASHIER_STATE', {
+      ...base,
+      session: this.sessionB(),
+      recovery_sessions: this.finished ? [] : [this.session()],
+      recovery_delivery_states: this.finished ? [] : [{
+        session_id: sid, groups_revision: 1,
+        current_priority_class: 'round_coverage',
+        eligible_groups: [this.groups[0]].filter(g => g.action !== 'none').map(g => ({
+          group_id: g.group_id, action: g.action, priority_class: g.priority_class,
+          recount_detail_id: null, reference_snapshot_id: snapshot,
+        })),
+      }],
+      recovery_manifests: this.finished ? [] :
+        [{ session_id: sid, observation_ids: [...this.observations] }],
+      groups: this.groupsB,
+      confirmed_observation_ids: [...this.observationsB],
+      stock: {
+        ...base.stock, snapshot_id: snapshotB,
+        snapshot_captured_at: iso(reference),
+        snapshot_confirmed_at: iso(reference + 30000),
+        stock_expires_at: iso(reference + 7200000),
+      },
+      capabilities: {
+        can_start_session: false, can_capture_in_current_session: true,
+        block_reason: 'SESSION_ALREADY_ACTIVE',
+      },
+    })
+  }
+  mutate(action, payload) {
+    if (payload.session_id !== sidB) return super.mutate(action, payload)
+    this.calls.push({ action, payload: structuredClone(payload) })
+    assert.equal(action, 'save_batch', 'Solo se permite registro B en esta simulación')
+    assert.equal(payload.device_token, deviceToken)
+    const fingerprint = JSON.stringify({ action, payload })
+    const prior = this.receipts.get(payload.operation_id)
+    if (prior) {
+      assert.equal(prior.fingerprint, fingerprint)
+      return this.envelope(prior.code, prior.data, true)
+    }
+    for (const item of payload.items) {
+      assert.equal(item.grupo_id, groupB)
+      assert.ok(!this.observationsB.has(item.client_observation_id))
+      this.observationsB.add(item.client_observation_id)
+    }
+    this.groupsB[0].action = 'none'
+    this.groupsB[0].priority_class = 'none'
+    const result = {
+      action, replay: false, session: this.sessionB(),
+      affected_groups: this.groupsB,
+      observation_results: payload.items.map((item, i) => ({
+        client_observation_id: item.client_observation_id,
+        detail_id: '12345678-1234-4123-8123-' + String(i + 7).padStart(12, '0'),
+        state: 'Coincide', difference: 0, replay: false,
+      })),
+    }
+    this.receipts.set(payload.operation_id, {
+      code: 'OBSERVATIONS_CONFIRMED', data: result, fingerprint,
+    })
+    return this.envelope('OBSERVATIONS_CONFIRMED', result)
   }
 }
 
@@ -191,7 +284,7 @@ const browser = await chromium.launch({
 const target = 'http://127.0.0.1:5212/cajero'
 
 async function scenario(options, run) {
-  const fake = new SimulatedFull(options)
+  const fake = options.coexisting ? new SimulatedCoexistingFull() : new SimulatedFull(options)
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const failures = [], external = []
   await context.addInitScript(token => localStorage.setItem('solog.device_token.v1', token), deviceToken)
@@ -444,6 +537,75 @@ try {
     assert.equal((await journal(page)).drafts[sid]?.length, 1)
   })
 
+
+  await check('segundo lote confirmado con respuesta perdida: replay exclusivo del segundo UUID', {
+    priorityChange: true, lostResponse: 'save_batch', lostResponseNth: 2,
+  }, async ({ fake, createPage }) => {
+    const page = await createPage()
+    await saveGroup(page, 'Grupo A')
+    await page.evaluate(({ key, groupId, sessionId }) => {
+      const data = JSON.parse(localStorage.getItem(key))
+      const first = data.drafts[sessionId][0]
+      data.drafts[sessionId].push({
+        ...first, clientObservationId: crypto.randomUUID(),
+        groupId, physical: 11, expression: '11',
+      })
+      localStorage.setItem(key, JSON.stringify(data))
+    }, { key: journalKey, groupId: groupB, sessionId: sid })
+    await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+    await waitPending(page, 1)
+    assert.equal(fake.observations.size, 2, 'El segundo lote fue aplicado en backend simulado')
+    const persisted = await journal(page)
+    assert.equal(persisted.drafts[sid]?.length, 1, 'Solo segundo borrador incierto')
+    assert.equal(persisted.confirmed[sid].length, 1, 'Primer lote confirmado localmente')
+    await page.getByRole('button', { name: 'Reintentar operaciones' }).click()
+    await waitPending(page, 0)
+    const calls = fake.calls.filter(c => c.action === 'save_batch')
+    assert.equal(calls.length, 3)
+    assert.deepEqual(calls.map(c => c.payload.items.map(i => i.grupo_id)),
+      [[groupA], [groupB], [groupB]])
+    assert.deepEqual(calls[1].payload, calls[2].payload)
+    assert.notEqual(calls[0].payload.operation_id, calls[1].payload.operation_id)
+    assert.equal((await journal(page)).drafts[sid]?.length ?? 0, 0)
+    assert.equal(fake.observations.size, 2)
+  })
+
+  await check('recovery A y sesión B activa: scopes y manifiestos independientes', {
+    coexisting: true,
+  }, async ({ fake, context, createPage }) => {
+    const draftA = {
+      clientObservationId: '12345678-1234-4123-8123-1234567890b2',
+      sessionId: sid, referenceSnapshotId: snapshot, groupsRevision: 1,
+      groupId: groupA, action: 'coverage', recountDetailId: null,
+      physical: 10, reason: null, note: null,
+      countedAt: iso(serverStart + 40 * 60_000), expression: '10',
+    }
+    await context.addInitScript(({ key, uid, token, sessionId, record }) => {
+      localStorage.setItem(key, JSON.stringify({
+        version: 2, userId: uid, deviceToken: token, pending: [],
+        confirmed: {}, panels: {}, drafts: { [sessionId]: [record] },
+      }))
+    }, { key: journalKey, uid: userId, token: deviceToken, sessionId: sid, record: draftA })
+    const page = await createPage()
+    await eventually(() => fake.finished, 'Recovery A no logró cerrar')
+    assert.equal(fake.observations.size, 1)
+    assert.equal(fake.observationsB.size, 0)
+    assert.deepEqual(fake.calls.slice(0, 2).map(c => [c.action, c.payload.session_id]), [
+      ['save_batch', sid], ['finish', sid],
+    ])
+    await saveGroup(page, 'Grupo B')
+    const outbox = await journal(page)
+    assert.equal(outbox.drafts[sidB]?.length, 1)
+    assert.equal(outbox.drafts[sid]?.length ?? 0, 0)
+    await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+    await eventually(() => fake.observationsB.size === 1, 'El conteo B no se confirmó')
+    assert.equal(fake.calls.at(-1).action, 'save_batch')
+    assert.equal(fake.calls.at(-1).payload.session_id, sidB)
+    assert.equal(fake.receipts.size, 3, 'Dos operaciones A y una B, con scopes independientes')
+    assert.equal(fake.observations.size, 1)
+    assert.equal(fake.observationsB.size, 1)
+  })
+
   await check('dos pestañas: borradores de grupos distintos y un único batch', {},
     async ({ fake, createPage }) => {
       const a = await createPage(), b = await createPage()
@@ -469,5 +631,5 @@ if (failures.length) {
   console.error('FAIL: ' + failures.length + ' escenarios Full browser: ' + failures.join(', '))
   process.exitCode = 1
 } else {
-  console.log('PASS: 9 escenarios Full browser simulados; 0 solicitudes externas.')
+  console.log('PASS: 11 escenarios Full browser simulados; 0 solicitudes externas.')
 }
