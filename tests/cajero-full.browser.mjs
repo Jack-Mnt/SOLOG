@@ -617,6 +617,102 @@ try {
     assert.equal(fake.observationsB.size, 1)
   })
 
+
+  await check('frontera exacta de expiración: prohíbe nuevas capturas y entrega solo el borrador previo', {
+    timeOffsetMinutes: 50,
+  }, async ({ fake, context, createPage }) => {
+    const capturedAt = iso(serverStart + 40 * 60_000)
+    const draft = {
+      clientObservationId: '12345678-1234-4123-8123-1234567890b2',
+      sessionId: sid, referenceSnapshotId: snapshot, groupsRevision: 1,
+      groupId: groupA, action: 'coverage', recountDetailId: null,
+      physical: 10, reason: null, note: null, countedAt: capturedAt, expression: '10',
+    }
+    assert.equal(fake.now, fake.expires, 'La fixture inicia en el milisegundo de expiración')
+    assert.equal(fake.session().capture_allowed, false)
+    await context.addInitScript(({ key, uid, token, sessionId, record }) => {
+      localStorage.setItem(key, JSON.stringify({
+        version: 2, userId: uid, deviceToken: token, pending: [],
+        confirmed: {}, panels: {}, drafts: { [sessionId]: [record] },
+      }))
+    }, { key: journalKey, uid: userId, token: deviceToken, sessionId: sid, record: draft })
+    const page = await createPage()
+    await eventually(() => fake.finished, 'No hubo autocierre en el límite exacto')
+    assert.equal(fake.observations.size, 1)
+    assert.deepEqual(fake.calls.map(c => c.action), ['save_batch', 'finish'])
+    const saved = fake.calls[0].payload.items[0]
+    assert.equal(saved.contado_at, capturedAt, 'No debe reemplazar la marca temporal previa')
+    assert.equal(saved.client_observation_id, draft.clientObservationId)
+    assert.equal(fake.calls[0].payload.session_id, sid)
+    assert.equal((await journal(page)).drafts[sid]?.length ?? 0, 0)
+    assert.equal(await page.getByRole('button', { name: 'Iniciar conteo' }).count(), 1)
+  })
+
+  await check('aislamiento local: outboxes de otro usuario y dispositivo permanecen intactos', {},
+    async ({ fake, context, createPage }) => {
+      const foreignUser = '12345678-1234-4123-8123-1234567890d1'
+      const foreignToken = 'b'.repeat(64)
+      const userKey = 'solog.full2.' + foreignUser + '.' + deviceToken
+      const deviceKey = 'solog.full2.' + userId + '.' + foreignToken
+      const foreignDraft = {
+        clientObservationId: '12345678-1234-4123-8123-1234567890d2',
+        sessionId: sid, referenceSnapshotId: snapshot, groupsRevision: 1,
+        groupId: groupA, action: 'coverage', recountDetailId: null,
+        physical: 10, reason: null, note: null,
+        countedAt: iso(serverStart + 30 * 60_000), expression: '10',
+      }
+      const record = (uid, token) => JSON.stringify({
+        version: 2, userId: uid, deviceToken: token, pending: [],
+        confirmed: {}, panels: {}, drafts: { [sid]: [foreignDraft] },
+      })
+      const originalUser = record(foreignUser, deviceToken)
+      const originalDevice = record(userId, foreignToken)
+      await context.addInitScript(({ keyUser, keyDevice, valueUser, valueDevice }) => {
+        localStorage.setItem(keyUser, valueUser)
+        localStorage.setItem(keyDevice, valueDevice)
+      }, { keyUser: userKey, keyDevice: deviceKey,
+        valueUser: originalUser, valueDevice: originalDevice })
+      const page = await createPage()
+      assert.equal(fake.calls.length, 0, 'No se deben reintentar outboxes ajenos')
+      await saveGroup(page, 'Grupo B')
+      await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+      await eventually(() => fake.observations.size === 1, 'No se confirmó el trabajo del usuario actual')
+      assert.equal(fake.calls.filter(c => c.action === 'save_batch').length, 1)
+      const values = await page.evaluate(({ keyUser, keyDevice }) => ({
+        user: localStorage.getItem(keyUser), device: localStorage.getItem(keyDevice),
+      }), { keyUser: userKey, keyDevice: deviceKey })
+      assert.equal(values.user, originalUser, 'Outbox ajeno por usuario modificado')
+      assert.equal(values.device, originalDevice, 'Outbox ajeno por dispositivo modificado')
+      assert.equal(fake.calls[0].payload.device_token, deviceToken)
+      assert.equal(fake.calls[0].payload.items[0].grupo_id, groupB)
+    })
+
+  await check('dos pestañas con Registrar simultáneo: un único batch bajo navigator.locks', {},
+    async ({ fake, createPage }) => {
+      const a = await createPage(), b = await createPage()
+      await saveGroup(a, 'Grupo A')
+      await saveGroup(b, 'Grupo B')
+      assert.equal((await journal(a)).drafts[sid].length, 2)
+      // Se lanzan dos clics sin esperar la respuesta del primero.
+      await Promise.all([
+        a.getByRole('button', { name: 'Registrar conteo', exact: true }).click(),
+        b.getByRole('button', { name: 'Registrar conteo', exact: true }).click(),
+      ])
+      await eventually(() => fake.observations.size === 2, 'No se confirmaron ambos grupos')
+      await a.waitForFunction(key => {
+        const j = JSON.parse(localStorage.getItem(key))
+        return (j.pending ?? []).length === 0 && (j.drafts?.['12345678-1234-4123-8123-1234567890ac']?.length ?? 0) === 0
+      }, journalKey)
+      await b.waitForFunction(key => {
+        const j = JSON.parse(localStorage.getItem(key))
+        return (j.pending ?? []).length === 0 && (j.drafts?.['12345678-1234-4123-8123-1234567890ac']?.length ?? 0) === 0
+      }, journalKey)
+      assert.equal(fake.calls.filter(c => c.action === 'save_batch').length, 1,
+        'Dos pestañas no deben generar batches duplicados')
+      assert.deepEqual(fake.calls[0].payload.items.map(item => item.grupo_id).sort(),
+        [groupA, groupB].sort())
+    })
+
   await check('dos pestañas: borradores de grupos distintos y un único batch', {},
     async ({ fake, createPage }) => {
       const a = await createPage(), b = await createPage()
@@ -642,5 +738,5 @@ if (failures.length) {
   console.error('FAIL: ' + failures.length + ' escenarios Full browser: ' + failures.join(', '))
   process.exitCode = 1
 } else {
-  console.log('PASS: 11 escenarios Full browser simulados; 0 solicitudes externas.')
+  console.log('PASS: 14 escenarios Full browser simulados; 0 solicitudes externas.')
 }
