@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero Full — Validación Browser V1
 
-**Estado:** Primera y segunda baterías Playwright **VALIDADAS LOCALMENTE (9/9)** en `admin-work` según ejecución del usuario el 2026-10-26. Tercera batería de dos escenarios adicionales implementada, pendiente de ejecución.
+**Estado:** Primera y segunda baterías Playwright **VALIDADAS LOCALMENTE (9/9)** en `admin-work` el 2026-10-26. Tercera batería: **1/2 aprobado**, 1 caso falló por sincronización prematura del arnés; corregido en `c80acff8`, **pendiente de reejecución**.
 **Fecha:** 2026-10-26. **Clasificación:** Nivel C por las garantías de recuperación/idempotencia que comprueba; los cambios realizados son exclusivamente de infraestructura de pruebas.
 
 ## Autoridad y alcance
@@ -51,7 +51,7 @@ El fixture se limita a un backend simulado con respuestas V6/V7 de prueba. Las g
 
 ## Tercera batería — escenarios concurrentes pendientes de ejecución
 
-**Estado:** implementada únicamente en `tests/cajero-full.browser.mjs`, todavía **NO VALIDADA**. Se añadieron dos pruebas sin alterar las nueve aprobadas:
+**Estado y evidencia real:** el usuario ejecutó la tercera batería el 2026-10-26 con resultado **10 PASS / 1 FAIL / 0 solicitudes externas**. Pasó el caso de recovery A con sesión B activa. Falló la primera versión del caso de segundo batch por **wait prematuro**: la espera de `pending.length === 1` podía corresponder al primer lote, antes de que se aplicara el segundo. No hubo evidencia de fallo del runtime en esa ejecución. Se corrigió el arnés en `c80acff8` para esperar expresamente **dos observaciones remotas** y una única operación pendiente de **grupo B**, con exactamente una confirmación local y un borrador pendiente. **No se ha ejecutado aún esa corrección.** Los dos casos nuevos son:
 
 | Caso | Criterio de aceptación |
 |---|---|
