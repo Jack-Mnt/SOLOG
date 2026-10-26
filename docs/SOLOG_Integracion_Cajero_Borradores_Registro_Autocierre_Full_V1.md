@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero — Borradores, registro y autocierre Full V1
 
-**Estado:** implementación frontend en `admin-work`; **validación local de tests dirigidos, lint y build reportada en verde (2026-10-26)** tras delta `docs/SOLOG_Correccion_Cajero_Full_Recuperacion_Incidencias_V1.md`. Smoke humano del nuevo flujo, suite global y E2E de recovery pendientes; no cerrado.
+**Estado:** implementación frontend en `admin-work`; **tests dirigidos, lint y build en verde y smoke humano Full 8/8 validado (2026-10-26)**. Evidencia técnica y trazabilidad en `docs/SOLOG_Correccion_Cajero_Full_Recuperacion_Incidencias_V1.md`; E2E de recovery avanzado y suite global pendientes. Bloque integral aún abierto.
 **Nivel:** C. **Fecha:** 2026-10-25.
 
 ## 1. Precedencia
@@ -46,7 +46,7 @@ Se conserva la compatibilidad de lectura del journal antiguo `solog.full2` y **n
 
 ## 4. Validaciones pendientes y bloqueos conocidos
 
-- **Actualización de validación (2026-10-26):** el usuario ejecutó el test dirigido `cajero-full-registro-autocierre.test.ts`, lint y build: todos reportados en verde tras la corrección de la aserción de retry (`640e197f`). La suite global, browser/Playwright, smoke humano del nuevo flujo y E2E autenticado siguen pendientes. Esta evidencia está detallada en el delta técnico vigente.
+- **Actualización de validación (2026-10-26):** el usuario ejecutó el test dirigido `cajero-full-registro-autocierre.test.ts`, lint y build, todos reportados en verde después de `640e197f`. Smoke humano del **nuevo flujo Full**: **8/8 aprobado**. Verificación remota solo lectura: 3 borradores identificados en exportación previa al envío, registrados en un único `save_batch`, 3 observaciones confirmadas, sesión finalizada con receipt de `finish` y 0 conflictos. Evidencia detallada en el delta técnico vigente. Permanecen pendientes la suite global y los E2E avanzados de recovery/concurrencia.
 - El backend tiene smoke básico V6/V7 8/8 reportado previamente, pero **no** pruebas autenticadas completas de recovery + replay con lotes ni cierre ambiguo; estas siguen siendo condición para el cierre integral.
 - Motivos originales/contexto de reconteos y KPIs autoritativos permanecen en sus bloques independientes. No inventar esos campos.
 - Faltan pruebas de múltiples pestañas y recuperación con reconteos reales; revisar secuencia y estado en navegador.
