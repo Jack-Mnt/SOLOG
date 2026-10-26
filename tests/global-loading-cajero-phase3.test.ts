@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 const source = (path: string) => Bun.file(path).text()
 
 const modules = [
-  'src/features/solog/cajero/cajero.app.tsx',
+  'src/features/solog/cajero/full.app.tsx',
   'src/features/solog/cajero/cajero.historial.tsx',
 ] as const
 
