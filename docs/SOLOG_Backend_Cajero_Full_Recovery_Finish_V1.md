@@ -1,6 +1,6 @@
 # SOLOG — Backend Cajero Full — Recovery y cierre seguro V1
 
-**Estado:** DESPLEGADO (2026-10-25); **smoke funcional humano V6/V7 validado (8/8)**; pruebas de replay y recovery autenticadas pendientes.
+**Estado:** DESPLEGADO; **validación técnica transaccional de dispatcher V6/V7 para recovery, finish y replay SUPERADA**; smoke humano básico previamente validado (8/8). **E2E real con navegador, captura agrupada y recovery/reintento por red pendientes.**
 **Nivel:** C — backend / consistencia operativa.
 **Rama documental:** `admin-work`. **Proyecto Supabase:** `PuertoRicoOnline` (`fvtohxvcvsflzmftgfzs`).
 **Migración aplicada:** `20261025201355_solog_cajero_full_recovery_finish_v1`.
@@ -75,14 +75,21 @@ Para un `finish` **nuevo**:
 - **Smoke humano reportado por el usuario (8/8)**: snapshot vigente; inicio autorizado; sesión y grupos/stock correctos; observación confirmada; recarga sin pérdida ni duplicación visible; finalización; Historial; sin errores ni pendientes. Este resultado acredita el flujo básico, no el replay/recovery extremo a extremo.
 - **Revisión remota de integridad posterior al smoke, solo lectura**: 5 sesiones Full (4 finalizadas, 0 activas, 0 recovery, 1 histórica expirada); 18 registros en `full_cashier_operations` (5 `start`, 9 `save_batch`, 4 `finish`); 9 observaciones confirmadas; 0 conflictos. Validaciones dirigidas: 0 observaciones sin receipt persistido, 0 operaciones `SESSION_FINISHED` cuya sesión no estuviera finalizada, 0 UUID duplicados en operaciones, 0 UUID duplicados en observaciones. Los agregados abarcan toda la base, **no constituyen trazabilidad individual del smoke**.
 - Revisado el handler de excepciones desplegado: el nuevo `SESSION_DELIVERY_CLOSED` está incluido en el mapeo a error estructurado V7; no es una excepción SQL sin gestionar.
+- **Validación SQL adicional de 2026-10-26, sin cambios persistentes:** reconstruidos los payloads históricos de 9 operaciones `save_batch`, con **9/9 fingerprints idénticos** a los almacenados. `full_compact_replay_data_v1` recuperó íntegramente los 9 manifiestos, grupos afectados y miembros.
+- **Dispatcher Full, autenticación interna y replay:** se reutilizó un dispositivo autorizado de la sede con hash temporal de prueba **solo dentro de un subbloque PL/pgSQL con excepción y rollback**. El dispatcher `inventario.full_cashier_dispatch_v2` verificó identidad Cajero, sede activa y token temporalmente autorizado. Reprodujo los **9 `save_batch` originales**, todos con `OBSERVATIONS_CONFIRMED`, `data.replay=true`, mismo `client_observation_id` y ninguna operación u observación nueva. Payload modificado con UUID original retornó `IDEMPOTENCY_CONFLICT`. No se utilizó la RPC pública `auth.uid()`; esa ruta permanece pendiente de E2E.
+- **Recovery/finish en dispatcher:** sesión histórica expirada revertida temporalmente a `recovery` con grupo congelado compatible, sin datos permanentes; `bootstrap` retornó `CASHIER_STATE` y `recovery_delivery_states` con prioridad `round_coverage`; `finish` con manifiesto incorrecto retornó `MANIFEST_NOT_CONFIRMED` sin cerrar; manifiesto exacto cerró con `SESSION_FINISHED`; replay del mismo `finish` después de `pending_delivery_until` retornó `SESSION_FINISHED` y `replay=true`; otro `finish` con UUID nuevo fuera de ventana retornó `SESSION_DELIVERY_CLOSED`; alterar el manifiesto con el UUID ya confirmado retornó `IDEMPOTENCY_CONFLICT`.
+- **Verificación posterior:** permanecen 18 operaciones, 9 observaciones, 0 conflictos, 0 grupos runtime, 0 sesiones `recovery`, 4 finalizadas y 1 expirada. El hash original del dispositivo se comprobó restablecido antes de terminar el bloque. Las pruebas no acreditan tolerancia real a cortes de red, concurrencia multitab ni envío de reconteos desde el navegador.
 
-## 5. Validaciones técnicas que siguen pendientes antes de autorizar implementación frontend
 
-1. Validar V6 mediante la entrada pública con usuario/dispositivo autorizados y sesión Full real en `recovery`; la prueba sintética de lectura ya pasó, pero no acredita autenticación de extremo a extremo.
-2. Enviar batches de normales/reconteos con prioridad cambiante; comprobar refresh V6 y replay exacto, recepción única y no duplicación.
-3. Probar `finish` en sesión activa, en recovery, fuera de ventana, con manifest incorrecto y como replay de cierre previamente confirmado, incluyendo resultado ambiguo por red.
-4. Evaluar cancelaciones, errores definitivos, clientes concurrentes y la retención de runtime groups hasta la ventana límite.
-5. Sólo después declarar contrato validado para la integración completa, actualizar tipos/tests frontend y preparar baseline/plan de Codex. **Codex no debe tocar backend**.
+## 5. Validaciones pendientes de la integración completa
+
+La implementación frontend de borradores, registro y autocierre **ya existe** en `admin-work`, conforme a `docs/SOLOG_Integracion_Cajero_Borradores_Registro_Autocierre_Full_V1.md`. No reinterpretar esta fase como una nueva orden de implementación.
+
+1. Ejecutar tests locales del frontend (Bun, lint, typecheck/build y `git diff --check`), registrar evidencia, corregir solo fallos demostrados tras aprobación.
+2. Smoke humano del **nuevo flujo de borradores**: guardar/editar sin RPC, `Registrar conteo` por lotes, cierre manual y autocierre al vencimiento, refresh/reconexión y protección del outbox.
+3. E2E vía RPC pública con identidad/dispositivo reales **en entorno de prueba aislado**: confirmación, replay ante pérdida de respuesta, recovery con grupos y prioridad cambiantes, reconteos válidos, reintento y cierre fuera de ventana. Las pruebas SQL transaccionales anteriores verifican el dispatcher, no simulan la red ni `auth.uid()`.
+4. Revisar pestañas concurrentes, errores retryable/definitivos, borradores no elegibles y procedimiento de resolución segura sin pérdida de evidencia.
+5. No cerrar el bloque ni autorizar conteos operativos reales hasta completar estas validaciones. **Codex no debe modificar backend**.
 
 ## 6. Fuentes y precedencia
 
@@ -91,4 +98,4 @@ Para un `finish` **nuevo**:
 3. `SOLOG_Correccion_Cajero_Restauracion_Interfaz_Full_Parcial_V1.md` para UI previa.
 4. Documentación V4/V5 solo como referencia histórica no ejecutable.
 
-Este documento **no declara cerrada** la recuperación de Cajero: KPI, cobertura, contexto original de reconteos, drafts, registro agrupado y autocierre en frontend siguen pendientes.
+Este documento **no declara cerrada** la recuperación de Cajero: KPI, cobertura y contexto original de reconteos siguen pendientes; drafts, registro agrupado y autocierre ya tienen código frontend, pero continúan **sin validación técnica local ni smoke del nuevo flujo**.
