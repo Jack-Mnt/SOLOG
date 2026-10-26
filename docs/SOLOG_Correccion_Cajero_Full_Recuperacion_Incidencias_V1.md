@@ -36,7 +36,7 @@ El panel muestra resumen de hasta 12 incidencias y total adicional, con botón d
 ## 3. Pruebas añadidas / actualizadas
 
 Se ampliaron las pruebas `tests/cajero-full-registro-autocierre.test.ts` para cubrir:
-- timeout después de **aplicación remota**, replay exacto y conservación del UUID;
+- timeout después de **aplicación remota** para `start` y `save_batch`, replay exacto y conservación del UUID;
 - `finish` aceptado cuya respuesta se perdió y ya no aparece en bootstrap;
 - cambio de prioridad con refresh entre lotes;
 - lote de 501 dividido 500+1;
