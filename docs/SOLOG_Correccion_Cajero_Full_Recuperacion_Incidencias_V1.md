@@ -1,6 +1,6 @@
 # SOLOG — Corrección Cajero Full: recuperación, incidencias y carga V1
 
-**Estado:** IMPLEMENTADO EN `admin-work` — **tests dirigidos, lint y build validados localmente por el usuario**; smoke del nuevo flujo y E2E de recovery pendientes.
+**Estado:** IMPLEMENTADO EN `admin-work` — **tests dirigidos, lint y build en verde; smoke humano del flujo normal Full validado (8/8) y contrastado con Supabase**. E2E de vencimiento/recovery, respuestas perdidas y concurrencia pendientes; bloque global aún abierto.
 **Fecha:** 2026-10-26. **Clasificación:** Nivel C (recuperación y persistencia) con ajustes puntuales Nivel A/B.
 **Fuente primaria funcional vigente:** `docs/SOLOG_Logica_Cajero_Registro_Cierre_Automatico_Full_V1.md`, aprobada y congelada. Este archivo es un **delta técnico**: solo reemplaza los comportamientos defectuosos identificados abajo.
 **Contrato backend vigente y ya desplegado:** `docs/SOLOG_Backend_Cajero_Full_Recovery_Finish_V1.md`. No se realizaron cambios en Supabase.
@@ -64,4 +64,12 @@ git diff --check
 
 Luego repetir suite ampliada de Cajero y loading, identificar exactamente cualquier test histórico V4 fallido, revisar visualmente el loader y la gestión de incidencias, y realizar smoke humano del **nuevo** flujo: borradores/edición sin RPC, dos grupos en batch, refresh, cierre manual/autocierre, pérdida de respuesta, recuperación tras vencer ventana, bloqueo de rechazos y exportación sin tokens. E2E autenticado con dispositivo real en un entorno de prueba; no usar datos operativos.
 
-**No se cierra esta fase** ni se habilitan conteos operativos hasta confirmar esas evidencias. Los pendientes de KPI, cobertura y contexto original de reconteo pertenecen a bloques independientes y siguen congelados donde corresponda.
+### Evidencia adicional — smoke humano Full del 2026-10-26
+
+- El usuario confirmó **8/8** comprobaciones: inicio, dos borradores sin envío inmediato, edición sin duplicación, persistencia tras recarga, registro, finalización/Historial, exportación diagnóstica y loading/Shell.
+- Se examinó el JSON exportado `solog.full.diagnostics.v1`: **3 borradores** `coverage` con UUID independientes y `contado_at` de una misma sesión, `operations: []`, confirmado local de sesión actual vacío, recibos de sesión anterior conservados (2), **sin `device_token`**. Corresponde a exportación anterior al registro, no a un estado final inconsistente.
+- Contraste read-only Supabase sobre esta sesión: durante la inspección pasó de `activo` con 0 observaciones a **`finalizado`**, 3 observaciones y 3 detalles. Los **3 `clientObservationId`** exportados se encuentran confirmados exactamente en esa sesión, sin mezcla de scopes.
+- Operaciones remotas de la sesión: **1 `SESSION_STARTED`, 1 `OBSERVATIONS_CONFIRMED` de `save_batch` con 3 observaciones en el mismo batch, 1 `SESSION_FINISHED`**, 1 receipt de cierre y **0 conflictos**. La sesión anterior del diagnóstico estaba `expirado` con 2 observaciones confirmadas; sus recibos históricos locales no son por sí mismos evidencia de trabajo nuevo pendiente.
+- Estas comprobaciones son evidencia real del **camino feliz** de Cajero Full; no acreditan auto-cierre por vencimiento, reconexión con entrega incierta, recuperación posterior a ventana, reconteos ni pruebas de dos pestañas.
+
+**El smoke humano normal está cerrado como validado; el bloque integral Cajero Full continúa abierto hasta completar los escenarios avanzados.** Los pendientes de KPI, cobertura y contexto original de reconteo pertenecen a bloques independientes y siguen congelados donde corresponda.
