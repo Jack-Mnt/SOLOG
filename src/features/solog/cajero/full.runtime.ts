@@ -187,8 +187,20 @@ export class FullRuntime {
     })
   }
   canDiscardIncident(incident: FullIncident) {
-    return incident.kind === 'draft' || (incident.status === 'rejected' &&
-      incident.code !== null && incident.code !== undefined && discardableRejections.has(incident.code))
+    if (incident.kind === 'draft') {
+      const current = this.journal.drafts[incident.sessionId ?? '']?.find(d => d.clientObservationId === incident.id)
+      if (!current || (this.journal.confirmed[incident.sessionId ?? ''] ?? []).includes(incident.id)) return false
+      return !this.journal.pending.some(p => {
+        if (p.sessionId !== incident.sessionId) return false
+        const items = (JSON.parse(p.exactPayload).items ?? []) as {
+          client_observation_id?: string; grupo_id?: string; detalle_id?: string
+        }[]
+        return items.some(i => i.client_observation_id === incident.id ||
+          i.grupo_id === current.groupId || (current.recountDetailId !== null && i.detalle_id === current.recountDetailId))
+      })
+    }
+    return incident.status === 'rejected' &&
+      incident.code !== null && incident.code !== undefined && discardableRejections.has(incident.code)
   }
 
   private async request(name: Parameters<FullRpc>[0], args: Record<string, unknown>): Promise<FullEnvelope> {
