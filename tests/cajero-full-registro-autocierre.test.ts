@@ -247,7 +247,15 @@ describe('Cajero Full — borradores y registro agrupado V7', () => {
   test('más de 500 borradores genera batches de 500 y 1, nunca uno de 501', async () => {
     const h = harness({ groupCount: 501 })
     await h.runtime.start()
-    for (const group of h.groups) await h.runtime.observe(group.group_id, 10, null, null)
+    // Fixture persistida en una sola escritura: el caso mide batching, no 501 interacciones UI.
+    const journal = JSON.parse(h.storage.getItem(h.runtime.key)!)
+    journal.drafts[sid] = h.groups.map((group, i) => ({
+      clientObservationId: uuid(String(i + 1000).padStart(12, '0')),
+      sessionId: sid, referenceSnapshotId: snapshotId, groupsRevision: 1,
+      groupId: group.group_id, action: 'coverage', recountDetailId: null,
+      physical: 10, reason: null, note: null, countedAt: iso(started), expression: '10',
+    }))
+    h.storage.setItem(h.runtime.key, JSON.stringify(journal))
     await h.runtime.sendPending()
     expect(h.requests().filter(x => x.action === 'save_batch')
       .map(x => (x.payload.items as unknown[]).length)).toEqual([500, 1])
