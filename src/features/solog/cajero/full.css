@@ -7,3 +7,14 @@
 }
 .cajero-capture-detail__card .full-contract-pending { margin: 0 0 0.75rem; }
 .cajero-home .cajero-home-metric--action { text-align: left; }
+
+/* Incidencias Full: diagnóstico visible sin expandir payloads ni secretos. */
+.cajero-incidents { display: grid; gap: 0.5rem; margin-top: 0.75rem; }
+.cajero-incidents__row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem; min-width: 0; flex-wrap: wrap;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.5rem;
+}
+.cajero-incidents__row > span { min-width: 0; overflow-wrap: anywhere; }
+.cajero-incidents__row > button { flex-shrink: 0; }
