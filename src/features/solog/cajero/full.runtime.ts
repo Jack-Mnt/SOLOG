@@ -9,6 +9,12 @@ export interface FullDraft {
   physical: number; reason: string | null; note: string | null; countedAt: string; expression: string
 }
 interface Pending { operationId: string; action: FullAction; sessionId: string | null; exactPayload: string; status: 'pending' | 'rejected'; code: string | null }
+export interface FullIncident {
+  kind: 'draft' | 'operation'; sessionId: string | null; id: string
+  groupId?: string; action?: FullAction; status?: 'pending' | 'rejected'; code?: string | null
+}
+// Solo rechazos confirmados por V7 antes de efectuar escrituras; nunca conflictos de identidad o idempotencia.
+const discardableRejections = new Set(['PRIORITY_CONFLICT', 'SESSION_CAPTURE_CLOSED', 'SESSION_DELIVERY_CLOSED', 'MANIFEST_NOT_CONFIRMED'])
 interface Journal {
   version: 2; userId: string; deviceToken: string
   pending: Pending[]; confirmed: Record<string, string[]>; panels: Record<string, FullGroup[]>
@@ -115,6 +121,75 @@ export class FullRuntime {
   getDrafts = (sessionId = this.view.session?.session_id) =>
     structuredClone(sessionId ? this.journal.drafts[sessionId] ?? [] : [])
   inspectPending() { return structuredClone(this.journal.pending) }
+  getIncidents(): FullIncident[] {
+    return [
+      ...Object.entries(this.journal.drafts).flatMap(([sessionId, drafts]) =>
+        drafts.map(d => ({ kind: 'draft' as const, sessionId, id: d.clientObservationId, groupId: d.groupId }))),
+      ...this.journal.pending.map(p => ({
+        kind: 'operation' as const, sessionId: p.sessionId, id: p.operationId,
+        action: p.action, status: p.status, code: p.code,
+      })),
+    ]
+  }
+  exportDiagnostics() {
+    // Los payloads originales se mantienen inmutables en storage; la exportación nunca incluye device_token.
+    return structuredClone({
+      schema: 'solog.full.diagnostics.v1',
+      userId: this.userId,
+      drafts: this.journal.drafts,
+      operations: this.journal.pending.map(p => {
+        const payload = JSON.parse(p.exactPayload) as Record<string, unknown>
+        delete payload.device_token
+        return {
+          operationId: p.operationId, sessionId: p.sessionId, action: p.action,
+          status: p.status, code: p.code, payload,
+        }
+      }),
+      confirmed: this.journal.confirmed,
+    })
+  }
+  async discardDraft(sessionId: string, observationId: string) {
+    await this.gate(async () => {
+      this.journal = this.read()
+      const current = this.journal.drafts[sessionId]?.find(d => d.clientObservationId === observationId)
+      if (!current) throw new Error('FULL_INCIDENT_NOT_FOUND')
+      const hasPrepared = this.journal.pending.some(p => p.sessionId === sessionId && (() => {
+        const payload = JSON.parse(p.exactPayload) as { items?: { client_observation_id?: string; grupo_id?: string; detalle_id?: string }[] }
+        return (payload.items ?? []).some(i => i.client_observation_id === observationId ||
+          i.grupo_id === current.groupId || (current.recountDetailId !== null && i.detalle_id === current.recountDetailId))
+      })())
+      if (hasPrepared || (this.journal.confirmed[sessionId] ?? []).includes(observationId)) {
+        throw new Error('FULL_INCIDENT_DISCARD_BLOCKED')
+      }
+      const next = structuredClone(this.journal)
+      next.drafts[sessionId] = next.drafts[sessionId].filter(d => d.clientObservationId !== observationId)
+      if (!next.drafts[sessionId].length) delete next.drafts[sessionId]
+      this.persist(next)
+    })
+  }
+  async discardRejectedOperation(operationId: string) {
+    await this.gate(async () => {
+      this.journal = this.read()
+      const row = this.journal.pending.find(p => p.operationId === operationId)
+      if (!row) throw new Error('FULL_INCIDENT_NOT_FOUND')
+      if (row.status !== 'rejected' || !row.code || !discardableRejections.has(row.code)) {
+        throw new Error('FULL_INCIDENT_DISCARD_BLOCKED')
+      }
+      const ids: string[] = (JSON.parse(row.exactPayload).items ?? [])
+        .map((i: { client_observation_id?: string }) => i.client_observation_id)
+        .filter((id: string | undefined): id is string => typeof id === 'string')
+      if (ids.some(id => (this.journal.confirmed[row.sessionId ?? ''] ?? []).includes(id))) {
+        throw new Error('FULL_INCIDENT_DISCARD_BLOCKED')
+      }
+      const next = structuredClone(this.journal)
+      next.pending = next.pending.filter(p => p.operationId !== operationId)
+      this.persist(next)
+    })
+  }
+  canDiscardIncident(incident: FullIncident) {
+    return incident.kind === 'draft' || (incident.status === 'rejected' &&
+      incident.code !== null && incident.code !== undefined && discardableRejections.has(incident.code))
+  }
 
   private async request(name: Parameters<FullRpc>[0], args: Record<string, unknown>): Promise<FullEnvelope> {
     const started = performance.now()
@@ -173,12 +248,12 @@ export class FullRuntime {
   private anyUnresolved(sessionId: string) {
     return (this.journal.drafts[sessionId]?.length ?? 0) > 0 || this.pendingFor(sessionId).length > 0
   }
-  private assertNoRejected(sessionId?: string) {
-    if (this.journal.pending.some(p => p.status === 'rejected' && (!sessionId || p.sessionId === sessionId))) {
+  private assertNoRejected(sessionId?: string | null) {
+    if (this.journal.pending.some(p => p.status === 'rejected' && (sessionId === undefined || p.sessionId === sessionId))) {
       throw new Error('FULL_REJECTED_REQUIRES_REVIEW')
     }
   }
-  private async flushInside(sessionId?: string) {
+  private async flushInside(sessionId?: string | null) {
     this.assertNoRejected(sessionId)
     const operations = [...this.journal.pending].filter(p =>
       p.status === 'pending' && (sessionId === undefined || p.sessionId === sessionId))
@@ -237,7 +312,22 @@ export class FullRuntime {
       finally { this.publish({ busy: false }) }
     })
   }
-  async retry() { await this.flush() }
+  async resumePrepared() {
+    await this.gate(async () => {
+      this.journal = this.read()
+      // Incluye start sin sessionId y finish cuya sesión ya no figura en bootstrap.
+      const scopes = [...new Set(this.journal.pending.filter(p => p.status === 'pending').map(p => p.sessionId))]
+      if (!scopes.length) return
+      this.publish({ busy: true })
+      try {
+        for (const sessionId of scopes) {
+          await this.flushInside(sessionId)
+          await this.refreshInside()
+        }
+      } finally { this.publish({ busy: false }) }
+    })
+  }
+  async retry() { await this.resumePrepared() }
 
   async start() {
     await this.gate(async () => {
