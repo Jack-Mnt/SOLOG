@@ -7,9 +7,10 @@ import { CajeroObservacionDialog } from './cajero.observacion.dialog'
 import { CajeroHistorial } from './cajero.historial'
 import { getCajeroCategoryIcon, evaluateCajeroExpression, calculateCajeroValuationPreview, formatCajeroCurrency, formatCajeroDifference, getCajeroDifferenceClass } from './cajero.utils'
 import { PaletteSwitcher } from '../../theme/palette-switcher'
+import { PanelLoader } from '../../../components/panel-loader'
 import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
-import { FullRuntime, type FullDraft } from './full.runtime'
+import { FullRuntime, type FullDraft, type FullIncident } from './full.runtime'
 import { cashierStartGate } from './full.start-gate'
 import type { FullGroup } from './full.contract'
 import { actionFor, actionable, stockType, type FullWorkAction, type FullStockType } from './full.presentation'
@@ -36,6 +37,8 @@ const messages: Record<string, string> = {
   FULL_PENDING_DELIVERY_REQUIRES_RECONCILIATION: 'Existen borradores u operaciones sin confirmar; no se puede finalizar.',
   FULL_RECOUNT_DETAIL_MISSING: 'Falta el detalle de reconteo necesario para guardar.',
   FULL_CONFIRMATION_MANIFEST_MISMATCH: 'La confirmación del servidor no coincide. Los registros quedan retenidos para revisión.',
+  FULL_INCIDENT_NOT_FOUND: 'La incidencia ya no está disponible. Actualiza el estado.',
+  FULL_INCIDENT_DISCARD_BLOCKED: 'No se ha demostrado que este registro pueda descartarse de forma segura.',
 }
 const explain = (error: unknown) => {
   const code = error instanceof Error ? error.message : String(error)
@@ -291,6 +294,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const [category, setCategory] = useState<string | null>(null)
   const [reviewGroup, setReviewGroup] = useState<string | null>(null)
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const [incidentToDiscard, setIncidentToDiscard] = useState<FullIncident | null>(null)
   const autoClosed = useRef(new Map<string, number>())
   const session = view.session
   const stockState = view.bootstrap?.stock
@@ -334,11 +338,14 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       }
     }
     const refresh = () => {
-      void runtime.refresh().then(syncClockOffset).catch(e => { if (live) setError(explain(e)) })
+      void runtime.refresh()
+        .then(() => runtime.resumePrepared())
+        .then(syncClockOffset)
+        .catch(e => { if (live) setError(explain(e)) })
     }
     const online = () => {
       autoClosed.current.clear()
-      void runtime.flush().then(syncClockOffset).catch(e => { if (live) setError(explain(e)) })
+      refresh()
     }
     refresh()
     const tick = window.setInterval(() => { if (live) setNow(runtime.clock.now()) }, 250)
@@ -420,11 +427,11 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     })()
   }
   const exportPending = () => {
-    const blob = new Blob([JSON.stringify(runtime.inspectPending(), null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify(runtime.exportDiagnostics(), null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'SOLOG_pendientes.json'
+    link.download = 'SOLOG_diagnostico_cajero.json'
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -432,6 +439,19 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const activeDrafts = session ? runtime.getDrafts(session.session_id).length : 0
   const hasUnresolved = view.drafts > 0 || view.pending > 0 || view.rejected > 0 ||
     Boolean(view.bootstrap?.recovery_sessions.length)
+  const incidents = hasUnresolved ? runtime.getIncidents() : []
+  const discardIncident = () => {
+    if (!incidentToDiscard) return
+    const incident = incidentToDiscard
+    setIncidentToDiscard(null)
+    void run(async () => {
+      if (incident.kind === 'draft' && incident.sessionId) {
+        await runtime.discardDraft(incident.sessionId, incident.id)
+      } else if (incident.kind === 'operation' && incident.status === 'rejected') {
+        await runtime.discardRejectedOperation(incident.id)
+      } else throw new Error('FULL_INCIDENT_DISCARD_BLOCKED')
+    })
+  }
 
   return <div className="cajero-shell">
     <header className="cajero-header">
@@ -464,9 +484,20 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         <p>{view.drafts} borradores locales, {view.pending} operaciones pendientes y {view.rejected} rechazadas. Los registros permanecen en este dispositivo.</p>
         <button className="button button--secondary" type="button" disabled={working || view.busy || view.pending === 0 || view.rejected > 0}
           onClick={() => void run(() => runtime.retry())}><RefreshCw size={18}/> Reintentar operaciones</button>
-        <button className="button button--secondary" type="button" onClick={exportPending}>Exportar pendientes</button>
+        <button className="button button--secondary" type="button" onClick={exportPending}>Exportar diagnóstico</button>
+        {incidents.length ? <div className="cajero-incidents" aria-label="Incidencias locales">
+          {incidents.slice(0, 12).map(item => <div className="cajero-incidents__row" key={item.id}>
+            <span>{item.kind === 'draft' ? 'Borrador' : item.status === 'rejected' ? 'Rechazo definitivo' : 'Envío sin conciliar'} · {item.groupId?.slice(0, 8) ?? item.action ?? '—'} · {item.sessionId?.slice(0, 8) ?? 'Inicio'}
+              {item.code ? ` · ${item.code}` : ''}</span>
+            {runtime.canDiscardIncident(item) ? <button type="button" className="button button--secondary" disabled={working || view.busy}
+              onClick={() => setIncidentToDiscard(item)}>Descartar…</button> : null}
+          </div>)}
+          {incidents.length > 12 ? <p>{incidents.length - 12} incidencias adicionales en el diagnóstico exportable.</p> : null}
+          <p>Exporta el diagnóstico antes de descartar. Los reintentos inciertos y los conflictos no se pueden descartar.</p>
+        </div> : null}
       </div> : null}
-      {pathname === '/cajero/historial' && loadHistory ? <CajeroHistorial session={history}/> : !route ? <section className="cajero-module cajero-home">
+      {!view.bootstrap && !error && !view.error ? <PanelLoader variant="contained" /> :
+        pathname === '/cajero/historial' && loadHistory ? <CajeroHistorial session={history}/> : !route ? <section className="cajero-module cajero-home">
         <div className="cajero-home__heading"><h1>Inicio</h1></div>
         <section className={'cajero-stock-card' + (stockFresh ? ' cajero-stock-card--updated' : ' cajero-stock-card--stale')}>
           <div className="cajero-stock-card__status">
@@ -562,6 +593,17 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         </button>
       })}
     </div></nav>
+    {incidentToDiscard ? <div className="cajero-confirmation-backdrop">
+      <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-label="Descartar incidencia local">
+        <h2>¿Descartar esta evidencia local?</h2>
+        <p>Esta acción elimina el {incidentToDiscard.kind === 'draft' ? 'borrador' : 'rechazo comprobado'} del dispositivo, no modifica los conteos confirmados en Supabase.</p>
+        <p>Exporta primero el diagnóstico si necesitas conservar el registro.</p>
+        <div className="cajero-confirmation__actions">
+          <button type="button" className="button button--secondary" onClick={() => setIncidentToDiscard(null)}>Cancelar</button>
+          <button type="button" className="button button--danger" disabled={working || view.busy} onClick={discardIncident}>Confirmar descarte</button>
+        </div>
+      </section>
+    </div> : null}
     {logoutOpen ? <div className="cajero-confirmation-backdrop">
       <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-label="Cerrar sesión">
         <h2>¿Cerrar sesión?</h2><p>Las operaciones sin confirmar permanecerán guardadas en este dispositivo.</p>
