@@ -482,7 +482,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       {error || view.error ? <div className="cajero-alert cajero-alert--error" role="alert">{error ?? explain(view.error)}</div> : null}
       {hasUnresolved ? <div className="cajero-alert cajero-alert--warning" role="status">
         <p>{view.drafts} borradores locales, {view.pending} operaciones pendientes y {view.rejected} rechazadas. Los registros permanecen en este dispositivo.</p>
-        <button className="button button--secondary" type="button" disabled={working || view.busy || view.pending === 0 || view.rejected > 0}
+        <button className="button button--secondary" type="button" disabled={working || view.busy || view.pending === 0}
           onClick={() => void run(() => runtime.retry())}><RefreshCw size={18}/> Reintentar operaciones</button>
         <button className="button button--secondary" type="button" onClick={exportPending}>Exportar diagnóstico</button>
         {incidents.length ? <div className="cajero-incidents" aria-label="Incidencias locales">
