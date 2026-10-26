@@ -20,8 +20,10 @@ const iso = n => new Date(n).toISOString()
 const serverStart = Date.parse('2026-10-26T09:15:00.000Z')
 
 class SimulatedFull {
-  constructor({ recovery = false, lostResponse = null } = {}) {
-    this.now = serverStart + (recovery ? 51 : 0) * 60_000
+  constructor({ recovery = false, lostResponse = null, priorityChange = false, recount = false,
+    rejectSave = false, timeOffsetMinutes = null } = {}) {
+    this.now = serverStart + (timeOffsetMinutes ?? (recovery ? 51 : 0)) * 60_000
+    this.rejectSave = rejectSave
     this.expires = serverStart + 50 * 60_000
     this.lostResponse = lostResponse
     this.lost = false
@@ -30,6 +32,14 @@ class SimulatedFull {
     this.receipts = new Map()
     this.calls = []
     this.groups = [this.group(groupA, 'Grupo A'), this.group(groupB, 'Grupo B')]
+    if (priorityChange) this.groups[1].priority_class = 'shift_coverage'
+    if (recount) {
+      this.groups[0].action = 'recount'
+      this.groups[0].priority_class = 'review_regular'
+      this.groups[0].recount_detail_id = '12345678-1234-4123-8123-1234567890b3'
+      this.groups[1].action = 'none'
+      this.groups[1].priority_class = 'none'
+    }
   }
   group(id, name) {
     return {
@@ -42,7 +52,9 @@ class SimulatedFull {
     }
   }
   session() {
-    const status = this.finished ? 'finished' : this.now >= this.expires ? 'recovery' : 'active'
+    const status = this.finished ? 'finished'
+      : this.now >= this.expires + 7200000 ? 'expired'
+        : this.now >= this.expires ? 'recovery' : 'active'
     return {
       session_id: sid, status, session_started_at: iso(serverStart - 60_000),
       reference_snapshot_id: snapshot, reference_snapshot_captured_at: iso(serverStart - 600_000),
@@ -50,7 +62,7 @@ class SimulatedFull {
       capture_interval_number: 1, capture_interval_starts_at: iso(serverStart - 600_000),
       capture_interval_ends_at: iso(this.expires), session_expires_at: iso(this.expires),
       pending_delivery_until: iso(this.expires + 7200000), groups_revision: 1,
-      capture_allowed: status === 'active', pending_delivery_allowed: !this.finished,
+      capture_allowed: status === 'active', pending_delivery_allowed: status === 'active' || status === 'recovery',
     }
   }
   envelope(code, data, replay = false) {
@@ -101,6 +113,13 @@ class SimulatedFull {
       return this.envelope(prior.code, prior.data, true)
     }
     const items = payload.items ?? []
+    if (action === 'save_batch' && this.rejectSave) {
+      return {
+        contract_version: 2, ok: false, code: 'PRIORITY_CONFLICT',
+        server_now: iso(this.now), request_id: '12345678-1234-4123-8123-1234567890b1',
+        retryable: false, data: null, errors: [],
+      }
+    }
     if (action === 'save_batch' || action === 'recount_save_batch') {
       assert.equal(payload.session_id, sid)
       assert.ok(items.length > 0 && items.length <= 500)
@@ -309,6 +328,120 @@ try {
     assert.deepEqual(fake.calls.map(c => c.action), ['save_batch', 'finish'])
   })
 
+
+  await check('reconteo: registra recount_save_batch y termina con manifiesto', {
+    recount: true,
+  }, async ({ fake, createPage }) => {
+    const page = await createPage()
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Revisar' }).click()
+    await page.getByRole('button', { name: /Grupo A/ }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('.cajero-calculator__keys').getByRole('button', { name: '1', exact: true }).click()
+    await modal.locator('.cajero-calculator__keys').getByRole('button', { name: '0', exact: true }).click()
+    await modal.getByRole('button', { name: 'Continuar', exact: true }).click()
+    await modal.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Inicio', exact: true }).click()
+    assert.equal((await journal(page)).drafts[sid][0].action, 'recount')
+    await page.getByRole('button', { name: 'Finalizar conteo' }).click()
+    await eventually(() => fake.finished, 'El reconteo no confirmó su cierre')
+    const recountCalls = fake.calls.filter(x => x.action === 'recount_save_batch')
+    assert.equal(recountCalls.length, 1)
+    assert.equal(recountCalls[0].payload.items[0].detalle_id,
+      '12345678-1234-4123-8123-1234567890b3')
+    assert.deepEqual(fake.calls.map(c => c.action), ['recount_save_batch', 'finish'])
+    assert.equal(fake.observations.size, 1)
+  })
+
+  await check('prioridad cambia tras primer batch y el segundo se envía por separado', {
+    priorityChange: true,
+  }, async ({ fake, createPage }) => {
+    const page = await createPage()
+    await saveGroup(page, 'Grupo A')
+    await page.evaluate(({ key, groupId, sessionId }) => {
+      const data = JSON.parse(localStorage.getItem(key))
+      const first = data.drafts[sessionId][0]
+      data.drafts[sessionId].push({
+        ...first, clientObservationId: crypto.randomUUID(),
+        groupId, physical: 11, expression: '11',
+      })
+      localStorage.setItem(key, JSON.stringify(data))
+    }, { key: journalKey, groupId: groupB, sessionId: sid })
+    await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+    await eventually(() => fake.observations.size === 2, 'No se confirmó el segundo batch')
+    const batches = fake.calls.filter(c => c.action === 'save_batch')
+    assert.equal(batches.length, 2)
+    assert.deepEqual(batches.map(c => c.payload.items.map(i => i.grupo_id)), [[groupA], [groupB]])
+    assert.equal((await journal(page)).drafts[sid]?.length ?? 0, 0)
+  })
+
+  await check('rechazo definitivo: bloquea finish y no reenvía operación', {
+    rejectSave: true,
+  }, async ({ fake, createPage }) => {
+    const page = await createPage()
+    await saveGroup(page, 'Grupo A')
+    await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+    await page.waitForFunction(key => JSON.parse(localStorage.getItem(key)).pending
+      .some(item => item.status === 'rejected'), journalKey)
+    const before = fake.calls.length
+    assert.equal(await page.getByRole('button', { name: 'Reintentar operaciones' }).isDisabled(), true)
+    await page.getByRole('button', { name: 'Finalizar conteo' }).click()
+    await page.getByText('Hay un rechazo definitivo. Requiere revisión antes de finalizar.').waitFor()
+    assert.equal(fake.calls.length, before)
+    assert.equal(fake.finished, false)
+    assert.equal(fake.observations.size, 0)
+    assert.equal((await journal(page)).pending[0].status, 'rejected')
+  })
+
+  await check('almacenamiento fallido: no inventa borrador ni envía RPC', {},
+    async ({ fake, createPage }) => {
+      const page = await createPage()
+      await page.evaluate(() => {
+        const original = Storage.prototype.setItem
+        Storage.prototype.setItem = function (key, value) {
+          if (key.startsWith('solog.full2.'))
+            throw new DOMException('Storage de prueba bloqueado', 'QuotaExceededError')
+          return original.call(this, key, value)
+        }
+      })
+      const navigation = page.getByRole('navigation', { name: 'Panel Cajero' })
+      await navigation.getByRole('button', { name: 'Conteo' }).click()
+      await page.getByRole('button', { name: /Pruebas.*grupos disponibles/ }).click()
+      const modal = page.getByRole('dialog')
+      await modal.getByRole('button', { name: /Grupo A/ }).click()
+      await modal.locator('.cajero-calculator__keys').getByRole('button', { name: '1', exact: true }).click()
+      await modal.locator('.cajero-calculator__keys').getByRole('button', { name: '0', exact: true }).click()
+      await modal.getByRole('button', { name: 'Continuar', exact: true }).click()
+      await modal.getByRole('alert').getByText('Storage de prueba bloqueado').waitFor()
+      assert.equal((await journal(page)).drafts[sid]?.length ?? 0, 0)
+      assert.equal(fake.calls.filter(c => c.action === 'save_batch').length, 0)
+    })
+
+  await check('límite exacto +2h: no hace nuevos envíos fuera de la ventana', {
+    timeOffsetMinutes: 170,
+  }, async ({ fake, context, createPage }) => {
+    const draft = {
+      clientObservationId: '12345678-1234-4123-8123-1234567890b2',
+      sessionId: sid, referenceSnapshotId: snapshot, groupsRevision: 1,
+      groupId: groupA, action: 'coverage', recountDetailId: null,
+      physical: 10, reason: null, note: null,
+      countedAt: iso(serverStart + 40 * 60_000), expression: '10',
+    }
+    await context.addInitScript(({ key, uid, token, sessionId, record }) => {
+      localStorage.setItem(key, JSON.stringify({
+        version: 2, userId: uid, deviceToken: token, pending: [],
+        confirmed: {}, panels: {}, drafts: { [sessionId]: [record] },
+      }))
+    }, { key: journalKey, uid: userId, token: deviceToken, sessionId: sid, record: draft })
+    const page = await createPage()
+    await page.waitForTimeout(800)
+    assert.equal(fake.session().status, 'expired')
+    assert.equal(fake.calls.length, 0)
+    assert.equal(fake.finished, false)
+    assert.equal((await journal(page)).drafts[sid]?.length, 1)
+  })
+
   await check('dos pestañas: borradores de grupos distintos y un único batch', {},
     async ({ fake, createPage }) => {
       const a = await createPage(), b = await createPage()
@@ -334,5 +467,5 @@ if (failures.length) {
   console.error('FAIL: ' + failures.length + ' escenarios Full browser: ' + failures.join(', '))
   process.exitCode = 1
 } else {
-  console.log('PASS: 4 escenarios Full browser simulados; 0 solicitudes externas.')
+  console.log('PASS: 9 escenarios Full browser simulados; 0 solicitudes externas.')
 }
