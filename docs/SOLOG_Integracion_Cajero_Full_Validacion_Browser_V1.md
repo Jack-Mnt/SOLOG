@@ -68,7 +68,7 @@ El nuevo arnés conserva prohibición explícita de tráfico externo y usa únic
 |---|---|
 | `session_expires_at` exacto | A igualdad exacta del timestamp, `capture_allowed = false`; se conserva `contado_at` de un borrador anterior; `save_batch` y `finish` cierran sin crear captura posterior |
 | Outboxes ajenos por usuario y por dispositivo | Dos journals de identidad distinta persisten sin ser modificados ni reintentados; solo se registra el borrador del usuario/dispositivo actuales. Esto no sustituye una prueba real de cambio de autenticación |
-| Dos pestañas y clicks concurrentes en `Registrar conteo` | Se lanzan ambos envíos al mismo tiempo; el lock del navegador debe impedir duplicar batches/observaciones y dejar los outboxes vacíos |
+| Dos pestañas y clicks concurrentes en `Registrar conteo` | Se retiene deliberadamente la respuesta del primer `save_batch` **ya aplicado**, se pulsa Registrar en la segunda pestaña mientras el lock sigue ocupado y después se libera la respuesta; debe haber un solo batch y cero duplicaciones |
 
 **Criterio de ejecución:** mantener los once anteriores en verde y superar estos tres nuevos con resumen **14 escenarios Full browser simulados; 0 solicitudes externas**. Verificar también eventuales falsos positivos por carreras de UI antes de atribuir fallos al runtime.
 
