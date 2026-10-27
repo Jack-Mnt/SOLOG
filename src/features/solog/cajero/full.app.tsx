@@ -1,9 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LogOut, MessageSquarePlus, Play, RefreshCw, SearchCheck, Send, Square, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, List, LogOut, MessageSquarePlus, Play, RefreshCw, SearchCheck, Send, Square, X } from 'lucide-react'
 import type { CashierRoute } from '../../../lib/router'
 import { navigateTo, usePathname } from '../../../lib/router'
 import { CajeroCalculator } from './cajero.calculadora'
 import { CajeroObservacionDialog } from './cajero.observacion.dialog'
+import { CajeroProductosDialog } from './cajero.productos.dialog'
 import { CajeroHistorial } from './cajero.historial'
 import { getCajeroCategoryIcon, evaluateCajeroExpression, calculateCajeroValuationPreview, formatCajeroCurrency, formatCajeroDifference, getCajeroDifferenceClass } from './cajero.utils'
 import { PaletteSwitcher } from '../../theme/palette-switcher'
@@ -80,6 +81,7 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
     }),
   ))
   const [observation, setObservation] = useState<{ required: boolean; after?: () => void } | null>(null)
+  const [productsOpen, setProductsOpen] = useState(false)
   const [confirm, setConfirm] = useState<(() => void) | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -107,7 +109,7 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
   }, [])
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (observation !== null) return
+      if (observation !== null || productsOpen) return
       if (event.key === 'Escape') {
         event.preventDefault()
         if (confirm) setConfirm(null)
@@ -195,12 +197,19 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
             <section className="cajero-capture-detail__card">
               <div className="cajero-capture-detail__card-heading">
                 <h3>{group.group_name}</h3>
-                <button type="button" className="cajero-capture-detail__observation-button"
-                  aria-label="Agregar observación" disabled={locked}
-                  onClick={() => setObservation({ required: false })}><MessageSquarePlus size={20}/></button>
+                <div className="cajero-capture-detail__actions">
+                  <button type="button" className="cajero-capture-detail__action-button"
+                    aria-label="Ver productos incluidos" aria-haspopup="dialog"
+                    onClick={() => setProductsOpen(true)}>
+                    <List size={20} aria-hidden="true"/>
+                  </button>
+                  <button type="button" className="cajero-capture-detail__action-button cajero-capture-detail__observation-button"
+                    aria-label="Agregar observación" aria-haspopup="dialog" disabled={locked}
+                    onClick={() => setObservation({ required: false })}>
+                    <MessageSquarePlus size={20} aria-hidden="true"/>
+                  </button>
+                </div>
               </div>
-              {group.members.length > 1 ? <details><summary>Productos incluidos</summary><ul>{group.members.map(p =>
-                <li key={p.c_interno}>{p.product} - #{p.c_interno}</li>)}</ul></details> : null}
               {group.action === 'recount' ? <p className="full-contract-pending">Motivo y diferencia inicial: pendiente de contrato de lectura.</p> : null}
               <dl>
                 <div><dt>Stock TumiSoft</dt><dd>{group.stock_theoretical}</dd></div>
@@ -235,6 +244,8 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
         </div>}
       </div>
     </section>
+    {productsOpen && group ? <CajeroProductosDialog key={group.group_id}
+      group={group} onClose={() => setProductsOpen(false)} /> : null}
     {observation && group ? <CajeroObservacionDialog key={group.group_id}
       initialReason={currentNote.reason} initialText={currentNote.text}
       priorReason={null} priorText={null}
