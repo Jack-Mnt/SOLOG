@@ -1,10 +1,12 @@
 # SOLOG — Corrección Cajero Full: recuperación, incidencias y carga V1
 
-**Estado:** IMPLEMENTADO EN `admin-work` — **tests dirigidos, lint y build en verde; smoke humano del flujo normal Full validado (8/8) y contrastado con Supabase**. E2E de vencimiento/recovery, respuestas perdidas y concurrencia pendientes; bloque global aún abierto.
+**Estado:** IMPLEMENTADO EN `admin-work` — **tests dirigidos, lint y build en verde; smoke humano Full 8/8 y 14/14 pruebas browser con RPC simuladas aprobados**. Browser simulado cerrado; E2E autenticado remoto de recovery/replay pendiente. Bloque global aún abierto.
 **Fecha:** 2026-10-26. **Clasificación:** Nivel C (recuperación y persistencia) con ajustes puntuales Nivel A/B.
 **Fuente primaria funcional vigente:** `docs/SOLOG_Logica_Cajero_Registro_Cierre_Automatico_Full_V1.md`, aprobada y congelada. Este archivo es un **delta técnico**: solo reemplaza los comportamientos defectuosos identificados abajo.
 **Contrato backend vigente y ya desplegado:** `docs/SOLOG_Backend_Cajero_Full_Recovery_Finish_V1.md`. No se realizaron cambios en Supabase.
 **Reporte previo:** `docs/SOLOG_Integracion_Cajero_Borradores_Registro_Autocierre_Full_V1.md`. Sigue vigente en lo no modificado por este delta. V4/V5 solo referencia histórica; `master` fuera de alcance.
+
+**Evidencia posterior (2026-10-27):** fase de validación browser simulada cerrada en verde, **14 PASS / 0 FAIL / 0 solicitudes externas**, ejecutada por el usuario en `admin-work` mediante `node tests/cajero-full.browser.mjs`. Cobertura: replay exacto de `save_batch` y `finish`, autocierre recovery, reconteos, prioridades, rechazo definitivo, fallos de `localStorage`, límite +2h, pérdida del segundo batch, sesión A recovery + B activa, expiración exacta de captura, separación de journals por usuario/dispositivo y serialización de `Registrar conteo` entre pestañas. La evidencia y límites están documentados en `docs/SOLOG_Integracion_Cajero_Full_Validacion_Browser_V1.md`. **No extrapolar a E2E autenticado con RPC reales**; esos ensayos siguen pendientes.
 
 ## 1. Evidencia de partida
 
