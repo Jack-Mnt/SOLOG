@@ -14,43 +14,48 @@ const render = (value: CashierV4Group | FullGroup) => renderToStaticMarkup(
 )
 
 describe('Cajero — detalle local de productos y composición de observaciones', () => {
-  test('un SKU: precio individual, código y sin inventar configuración por paquete', () => {
+  test('un SKU muestra precio de grupo en encabezado y solo un código/nombre', () => {
     const value = group()
     const html = render(value)
     expect(html).toContain('role="dialog"')
     expect(html).toContain('Productos incluidos')
     expect(html).toContain('1 producto')
     expect(html).toContain('Código #123')
-    expect(html).toContain(formatCajeroCurrency(value.productos[0].precio))
-    expect(html).not.toContain('Configuración de paquete del grupo')
-    expect(html).not.toContain(' · null')
-    expect(html).toContain('Detalle de productos incluidos')
+    expect(html).toContain('Precio unitario')
+    expect(html).toContain(formatCajeroCurrency(value.precio))
+    expect(html).not.toContain('Precio por paquete')
+    expect(html).not.toContain('Unidades por paquete')
+    expect(html).not.toContain('cajero-productos-dialog__price"')
     expect(html).toContain('aria-label="Cerrar productos incluidos"')
   })
 
-  test('varios SKU: mantiene marca y precio por SKU, sin asignarles precio de paquete', () => {
+  test('SKU agrupados conservan tarifa única en header, marca opcional y fila código→nombre', () => {
     const value = group()
+    value.precio = 5.5
     value.productos = [
       { c_interno: 22001, producto: 'BEBIDA CON NOMBRE EXTRAORDINARIAMENTE LARGO QUE NECESITA SALTO DE LÍNEA',
         marca: 'Marca Uno', precio: 5.5 },
-      { c_interno: 22002, producto: 'BEBIDA DE OTRA PRESENTACIÓN', marca: null, precio: 6.5 },
+      { c_interno: 22002, producto: 'BEBIDA DE OTRA PRESENTACIÓN', marca: null, precio: 5.5 },
     ]
     value.unidades_por_paquete = 12
     value.precio_paquete = 60
     const html = render(value)
     expect(html).toContain('2 productos')
     expect(html).toContain('Marca Uno')
-    expect(html).toContain('Código #22002')
-    expect(html).toContain(formatCajeroCurrency(5.5))
-    expect(html).toContain(formatCajeroCurrency(6.5))
-    expect(html).toContain('Configuración de paquete del grupo')
+    expect(html).toContain('Precios del grupo')
+    expect(html).toContain('Precio unitario')
     expect(html).toContain('Unidades por paquete')
     expect(html).toContain('Precio por paquete')
+    expect(html).toContain(formatCajeroCurrency(5.5))
     expect(html).toContain(formatCajeroCurrency(60))
-    expect((html.match(/cajero-productos-dialog__price/g) ?? [])).toHaveLength(2)
+    expect((html.match(/cajero-productos-dialog__prices/g) ?? [])).toHaveLength(1)
+    expect((html.match(/cajero-productos-dialog__code/g) ?? [])).toHaveLength(2)
+    expect((html.match(/cajero-productos-dialog__name/g) ?? [])).toHaveLength(2)
+    expect(html.indexOf('Código #22001')).toBeLessThan(html.indexOf('BEBIDA CON NOMBRE'))
+    expect(html).not.toContain('cajero-productos-dialog__package')
   })
 
-  test('configuración parcial: no fabrica campos ausentes', () => {
+  test('configuración parcial: muestra únicamente los campos de paquete disponibles', () => {
     const value = group()
     value.precio_paquete = 45
     expect(render(value)).not.toContain('Unidades por paquete')
@@ -61,16 +66,15 @@ describe('Cajero — detalle local de productos y composición de observaciones'
     expect(render(value)).not.toContain('Precio por paquete')
   })
 
-  test('Full V6/V7: lectura de members y configuración de paquete sin marca inventada', () => {
+  test('Full V6/V7: tarifa unificada y paquete a nivel de grupo', () => {
     const value: FullGroup = {
       group_id: '10000000-0000-4000-8000-000000000001',
       group_name: 'Bebidas del grupo', category_id: '10000000-0000-4000-8000-000000000002',
       category_name: 'Bebidas', reference_snapshot_id: '10000000-0000-4000-8000-000000000003',
-      groups_revision: 1, stock_theoretical: 81,
-      member_codes: [22001, 22002],
+      groups_revision: 1, stock_theoretical: 81, member_codes: [22001, 22002],
       members: [
         { c_interno: 22001, product: 'GASEOSA LIMA 500ML', barcode: '7751000012345', price: 4.5 },
-        { c_interno: 22002, product: 'GASEOSA MANDARINA 500ML', barcode: null, price: 6.5 },
+        { c_interno: 22002, product: 'GASEOSA MANDARINA 500ML', barcode: null, price: 4.5 },
       ],
       price: 4.5, units_per_package: 6, package_price: 24,
       action: 'coverage', priority_class: 'round_coverage', recount_detail_id: null,
@@ -81,21 +85,23 @@ describe('Cajero — detalle local de productos y composición de observaciones'
     expect(html).toContain('GASEOSA LIMA 500ML')
     expect(html).toContain('Código #22002')
     expect(html).toContain(formatCajeroCurrency(4.5))
-    expect(html).toContain(formatCajeroCurrency(6.5))
+    expect(html).toContain(formatCajeroCurrency(24))
+    expect(html).toContain('Precio unitario')
     expect(html).toContain('Unidades por paquete')
     expect(html).toContain('Precio por paquete')
-    expect(html).toContain(formatCajeroCurrency(24))
+    expect((html.match(/cajero-productos-dialog__code/g) ?? [])).toHaveLength(2)
     expect(html).not.toContain('null')
   })
 
-  test('lista numerosa o vacía: detalle desplazable y estado de ausencia explícito', () => {
+  test('lista numerosa o vacía: mantiene scroll y mensaje explícito', () => {
     const value = group()
+    value.precio = 1
     value.productos = Array.from({ length: 32 }, (_, index) => ({
       c_interno: 23000 + index, producto: `SKU ${index + 1}`, marca: null, precio: 1,
     }))
     const html = render(value)
     expect(html).toContain('32 productos')
-    expect((html.match(/cajero-productos-dialog__identity/g) ?? [])).toHaveLength(32)
+    expect((html.match(/cajero-productos-dialog__name/g) ?? [])).toHaveLength(32)
     value.productos = []
     expect(render(value)).toContain('No hay productos incluidos.')
   })
