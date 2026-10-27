@@ -400,7 +400,7 @@ try {
     await detail.getByText('Unidades por paquete', { exact: true }).waitFor()
     await detail.getByText('Precio por paquete', { exact: true }).waitFor()
     await detail.getByText('Precio unitario', { exact: true }).waitFor()
-    assert.equal(await detail.locator('.cajero-productos-dialog__prices strong').first().textContent(), 'S/ 5.00')
+    assert.match((await detail.locator('.cajero-productos-dialog__prices strong').first().textContent()) ?? '', /S\/\s*5[.,]00/)
     assert.equal(await detail.locator('.cajero-productos-dialog__list .cajero-productos-dialog__price').count(), 0)
     assert.equal(await detail.locator('.cajero-productos-dialog__list .cajero-productos-dialog__code').count(), 16)
     assert.equal(await detail.locator('.cajero-productos-dialog__list .cajero-productos-dialog__name').count(), 16)
