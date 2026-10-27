@@ -19,13 +19,24 @@ const user = { id: ids.user, email: 'cashier@example.test', role: 'authenticated
 const jwt = [{ alg: 'HS256', typ: 'JWT' }, { sub: user.id, aud: 'authenticated', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 }]
   .map(part => Buffer.from(JSON.stringify(part)).toString('base64url')).join('.') + '.test'
 
-async function scenario({ startAction = 'coverage', preSessionAction = 'coverage', coverageComplete = false, blockedCoverage = false, round = 1, initial = 'pre_session', recovery = false, richCoverage = false, multiCategory = false, reviewWithPriorReason = false, expiredWithDraft = false, expiredWithoutDraft = false, autocloseError = null, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
+async function scenario({ startAction = 'coverage', preSessionAction = 'coverage', coverageComplete = false, blockedCoverage = false, round = 1, initial = 'pre_session', recovery = false, richCoverage = false, multiCategory = false, productDetails = false, reviewWithPriorReason = false, expiredWithDraft = false, expiredWithoutDraft = false, autocloseError = null, startTimeout = false, finishFailure = false, startRefreshError = false } = {}, run) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const calls = [], errors = []
   let startAttempts = 0, finishAttempts = 0, batchAttempts = 0
   let confirmedBatch = null
   let b = cashierV4Bootstrap(initial, { next_action: initial === 'pre_session' ? preSessionAction : startAction, ronda: round })
   if (recovery) b = cashierV4Bootstrap('active_recovery', { next_action: 'coverage' })
+  if (productDetails && b.panel_state) {
+    const group = b.panel_state.groups.find(item => item.grupo_id === ids.coverage)
+    group.tipo = 'Agrupado'
+    group.productos = Array.from({ length: 16 }, (_, index) => ({
+      c_interno: 23001 + index, producto: `PRODUCTO ${index + 1} CON UN NOMBRE COMERCIAL EXTENSO`,
+      marca: index === 0 ? 'Marca de prueba' : null, precio: index + 1.5,
+    }))
+    group.codigos_internos = group.productos.map(item => item.c_interno)
+    group.unidades_por_paquete = 12
+    group.precio_paquete = 45
+  }
   if (reviewWithPriorReason && b.panel_state?.review_queue?.length) {
     Object.assign(b.panel_state.review_queue[0], {
       motivo_diferencia: 'Transferencia',
@@ -521,6 +532,74 @@ try {
     assert.equal(await capture.count(), 1, 'El segundo Escape cancela solo la confirmación')
     assert.equal(calls.filter(call => call.body.p_action === 'save_batch').length, 0)
     console.log('PASS D.1.4 + motivo obligatorio: Escape cierra una sola capa por pulsación')
+  })
+  await scenario({ initial: 'active', productDetails: true }, async (page, calls) => {
+    await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
+    await page.getByRole('button', { name: /Abarrotes.*0\/1 contados/ }).click()
+    await page.getByRole('dialog').getByRole('button', { name: /Grupo coverage/ }).click()
+    const capture = page.getByRole('dialog')
+    const actions = capture.locator('.cajero-capture-detail__actions button')
+    assert.deepEqual(await actions.evaluateAll(nodes => nodes.map(node => node.getAttribute('aria-label'))),
+      ['Ver productos incluidos', 'Agregar observación'])
+    assert.equal(await capture.locator('details').count(), 0, 'Tarjeta sin disclosure inline')
+    assert.equal(await capture.locator('.cajero-capture-detail__card dl > div').count(), 4)
+    const before = calls.length
+    const opener = capture.getByRole('button', { name: 'Ver productos incluidos' })
+    await opener.click()
+    const products = page.getByRole('dialog', { name: 'Productos incluidos' })
+    await products.waitFor()
+    assert.equal(await products.getByText('16 productos').count(), 1)
+    assert.equal(await products.locator('.cajero-productos-dialog__list > li').count(), 16)
+    assert.equal(await products.getByText('Marca de prueba', { exact: false }).count(), 1)
+    assert.equal(await products.getByText('Unidades por paquete').count(), 1)
+    assert.equal(await products.getByText('Precio por paquete').count(), 1)
+    const closeProducts = products.getByRole('button', { name: 'Cerrar productos incluidos' })
+    assert.equal(await closeProducts.evaluate(el => document.activeElement === el), true)
+    await page.keyboard.press('Tab')
+    const scroll = products.getByRole('region', { name: 'Detalle de productos incluidos' })
+    assert.equal(await scroll.evaluate(el => document.activeElement === el), true)
+    await page.keyboard.press('Tab')
+    assert.equal(await closeProducts.evaluate(el => document.activeElement === el), true)
+    await page.keyboard.press('Shift+Tab')
+    assert.equal(await scroll.evaluate(el => document.activeElement === el), true)
+    await page.keyboard.press('Escape')
+    await products.waitFor({ state: 'detached' })
+    assert.equal(await opener.evaluate(el => document.activeElement === el), true)
+    assert.equal(await capture.count(), 1, 'Escape no cierra captura')
+    await opener.click()
+    await products.getByRole('button', { name: 'Cerrar productos incluidos' }).click()
+    await products.waitFor({ state: 'detached' })
+    assert.equal(await opener.evaluate(el => document.activeElement === el), true)
+    await opener.click()
+    await page.locator('.cajero-productos-backdrop').click({ position: { x: 4, y: 4 } })
+    await products.waitFor({ state: 'detached' })
+    assert.equal(await opener.evaluate(el => document.activeElement === el), true)
+    assert.equal(calls.length, before, 'Detalle de productos no consulta ni modifica backend')
+    assert.equal(await capture.getByText('0/1 contados').count(), 1)
+    const noteButton = capture.getByRole('button', { name: 'Agregar observación' })
+    await noteButton.click()
+    await page.getByRole('dialog', { name: 'Motivo y observación' }).waitFor()
+    await page.keyboard.press('Escape')
+    assert.equal(await capture.count(), 1)
+    console.log('PASS productos: SKU, paquete, 16 ítems, foco, Escape, clic fuera y sin RPC')
+  })
+  await scenario({ initial: 'active' }, async (page, calls) => {
+    await nav(page).getByRole('button', { name: 'Conteo', exact: true }).click()
+    await page.getByRole('button', { name: /Abarrotes.*0\/1 contados/ }).click()
+    await page.getByRole('dialog').getByRole('button', { name: /Grupo coverage/ }).click()
+    const capture = page.getByRole('dialog')
+    const opener = capture.getByRole('button', { name: 'Ver productos incluidos' })
+    const before = calls.length
+    await opener.click()
+    const products = page.getByRole('dialog', { name: 'Productos incluidos' })
+    assert.equal(await products.locator('.cajero-productos-dialog__list > li').count(), 1)
+    assert.equal(await products.getByText('1 producto').count(), 1)
+    assert.equal(await products.getByText('Configuración de paquete del grupo').count(), 0)
+    await page.keyboard.press('Escape')
+    await products.waitFor({ state: 'detached' })
+    assert.equal(await capture.count(), 1)
+    assert.equal(calls.length, before)
+    console.log('PASS productos: SKU único sin configuración por paquete')
   })
   await scenario({ initial: 'active', startAction: 'review', reviewWithPriorReason: true }, async (page, calls) => {
     await nav(page).getByRole('button', { name: 'Revisar', exact: true }).click()
