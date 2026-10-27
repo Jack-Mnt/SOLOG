@@ -23,7 +23,7 @@ const serverStart = Date.parse('2026-10-26T09:15:00.000Z')
 
 class SimulatedFull {
   constructor({ recovery = false, lostResponse = null, priorityChange = false, recount = false,
-    rejectSave = false, timeOffsetMinutes = null, lostResponseNth = 1 } = {}) {
+    rejectSave = false, timeOffsetMinutes = null, lostResponseNth = 1, productDetails = false } = {}) {
     this.now = serverStart + (timeOffsetMinutes ?? (recovery ? 51 : 0)) * 60_000
     this.rejectSave = rejectSave
     this.expires = serverStart + 50 * 60_000
@@ -36,6 +36,15 @@ class SimulatedFull {
     this.receipts = new Map()
     this.calls = []
     this.groups = [this.group(groupA, 'Grupo A'), this.group(groupB, 'Grupo B')]
+    if (productDetails) {
+      this.groups[0].members = Array.from({ length: 16 }, (_, i) => ({
+        c_interno: 21001 + i, product: `BEBIDA SABOR ${i + 1} CON NOMBRE EXTENSO`,
+        barcode: i === 0 ? '7750000000001' : null, price: 2.5 + i,
+      }))
+      this.groups[0].member_codes = this.groups[0].members.map(p => p.c_interno)
+      this.groups[0].units_per_package = 12
+      this.groups[0].package_price = 44
+    }
     if (priorityChange) this.groups[1].priority_class = 'shift_coverage'
     if (recount) {
       this.groups[0].action = 'recount'
@@ -367,6 +376,73 @@ async function check(title, options, test) {
   catch (e) { failures.push(title); console.error('FAIL Full browser: ' + title, e) }
 }
 try {
+  await check('tarjeta activa Full: popup de SKU y foco sin alterar conteos ni consultar servidor', {
+    productDetails: true,
+  }, async ({ fake, createPage }) => {
+    const page = await createPage()
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Conteo' }).click()
+    await page.getByRole('button', { name: /Pruebas.*grupos disponibles/ }).click()
+    const modal = page.locator('.cajero-capture-modal')
+    await modal.getByRole('button', { name: /Grupo A/ }).click()
+    assert.equal(await modal.locator('.cajero-capture-detail__card details').count(), 0)
+    assert.equal(await modal.locator('.cajero-capture-detail__card dl > div').count(), 4)
+    const buttons = modal.locator('.cajero-capture-detail__actions > button')
+    assert.deepEqual(await buttons.evaluateAll(nodes => nodes.map(el => el.getAttribute('aria-label'))),
+      ['Ver productos incluidos', 'Agregar observación'])
+    const before = fake.calls.length
+    const opener = modal.getByRole('button', { name: 'Ver productos incluidos' })
+    await opener.click()
+    const detail = page.getByRole('dialog', { name: 'Productos incluidos' })
+    await detail.waitFor()
+    assert.equal(await detail.locator('.cajero-productos-dialog__list > li').count(), 16)
+    await detail.getByText(/16 productos/).waitFor()
+    await detail.getByText('Unidades por paquete', { exact: true }).waitFor()
+    await detail.getByText('Precio por paquete', { exact: true }).waitFor()
+    const close = detail.getByRole('button', { name: 'Cerrar productos incluidos' })
+    assert.equal(await close.evaluate(el => document.activeElement === el), true)
+    await page.keyboard.press('Tab')
+    const scroll = detail.getByRole('region', { name: 'Detalle de productos incluidos' })
+    assert.equal(await scroll.evaluate(el => document.activeElement === el), true)
+    await page.keyboard.press('Shift+Tab')
+    assert.equal(await close.evaluate(el => document.activeElement === el), true)
+    await page.keyboard.press('Escape')
+    await detail.waitFor({ state: 'detached' })
+    assert.equal(await opener.evaluate(el => document.activeElement === el), true)
+    assert.equal(await modal.count(), 1)
+    await opener.click()
+    await detail.getByRole('button', { name: 'Cerrar productos incluidos' }).click()
+    await detail.waitFor({ state: 'detached' })
+    assert.equal(await opener.evaluate(el => document.activeElement === el), true)
+    await opener.click()
+    await page.locator('.cajero-productos-backdrop').click({ position: { x: 4, y: 4 } })
+    await detail.waitFor({ state: 'detached' })
+    assert.equal(await opener.evaluate(el => document.activeElement === el), true)
+    assert.equal(fake.calls.length, before)
+    assert.equal((await journal(page)).drafts[sid]?.length ?? 0, 0)
+    await modal.getByRole('button', { name: 'Agregar observación' }).click()
+    const observation = page.getByRole('dialog', { name: 'Motivo y observación' })
+    await observation.waitFor()
+    await page.keyboard.press('Escape')
+    await observation.waitFor({ state: 'detached' })
+    assert.equal(await modal.count(), 1)
+  })
+  await check('tarjeta Full con un SKU: detalle disponible sin desplegable', {}, async ({ createPage }) => {
+    const page = await createPage()
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Conteo' }).click()
+    await page.getByRole('button', { name: /Pruebas.*grupos disponibles/ }).click()
+    const modal = page.locator('.cajero-capture-modal')
+    await modal.getByRole('button', { name: /Grupo A/ }).click()
+    await modal.getByRole('button', { name: 'Ver productos incluidos' }).click()
+    const detail = page.getByRole('dialog', { name: 'Productos incluidos' })
+    await detail.getByText(/1 producto/).waitFor()
+    assert.equal(await detail.locator('.cajero-productos-dialog__list > li').count(), 1)
+    assert.equal(await detail.getByText('Configuración de paquete del grupo').count(), 0)
+    await page.keyboard.press('Escape')
+    await detail.waitFor({ state: 'detached' })
+    assert.equal(await modal.count(), 1)
+  })
   await check('save_batch aceptado sin respuesta: replay exacto y sin duplicar', {
     lostResponse: 'save_batch',
   }, async ({ fake, createPage }) => {
@@ -751,5 +827,5 @@ if (failures.length) {
   console.error('FAIL: ' + failures.length + ' escenarios Full browser: ' + failures.join(', '))
   process.exitCode = 1
 } else {
-  console.log('PASS: 14 escenarios Full browser simulados; 0 solicitudes externas.')
+  console.log('PASS: escenarios Full browser simulados; 0 solicitudes externas.')
 }
