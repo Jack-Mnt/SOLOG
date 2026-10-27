@@ -23,14 +23,14 @@ export function CajeroProductosDialog({ group, onClose }: Props) {
         c_interno: item.c_interno,
         name: item.product,
         brand: null as string | null,
-        price: item.price,
       }))
     : group.productos.map(item => ({
         c_interno: item.c_interno,
         name: item.producto,
         brand: item.marca,
-        price: item.precio,
       }))
+  // El grupo garantiza un precio unitario común para todos sus SKU.
+  const unitPrice = isFull ? group.price : group.precio
   const unitsPerPackage = isFull ? group.units_per_package : group.unidades_por_paquete
   const packagePrice = isFull ? group.package_price : group.precio_paquete
   const packageConfigured = unitsPerPackage !== null || packagePrice !== null
@@ -71,6 +71,17 @@ export function CajeroProductosDialog({ group, onClose }: Props) {
         <div>
           <h2 id={titleId}>Productos incluidos</h2>
           <p id={listId}>{name} · {products.length} {products.length === 1 ? 'producto' : 'productos'}</p>
+          <div className="cajero-productos-dialog__prices" role="group" aria-label="Precios del grupo">
+            <div><span>Precio unitario</span><strong>{formatCajeroCurrency(unitPrice)}</strong></div>
+            {packageConfigured && <>
+              {unitsPerPackage !== null && <div>
+                <span>Unidades por paquete</span><strong>{unitsPerPackage}</strong>
+              </div>}
+              {packagePrice !== null && <div>
+                <span>Precio por paquete</span><strong>{formatCajeroCurrency(packagePrice)}</strong>
+              </div>}
+            </>}
+          </div>
         </div>
         <button ref={closeButton} className="cajero-productos-dialog__close"
           type="button" aria-label="Cerrar productos incluidos" onClick={onClose}>
@@ -81,25 +92,14 @@ export function CajeroProductosDialog({ group, onClose }: Props) {
         role="region" aria-label="Detalle de productos incluidos">
         {products.length ? <ul className="cajero-productos-dialog__list">
           {products.map(product => <li key={product.c_interno}>
-            <div className="cajero-productos-dialog__identity">
+            <span className="cajero-productos-dialog__code">Código #{product.c_interno}</span>
+            <span className="cajero-productos-dialog__name">
               <strong>{product.name}</strong>
-              <span>Código #{product.c_interno}{product.brand ? ` · ${product.brand}` : ''}</span>
-            </div>
-            <span className="cajero-productos-dialog__price">{formatCajeroCurrency(product.price)}</span>
+              {product.brand && <small>{product.brand}</small>}
+            </span>
           </li>)}
         </ul> : <p className="cajero-productos-dialog__empty">No hay productos incluidos.</p>}
-        {packageConfigured && <section className="cajero-productos-dialog__package"
-          aria-label="Configuración de paquete del grupo">
-          <h3>Configuración de paquete del grupo</h3>
-          <dl>
-            {unitsPerPackage !== null && <div>
-              <dt>Unidades por paquete</dt><dd>{unitsPerPackage}</dd>
-            </div>}
-            {packagePrice !== null && <div>
-              <dt>Precio por paquete</dt><dd>{formatCajeroCurrency(packagePrice)}</dd>
-            </div>}
-          </dl>
-        </section>}
+
       </div>
     </section>
   </div>
