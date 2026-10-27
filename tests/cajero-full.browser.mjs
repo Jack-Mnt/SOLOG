@@ -39,7 +39,7 @@ class SimulatedFull {
     if (productDetails) {
       this.groups[0].members = Array.from({ length: 16 }, (_, i) => ({
         c_interno: 21001 + i, product: `BEBIDA SABOR ${i + 1} CON NOMBRE EXTENSO`,
-        barcode: i === 0 ? '7750000000001' : null, price: 2.5 + i,
+        barcode: i === 0 ? '7750000000001' : null, price: 5,
       }))
       this.groups[0].member_codes = this.groups[0].members.map(p => p.c_interno)
       this.groups[0].units_per_package = 12
@@ -399,6 +399,11 @@ try {
     await detail.getByText(/16 productos/).waitFor()
     await detail.getByText('Unidades por paquete', { exact: true }).waitFor()
     await detail.getByText('Precio por paquete', { exact: true }).waitFor()
+    await detail.getByText('Precio unitario', { exact: true }).waitFor()
+    assert.equal(await detail.locator('.cajero-productos-dialog__prices strong').first().textContent(), 'S/ 5.00')
+    assert.equal(await detail.locator('.cajero-productos-dialog__list .cajero-productos-dialog__price').count(), 0)
+    assert.equal(await detail.locator('.cajero-productos-dialog__list .cajero-productos-dialog__code').count(), 16)
+    assert.equal(await detail.locator('.cajero-productos-dialog__list .cajero-productos-dialog__name').count(), 16)
     const close = detail.getByRole('button', { name: 'Cerrar productos incluidos' })
     assert.equal(await close.evaluate(el => document.activeElement === el), true)
     await page.keyboard.press('Tab')
@@ -420,6 +425,16 @@ try {
     assert.equal(await opener.evaluate(el => document.activeElement === el), true)
     assert.equal(fake.calls.length, before)
     assert.equal((await journal(page)).drafts[sid]?.length ?? 0, 0)
+
+    // El espacio sobrante queda sobre la calculadora, no bajo la navegación.
+    const panelBox = await modal.boundingBox()
+    const navBox = await modal.locator('.cajero-capture-detail__navigation').boundingBox()
+    const calculatorBox = await modal.locator('.cajero-calculator').boundingBox()
+    assert.ok(panelBox && navBox && calculatorBox)
+    assert.ok(panelBox.y + panelBox.height - (navBox.y + navBox.height) < 65,
+      'Navegación debe permanecer junto al borde inferior de captura')
+    assert.ok(calculatorBox.y + calculatorBox.height <= navBox.y + 3,
+      'Calculadora debe quedar inmediatamente encima de la navegación')
     await modal.getByRole('button', { name: 'Agregar observación' }).click()
     const observation = page.getByRole('dialog', { name: 'Motivo y observación' })
     await observation.waitFor()
