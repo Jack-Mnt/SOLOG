@@ -88,6 +88,19 @@ El navegador por defecto es Chrome. Se admite `SOLOG_TEST_BROWSER` con ruta abso
 
 **Criterios de aceptación browser simulado, cumplidos:** **14/14 PASS**, cero solicitudes externas, sin fallos reportados por el arnés. El usuario ejecutó `git pull --ff-only origin admin-work` y `node tests/cajero-full.browser.mjs` el 2026-10-27 y aportó la salida completa. Esto no demuestra autorización, recepción o persistencia en Supabase real.
 
+## Preflight E2E autenticado real — 2026-10-27 (solo lectura)
+
+**Estado:** preflight inicial realizado, **sin autorización para mutaciones de prueba ni entorno aislado identificado**. No se cambió esquema, usuarios, dispositivos, sesiones o funciones.
+
+- Proyecto Supabase actual SOLOG: `PuertoRicoOnline` (`fvtohxvcvsflzmftgfzs`), operativo, con **1 sesión activa y 0 en recovery** en el momento de la consulta. Los números son puntuales y pueden cambiar.
+- En la cuenta figuran dos proyectos: `PuertoRicoOnline` y `ControlA-PR`; **no hay constancia de que el segundo sea un staging de SOLOG** y no debe reutilizarse sin decisión explícita.
+- Datos agregados de `PuertoRicoOnline`: 5 sedes activas, 2 usuarios Cajero activos, 2 dispositivos autorizados y una instalación Full habilitada. Estos datos no demuestran disponer de una sede, cajero o dispositivo **exclusivos para pruebas**.
+- Entradas públicas: `rpc_solog_cashier_bootstrap_v6(p_payload jsonb)` y `rpc_solog_cashier_mutate_v7(p_action text,p_payload jsonb)`; `authenticated` tiene permiso `EXECUTE`, `anon` no.
+- Advertencia de inventario de Supabase: `inventario.solog_session_runtime_groups` tiene RLS desactivado. Comprobación SQL independiente: `anon` y `authenticated` no disponen de `USAGE` directo sobre el esquema ni `SELECT/INSERT` directo sobre la tabla. **No asumir exposición real directa a Data API sin verificar configuraciones adicionales**; tratar auditoría RLS/permisos como tema independiente, sin aplicar RLS a ciegas.
+- El smoke humano Full **8/8** más contraste remoto de tres observaciones y un `finish` ya acredita el flujo autenticado básico. El E2E adicional debe concentrarse en **replay, respuestas perdidas, vencimiento, recovery y autorización**, no repetir el flujo normal sin propósito.
+
+**Bloqueo:** no ejecutar mutaciones reales destructivas ni manipular fechas/caducidades/sesiones operativas. Antes de tests autenticados avanzados se necesita aislar backend y datos, definir limpieza y rollback, y comprobar permisos y fixtures. Preferencia propuesta, **no aprobada**: entorno staging Supabase propio de SOLOG o Supabase local reproducible con esquema/migraciones y datos ficticios. No utilizar `ControlA-PR` como staging por inferencia.
+
 ## Pendientes — siguientes fases
 
 - **14 escenarios browser simulados validados; fase browser simulada cerrada.** La simulación de claves de journals distintas no sustituye un cambio real de sesión autenticada; las carreras entre pestañas del mismo navegador no representan concurrencia multi-dispositivo remota.
