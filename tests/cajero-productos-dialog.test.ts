@@ -5,10 +5,11 @@ import { CajeroProductosDialog } from '../src/features/solog/cajero/cajero.produ
 import { CajeroObservacionDialog } from '../src/features/solog/cajero/cajero.observacion.dialog'
 import { formatCajeroCurrency } from '../src/features/solog/cajero/cajero.utils'
 import type { CashierV4Group } from '../src/features/solog/cajero/cajero.v4'
+import type { FullGroup } from '../src/features/solog/cajero/full.contract'
 import { cashierV4Group } from './fixtures/cashier-v4.mjs'
 
 const group = () => cashierV4Group('coverage') as CashierV4Group
-const render = (value: CashierV4Group) => renderToStaticMarkup(
+const render = (value: CashierV4Group | FullGroup) => renderToStaticMarkup(
   createElement(CajeroProductosDialog, { group: value, onClose: () => {} }),
 )
 
@@ -58,6 +59,33 @@ describe('Cajero — detalle local de productos y composición de observaciones'
     value.unidades_por_paquete = 6
     expect(render(value)).toContain('Unidades por paquete')
     expect(render(value)).not.toContain('Precio por paquete')
+  })
+
+  test('Full V6/V7: lectura de members y configuración de paquete sin marca inventada', () => {
+    const value: FullGroup = {
+      group_id: '10000000-0000-4000-8000-000000000001',
+      group_name: 'Bebidas del grupo', category_id: '10000000-0000-4000-8000-000000000002',
+      category_name: 'Bebidas', reference_snapshot_id: '10000000-0000-4000-8000-000000000003',
+      groups_revision: 1, stock_theoretical: 81,
+      member_codes: [22001, 22002],
+      members: [
+        { c_interno: 22001, product: 'GASEOSA LIMA 500ML', barcode: '7751000012345', price: 4.5 },
+        { c_interno: 22002, product: 'GASEOSA MANDARINA 500ML', barcode: null, price: 6.5 },
+      ],
+      price: 4.5, units_per_package: 6, package_price: 24,
+      action: 'coverage', priority_class: 'round_coverage', recount_detail_id: null,
+    }
+    const html = render(value)
+    expect(html).toContain('Bebidas del grupo')
+    expect(html).toContain('2 productos')
+    expect(html).toContain('GASEOSA LIMA 500ML')
+    expect(html).toContain('Código #22002')
+    expect(html).toContain(formatCajeroCurrency(4.5))
+    expect(html).toContain(formatCajeroCurrency(6.5))
+    expect(html).toContain('Unidades por paquete')
+    expect(html).toContain('Precio por paquete')
+    expect(html).toContain(formatCajeroCurrency(24))
+    expect(html).not.toContain('null')
   })
 
   test('lista numerosa o vacía: detalle desplazable y estado de ausencia explícito', () => {
