@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero Full — Validación Browser V1
 
-**Estado:** Tres baterías Playwright **VALIDADAS LOCALMENTE (11/11)** en `admin-work` el 2026-10-26, con **0 solicitudes externas** según salida del usuario. Cuarta batería browser de tres escenarios adicionales implementada, **pendiente de ejecución local**. E2E autenticado aislado sigue pendiente; **bloque integral aún abierto**.
+**Estado:** Cuatro baterías Playwright **VALIDADAS LOCALMENTE (14/14)** en `admin-work` con **0 solicitudes externas** según ejecución comunicada el 2026-10-27. Browser simulado cerrado y aprobado; E2E autenticado aislado de Supabase pendiente. **Bloque integral aún abierto**.
 **Fecha:** 2026-10-26. **Clasificación:** Nivel C por las garantías de recuperación/idempotencia que comprueba; los cambios realizados son exclusivamente de infraestructura de pruebas.
 
 ## Autoridad y alcance
@@ -60,9 +60,9 @@ El fixture se limita a un backend simulado con respuestas V6/V7 de prueba. Las g
 
 El nuevo arnés conserva prohibición explícita de tráfico externo y usa únicamente fixtures simuladas.
 
-## Cuarta batería — límites e aislamiento (pendiente de ejecución)
+## Cuarta batería — límites y aislamiento (validada)
 
-**Estado:** pruebas implementadas; **no declaradas validadas**. Solo se amplió `tests/cajero-full.browser.mjs`, sin tocar frontend, Motor o backend.
+**Estado:** tres pruebas adicionales **validadas localmente (3/3) el 2026-10-27**, junto a once anteriores en verde: resultado final **14 PASS / 0 FAIL / 0 solicitudes externas**. Solo se amplió `tests/cajero-full.browser.mjs`; frontend, Motor y backend permanecieron intactos.
 
 | Caso | Criterio de aceptación |
 |---|---|
@@ -70,7 +70,7 @@ El nuevo arnés conserva prohibición explícita de tráfico externo y usa únic
 | Outboxes ajenos por usuario y por dispositivo | Dos journals de identidad distinta persisten sin ser modificados ni reintentados; solo se registra el borrador del usuario/dispositivo actuales. Esto no sustituye una prueba real de cambio de autenticación |
 | Dos pestañas y clicks concurrentes en `Registrar conteo` | Se retiene deliberadamente la respuesta del primer `save_batch` **ya aplicado**, se pulsa Registrar en la segunda pestaña mientras el lock sigue ocupado y después se libera la respuesta; debe haber un solo batch y cero duplicaciones |
 
-**Criterio de ejecución:** mantener los once anteriores en verde y superar estos tres nuevos con resumen **14 escenarios Full browser simulados; 0 solicitudes externas**. Verificar también eventuales falsos positivos por carreras de UI antes de atribuir fallos al runtime.
+**Criterio de ejecución cumplido:** once pruebas anteriores en verde, tres nuevas aprobadas y resumen `PASS: 14 escenarios Full browser simulados; 0 solicitudes externas.` La barrera del ensayo multitab retuvo deliberadamente el receipt del primer lote mientras la segunda pestaña ejecutaba Registrar, confirmando el único batch.
 
 ## Ejecución local
 
@@ -86,11 +86,11 @@ git diff --check
 
 El navegador por defecto es Chrome. Se admite `SOLOG_TEST_BROWSER` con ruta absoluta a un ejecutable Chromium/Chrome alternativo. Si no hay Chrome, debe instalarse un navegador Playwright o configurarse explícitamente un ejecutable disponible, sin cambiar la lógica de pruebas.
 
-**Criterios de aceptación:** la última ejecución aportada confirma **11/11 PASS** en las tres primeras baterías y cero solicitudes externas. La cuarta aún no se ha ejecutado; su objetivo es **14/14 PASS**. No relajar las aserciones de idempotencia, no tratar fallos de arnés como defectos demostrados del producto ni afirmar validación autenticada de Supabase.
+**Criterios de aceptación browser simulado, cumplidos:** **14/14 PASS**, cero solicitudes externas, sin fallos reportados por el arnés. El usuario ejecutó `git pull --ff-only origin admin-work` y `node tests/cajero-full.browser.mjs` el 2026-10-27 y aportó la salida completa. Esto no demuestra autorización, recepción o persistencia en Supabase real.
 
 ## Pendientes — siguientes fases
 
-- **11 escenarios browser simulados validados.** Se añadieron tres pruebas browser para límite exacto de expiración, separación de journals por identidad y clicks simultáneos; siguen **pendientes de ejecución local**. La simulación no sustituye cambios de sesión autenticados reales, otros relojes del cliente o concurrencia multi-dispositivo remota.
+- **14 escenarios browser simulados validados; fase browser simulada cerrada.** La simulación de claves de journals distintas no sustituye un cambio real de sesión autenticada; las carreras entre pestañas del mismo navegador no representan concurrencia multi-dispositivo remota.
 - Hacer la validación autenticada con RPC públicas V6/V7, usuario/dispositivo y datos específicamente aislados. Nunca simular autorización de backend con bypass en ambiente productivo.
 - Revisión global y smoke final según evidencia. No cerrar el bloque solo por tests browser simulados.
 
