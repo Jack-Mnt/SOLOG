@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero — Borradores, registro y autocierre Full V1
 
-**Estado:** implementación frontend en `admin-work`; **tests dirigidos, lint y build en verde y smoke humano Full 8/8 validado (2026-10-26)**. Evidencia técnica y trazabilidad en `docs/SOLOG_Correccion_Cajero_Full_Recuperacion_Incidencias_V1.md`; E2E de recovery avanzado y suite global pendientes. Bloque integral aún abierto.
+**Estado:** implementación frontend en `admin-work`; **tests dirigidos, lint y build en verde, smoke humano Full 8/8 y browser simulado 14/14 validados**. Evidencia técnica y trazabilidad en `docs/SOLOG_Correccion_Cajero_Full_Recuperacion_Incidencias_V1.md` y `docs/SOLOG_Integracion_Cajero_Full_Validacion_Browser_V1.md`. E2E autenticado de recovery/replay y suite global pendientes. Bloque integral aún abierto.
 **Nivel:** C. **Fecha:** 2026-10-25.
 
 ## 1. Precedencia
@@ -49,7 +49,7 @@ Se conserva la compatibilidad de lectura del journal antiguo `solog.full2` y **n
 - **Actualización de validación (2026-10-26):** el usuario ejecutó el test dirigido `cajero-full-registro-autocierre.test.ts`, lint y build, todos reportados en verde después de `640e197f`. Smoke humano del **nuevo flujo Full**: **8/8 aprobado**. Verificación remota solo lectura: 3 borradores identificados en exportación previa al envío, registrados en un único `save_batch`, 3 observaciones confirmadas, sesión finalizada con receipt de `finish` y 0 conflictos. Evidencia detallada en el delta técnico vigente. Permanecen pendientes la suite global y los E2E avanzados de recovery/concurrencia.
 - El backend tiene smoke básico V6/V7 8/8 reportado previamente, pero **no** pruebas autenticadas completas de recovery + replay con lotes ni cierre ambiguo; estas siguen siendo condición para el cierre integral.
 - Motivos originales/contexto de reconteos y KPIs autoritativos permanecen en sus bloques independientes. No inventar esos campos.
-- Faltan pruebas de múltiples pestañas y recuperación con reconteos reales; revisar secuencia y estado en navegador.
+- **Browser simulado cerrado (14/14, 2026-10-27):** Playwright verificó replay, recovery con reconteos simulados, prioridades y carreras entre dos pestañas con `navigator.locks`, además de fallos de almacenamiento y límites temporales. **Aún falta** validar estos contratos con identidad autenticada y RPC públicas V6/V7 en condiciones remotas controladas; el browser simulado no emplea Supabase real.
 - Un borrador no elegible después de cambio de prioridad se conserva y bloquea cierre; se necesita decidir y comprobar el procedimiento explícito de descarte seguro y atención al usuario antes de producción.
 - No se deben realizar conteos operativos reales con esta rama hasta finalizar pruebas de persistencia/recuperación y smoke.
 
