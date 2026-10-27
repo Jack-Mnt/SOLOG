@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { X } from 'lucide-react'
 import {
   CASHIER_DIFFERENCE_REASONS, hasCashierObservationText,
   type CashierDifferenceReason,
@@ -24,6 +25,7 @@ export function CajeroObservacionDialog({
   isRecount, isResolved, mandatory, onApply, onCancel, onClear, onOmit,
 }: Props) {
   const titleId = useId()
+  const subtitleId = useId()
   const [reason, setReason] = useState<CashierDifferenceReason | null>(priorReason ?? initialReason)
   const [note, setNote] = useState(isResolved ? '' : initialText ?? '')
   const root = useRef<HTMLElement>(null)
@@ -74,11 +76,18 @@ export function CajeroObservacionDialog({
   }
   return <div className="cajero-observacion-backdrop">
     <section ref={root} className="cajero-observacion-dialog" role="dialog" aria-modal="true"
-      aria-labelledby={titleId} tabIndex={-1} onKeyDown={keyboard}>
+      aria-labelledby={titleId} aria-describedby={subtitleId} tabIndex={-1} onKeyDown={keyboard}>
       <div className="cajero-observacion-dialog__header">
-        <h2 id={titleId}>{mandatory ? 'Explica esta diferencia' : 'Motivo y observación'}</h2>
+        <div>
+          <h2 id={titleId}>{mandatory ? 'Explica esta diferencia' : 'Motivo y observación'}</h2>
+          <p className="cajero-observacion-dialog__subtitle" id={subtitleId}>
+            {isResolved ? 'Revisa el resultado del reconteo.' :
+              mandatory ? 'Selecciona un motivo y explica la diferencia para continuar.' :
+                'Registra el motivo y explica lo ocurrido.'}
+          </p>
+        </div>
         <button type="button" aria-label="Cerrar observación" className="cajero-observacion-dialog__close"
-          ref={closeButton} onClick={onCancel}>×</button>
+          ref={closeButton} onClick={onCancel}><X size={20} aria-hidden="true" /></button>
       </div>
       {priorText !== null && isRecount ? <div className="cajero-observacion-dialog__original">
         <strong>Observación del conteo original</strong>
@@ -86,7 +95,8 @@ export function CajeroObservacionDialog({
       </div> : null}
       <fieldset className="cajero-observacion-dialog__choices">
         <legend>Motivo de diferencia</legend>
-        {CASHIER_DIFFERENCE_REASONS.map(value => <label key={value}>
+        {CASHIER_DIFFERENCE_REASONS.map(value => <label key={value}
+          className={[reason === value ? 'is-selected' : '', fixedReason ? 'is-locked' : ''].filter(Boolean).join(' ')}>
           <input type="radio" name="motivo-diferencia" checked={reason === value}
             disabled={fixedReason} onChange={() => setReason(value)} />
           <span>{value}</span>
@@ -108,10 +118,10 @@ export function CajeroObservacionDialog({
         </p>
       </>}
       <div className="cajero-observacion-dialog__actions">
-        {!mandatory ? <button className="button button--secondary" type="button" onClick={onClear}>
+        {!mandatory ? <button className="button button--secondary cajero-observacion-dialog__action-auxiliary" type="button" onClick={onClear}>
           Limpiar
         </button> : null}
-        {mandatory ? <button className="button button--secondary" type="button" onClick={onOmit}>
+        {mandatory ? <button className="button button--secondary cajero-observacion-dialog__action-auxiliary" type="button" onClick={onOmit}>
           Omitir producto
         </button> : null}
         <button className="button button--secondary" type="button" onClick={onCancel}>Cancelar</button>
