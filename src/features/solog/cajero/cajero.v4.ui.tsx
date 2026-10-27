@@ -1,12 +1,13 @@
 import type { CashierRoute } from '../../../lib/router'
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
-import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LoaderCircle, LogOut, MessageSquarePlus, Palette, Play, RefreshCw, SearchCheck, Send, Square, Trash2, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, LoaderCircle, LogOut, List, MessageSquarePlus, Palette, Play, RefreshCw, SearchCheck, Send, Square, Trash2, X } from 'lucide-react'
 import { navigateTo, replaceRoute } from '../../../lib/router'
 import { PaletteSwitcher } from '../../theme/palette-switcher'
 import { SologApiError, type SologErrorCode } from '../errors'
 import { CajeroCalculator } from './cajero.calculadora'
 import { hasUnsavedCaptureEdit } from './cajero.capture.guard'
 import { CajeroObservacionDialog } from './cajero.observacion.dialog'
+import { CajeroProductosDialog } from './cajero.productos.dialog'
 import { validCashierInitialObservation, validCashierRecountObservation,
   type CashierDifferenceReason, type CashierInitialObservation, type CashierRecountObservation,
 } from './cajero.observaciones.v5'
@@ -388,9 +389,10 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
   const [expressions, setExpressions] = useState<Record<string, string>>({})
   const [notes, setNotes] = useState<Record<string, CashierInitialObservation | CashierRecountObservation>>({})
   const [observationRequest, setObservationRequest] = useState<{ required: boolean; afterSave?: () => void } | null>(null)
-  // El trap global de captura se suspende mientras un diálogo secundario controla el teclado.
-  const observationOpenRef = useRef(false)
-  useEffect(() => { observationOpenRef.current = observationRequest !== null }, [observationRequest])
+  const [productsOpen, setProductsOpen] = useState(false)
+  // Solo la capa superior activa debe controlar Tab y Escape.
+  const secondaryDialogOpenRef = useRef(false)
+  useEffect(() => { secondaryDialogOpenRef.current = observationRequest !== null || productsOpen }, [observationRequest, productsOpen])
   const [error, setError] = useState<string | null>(null)
   const [confirmExit, setConfirmExit] = useState(false)
   const confirmationOpenRef = useRef(false)
@@ -498,7 +500,7 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
     document.body.style.overflow = 'hidden'; dialogRef.current?.querySelector<HTMLElement>('button')?.focus()
     const keys = (e: KeyboardEvent) => {
       // El diálogo secundario es la única capa que debe procesar Tab y Escape.
-      if (observationOpenRef.current) return
+      if (secondaryDialogOpenRef.current) return
       if (e.key === 'Escape') { e.preventDefault(); if (confirmationOpenRef.current) { confirmationOpenRef.current = false; pendingExitRef.current = null; setConfirmExit(false) } else closeRef.current(); return }
       if (e.key !== 'Tab') return
       const nodes = [...((confirmationOpenRef.current ? confirmationRef.current : dialogRef.current)?.querySelectorAll<HTMLElement>('button:not(:disabled),[tabindex="0"]') ?? [])]
@@ -548,13 +550,20 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
       <div className={`cajero-capture-modal__body${group ? ' cajero-capture-modal__body--detail' : ''}`}>
         {group ? <div className="cajero-capture-detail"><div className="cajero-capture-detail__information"><section className="cajero-capture-detail__card">
           <div className="cajero-capture-detail__card-heading"><h3>{group.nombre}</h3>
-            <button aria-label={noteText !== null ? 'Editar observación' : 'Agregar observación'}
-              className="cajero-capture-detail__observation-button"
-              disabled={!canCapture}
-              aria-haspopup="dialog"
-              onClick={() => setObservationRequest({ required: false })}
-              type="button"><MessageSquarePlus aria-hidden="true" size={20} /></button>
-          </div>{group.productos.length > 1 ? <details><summary>Productos incluidos</summary><ul>{group.productos.map(p => <li key={p.c_interno}>{p.producto} - #{p.c_interno}</li>)}</ul></details> : null}
+            <div className="cajero-capture-detail__actions">
+              <button type="button" className="cajero-capture-detail__action-button"
+                aria-label="Ver productos incluidos" aria-haspopup="dialog"
+                onClick={() => setProductsOpen(true)}>
+                <List aria-hidden="true" size={20} />
+              </button>
+              <button aria-label={noteText !== null ? 'Editar observación' : 'Agregar observación'}
+                className="cajero-capture-detail__action-button cajero-capture-detail__observation-button"
+                disabled={!canCapture}
+                aria-haspopup="dialog"
+                onClick={() => setObservationRequest({ required: false })}
+                type="button"><MessageSquarePlus aria-hidden="true" size={20} /></button>
+            </div>
+          </div>
           {reviewEntry && action === 'review' ? <p>Diferencia inicial: {formatCajeroDifference(reviewEntry.ultima_diferencia)}</p> : null}
           <dl><div><dt>Stock TumiSoft</dt><dd>{group.stock_teorico}</dd></div><div><dt>Conteo</dt><dd>{physical ?? '—'}</dd></div>
             <div><dt>Diferencia</dt><dd>{formatCajeroDifference(difference)}</dd></div><div><dt>Valorizado</dt><dd>{valuation === null ? '—' : formatCajeroCurrency(valuation)}</dd></div></dl>
@@ -574,6 +583,8 @@ function Capture({ runtime, groups, action, title, initialGroupId, onClose, onNe
           })}</div></div>}
       </div>
     </section>
+    {productsOpen && group ? <CajeroProductosDialog key={group.grupo_id}
+      group={group} onClose={() => setProductsOpen(false)} /> : null}
     {observationRequest && group ? <CajeroObservacionDialog
       key={selected ?? group.grupo_id}
       initialReason={note.motivo_diferencia}
