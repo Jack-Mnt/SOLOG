@@ -458,9 +458,25 @@ try {
       const completed = page.locator('.cajero-period-complete')
       const coverage = page.locator('.cajero-coverage-card')
       await page.locator('.cajero-header__site').getByText('PR Cutervo', { exact: true }).waitFor()
+      const inventory = page.locator('.cajero-stock-card')
+      await inventory.getByText('Última actualización: 04:05 a. m. [26/10]').waitFor()
+      if (homeScenario === 'A1' || homeScenario === 'A2') {
+        await inventory.getByText('110 min restantes de vigencia').waitFor()
+      } else {
+        await inventory.getByText('50 min restantes para capturar').waitFor()
+        assert.equal(await page.getByRole('heading', { name: 'Sesión activa', exact: true }).count(), 0,
+          'La tarjeta redundante Sesión activa se elimina por completo')
+      }
       const indicator = page.getByRole('button', { name: 'Estado del inventario' })
       assert.equal(await indicator.locator('svg').count(), 0, 'Indicador de stock solo muestra el punto')
       assert.equal(await indicator.locator('.cajero-stock-indicator__dot').count(), 1)
+      await indicator.click()
+      const popover = page.getByRole('dialog', { name: 'Estado del inventario' })
+      await popover.getByText('110 min restantes de vigencia').waitFor()
+      const popoverContent = await popover.innerText()
+      assert.ok(!/\b(?:\d{1,2}:\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})\b/.test(popoverContent),
+        'El popover no debe repetir fechas ni horas exactas')
+      await indicator.click()
       if (homeScenario === 'B') {
         await page.getByText('grupos pendientes').waitFor()
         await page.locator('.cajero-home-metrics--stock').getByText('por contar').first().waitFor()
