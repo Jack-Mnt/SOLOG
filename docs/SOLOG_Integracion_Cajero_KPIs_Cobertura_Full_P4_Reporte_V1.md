@@ -5,7 +5,7 @@
 **Fuente primaria:** `docs/SOLOG_Integracion_Cajero_KPIs_Cobertura_Full_V1.md` (prevalece).
 **Contrato backend efectivo:** `docs/SOLOG_Backend_Cajero_KPIs_Cobertura_Full_Contrato_V1.md`.
 **Plan subordinado:** `docs/SOLOG_Integracion_Cajero_KPIs_Cobertura_Full_Plan_Frontend_V1.md`.
-**Baseline remoto previo a P4:** `c79f229efd1bdfce4a1e9daaac7f0f95352bf29e`.
+**Baseline documental de P3:** `c79f229efd1bdfce4a1e9daaac7f0f95352bf29e`. **Baseline inmediato de código al inicio de P4:** `b1f478991` (seis commits adicionales antes de la primera modificación de P4, preservados; incluyen manejo de error Full y tests).
 **Repositorio local y tests Bun:** no accesibles desde esta conexión; verificación técnica integral todavía no ejecutada.
 
 ## P4.1 — Contrato V6
@@ -60,3 +60,7 @@ Después, en P5/P6, `bun test` completo y browser de cuatro estados A1/A2/B/C, d
 **Limitaciones actuales:** no se ha ejecutado la suite, typecheck, lint, build, `git diff --check` ni Playwright sobre el workspace real; tampoco se ha verificado el árbol local. No afirmar validaciones ni compatibilidad visual completadas. La fuente remota inspeccionada se mantuvo, sin tocar Supabase ni V7.
 
 **Siguiente paso:** obtener evidencia de validación P4, corregir regresiones detectadas si las hubiera y después implementar P5 sobre el selector ya integrado.
+
+## Revisión adicional del historial GitHub
+
+En la comparación P3→P4 aparecen seis commits anteriores a la primera edición de esta fase (error de bootstrap con reintento/salida segura y cuatro grupos de tests). **Se mantuvieron íntegramente** y no son autoría de los cambios P4. El diff consultado de GitHub no detectó espacios al final ni marcadores de conflicto en líneas añadidas. Esta comprobación no reemplaza `git diff --check` real ni el estado local del workspace.
