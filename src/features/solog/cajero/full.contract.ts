@@ -13,6 +13,15 @@ export interface FullGroup {
   price: number; units_per_package: number | null; package_price: number | null
   action: 'recount' | 'coverage' | 'daily' | 'none'; priority_class: string; recount_detail_id: string | null
 }
+export interface FullCashierGroup extends FullGroup {
+  coverage_pending_round: boolean
+}
+export interface FullOperationalSummary {
+  basis: { coverage_round: 1 | 2; round_starts_at: string; round_ends_at: string }
+  coverage_total: number; coverage_counted: number; coverage_pending: number; coverage_percent: number
+  review_pending: number; daily_pending: number
+  next_action: 'coverage' | 'review' | 'daily' | 'none'
+}
 export interface FullRecoveryDeliveryState {
   session_id: string; groups_revision: number
   current_priority_class: 'round_coverage' | 'review_for_coverage' | 'review_regular' | 'shift_coverage' | 'none'
@@ -24,7 +33,8 @@ export interface FullRecoveryDeliveryState {
 export interface FullState {
   timezone: 'America/Lima'
   stock: null | { snapshot_id: string; snapshot_captured_at: string; snapshot_confirmed_at: string; stock_expires_at: string; is_fresh: boolean; is_fallback: boolean; catalog_version: number; groups_revision: number }
-  session: FullSession | null; recovery_sessions: FullSession[]; groups: FullGroup[]
+  session: FullSession | null; recovery_sessions: FullSession[]; groups: FullCashierGroup[]
+  operational_summary: FullOperationalSummary
   confirmed_observation_ids: string[]; recovery_manifests: { session_id: string; observation_ids: string[] }[]
   recovery_delivery_states?: FullRecoveryDeliveryState[]
   capabilities: { can_start_session: boolean; can_capture_in_current_session: boolean; block_reason: string | null }
@@ -56,6 +66,22 @@ function session(value: unknown) {
   check(Date.parse(String(s.pending_delivery_until)) === end + 7200000)
   check(!s.capture_allowed || s.status === 'active' && s.pending_delivery_allowed)
 }
+function operationalSummary(value: unknown, serverNow: string) {
+  const s = object(value), basis = object(s.basis)
+  check(basis.coverage_round === 1 || basis.coverage_round === 2)
+  date(basis.round_starts_at); date(basis.round_ends_at)
+  const start = Date.parse(basis.round_starts_at), end = Date.parse(basis.round_ends_at)
+  check(start < end && start <= Date.parse(serverNow) && Date.parse(serverNow) < end)
+  for (const key of ['coverage_total', 'coverage_counted', 'coverage_pending', 'review_pending', 'daily_pending']) {
+    integer(s[key]); check(Number(s[key]) >= 0)
+  }
+  const total = Number(s.coverage_total), counted = Number(s.coverage_counted), pending = Number(s.coverage_pending)
+  check(counted <= total && pending === total - counted)
+  check(typeof s.coverage_percent === 'number' && Number.isFinite(s.coverage_percent))
+  const expected = total ? Math.round(counted * 1000 / total) / 10 : 0
+  check(Math.abs(s.coverage_percent - expected) < 1e-9)
+  check(['coverage', 'review', 'daily', 'none'].includes(String(s.next_action)))
+}
 function group(value: unknown) {
   const g = object(value); check(isUuid(g.group_id) && isUuid(g.reference_snapshot_id) && isUuid(g.category_id))
   text(g.group_name); text(g.category_name); integer(g.groups_revision); integer(g.stock_theoretical)
@@ -71,7 +97,8 @@ export function parseFullEnvelope(value: unknown): FullEnvelope {
   const d = object(r.data)
   if (r.code === 'CASHIER_STATE') {
     check(d.timezone === 'America/Lima'); if (d.session !== null) session(d.session)
-    list(d.recovery_sessions).forEach(session); list(d.groups).forEach(group); uniqueIds(d.confirmed_observation_ids)
+    list(d.recovery_sessions).forEach(session); operationalSummary(d.operational_summary, r.server_now)
+    list(d.groups).forEach(item => { group(item); boolean(object(item).coverage_pending_round) }); uniqueIds(d.confirmed_observation_ids)
     const groups = list(d.groups).map(object); check(new Set(groups.map(g => g.group_id)).size === groups.length)
     check(d.session !== null || groups.length === 0)
     if (d.session !== null) { const s = object(d.session); check(groups.every(g => g.reference_snapshot_id === s.reference_snapshot_id && g.groups_revision === s.groups_revision)) }
