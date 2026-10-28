@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, List, LogOut, MessageSquarePlus, Play, RefreshCw, SearchCheck, Send, Square, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CalendarClock, ClipboardList, Database, History, Home, List, LogOut, MessageSquarePlus, Palette, Play, RefreshCw, SearchCheck, Send, Square, X } from 'lucide-react'
 import type { CashierRoute } from '../../../lib/router'
 import { navigateTo, usePathname } from '../../../lib/router'
 import { CajeroCalculator } from './cajero.calculadora'
@@ -13,6 +13,8 @@ import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
 import { FullRuntime, type FullDraft, type FullIncident } from './full.runtime'
 import { cashierStartGate } from './full.start-gate'
+import { projectFullCoverage } from './full.coverage'
+import { FullCoverageCard, FullCoverageComplete, FullHomeMetric, FullOperationalFlow } from './full.home'
 import type { FullGroup } from './full.contract'
 import { actionFor, actionable, stockType, type FullWorkAction, type FullStockType } from './full.presentation'
 import './cajero.css'
@@ -439,6 +441,14 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     }
     void run(() => runtime.start())
   }
+  useEffect(() => {
+    const syncStock = () => {
+      const raw = new URLSearchParams(window.location.search).get('stock')
+      if (window.location.pathname === '/cajero/conteo') setStock(raw === 'zero' || raw === 'negative' ? raw : 'positive')
+    }
+    window.addEventListener('popstate', syncStock)
+    return () => window.removeEventListener('popstate', syncStock)
+  }, [])
   const workLink = (r: CashierRoute) => {
     setCategory(null); setReviewGroup(null)
     navigateTo(r)
@@ -470,7 +480,29 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     URL.revokeObjectURL(url)
   }
   const navRoutes: CashierRoute[] = actionRoute ? ['/cajero', actionRoute, '/cajero/historial'] : ['/cajero', '/cajero/historial']
-  const activeDrafts = session ? runtime.getDrafts(session.session_id).length : 0
+  const sessionDrafts = session ? runtime.getDrafts(session.session_id) : []
+  const activeDrafts = sessionDrafts.length
+  const coverage = projectFullCoverage(view.bootstrap, session, sessionDrafts,
+    session ? runtime.getRejectedObservationIds(session.session_id) : new Set<string>(),
+    now, runtime.clock.trusted, view.coverageFresh)
+  const homeState = coverage?.homeState
+  const coverageRoute = actionRoute === '/cajero/conteo' && canCapture
+  const reviewRoute = actionRoute === '/cajero/revisar' && canCapture
+  const dailyRoute = actionRoute === '/cajero/diario' && canCapture
+  const stockCounts = { zero: 0, negative: 0 }
+  if (homeState === 'B' && !coverage?.empty) {
+    const eligibleIds = new Set(available.filter(g => g.action === 'coverage').map(g => g.group_id))
+    for (const group of view.bootstrap?.groups ?? []) {
+      if (!eligibleIds.has(group.group_id) || !group.coverage_pending_round || group.action !== 'coverage') continue
+      if (group.stock_theoretical === 0) stockCounts.zero++
+      if (group.stock_theoretical < 0) stockCounts.negative++
+    }
+  }
+  const navigateStock = (type: 'zero' | 'negative') => {
+    if (!coverageRoute) return
+    setStock(type); setCategory(null); setReviewGroup(null)
+    navigateTo('/cajero/conteo?stock=' + type)
+  }
   const hasUnresolved = view.drafts > 0 || view.pending > 0 || view.rejected > 0 ||
     Boolean(view.bootstrap?.recovery_sessions.length)
   const incidents = hasUnresolved ? runtime.getIncidents() : []
@@ -561,7 +593,41 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
                 onClick={() => void run(() => runtime.finish())}><Square size={19}/> Finalizar conteo</button>}
           </div>
         </section>
-        {session ? <section className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Registro de conteos">
+        {!coverage ? <section className="full-coverage-unavailable" role="status">
+          <div><strong>Cobertura pendiente de sincronización</strong>
+            <p>No se muestra el avance de una ronda anterior ni un progreso no confirmado.</p></div>
+          <button type="button" className="button button--secondary" disabled={working || view.busy}
+            onClick={() => void run(() => runtime.refresh())}><RefreshCw size={18} aria-hidden="true"/> Actualizar cobertura</button>
+        </section> : coverage.empty ? <section className="full-coverage-unavailable" role="status">
+          <strong>Sin grupos para esta ronda</strong>
+          <p>No hay cobertura disponible para calcular progreso.</p>
+        </section> : coverage.complete
+          ? <FullCoverageComplete coverage={coverage}/>
+          : <FullCoverageCard coverage={coverage}
+            onClick={coverageRoute ? () => workLink('/cajero/conteo') : undefined}/>}
+        {!session && coverage ? <FullOperationalFlow nextAction={coverage.summary.next_action}/> : null}
+        {(homeState === 'A2' || homeState === 'C') && coverage ? <div className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Trabajo operativo">
+          <FullHomeMetric kind="review" label="Revisar" value={coverage.summary.review_pending}
+            emphasized={homeState === 'C' ? reviewRoute : coverage.summary.next_action === 'review'}
+            onClick={reviewRoute ? () => workLink('/cajero/revisar') : undefined}/>
+          <FullHomeMetric kind="daily" label="Conteo diario" value={coverage.summary.daily_pending}
+            emphasized={homeState === 'C' ? dailyRoute : coverage.summary.next_action === 'daily'}
+            onClick={dailyRoute ? () => workLink('/cajero/diario') : undefined}/>
+        </div> : null}
+        {homeState === 'B' && coverage && !coverage.empty ? <>
+          <div className="cajero-home-metrics cajero-home-metrics--stock" aria-label="Grupos disponibles de cobertura por stock">
+            <FullHomeMetric kind="zero" label="Stock 0" value={stockCounts.zero}
+              onClick={coverageRoute ? () => navigateStock('zero') : undefined}/>
+            <FullHomeMetric kind="negative" label="Stock negativo" value={stockCounts.negative}
+              onClick={coverageRoute ? () => navigateStock('negative') : undefined}/>
+          </div>
+          <div className="cajero-home-metrics cajero-home-metrics--stacked">
+            <FullHomeMetric kind="review" label="Revisar" value={coverage.summary.review_pending} wide
+              emphasized={reviewRoute}
+              onClick={reviewRoute ? () => workLink('/cajero/revisar') : undefined}/>
+          </div>
+        </> : null}
+        {session ? <section className="cajero-home-metrics cajero-home-metrics--stacked" aria-label="Registro de conteos">
           <article className="cajero-home-metric cajero-home-metric--pending">
             <Send size={23} aria-hidden="true"/><span>Pendientes de registro</span>
             <div className="cajero-home-metric__send-row">
@@ -571,15 +637,9 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
             </div>
           </article>
         </section> : null}
-        {session && actionRoute ? <section className="cajero-home-metrics cajero-home-metrics--operations" aria-label="Trabajo habilitado">
-          <button type="button" className="cajero-home-metric cajero-home-metric--action" onClick={() => workLink(actionRoute)}>
-            <SearchCheck size={23}/><span>Continuar trabajo habilitado</span>
-            <div className="cajero-home-metric__value"><strong>{available.length}</strong><small>grupos disponibles</small></div>
-          </button>
-        </section> : null}
         {session ? <div className="cajero-home-appearance"><div><Home size={20}/><h2>Sesión activa</h2></div>
           <span className="full-session-time">Referencia: {dateTime(session.reference_snapshot_captured_at)}</span></div> : null}
-        <section className="cajero-home-appearance"><div><Home size={20}/><h2>Apariencia</h2></div><PaletteSwitcher variant="home"/></section>
+        <section className="cajero-home-appearance"><div><Palette size={20}/><h2>Apariencia</h2></div><PaletteSwitcher variant="home"/></section>
       </section> : <section className="cajero-module cajero-operational">
         <div className="cajero-module__heading cajero-operational__heading cajero-operational__heading--with-action">
           <div><h1>{route.title}</h1><p>{currentAction === 'recount' ? 'Verifica la realidad' : 'Registra la realidad'}</p></div>
@@ -610,7 +670,9 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
               const count = stockGroups.filter(g => g.category_id === c.id).length
               const Icon = getCajeroCategoryIcon(c.name)
               return <button type="button" key={c.id} disabled={!canCapture} onClick={() => setCategory(c.id)}>
-                <Icon size={24}/><span><strong>{c.name}</strong><small>{count} grupos disponibles</small></span>
+                <Icon size={24}/><span><strong>{c.name}</strong>
+                  <small>{stockGroups.filter(g => g.category_id === c.id && runtime.getDraft(g.group_id)).length}/{count} contados</small>
+                </span>
               </button>
             })}
           </div>
