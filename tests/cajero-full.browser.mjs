@@ -23,7 +23,8 @@ const serverStart = Date.parse('2026-10-26T09:15:00.000Z')
 
 class SimulatedFull {
   constructor({ recovery = false, lostResponse = null, priorityChange = false, recount = false,
-    rejectSave = false, timeOffsetMinutes = null, lostResponseNth = 1, productDetails = false } = {}) {
+    rejectSave = false, timeOffsetMinutes = null, lostResponseNth = 1, productDetails = false, homeScenario = null } = {}) {
+    this.homeScenario = homeScenario
     this.now = serverStart + (timeOffsetMinutes ?? (recovery ? 51 : 0)) * 60_000
     this.rejectSave = rejectSave
     this.expires = serverStart + 50 * 60_000
@@ -87,7 +88,9 @@ class SimulatedFull {
   }
   bootstrap() {
     const state = this.session()
-    const active = state.status === 'active', recovery = state.status === 'recovery'
+    const noSession = this.homeScenario === 'A1' || this.homeScenario === 'A2'
+    const fullyCovered = this.homeScenario === 'A2' || this.homeScenario === 'C'
+    const active = !noSession && state.status === 'active', recovery = !noSession && state.status === 'recovery'
     return this.envelope('CASHIER_STATE', {
       timezone: 'America/Lima',
       stock: {
@@ -101,16 +104,16 @@ class SimulatedFull {
           round_starts_at: iso(this.now - 5 * 86400000),
           round_ends_at: iso(this.now + 5 * 86400000) },
         coverage_total: this.groups.length,
-        coverage_counted: this.groups.filter(g => g.action === 'none').length,
-        coverage_pending: this.groups.filter(g => g.action !== 'none').length,
-        coverage_percent: Math.round(this.groups.filter(g => g.action === 'none').length * 1000 / this.groups.length) / 10,
+        coverage_counted: fullyCovered ? this.groups.length : this.groups.filter(g => g.action === 'none').length,
+        coverage_pending: fullyCovered ? 0 : this.groups.filter(g => g.action !== 'none').length,
+        coverage_percent: fullyCovered ? 100 : Math.round(this.groups.filter(g => g.action === 'none').length * 1000 / this.groups.length) / 10,
         review_pending: this.groups.filter(g => g.action === 'recount').length,
         daily_pending: this.groups.filter(g => g.action === 'daily').length,
         next_action: this.groups.some(g => g.action === 'coverage') ? 'coverage' : 'none',
       },
       session: active ? state : null,
       recovery_sessions: recovery ? [state] : [],
-      groups: active ? this.groups.map(g => ({ ...g, coverage_pending_round: g.action !== 'none' })) : [],
+      groups: active ? this.groups.map(g => ({ ...g, coverage_pending_round: !fullyCovered && g.action !== 'none' })) : [],
       confirmed_observation_ids: active ? [...this.observations] : [],
       recovery_manifests: recovery ? [{ session_id: sid, observation_ids: [...this.observations] }] : [],
       recovery_delivery_states: recovery ? [{
@@ -121,8 +124,8 @@ class SimulatedFull {
         })),
       }] : [],
       capabilities: {
-        can_start_session: false, can_capture_in_current_session: active,
-        block_reason: 'SESSION_ALREADY_ACTIVE',
+        can_start_session: noSession, can_capture_in_current_session: active,
+        block_reason: noSession ? null : 'SESSION_ALREADY_ACTIVE',
       },
     })
   }
@@ -382,7 +385,7 @@ async function waitPending(page, count) {
 async function saveGroup(page, groupName) {
   const navigation = page.getByRole('navigation', { name: 'Panel Cajero' })
   await navigation.getByRole('button', { name: 'Conteo' }).click()
-  await page.getByRole('button', { name: /Pruebas.*grupos disponibles/ }).click()
+  await page.getByRole('button', { name: /Pruebas.*contados/ }).click()
   const modal = page.getByRole('dialog')
   await modal.getByRole('button', { name: new RegExp(groupName) }).click()
   const calculator = modal.locator('.cajero-calculator__keys')
@@ -422,13 +425,52 @@ try {
     await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click()
     await page.getByRole('dialog', { name: 'Cerrar sesión' }).waitFor()
   })
+  for (const homeScenario of ['A1', 'A2', 'B', 'C']) {
+    await check('Inicio: presentación A1/A2/B/C · ' + homeScenario, {
+      homeScenario,
+    }, async ({ createPage }) => {
+      const page = await createPage()
+      await page.waitForFunction(() => Boolean(document.querySelector('.cajero-coverage-card, .cajero-period-complete')))
+      const flow = page.locator('.cajero-home-flow')
+      const completed = page.locator('.cajero-period-complete')
+      const coverage = page.locator('.cajero-coverage-card')
+      if (homeScenario === 'A1' || homeScenario === 'A2') {
+        assert.equal(await flow.count(), 1, 'Flujo operativo debe aparecer en A1 y A2')
+        assert.equal(await page.getByRole('button', { name: 'Iniciar conteo' }).count(), 1)
+        assert.equal(await page.getByText('Pendientes de registro').count(), 0)
+        await flow.getByRole('button', { name: 'Revisar' }).click()
+        await flow.getByText('Recuenta los casos que requieren una nueva verificación física.').waitFor()
+      } else {
+        assert.equal(await flow.count(), 0, 'Flujo operativo no se muestra durante sesión')
+        assert.equal(await page.getByText('Pendientes de registro').count(), 1)
+      }
+      assert.equal(await completed.count(), homeScenario === 'A2' || homeScenario === 'C' ? 1 : 0)
+      assert.equal(await coverage.count(), homeScenario === 'A1' || homeScenario === 'B' ? 1 : 0)
+      assert.equal(await page.locator('.cajero-home-metrics--stock').count(), homeScenario === 'B' ? 1 : 0)
+      if (homeScenario === 'A2' || homeScenario === 'C')
+        assert.equal(await page.locator('.cajero-home-metrics--operations .cajero-home-metric').count(), 2)
+      for (const width of [390, 768, 1280]) {
+        await page.setViewportSize({ width, height: 820 })
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
+        assert.equal(overflow, false, 'No puede existir desborde horizontal a ' + width + ' px')
+      }
+    })
+  }
+  await check('Inicio B: borrador provisional no completa la ronda', {}, async ({ createPage }) => {
+    const page = await createPage()
+    await saveGroup(page, 'Grupo A')
+    const card = page.locator('.cajero-coverage-card')
+    await card.getByText('1 provisional').waitFor()
+    assert.equal(await page.locator('.cajero-period-complete').count(), 0)
+    assert.equal(await page.getByText('Pendientes de registro').count(), 1)
+  })
   await check('tarjeta activa Full: popup de SKU y foco sin alterar conteos ni consultar servidor', {
     productDetails: true,
   }, async ({ fake, createPage }) => {
     const page = await createPage()
     await page.getByRole('navigation', { name: 'Panel Cajero' })
       .getByRole('button', { name: 'Conteo' }).click()
-    await page.getByRole('button', { name: /Pruebas.*grupos disponibles/ }).click()
+    await page.getByRole('button', { name: /Pruebas.*contados/ }).click()
     const modal = page.locator('.cajero-capture-modal')
     await modal.getByRole('button', { name: /Grupo A/ }).click()
     assert.equal(await modal.locator('.cajero-capture-detail__card details').count(), 0)
@@ -492,7 +534,7 @@ try {
     const page = await createPage()
     await page.getByRole('navigation', { name: 'Panel Cajero' })
       .getByRole('button', { name: 'Conteo' }).click()
-    await page.getByRole('button', { name: /Pruebas.*grupos disponibles/ }).click()
+    await page.getByRole('button', { name: /Pruebas.*contados/ }).click()
     const modal = page.locator('.cajero-capture-modal')
     await modal.getByRole('button', { name: /Grupo A/ }).click()
     await modal.getByRole('button', { name: 'Ver productos incluidos' }).click()
@@ -645,7 +687,7 @@ try {
       })
       const navigation = page.getByRole('navigation', { name: 'Panel Cajero' })
       await navigation.getByRole('button', { name: 'Conteo' }).click()
-      await page.getByRole('button', { name: /Pruebas.*grupos disponibles/ }).click()
+      await page.getByRole('button', { name: /Pruebas.*contados/ }).click()
       const modal = page.getByRole('dialog')
       await modal.getByRole('button', { name: /Grupo A/ }).click()
       await modal.locator('.cajero-calculator__keys').getByRole('button', { name: '1', exact: true }).click()
