@@ -34,13 +34,15 @@ export function fullMinutesRemaining(
 
 export function fullRemainingLabel(
   minutes: number | null,
-  purpose: 'capture' | 'stock',
+  purpose: 'capture' | 'stock' | 'delivery',
 ): string {
   if (minutes === null) return 'Tiempo restante no disponible'
   if (minutes === 0) return purpose === 'capture'
     ? 'Tiempo de captura agotado'
-    : 'Vigencia del inventario agotada'
+    : purpose === 'delivery' ? 'Plazo de entrega agotado'
+      : 'Vigencia del inventario agotada'
   return purpose === 'capture'
     ? `${minutes} min restantes para capturar`
-    : `${minutes} min restantes de vigencia`
+    : purpose === 'delivery' ? `${minutes} min restantes para entregar`
+      : `${minutes} min restantes de vigencia`
 }
