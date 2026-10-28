@@ -26,7 +26,7 @@ export function fullMinutesRemaining(
   serverNow: number,
   clockTrusted: boolean,
 ): number | null {
-  if (!clockTrusted || !Number.isFinite(serverNow) || !expiresAt) return null
+  if (!clockTrusted || !Number.isFinite(serverNow) || serverNow <= 0 || !expiresAt) return null
   const expiry = Date.parse(expiresAt)
   if (!Number.isFinite(expiry)) return null
   return Math.max(0, Math.ceil((expiry - serverNow) / 60_000))
