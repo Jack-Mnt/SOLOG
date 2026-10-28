@@ -24,6 +24,7 @@ interface StoragePort { getItem(key: string): string | null; setItem(key: string
 export interface FullView {
   bootstrap: FullState | null; session: FullSession | null; groups: FullGroup[]
   drafts: number; pending: number; rejected: number; busy: boolean; error: string | null; revision: number
+  coverageFresh: boolean
 }
 
 const rank: Record<string, number> = { round_coverage: 0, review_for_coverage: 1, review_regular: 2, shift_coverage: 3, none: 4 }
@@ -51,7 +52,7 @@ export class FullRuntime {
   private journal: Journal; private listeners = new Set<() => void>(); private gate: FullLock
   private view: FullView = {
     bootstrap: null, session: null, groups: [], drafts: 0, pending: 0,
-    rejected: 0, busy: false, error: null, revision: 0,
+    rejected: 0, busy: false, error: null, revision: 0, coverageFresh: false,
   }
   constructor(readonly userId: string, readonly deviceToken: string, private storage: StoragePort,
     private rpc: FullRpc, options: { clock?: ServerClock; lock?: FullLock } = {}) {
@@ -121,6 +122,20 @@ export class FullRuntime {
   getDrafts = (sessionId = this.view.session?.session_id) =>
     structuredClone(sessionId ? this.journal.drafts[sessionId] ?? [] : [])
   inspectPending() { return structuredClone(this.journal.pending) }
+  getRejectedObservationIds(sessionId: string): Set<string> {
+    const rejected = new Set<string>()
+    for (const op of this.journal.pending) {
+      if (op.sessionId !== sessionId || op.status !== 'rejected') continue
+      try {
+        const items = JSON.parse(op.exactPayload).items
+        if (!Array.isArray(items)) continue
+        for (const item of items) {
+          if (item && typeof item.client_observation_id === 'string') rejected.add(item.client_observation_id)
+        }
+      } catch { /* No reinterpretar ni reescribir un payload local corrupto. */ }
+    }
+    return rejected
+  }
   getIncidents(): FullIncident[] {
     return [
       ...Object.entries(this.journal.drafts).flatMap(([sessionId, drafts]) =>
@@ -242,7 +257,7 @@ export class FullRuntime {
       if (!next.drafts[sid].length) delete next.drafts[sid]
     }
     this.persist(next)
-    this.publish({ bootstrap: state, session: state.session, groups: state.groups, error: null })
+    this.publish({ bootstrap: state, session: state.session, groups: state.groups, coverageFresh: true, error: null })
   }
   async refresh() { await this.gate(async () => { this.journal = this.read(); await this.refreshInside() }) }
 
@@ -298,6 +313,8 @@ export class FullRuntime {
       const received = result.observation_results.map(x => x.client_observation_id)
       if (new Set(received).size !== received.length || expected.length !== received.length ||
         expected.some(x => !received.includes(x))) throw new Error('FULL_CONFIRMATION_MANIFEST_MISMATCH')
+      // V7 no trae banderas de cobertura. Mantener el KPI oculto hasta un nuevo V6.
+      this.publish({ coverageFresh: false })
       const next = structuredClone(this.journal), sid = result.session.session_id
       next.confirmed[sid] = [...new Set([...(next.confirmed[sid] ?? []), ...received])]
       next.pending = next.pending.filter(x => x.operationId !== pending.operationId)
