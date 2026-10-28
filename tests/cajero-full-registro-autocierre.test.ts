@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { FullRuntime, ServerClock, type FullRpc } from '../src/features/solog/cajero/full.runtime'
+import { FullRuntime, ServerClock, type FullLock, type FullRpc } from '../src/features/solog/cajero/full.runtime'
 import type { FullGroup, FullSession } from '../src/features/solog/cajero/full.contract'
 
 const uuid = (suffix: string) => `12345678-1234-4123-8123-${suffix}`
@@ -23,11 +23,18 @@ const makeGroup = (id: string, priority: string): FullGroup => ({
 function harness(options: {
   failOnce?: boolean; reject?: boolean; twoPriorities?: boolean
   failAfterAcceptOnce?: 'start' | 'save_batch' | 'finish'; groupCount?: number; failOnBatchNumber?: number
+  lock?: FullLock; holdFirstSaveBatch?: boolean
 } = {}) {
   let now = started, monotonic = 0
   const requests: { action: string; payload: Record<string, unknown> }[] = []
   const confirmed = new Set<string>(), accepted = new Map<string, unknown>(), memory = new Map<string, string>()
+  const appliedObservations = new Map<string, number>()
   let startedSession = false, finished = false, failed = false, postAcceptanceFailed = false, batchCalls = 0
+  let firstBatchHeld = false
+  let signalHeldBatch!: () => void
+  let releaseHeldBatch!: () => void
+  const firstBatchReached = new Promise<void>(resolve => { signalHeldBatch = resolve })
+  const firstBatchRelease = new Promise<void>(resolve => { releaseHeldBatch = resolve })
   const groups = options.groupCount === undefined
     ? [makeGroup(groupA, 'round_coverage'),
       makeGroup(groupB, options.twoPriorities ? 'shift_coverage' : 'round_coverage')]
@@ -99,6 +106,7 @@ function harness(options: {
     if (action === 'start') startedSession = true
     const items = (payload.items ?? []) as { client_observation_id: string; grupo_id?: string }[]
     for (const i of items) {
+      appliedObservations.set(i.client_observation_id, (appliedObservations.get(i.client_observation_id) ?? 0) + 1)
       confirmed.add(i.client_observation_id)
       const g = groups.find(g => g.group_id === i.grupo_id)
       if (g) { g.action = 'none'; g.priority_class = 'none' }
@@ -116,6 +124,11 @@ function harness(options: {
       })),
     }
     accepted.set(op, mutation)
+    if (action === 'save_batch' && options.holdFirstSaveBatch && !firstBatchHeld) {
+      firstBatchHeld = true
+      signalHeldBatch()
+      await firstBatchRelease
+    }
     if (action === options.failAfterAcceptOnce && !postAcceptanceFailed) {
       postAcceptanceFailed = true
       throw new Error('response lost after remote confirmation')
@@ -126,11 +139,16 @@ function harness(options: {
     getItem: (key: string) => memory.get(key) ?? null,
     setItem: (key: string, value: string) => { memory.set(key, value) },
   }
-  const runtime = new FullRuntime(userId, 'a'.repeat(64), storage, rpc, {
-    clock: new ServerClock(() => monotonic, () => monotonic), lock: async fn => fn(),
+  const createPeer = () => new FullRuntime(userId, 'a'.repeat(64), storage, rpc, {
+    clock: new ServerClock(() => monotonic, () => monotonic),
+    lock: options.lock ?? (async fn => fn()),
   })
+  const runtime = createPeer()
   const advance = (ms: number) => { now += ms; monotonic += ms }
-  return { runtime, storage, requests: () => requests, advance, memory, groups }
+  return {
+    runtime, createPeer, storage, requests: () => requests, advance, memory, groups,
+    appliedObservations, firstBatchReached, releaseHeldBatch,
+  }
 }
 
 describe('Cajero Full — borradores y registro agrupado V7', () => {
@@ -386,5 +404,132 @@ describe('Cajero Full — frescura KPI V6/V7', () => {
     await expect(h.runtime.sendPending()).rejects.toThrow('PRIORITY_CONFLICT')
     expect(h.runtime.getRejectedObservationIds(sid).has(id)).toBe(true)
     expect(h.runtime.getDraft(groupA)?.clientObservationId).toBe(id)
+  })
+})
+
+/**
+ * Mutex de integración compartido entre dos FullRuntime. Modela la serialización
+ * del lock transaccional entre contextos sin depender de una segunda interfaz.
+ * No es la implementación del lock de instancia (Fase 2).
+ */
+function sharedTransactionalLock() {
+  let tail = Promise.resolve()
+  let active = 0, waiting = 0, peak = 0
+  const lock: FullLock = async run => {
+    const predecessor = tail
+    let release!: () => void
+    tail = new Promise<void>(resolve => { release = resolve })
+    waiting++
+    await predecessor
+    waiting--
+    active++
+    peak = Math.max(peak, active)
+    try { return await run() }
+    finally { active--; release() }
+  }
+  return { lock, stats: () => ({ active, waiting, peak }) }
+}
+
+describe('Cajero Full — concurrencia entre runtimes con storage y mutex compartidos', () => {
+  test('capturas independientes de dos runtimes conservan ambos borradores y sus UUID', async () => {
+    const mutex = sharedTransactionalLock()
+    const h = harness({ lock: mutex.lock })
+    const b = h.createPeer()
+    await h.runtime.start()
+    await b.refresh()
+
+    await Promise.all([
+      h.runtime.observe(groupA, 10, null, null, '10'),
+      b.observe(groupB, 11, null, null, '11'),
+    ])
+    const journal = JSON.parse(h.storage.getItem(h.runtime.key)!)
+    const drafts = journal.drafts[sid] as { groupId: string; clientObservationId: string; physical: number }[]
+    expect(drafts).toHaveLength(2)
+    expect(new Set(drafts.map(d => d.groupId))).toEqual(new Set([groupA, groupB]))
+    expect(new Set(drafts.map(d => d.clientObservationId)).size).toBe(2)
+    expect(drafts.find(d => d.groupId === groupA)?.physical).toBe(10)
+    expect(drafts.find(d => d.groupId === groupB)?.physical).toBe(11)
+    expect(h.requests().filter(r => r.action === 'save_batch')).toHaveLength(0)
+    expect(mutex.stats().peak).toBe(1)
+    expect(mutex.stats().waiting).toBe(0)
+  })
+
+  test('Registrar simultáneo con primera respuesta V7 retenida serializa sin duplicar batches', async () => {
+    const mutex = sharedTransactionalLock()
+    const h = harness({ lock: mutex.lock, holdFirstSaveBatch: true })
+    const b = h.createPeer()
+    await h.runtime.start()
+    await b.refresh()
+    await Promise.all([
+      h.runtime.observe(groupA, 10, null, null),
+      b.observe(groupB, 11, null, null),
+    ])
+
+    const first = h.runtime.sendPending()
+    await h.firstBatchReached
+    const second = b.sendPending()
+    try {
+      await Promise.resolve()
+      expect(mutex.stats().waiting).toBe(1)
+      expect(h.requests().filter(r => r.action === 'save_batch')).toHaveLength(1)
+      expect(h.appliedObservations.size).toBe(2)
+    } finally {
+      h.releaseHeldBatch()
+    }
+    await Promise.all([first, second])
+
+    const batches = h.requests().filter(r => r.action === 'save_batch')
+    expect(batches).toHaveLength(1)
+    const items = batches[0].payload.items as { grupo_id: string; client_observation_id: string }[]
+    expect(new Set(items.map(item => item.grupo_id))).toEqual(new Set([groupA, groupB]))
+    expect([...h.appliedObservations.values()]).toEqual([1, 1])
+    const journal = JSON.parse(h.storage.getItem(h.runtime.key)!)
+    expect(journal.drafts[sid] ?? []).toHaveLength(0)
+    expect(journal.pending).toHaveLength(0)
+    expect(mutex.stats()).toEqual({ active: 0, waiting: 0, peak: 1 })
+  })
+
+  test('V7 aplicada remotamente pero sin respuesta: segundo runtime reintenta UUID y payload exactos', async () => {
+    const mutex = sharedTransactionalLock()
+    const h = harness({
+      lock: mutex.lock, holdFirstSaveBatch: true, failAfterAcceptOnce: 'save_batch',
+    })
+    const b = h.createPeer()
+    await h.runtime.start()
+    await b.refresh()
+    await Promise.all([
+      h.runtime.observe(groupA, 10, null, null),
+      b.observe(groupB, 11, null, null),
+    ])
+    const originalDrafts = JSON.parse(h.storage.getItem(h.runtime.key)!).drafts[sid] as {
+      clientObservationId: string
+    }[]
+    const first = h.runtime.sendPending()
+    await h.firstBatchReached
+    const second = b.sendPending()
+    try {
+      await Promise.resolve()
+      expect(mutex.stats().waiting).toBe(1)
+      expect(h.requests().filter(r => r.action === 'save_batch')).toHaveLength(1)
+    } finally {
+      h.releaseHeldBatch()
+    }
+    await expect(first).rejects.toThrow('FULL_DELIVERY_UNCERTAIN')
+    // El segundo runtime recibe el mismo journal bajo el mutex: replay del
+    // pending original, nunca otro UUID para un lote ya confirmado.
+    await second
+
+    const batches = h.requests().filter(r => r.action === 'save_batch')
+    expect(batches).toHaveLength(2)
+    expect(batches[1]).toEqual(batches[0])
+    expect(batches[0].payload.operation_id).toBe(batches[1].payload.operation_id)
+    expect([...h.appliedObservations.values()]).toEqual([1, 1])
+    expect((batches[0].payload.items as { client_observation_id: string }[])
+      .map(item => item.client_observation_id).sort())
+      .toEqual(originalDrafts.map(item => item.clientObservationId).sort())
+    const journal = JSON.parse(h.storage.getItem(h.runtime.key)!)
+    expect(journal.pending).toHaveLength(0)
+    expect(journal.drafts[sid] ?? []).toHaveLength(0)
+    expect(mutex.stats()).toEqual({ active: 0, waiting: 0, peak: 1 })
   })
 })
