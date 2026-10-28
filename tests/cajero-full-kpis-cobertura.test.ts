@@ -49,7 +49,7 @@ function state(active = true): FullState {
     },
   }
 }
-function response(data: FullState) {
+function response(data: unknown) {
   return {
     ok: true, code: 'CASHIER_STATE', contract_version: 2, server_now: now, retryable: false,
     request_id: uuid('1234567890b1'), data,
