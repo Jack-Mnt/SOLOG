@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero — KPIs y cobertura Full — Revisión global P6 V1
 
-**Estado actualizado:** P6 REVISIÓN GLOBAL Y VALIDACIÓN AUTOMATIZADA APROBADAS SEGÚN REPORTE DEL USUARIO; **SMOKE VISUAL HUMANO PENDIENTE**. No declarar bloque cerrado todavía.
+**Estado final:** P6 CERRADA CON EVIDENCIA DELIMITADA. Tests Bun/lint/build/browser aprobados según el usuario; smoke visual del estado B revisado a partir de captura proporcionada. A1/A2/C cuentan con cobertura automatizada, sin capturas manuales adicionales. No afirmar que todas las variantes se revisaron visualmente.
 **Fecha:** 2026-10-28, zona de proyecto America/Lima.
 **Clasificación:** cierre Nivel C/backend + B/frontend.
 **Rama:** `admin-work`; `master` fuera de alcance.
@@ -107,3 +107,27 @@ El usuario confirmó explícitamente: **«Todos los test pasaron»** después de
 - **Bun, lint, build y git diff --check:** aprobados anteriormente por el usuario en P5; los últimos cambios P6 fueron exclusivamente de pruebas y documentación. Sin cambios de código productivo posteriores.
 - **Contrato Supabase:** comprobado en lectura durante P6. Sin migraciones adicionales ni mutaciones.
 - **Única barrera restante:** smoke visual humano de Inicio A1/A2/B/C, segmentos del anillo, navegación y responsive en Preview o entorno controlado. No declarar P6 ni bloque global cerrado hasta que el usuario apruebe el smoke o acepte expresamente una excepción documentada.
+
+
+## 10. Cierre P6 posterior al delta de header y UX — 2026-10-28
+
+**Resultado:** P6 y el bloque de integración de KPIs/Cobertura Full se cierran en `admin-work`, con el alcance de validación observado a continuación. Este registro de cierre es posterior y prevalece sobre las menciones de «pendiente» de los apartados históricos 1–9.
+
+### Evidencia final disponible
+
+- El usuario confirmó que **todos los tests están en verde** después de desplegar `data.site`, conectar `PR [sede]`, retirar el icono del indicador y eliminar la tarjeta de diagnóstico habitual, con ajustes de terminología.
+- Las pruebas ejecutadas localmente por el usuario incluyen `bun test`, lint, build y browser Chrome según la secuencia validada en conversación; **no se recibieron logs individuales de esta última ejecución**. No atribuir su ejecución a ChatGPT.
+- Captura de pantalla del usuario: estado **B** con sesión activa, `PR Casuarinas`, indicador de stock únicamente con punto, sin tarjeta de diagnóstico usual, KPIs `217 por contar` para Stock 0, `1 por contar` para Stock negativo, `44 por recontar` para Revisar y tarjeta «Pendientes de registro» conservada.
+- La cobertura visible `18 / 493` y `475 grupos pendientes` cumple `493-18=475`; el anillo indica `3.7%` y no muestra componente provisional cuando no hay borradores pendientes. La ventana de inventario se muestra en popover.
+- No se observan desbordamientos horizontales evidentes ni elementos solapados anómalos en **esta** captura móvil. **Solo se ha revisado visualmente el estado B en la imagen**: no se debe afirmar smoke humano independiente de A1, A2, C, otras resoluciones o carreras reales de dos sesiones.
+- A1/A2/B/C, responsive básico, rutas, borradores y recovery cuentan con las pruebas automatizadas de `tests/cajero-full.browser.mjs`, aprobadas por usuario.
+- Backend `data.site`: migración aplicada `20261028093324_solog_cajero_full_site_header_v1`, validación SQL 5/5 sedes y ACL sin permisos nuevos de acceso directo. Migración local versionada y contrato aditivo congelado.
+- Ningún cambio en `master` ni fusión/despliegue a producción durante este cierre documental.
+
+### Fuente primaria y límites
+
+La fuente primaria de KPIs sigue siendo `docs/SOLOG_Integracion_Cajero_KPIs_Cobertura_Full_V1.md`; para la sede del header prevalece el contrato aditivo `docs/SOLOG_Backend_Cajero_Full_Header_Sede_Contrato_V1.md`; los ajustes de interfaz se fijan en `docs/SOLOG_UX_Cajero_Header_Estados_Delta_V1.md`. Los apartados «pendiente» de reportes anteriores son históricos y quedan sustituidos por esta evidencia final, **únicamente** en lo efectivamente verificado.
+
+**Límites no resueltos por el cierre:** llamadas HTTP reales de estrés y concurrencia V6/V7 en producción, validación visual manual de A1/A2/C y deuda global de migraciones históricas no versionadas. No se realizaron escrituras de prueba productivas.
+
+**Cierre operativo:** no quedan correcciones abiertas dentro del delta UX de esta captura; futuras mejoras se gestionan como nuevos deltas.
