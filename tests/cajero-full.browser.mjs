@@ -324,6 +324,10 @@ async function scenario(options, run) {
   const fake = options.coexisting ? new SimulatedCoexistingFull() : new SimulatedFull(options)
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const failures = [], external = []
+  // Las solicitudes se atribuyen a la página que las emitió; el contador global
+  // fake.bootstrapAttempts no demuestra inactividad de una segunda ventana.
+  const requestsByPage = new Map()
+  const rpcFor = page => requestsByPage.get(page) ?? []
   await context.addInitScript(token => localStorage.setItem('solog.device_token.v1', token), deviceToken)
   await context.route('**/*', async route => {
     const url = new URL(route.request().url())
@@ -369,22 +373,45 @@ async function scenario(options, run) {
       return route.abort()
     }
   })
-  const createPage = async ({ waitForHome = true } = {}) => {
+  const createPage = async ({ waitForHome = true, trackJournalWrites = false } = {}) => {
     const page = await context.newPage()
+    const calls = []
+    requestsByPage.set(page, calls)
     page.setDefaultTimeout(12000)
     page.on('pageerror', e => failures.push(e.message))
+    page.on('request', request => {
+      if (new URL(request.url()).pathname !== '/__solog_full_browser_rpc__') return
+      const { name, args } = request.postDataJSON()
+      calls.push({ name, action: args?.p_action ?? null })
+    })
+    if (trackJournalWrites) {
+      await page.addInitScript(() => {
+        window.__sologJournalWrites = 0
+        const original = Storage.prototype.setItem
+        Storage.prototype.setItem = function (key, value) {
+          if (key.startsWith('solog.full2.')) window.__sologJournalWrites++
+          return original.call(this, key, value)
+        }
+      })
+    }
     await page.goto(target)
     if (waitForHome) await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     return page
   }
   try {
-    await run({ fake, context, createPage })
+    await run({ fake, context, createPage, rpcFor })
     assert.deepEqual(failures, [], 'Fallos JS/RPC de la simulación')
     assert.deepEqual(external, [], 'Ninguna solicitud debe llegar a servicios externos')
   } finally { await context.close() }
 }
 
 const journal = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)), journalKey)
+const instanceTitle = 'SOLOG Cajero ya está abierto en otra ventana'
+const waitBlocked = page => page.getByText(instanceTitle, { exact: true }).waitFor()
+const waitInstanceRelease = page => page.waitForFunction(async () => {
+  const state = await navigator.locks.query()
+  return !state.held.some(lock => lock.name === 'solog.cashier.instance.v1')
+})
 async function eventually(predicate, message, timeout = 12000) {
   const deadline = Date.now() + timeout
   while (!predicate() && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50))
@@ -957,56 +984,131 @@ try {
       assert.equal(fake.calls[0].payload.items[0].grupo_id, groupB)
     })
 
-  await check('dos pestañas con Registrar simultáneo: un único batch bajo navigator.locks', {},
-    async ({ fake, createPage }) => {
-      const a = await createPage(), b = await createPage()
+  await check('instancia única: segunda ventana inactiva durante V7 retenida, también en background', {},
+    async ({ fake, createPage, rpcFor }) => {
+      const a = await createPage()
       await saveGroup(a, 'Grupo A')
-      await saveGroup(b, 'Grupo B')
+      await saveGroup(a, 'Grupo B')
       assert.equal((await journal(a)).drafts[sid].length, 2)
-      // El primer batch queda aplicado en el backend simulado, pero sin respuesta.
-      // La segunda pestaña pulsa mientras la primera aún posee el lock.
+
+      const b = await createPage({ waitForHome: false, trackJournalWrites: true })
+      await waitBlocked(b)
+      assert.deepEqual(rpcFor(b), [], 'La segunda ventana nunca consulta V6/V7')
+      assert.equal(await b.evaluate(() => window.__sologJournalWrites), 0,
+        'La secundaria no debe escribir el journal Full')
+      assert.equal(await b.getByRole('button', { name: 'Registrar conteo' }).count(), 0)
+
       fake.holdFirstBatch = true
       const firstClick = a.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
       try {
         await eventually(() => typeof fake.releaseHeldBatch === 'function',
-          'La primera pestaña no llegó al backend simulado')
-        await b.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+          'La propietaria no llegó al V7 retenido')
+        // B toma el foco; no recibe el Web Lock de A ni por cambio de visibilidad.
+        await b.bringToFront()
+        await b.getByRole('button', { name: 'Reintentar', exact: true }).click()
+        await waitBlocked(b)
+        assert.deepEqual(rpcFor(b), [], 'Ni focus ni retry con A activa emiten RPC en B')
+        assert.equal(await b.evaluate(() => window.__sologJournalWrites), 0)
+        assert.equal(fake.observations.size, 2, 'El V7 retenido ya se aplicó una sola vez')
       } finally {
         fake.releaseHeldBatch?.()
       }
       await firstClick
-      await eventually(() => fake.observations.size === 2, 'No se confirmaron ambos grupos')
       await a.waitForFunction(key => {
-        const j = JSON.parse(localStorage.getItem(key))
+        const j = JSON.parse(localStorage.getItem(key) || '{}')
         return (j.pending ?? []).length === 0 && (j.drafts?.['12345678-1234-4123-8123-1234567890ac']?.length ?? 0) === 0
       }, journalKey)
-      await b.waitForFunction(key => {
-        const j = JSON.parse(localStorage.getItem(key))
-        return (j.pending ?? []).length === 0 && (j.drafts?.['12345678-1234-4123-8123-1234567890ac']?.length ?? 0) === 0
-      }, journalKey)
-      assert.equal(fake.calls.filter(c => c.action === 'save_batch').length, 1,
-        'Dos pestañas no deben generar batches duplicados')
+      assert.equal(fake.calls.filter(c => c.action === 'save_batch').length, 1)
       assert.deepEqual(fake.calls[0].payload.items.map(item => item.grupo_id).sort(),
         [groupA, groupB].sort())
+      assert.deepEqual(rpcFor(b), [], 'B siguió bloqueada incluso después de concluir V7')
     })
 
-  await check('dos pestañas: borradores de grupos distintos y un único batch', {},
-    async ({ fake, createPage }) => {
-      const a = await createPage(), b = await createPage()
+  await check('instancia única: borrador sobrevive cierre y transferencia manual a segunda ventana', {},
+    async ({ fake, createPage, rpcFor }) => {
+      const a = await createPage()
       await saveGroup(a, 'Grupo A')
+      const original = (await journal(a)).drafts[sid][0]
+      const b = await createPage({ waitForHome: false, trackJournalWrites: true })
+      await waitBlocked(b)
+      assert.deepEqual(rpcFor(b), [])
+      assert.equal(await b.evaluate(() => window.__sologJournalWrites), 0)
+
+      await a.close()
+      await waitInstanceRelease(b)
+      // No hay adquisición automática cuando la primera libera el lock.
+      await waitBlocked(b)
+      assert.deepEqual(rpcFor(b), [])
+      await b.getByRole('button', { name: 'Reintentar', exact: true }).click()
+      await b.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+      assert.ok(rpcFor(b).some(call => call.name === 'rpc_solog_cashier_bootstrap_v6'),
+        'La nueva propietaria debe conciliar estado con V6')
+      assert.equal((await journal(b)).drafts[sid][0].clientObservationId, original.clientObservationId)
+
       await saveGroup(b, 'Grupo B')
-      await a.waitForFunction(key => {
+      await b.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+      await eventually(() => fake.observations.size === 2, 'Ambos grupos deben registrarse')
+      await b.waitForFunction(key => {
         const j = JSON.parse(localStorage.getItem(key) || '{}')
-        return (j.drafts?.['12345678-1234-4123-8123-1234567890ac']?.length ?? 0) === 2
+        return (j.pending ?? []).length === 0 && (j.drafts?.['12345678-1234-4123-8123-1234567890ac']?.length ?? 0) === 0
       }, journalKey)
-      await a.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
-      await a.waitForFunction(key => {
-        const j = JSON.parse(localStorage.getItem(key) || '{}')
-        return (j.drafts?.['12345678-1234-4123-8123-1234567890ac']?.length ?? 0) === 0
-      }, journalKey)
-      assert.equal(fake.observations.size, 2)
       assert.equal(fake.calls.filter(c => c.action === 'save_batch').length, 1)
+      assert.deepEqual(fake.calls[0].payload.items.map(item => item.grupo_id).sort(),
+        [groupA, groupB].sort())
+      assert.equal(fake.calls[0].payload.items.find(item => item.grupo_id === groupA).client_observation_id,
+        original.clientObservationId, 'La nueva propietaria reutiliza el UUID del borrador heredado')
     })
+
+  await check('instancia única: respuesta V7 perdida sobrevive cierre y replay manual exacto', {
+    lostResponse: 'save_batch',
+  }, async ({ fake, createPage, rpcFor }) => {
+    const a = await createPage()
+    await saveGroup(a, 'Grupo A')
+    const draft = (await journal(a)).drafts[sid][0]
+    const b = await createPage({ waitForHome: false, trackJournalWrites: true })
+    await waitBlocked(b)
+    assert.deepEqual(rpcFor(b), [])
+
+    await a.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+    await waitPending(a, 1)
+    const first = structuredClone(fake.calls.find(c => c.action === 'save_batch'))
+    assert.ok(first, 'V7 debe haberse aplicado con respuesta perdida')
+    assert.equal(fake.observations.size, 1)
+    await a.close()
+    await waitInstanceRelease(b)
+    assert.deepEqual(rpcFor(b), [], 'No existe reconciliación espontánea desde B')
+    await b.getByRole('button', { name: 'Reintentar', exact: true }).click()
+    await b.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    await eventually(() => fake.calls.filter(c => c.action === 'save_batch').length === 2,
+      'La nueva propietaria no ejecutó el replay de la V7 incierta')
+    const saves = fake.calls.filter(c => c.action === 'save_batch')
+    assert.deepEqual(saves[1], first, 'El replay debe usar el mismo UUID y payload')
+    assert.equal(fake.observations.size, 1, 'El replay no debe duplicar observaciones')
+    assert.equal(saves[0].payload.items[0].client_observation_id, draft.clientObservationId)
+    await waitPending(b, 0)
+    assert.equal((await journal(b)).drafts[sid]?.length ?? 0, 0)
+  })
+
+  await check('instancia única: apertura simultánea concede un solo propietario', {},
+    async ({ fake, createPage, rpcFor }) => {
+      const [a, b] = await Promise.all([
+        createPage({ waitForHome: false, trackJournalWrites: true }),
+        createPage({ waitForHome: false, trackJournalWrites: true }),
+      ])
+      const settled = page => page.waitForFunction(label =>
+        Boolean(document.querySelector('.cajero-header__site')) ||
+        document.body.textContent.includes(label), instanceTitle)
+      await Promise.all([settled(a), settled(b)])
+      const blocked = await a.getByText(instanceTitle, { exact: true }).count() ? a : b
+      const owner = blocked === a ? b : a
+      await owner.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+      await waitBlocked(blocked)
+      assert.deepEqual(rpcFor(blocked), [], 'Solo la propietaria puede consultar Supabase')
+      assert.equal(await blocked.evaluate(() => window.__sologJournalWrites), 0)
+      assert.ok(rpcFor(owner).some(c => c.name === 'rpc_solog_cashier_bootstrap_v6'))
+      assert.equal(fake.calls.length, 0)
+    })
+
 } finally {
   await browser.close()
   await server.close()
