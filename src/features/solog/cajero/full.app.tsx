@@ -13,6 +13,7 @@ import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
 import { FullRuntime, type FullDraft, type FullIncident } from './full.runtime'
 import { cashierStartGate } from './full.start-gate'
+import { formatFullInventoryUpdate, fullMinutesRemaining, fullRemainingLabel } from './full.temporal'
 import { projectFullCoverage } from './full.coverage'
 import { FullCoverageCard, FullCoverageComplete, FullHomeMetric, FullOperationalFlow } from './full.home'
 import type { FullGroup } from './full.contract'
@@ -314,7 +315,8 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const session = view.session
   const stockState = view.bootstrap?.stock
   const canCapture = runtime.clock.canCapture(session) && !working && !view.busy
-  const remaining = session ? Math.max(0, Math.ceil((Date.parse(session.session_expires_at) - now) / 1000)) : 0
+  const captureMinutes = fullMinutesRemaining(session?.session_expires_at, now, runtime.clock.trusted)
+  const stockMinutes = fullMinutesRemaining(stockState?.stock_expires_at, now, runtime.clock.trusted)
   const stockFresh = runtime.clock.trusted && Boolean(stockState?.is_fresh && now >= Date.parse(stockState.snapshot_captured_at) && now < Date.parse(stockState.stock_expires_at))
   const startGate = cashierStartGate(now, runtime.clock.trusted, stockState?.snapshot_confirmed_at, stockState?.snapshot_captured_at)
   const startGateSeconds = Math.ceil(startGate.remainingMs / 1000)
@@ -540,9 +542,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
             </button>
             {stockOpen ? <section className="cajero-stock-indicator__popover" role="dialog" aria-label="Estado del inventario">
               <strong>{stockFresh ? 'Inventario vigente' : 'Inventario desactualizado'}</strong>
-              <p>Actualizado {dateTime(stockState?.snapshot_captured_at)}</p>
-              <p>Vigencia hasta {dateTime(stockState?.stock_expires_at)}</p>
-              {session ? <p>Sesión hasta {dateTime(session.session_expires_at)}</p> : null}
+              <p>{fullRemainingLabel(stockMinutes, 'stock')}</p>
             </section> : null}
           </div>
           <button className="cajero-header__logout" type="button" disabled={working || view.busy}
@@ -590,11 +590,13 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
             <span className="cajero-stock-card__icon">{stockFresh ? <Database size={23}/> : <AlertTriangle size={23}/>}</span>
             <div className="cajero-stock-card__copy">
               <h2>{stockFresh ? 'Inventario cargado' : 'Inventario desactualizado'}</h2>
-              <p>Última actualización: {dateTime(stockState?.snapshot_captured_at)}</p>
-              {session ? <p>Captura hasta {dateTime(session.session_expires_at)} · {Math.floor(remaining / 60)} min restantes</p>
+              <p>Última actualización: {formatFullInventoryUpdate(stockState?.snapshot_captured_at)}</p>
+              {session ? <p>{fullRemainingLabel(captureMinutes, 'capture')}</p>
                 : startGate.phase === 'minute_59' ? <p role="status">Actualizando inventario. Inicio bloqueado durante el minuto 59 · {startGateCountdown} restantes para habilitar el respaldo.</p>
                 : startGate.phase === 'waiting_new_snapshot' ? <p role="status">Esperando el nuevo snapshot. Si no llega, el stock anterior podrá utilizarse desde el minuto 02, si continúa vigente · {startGateCountdown}.</p>
-                : view.bootstrap?.capabilities.block_reason ? <p>{explain(view.bootstrap.capabilities.block_reason)}</p> : null}
+                : <p>{fullRemainingLabel(stockMinutes, 'stock')}</p>}
+              {!session && view.bootstrap?.capabilities.block_reason &&
+                <p>{explain(view.bootstrap.capabilities.block_reason)}</p>}
             </div>
           </div>
           <div className="cajero-stock-card__actions">
@@ -648,8 +650,6 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
             </div>
           </article>
         </section> : null}
-        {session ? <div className="cajero-home-appearance"><div><Home size={20}/><h2>Sesión activa</h2></div>
-          <span className="full-session-time">Referencia: {dateTime(session.reference_snapshot_captured_at)}</span></div> : null}
         <section className="cajero-home-appearance"><div><Palette size={20}/><h2>Apariencia</h2></div><PaletteSwitcher variant="home"/></section>
       </section> : <section className="cajero-module cajero-operational">
         <div className="cajero-module__heading cajero-operational__heading cajero-operational__heading--with-action">
