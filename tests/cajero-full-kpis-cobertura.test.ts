@@ -37,7 +37,7 @@ function group(id: string, pending: boolean): FullCashierGroup {
 }
 function state(active = true): FullState {
   return {
-    timezone: 'America/Lima', stock: null,
+    timezone: 'America/Lima', site: { id: uuid('1234567890e1'), nombre: 'Cutervo' }, stock: null,
     session: active ? session : null, recovery_sessions: [],
     groups: active ? [group(groupA, true), group(groupB, false)] : [],
     confirmed_observation_ids: [], recovery_manifests: [],
@@ -68,6 +68,15 @@ const present = (s: FullState, d: FullDraft[] = [], rejected = new Set<string>()
 describe('Cajero Full — contrato V6 KPI separado de V7', () => {
   test('acepta resumen autoritativo y banderas en CASHIER_STATE', () => {
     expect(parseFullEnvelope(response(state())).code).toBe('CASHIER_STATE')
+  })
+  test('la sede de V6 es obligatoria y validada, V7 no se modifica', () => {
+    const base = state()
+    expect(parseFullEnvelope(response(base)).code).toBe('CASHIER_STATE')
+    for (const site of [undefined, null, {}, { id: 'invalido', nombre: 'Cutervo' },
+      { id: uuid('1234567890e1'), nombre: '' },
+      { id: uuid('1234567890e1'), nombre: '   ' }]) {
+      expect(() => parseFullEnvelope(response({ ...base, site }))).toThrow('FULL_INVALID_RESPONSE')
+    }
   })
   test('rechaza resumen ausente, grupos sin bandera, aritmética y porcentaje contradictorios', () => {
     const missing = state()
