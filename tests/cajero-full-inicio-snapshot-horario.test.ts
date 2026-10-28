@@ -119,6 +119,13 @@ describe('Cajero Full — protección de runtime durante el inicio remoto', () =
             is_fresh: true, is_fallback: Date.parse(serverNow) - captured >= 3_600_000,
             catalog_version: 1, groups_revision: 1,
           },
+          operational_summary: {
+            basis: { coverage_round: 2,
+              round_starts_at: new Date(Date.parse(serverNow) - 86400000).toISOString(),
+              round_ends_at: new Date(Date.parse(serverNow) + 86400000).toISOString() },
+            coverage_total: 0, coverage_counted: 0, coverage_pending: 0, coverage_percent: 0,
+            review_pending: 0, daily_pending: 0, next_action: 'none',
+          },
           session: null, recovery_sessions: [], groups: [],
           confirmed_observation_ids: [], recovery_manifests: [],
           capabilities: { can_start_session: true, can_capture_in_current_session: false, block_reason: null },
