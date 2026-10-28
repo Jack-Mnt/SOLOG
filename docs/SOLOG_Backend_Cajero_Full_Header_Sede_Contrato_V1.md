@@ -45,3 +45,10 @@ Ninguna consulta frontend adicional, ningún dato tomado de `user_metadata`, nin
 No alterar `rpc_solog_cashier_bootstrap_v6` público, `rpc_solog_cashier_mutate_v7`, `FullRuntime` de registro, prioridad, autorización, outbox, recuperación, lógica de stock o bordes temporales. Adaptar fixtures Bun/Playwright V6 y pruebas de esquema. No añadir `site` obligatorio a variantes de mutación V7.
 
 El ajuste permanece abierto hasta validación Bun/lint/build/browser y smoke humano del header.
+
+
+## Consumo frontend implementado (2026-10-28)
+
+Se añadieron `FullState.site` y su validador estricto en `src/features/solog/cajero/full.contract.ts`; `src/features/solog/cajero/full.app.tsx` muestra `PR {site.nombre}` solo después de V6 correcto. Se actualizaron las fixtures Bun/Playwright de bootstrap y los tests que rechazan sede ausente, UUID inválido y nombre vacío. Las pruebas de V7 conservan la ausencia de este campo.
+
+**Estado técnico:** backend verificado; pruebas frontend nuevas, build y smoke pendientes de ejecución local. La fuente primaria del delta UX actualizado está en `docs/SOLOG_UX_Cajero_Header_Estados_Delta_V1.md`. Ninguna otra regla o ruta operativa se modificó.
