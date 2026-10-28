@@ -296,11 +296,12 @@ const supabaseModule = [
 
 const server = await createServer({ server: { host: '127.0.0.1', port: 5212, strictPort: true } })
 await server.listen()
+// Chromium administrado por Playwright por defecto; solo usar binario externo si se solicita.
 const browser = await chromium.launch({
   headless: true,
   ...(process.env.SOLOG_TEST_BROWSER
     ? { executablePath: process.env.SOLOG_TEST_BROWSER }
-    : { channel: 'chrome' }),
+    : {}),
 })
 const target = 'http://127.0.0.1:5212/cajero'
 
