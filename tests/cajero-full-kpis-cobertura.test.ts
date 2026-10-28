@@ -131,6 +131,10 @@ describe('Cajero Full — estado y avance provisional', () => {
     expect(a?.homeState).toBe('A1')
     expect(parseFullEnvelope(response(s)).ok).toBe(true)
   })
+  test('sesión transitoria en recovery no se interpreta como ausencia de sesión', () => {
+    const stale = { ...session, status: 'recovery' as const }
+    expect(projectFullCoverage(state(), stale, [], new Set(), Date.parse(now), true, true)).toBeNull()
+  })
   test('fail closed sin reloj confiable, tras V7 o al terminar la ronda', () => {
     expect(present(state(), [], new Set(), Date.parse(roundUntil))).toBeNull()
     expect(present(state(), [], new Set(), Date.parse(now), false)).toBeNull()
