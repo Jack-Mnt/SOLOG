@@ -61,7 +61,7 @@ export function FullCoverageCard({ coverage, onClick }: {
       <p>{summary.coverage_pending} pendientes de confirmar</p>
       <p className="full-coverage-breakdown">
         <span>{confirmed} confirmados</span>
-        {provisional > 0 ? <span>{provisional} provisionales</span> : null}
+        {provisional > 0 ? <span>{provisional} {provisional === 1 ? 'provisional' : 'provisionales'}</span> : null}
       </p>
     </div>{ring}
   </>
