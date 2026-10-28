@@ -30,14 +30,19 @@ function runtimeHarness(next: 'review' | 'coverage' | 'daily' | 'none' = 'covera
 }
 
 describe('runtime productivo V4', () => {
-  test('entry monta V4, lazy UI directa y no importa foundation V3', async () => {
+  test('entry productivo monta Full V6/V7 sin volver a foundation V3 o UI V4', async () => {
     const app = await Bun.file('src/features/solog/cajero/cajero.app.tsx').text()
-    expect(app).toContain('<CashierV4Provider')
-    expect(app).toContain("import('./cajero.v4.ui')")
-    for (const fragment of ['v3.context', 'useCashierV3', 'rpc_solog_cashier_bootstrap_v3', 'rpc_solog_cashier_mutate_v3']) expect(app).not.toContain(fragment)
-    const ui = await Bun.file('src/features/solog/cajero/cajero.v4.ui.tsx').text()
-    expect(ui).not.toContain('periodComplete')
-    expect(ui).not.toContain('cajero.session')
+    const full = await Bun.file('src/features/solog/cajero/full.runtime.ts').text()
+    expect(app).toContain("import { FullRuntime, type FullRpc } from './full.runtime'")
+    expect(app).toContain('new FullRuntime(')
+    expect(app).toContain('<FullCashierPanel runtime={runtime}')
+    expect(app).not.toContain('<CashierV4Provider')
+    expect(app).not.toContain("import('./cajero.v4.ui')")
+    expect(full).toContain('rpc_solog_cashier_bootstrap_v6')
+    expect(full).toContain('rpc_solog_cashier_mutate_v7')
+    for (const fragment of ['v3.context', 'useCashierV3', 'rpc_solog_cashier_bootstrap_v3', 'rpc_solog_cashier_mutate_v3']) {
+      expect(app + full).not.toContain(fragment)
+    }
   })
   for (const round of [1, 2]) test(`Inicio pre-session ronda ${round} no inventa tipos de stock`, () => {
     const b = cashierV4Bootstrap('pre_session', { ronda: round, next_action: 'coverage' })
