@@ -49,7 +49,11 @@ enriched_groups AS (
       ) ORDER BY g.value->>'group_id'
     ),'[]'::jsonb
   ) AS groups_json
-  FROM jsonb_array_elements(inventario.full_runtime_json_v2(p_session)) AS g(value)
+  FROM (SELECT CASE WHEN EXISTS (
+    SELECT 1 FROM inventario.conteos c
+    WHERE c.id=p_session AND c.sede_id=p_site
+  ) THEN p_session ELSE NULL::uuid END AS session_id) scope
+  CROSS JOIN LATERAL jsonb_array_elements(inventario.full_runtime_json_v2(scope.session_id)) AS g(value)
   LEFT JOIN source s ON s.grupo_conteo_id=(g.value->>'group_id')::uuid
 )
 SELECT jsonb_build_object(
