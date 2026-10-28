@@ -61,9 +61,17 @@ describe('Detalles — transición de autorización hacia Cajero', () => {
     expect(source).toContain('clearNotice, requestAccess')
   })
 
-  test('Cajero conserva la validación autoritativa del dispositivo', async () => {
-    const source = await Bun.file('src/features/solog/cajero/cajero.app.tsx').text()
+  test('Cajero Full conserva la autorización del dispositivo en bootstrap V6 y bloquea captura', async () => {
+    const entry = await Bun.file('src/features/solog/cajero/cajero.app.tsx').text()
+    const runtime = await Bun.file('src/features/solog/cajero/full.runtime.ts').text()
+    const panel = await Bun.file('src/features/solog/cajero/full.app.tsx').text()
 
-    expect(source).toContain("if (!b.device.autorizado) replaceRoute('/detalles')")
+    expect(entry).toContain('new FullRuntime(')
+    expect(runtime).toContain("this.request('rpc_solog_cashier_bootstrap_v6', { p_payload: { device_token: this.deviceToken } })")
+    expect(runtime).toContain("if (!response.ok || response.code !== 'CASHIER_STATE') throw new Error(response.code)")
+    expect(runtime).toContain("if (!this.view.bootstrap?.capabilities.can_start_session)")
+    expect(runtime).toContain("!this.clock.canCapture(session)")
+    expect(panel).toContain('const canCapture = runtime.clock.canCapture(session)')
+    expect(panel).toContain('disabled={!canCapture}')
   })
 })
