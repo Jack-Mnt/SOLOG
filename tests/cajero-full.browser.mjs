@@ -454,6 +454,14 @@ try {
       const flow = page.locator('.cajero-home-flow')
       const completed = page.locator('.cajero-period-complete')
       const coverage = page.locator('.cajero-coverage-card')
+      const indicator = page.getByRole('button', { name: 'Estado del inventario' })
+      assert.equal(await indicator.locator('svg').count(), 0, 'Indicador de stock solo muestra el punto')
+      assert.equal(await indicator.locator('.cajero-stock-indicator__dot').count(), 1)
+      if (homeScenario === 'B') {
+        await page.getByText('grupos pendientes').waitFor()
+        await page.locator('.cajero-home-metrics--stock').getByText('por contar').first().waitFor()
+        await page.locator('.cajero-home-metrics--stacked').getByText('por recontar').first().waitFor()
+      }
       if (homeScenario === 'A1' || homeScenario === 'A2') {
         assert.equal(await flow.count(), 1, 'Flujo operativo debe aparecer en A1 y A2')
         assert.equal(await page.getByRole('button', { name: 'Iniciar conteo' }).count(), 1)
@@ -503,6 +511,8 @@ try {
     await saveGroup(page, 'Grupo A')
     const card = page.locator('.cajero-coverage-card')
     await card.getByText('1 provisional').waitFor()
+    assert.equal(await page.locator('.full-local-issues').count(), 0,
+      'Un borrador normal no debe mostrar la tarjeta de diagnóstico')
     assert.equal(await page.locator('.cajero-period-complete').count(), 0)
     assert.equal(await page.getByText('Pendientes de registro').count(), 1)
   })
@@ -607,6 +617,7 @@ try {
     await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
     await waitPending(page, 1)
     assert.equal(fake.observations.size, 1)
+    await page.locator('.full-local-issues > summary').click()
     await page.getByRole('button', { name: 'Reintentar operaciones' }).click()
     await waitPending(page, 0)
     const saves = fake.calls.filter(x => x.action === 'save_batch')
@@ -717,6 +728,7 @@ try {
     await page.waitForFunction(key => JSON.parse(localStorage.getItem(key)).pending
       .some(item => item.status === 'rejected'), journalKey)
     const before = fake.calls.length
+    await page.locator('.full-local-issues > summary').click()
     assert.equal(await page.getByRole('button', { name: 'Reintentar operaciones' }).isDisabled(), true)
     await page.getByRole('button', { name: 'Finalizar conteo' }).click()
     await page.getByText('Hay un rechazo definitivo. Requiere revisión antes de finalizar.').waitFor()
@@ -806,6 +818,7 @@ try {
     assert.equal(persisted.drafts[sid]?.length, 1, 'Solo segundo borrador incierto')
     assert.equal(persisted.confirmed[sid].length, 1, 'Primer lote confirmado localmente')
     assert.equal(fake.observations.size, 2, 'El segundo lote fue aplicado en backend simulado')
+    await page.locator('.full-local-issues > summary').click()
     await page.getByRole('button', { name: 'Reintentar operaciones' }).click()
     await waitPending(page, 0)
     const calls = fake.calls.filter(c => c.action === 'save_batch')
