@@ -79,3 +79,22 @@ Solo reinstalar Chromium si continúa faltando. Si el navegador arroja fallos de
 7. Fallo de V6 o cambio de ronda: estado de sincronización y reintento sin progreso obsoleto.
 
 **Regla de cierre:** no declarar P6 ni el bloque global cerrado hasta que el usuario confirme browser test y smoke visual humano o se documenten explícitamente las excepciones aceptadas. Nuevos cambios ajenos a KPIs van a backlog.
+
+
+## 8. Delta P6 — browser Chrome: dos escenarios inicialmente fallidos (2026-10-28)
+
+**Evidencia recibida del usuario:** ejecución real con Google Chrome instalado como `SOLOG_TEST_BROWSER`. 21 escenarios aprobados y 2 fallidos, con ejecución del browser efectiva. Se descartó el bloqueo previo de navegador ausente.
+
+- **Bootstrap con error transitorio**: el test simulaba un único fallo V6; en React StrictMode más de una lectura inicial puede eliminar el error antes de la aserción. La fixture ahora mantiene `FULL_TEMP_UNAVAILABLE` hasta pulsar realmente `Reintentar`. Verifica pantalla de error, ausencia de mutaciones V7 y una nueva lectura V6 que vuelve a Inicio.
+- **Popup de SKU y calculadora**: la comparación de coordenadas absolutas no distinguía la barra de navegación `position: sticky` frente al contenido desplazable. Se conserva la comprobación de navegación junto al borde inferior, se comprueba que la calculadora precede a la navegación en el DOM y que los controles de ambos elementos son operables mediante comprobaciones Playwright `click({trial:true})` que incluyen el scroll necesario y verifican que no están interceptados.
+- **Archivos modificados por este delta:** únicamente `tests/cajero-full.browser.mjs`. Ni CSS ni frontend productivo, ni backend, ni demás tests.
+- **Estado:** corrección enviada al repositorio; **nuevo browser test aún por ejecutar en Chrome local**. Si la prueba de operabilidad falla, tratar como incidencia real de layout, no ocultarla rebajando aserciones.
+
+### Comando dirigido en PowerShell
+
+```powershell
+$env:SOLOG_TEST_BROWSER = "$env:ProgramFiles\Google\Chrome\Application\chrome.exe"
+node tests/cajero-full.browser.mjs
+```
+
+Mantener P6 abierto hasta resultado real y smoke visual humano.
