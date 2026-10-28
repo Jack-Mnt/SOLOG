@@ -21,11 +21,14 @@ test('error de inicialización Auth reintenta con recarga completa', async () =>
   expect(app).toContain('onClick={() => window.location.reload()}')
 })
 
-test('bootstrap Cajero V4 usa PanelLoader error con retry y logout', async () => {
-  const app = await source('src/features/solog/cajero/cajero.app.tsx')
-  expect(app).toContain('title="No se pudo cargar Cajero"')
-  expect(app).toContain('state="error"')
-  expect(app).toContain('store.refresh().catch(() => {})')
-  expect(app).toContain('onClick={() => void onLogout()}')
-  expect(app).toContain('if (!b || !b.device.autorizado) return <PanelLoader />')
+test('bootstrap Cajero Full V6 muestra error, reintento y cierre seguro', async () => {
+  const entry = await source('src/features/solog/cajero/cajero.app.tsx')
+  const panel = await source('src/features/solog/cajero/full.app.tsx')
+  expect(entry).toContain('<FullCashierPanel runtime={runtime}')
+  expect(panel).toContain('!view.bootstrap && (error || view.error)')
+  expect(panel).toContain('state="error" title="No se pudo cargar Cajero"')
+  expect(panel).toContain('onClick={() => void run(() => runtime.refresh())}')
+  expect(panel).toContain('onClick={() => setLogoutOpen(true)}')
+  expect(panel).toContain('onClick={logoutSafe}')
+  expect(panel).toContain('!view.bootstrap ? <PanelLoader variant="contained" />')
 })
