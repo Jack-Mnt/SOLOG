@@ -1,5 +1,4 @@
 /* Composición puente para Cajero Full: reutiliza el Design System y el CSS original. */
-.full-session-time { color: var(--color-text-secondary); font-size: 0.8rem; }
 .full-contract-pending {
   color: var(--color-text-secondary);
   font-size: 0.8rem;
