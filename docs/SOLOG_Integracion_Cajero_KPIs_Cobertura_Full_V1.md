@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero — KPIs y cobertura Full V1
 
-**Estado:** CONGELADO para definición funcional y contrato objetivo; **sin implementar ni desplegar**. Plan de ejecución pendiente de aprobación del usuario.
+**Estado:** DECISIONES FUNCIONALES CONGELADAS. **Backend P2 DESPLEGADO Y VALIDADO EN LECTURA** mediante migración `20261028034458_solog_cajero_full_kpis_cobertura_v1`; contrato efectivo congelado en `docs/SOLOG_Backend_Cajero_KPIs_Cobertura_Full_Contrato_V1.md`. Frontend P3–P6 pendiente; E2E autenticado y carrera real V6/V7 todavía no acreditados.
 **Fecha:** 2026-10-27.
 **Proyecto:** SOLOG. **Rama:** `admin-work`; `master` fuera de alcance.
 **Clasificación:** Nivel C (lectura/consistencia backend) + B (frontend).
@@ -109,7 +109,7 @@ coverage_pending_round: boolean; // grupo del universo actual sin observación v
 
 **P1 — Backend, diseño SQL y test sintético.** ChatGPT prepara la proyección única, prueba invariantes, ronda exacta, denominador con `requiere_snapshot_completo`, observaciones tardías, concurrencia a nivel de transacción, plan de ejecución y seguridad. Preferir entorno aislado; para tests con escritura, rollback verificado. No crear datos permanentes ni alterar sesiones reales. No desplegar ante bloqueos.
 
-**P2 — Backend, despliegue y contrato congelado.** ChatGPT aplica migración aditiva controlada, valida funciones, autorización, JSON completo V6, performance/egress y que V7 siga idéntico; documenta contrato real y evidencia. **Barrera:** no enviar frontend a implementación antes de este paso.
+**P2 — Backend, despliegue y contrato congelado — COMPLETADA.** Migración `20261028034458` aplicada y verificada en lectura; V7 idéntico. La evidencia y límites se detallan en `docs/SOLOG_Backend_Cajero_KPIs_Cobertura_Full_Contrato_V1.md`. **Barrera backend liberada**; no considerar E2E ni concurrencia real validada.
 
 **P3 — Codex, baseline + plan frontend, sin implementar.** En `admin-work` inspeccionar el alcance, guardar HEAD, working tree, cambios preexistentes, validaciones iniciales y proponer fases con archivos/tests. Esperar aprobación explícita del usuario.
 
