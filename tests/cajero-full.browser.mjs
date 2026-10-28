@@ -102,6 +102,7 @@ class SimulatedFull {
     const active = !noSession && state.status === 'active', recovery = !noSession && state.status === 'recovery'
     return this.envelope('CASHIER_STATE', {
       timezone: 'America/Lima',
+      site: { id: '12345678-1234-4123-8123-1234567890e1', nombre: 'Cutervo' },
       stock: {
         snapshot_id: snapshot, snapshot_captured_at: iso(serverStart - 600_000),
         snapshot_confirmed_at: iso(serverStart - 570_000),
@@ -422,6 +423,8 @@ try {
   }, async ({ fake, createPage }) => {
     const page = await createPage({ waitForHome: false })
     await page.getByText('No se pudo cargar Cajero').waitFor()
+    assert.equal(await page.locator('.cajero-header__site').count(), 0,
+      'El encabezado no inventa sede cuando V6 falla')
     assert.ok(fake.bootstrapAttempts >= 1, 'Debe existir al menos un intento V6 fallido')
     const attemptsBeforeRetry = fake.bootstrapAttempts
     assert.equal(await page.getByRole('heading', { name: 'Inicio', exact: true }).count(), 0)
@@ -454,6 +457,7 @@ try {
       const flow = page.locator('.cajero-home-flow')
       const completed = page.locator('.cajero-period-complete')
       const coverage = page.locator('.cajero-coverage-card')
+      await page.locator('.cajero-header__site').getByText('PR Cutervo', { exact: true }).waitFor()
       const indicator = page.getByRole('button', { name: 'Estado del inventario' })
       assert.equal(await indicator.locator('svg').count(), 0, 'Indicador de stock solo muestra el punto')
       assert.equal(await indicator.locator('.cajero-stock-indicator__dot').count(), 1)
