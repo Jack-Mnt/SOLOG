@@ -35,6 +35,10 @@ Se creó `src/features/solog/cajero/full.home.tsx`, exclusivamente visual:
 - Se mantiene la barra inferior y estilos responsivos existentes (móvil, tablet, escritorio), controles accesibles con botones/labels, descripción del anillo y `role=status` en superficies pertinentes.
 - No se modificaron `operational.css`, `cajero.css` ni componentes compartidos globales.
 
+## Delta de seguridad P5 sobre proyección P4
+
+Durante la revisión de estados se detectó un caso concreto: el backend puede presentar temporalmente `state.session` con `status='recovery'` antes de mover la sesión a `recovery_sessions`. `projectFullCoverage` ahora devuelve `null` en ese estado, sin confundir una sesión presente no activa con A1/A2. Se agregó la regresión correspondiente en `tests/cajero-full-kpis-cobertura.test.ts`. Esto no altera reglas, RPC, draft ni recovery; únicamente evita una clasificación visual incorrecta mientras se sincroniza.
+
 ## Pruebas preparadas, NO ejecutadas en esta conexión
 
 `tests/cajero-full.browser.mjs`:
