@@ -1,6 +1,6 @@
 # SOLOG — UX Cajero — Instancia única en tablet — V1
 
-**Estado:** DECISIÓN FUNCIONAL APROBADA Y CONGELADA; preflight técnico dirigido y plan de implementación pendientes. No implementado.
+**Estado:** VIGENTE — IMPLEMENTACIÓN APROBADA, VALIDADA Y CERRADA (2026-10-28). Las decisiones funcionales de esta V1 permanecen congeladas.
 **Fecha:** 2026-10-28.
 **Clasificación:** Nivel B funcional de coordinación entre contextos, con riesgo de concurrencia y recovery que exige pruebas propias.
 **Fuente primaria específica de la instancia única:** este documento.
@@ -54,6 +54,12 @@ También fuera: cambiar V6/V7, SQL, permisos, condiciones del Motor, política d
 - Chrome Android instalado, Chrome tab, Preview y dominio de producción: documentar límites de origen, Chrome profile y experiencia real.
 - Baseline de solicitudes V6 comparado contra la situación pre-cambio; no atribuir ahorros de sondeo horario a la restricción de pestañas.
 
-## Próximo paso
+## Registro de cierre (2026-10-28)
 
-Completar preflight específico de ciclo de vida Web Locks en Chrome Android + producir plan técnico delimitado para Codex; obtener aprobación de plan antes de implementar. Tratar el manifiesto PWA como bloque separado de producto, salvo nueva aprobación explícita.
+- **Implementación:** fases 1–4 completadas en `admin-work`; checkpoint de código y pruebas `2c2ceb2b931b635052385109cf0ba527aa36b691`.
+- **Validación técnica:** suite Bun, lint, build, `git diff --check` y navegador Full/Playwright reportados en verde por el usuario.
+- **Revisión global:** completada sin bloqueos contractuales nuevos.
+- **Smoke humano:** los siete puntos en Chrome/Android fueron reportados como aprobados por el usuario el 2026-10-28.
+- **Resultado:** bloque de instancia única **CERRADO**; no reabrir ni reinterpretar esta V1 sin bug, regresión, evidencia nueva o cambio de requisitos aprobado.
+- **Evidencia de revisión y aceptación:** `docs/SOLOG_Correccion_Cajero_Instancia_Unica_Revision_Global_V1.md` (registro secundario, no sustituye esta fuente primaria).
+- **Trabajo independiente pendiente:** optimización de refrescos/sondeo V6 dentro de O1 y eventual instalación PWA formal. No forman parte del cierre de instancia única.
