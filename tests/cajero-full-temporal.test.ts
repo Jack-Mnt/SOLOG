@@ -27,6 +27,8 @@ describe('Cajero Full — presentación temporal sin duplicar fechas', () => {
       .toBe('118 min restantes de vigencia')
     expect(fullRemainingLabel(0, 'capture')).toBe('Tiempo de captura agotado')
     expect(fullRemainingLabel(0, 'stock')).toBe('Vigencia del inventario agotada')
+    expect(fullRemainingLabel(22, 'delivery')).toBe('22 min restantes para entregar')
+    expect(fullRemainingLabel(0, 'delivery')).toBe('Plazo de entrega agotado')
   })
 
   test('no presenta tiempo inventado si el reloj no es confiable', () => {
