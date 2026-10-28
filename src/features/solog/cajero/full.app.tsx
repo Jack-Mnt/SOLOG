@@ -508,6 +508,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     setStock(type); setCategory(null); setReviewGroup(null)
     navigateTo('/cajero/conteo?stock=' + type)
   }
+  const issueRequiresAttention = view.pending > 0 || view.rejected > 0 || view.drafts > activeDrafts
   const hasUnresolved = view.drafts > 0 || view.pending > 0 || view.rejected > 0 ||
     Boolean(view.bootstrap?.recovery_sessions.length)
   const incidents = hasUnresolved ? runtime.getIncidents() : []
@@ -534,8 +535,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
           <div className="cajero-stock-indicator">
             <button className={'cajero-stock-indicator__trigger' + (!stockFresh ? ' cajero-stock-indicator__trigger--expired' : '')}
               type="button" aria-label="Estado del inventario" aria-expanded={stockOpen} onClick={() => setStockOpen(v => !v)}>
-              <span className="cajero-stock-indicator__dot"/>
-              <Database size={19} aria-hidden="true"/>
+              <span className="cajero-stock-indicator__dot" aria-hidden="true"/>
             </button>
             {stockOpen ? <section className="cajero-stock-indicator__popover" role="dialog" aria-label="Estado del inventario">
               <strong>{stockFresh ? 'Inventario vigente' : 'Inventario desactualizado'}</strong>
@@ -551,22 +551,27 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     </header>
     <main className="cajero-main">
       {view.bootstrap && (error || view.error) ? <div className="cajero-alert cajero-alert--error" role="alert">{error ?? explain(view.error)}</div> : null}
-      {hasUnresolved ? <div className="cajero-alert cajero-alert--warning" role="status">
-        <p>{view.drafts} borradores locales, {view.pending} operaciones pendientes y {view.rejected} rechazadas. Los registros permanecen en este dispositivo.</p>
-        <button className="button button--secondary" type="button" disabled={working || view.busy || view.pending === 0}
-          onClick={() => void run(() => runtime.retry())}><RefreshCw size={18}/> Reintentar operaciones</button>
-        <button className="button button--secondary" type="button" onClick={exportPending}>Exportar diagnóstico</button>
-        {incidents.length ? <div className="cajero-incidents" aria-label="Incidencias locales">
-          {incidents.slice(0, 12).map(item => <div className="cajero-incidents__row" key={item.id}>
-            <span>{item.kind === 'draft' ? 'Borrador' : item.status === 'rejected' ? 'Rechazo definitivo' : 'Envío sin conciliar'} · {item.groupId?.slice(0, 8) ?? item.action ?? '—'} · {item.sessionId?.slice(0, 8) ?? 'Inicio'}
-              {item.code ? ` · ${item.code}` : ''}</span>
-            {runtime.canDiscardIncident(item) ? <button type="button" className="button button--secondary" disabled={working || view.busy}
-              onClick={() => setIncidentToDiscard(item)}>Descartar…</button> : null}
-          </div>)}
-          {incidents.length > 12 ? <p>{incidents.length - 12} incidencias adicionales en el diagnóstico exportable.</p> : null}
-          <p>Exporta el diagnóstico antes de descartar. Los reintentos inciertos y los conflictos no se pueden descartar.</p>
-        </div> : null}
-      </div> : null}
+      {issueRequiresAttention ? <details className="full-local-issues">
+        <summary>Registros que requieren atención</summary>
+        <div className="full-local-issues__body">
+          <p>Hay {view.pending} envíos sin conciliar, {view.rejected} rechazados y {Math.max(0, view.drafts - activeDrafts)} borradores de otras sesiones. Ningún registro se elimina automáticamente.</p>
+          <div className="full-local-issues__actions">
+            <button className="button button--secondary" type="button" disabled={working || view.busy || view.pending === 0}
+              onClick={() => void run(() => runtime.retry())}><RefreshCw size={18} aria-hidden="true"/> Reintentar operaciones</button>
+            <button className="button button--secondary" type="button" onClick={exportPending}>Exportar diagnóstico</button>
+          </div>
+          {incidents.length ? <div className="cajero-incidents" aria-label="Incidencias locales">
+            {incidents.slice(0, 12).map(item => <div className="cajero-incidents__row" key={item.id}>
+              <span>{item.kind === 'draft' ? 'Borrador' : item.status === 'rejected' ? 'Rechazo definitivo' : 'Envío sin conciliar'} · {item.groupId?.slice(0, 8) ?? item.action ?? '—'} · {item.sessionId?.slice(0, 8) ?? 'Inicio'}
+                {item.code ? ` · ${item.code}` : ''}</span>
+              {runtime.canDiscardIncident(item) ? <button type="button" className="button button--secondary" disabled={working || view.busy}
+                onClick={() => setIncidentToDiscard(item)}>Descartar…</button> : null}
+            </div>)}
+            {incidents.length > 12 ? <p>{incidents.length - 12} incidencias adicionales en el diagnóstico exportable.</p> : null}
+            <p>Exporta el diagnóstico antes de descartar. Los reintentos inciertos y los conflictos no se pueden descartar.</p>
+          </div> : null}
+        </div>
+      </details> : null}
       {!view.bootstrap && (error || view.error) ? <PanelLoader variant="contained"
         state="error" title="No se pudo cargar Cajero"
         description={error ?? explain(view.error)}
