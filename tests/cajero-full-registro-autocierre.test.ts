@@ -50,7 +50,7 @@ function harness(options: {
     if (name === 'rpc_solog_cashier_bootstrap_v6') {
       const recovery = startedSession && !finished && now >= expiration
       return response('CASHIER_STATE', {
-        timezone: 'America/Lima', stock: {
+        timezone: 'America/Lima', site: { id: '12345678-1234-4123-8123-1234567890e1', nombre: 'Cutervo' }, stock: {
           snapshot_id: snapshotId, snapshot_captured_at: iso(captured),
           snapshot_confirmed_at: iso(captured + 22000),
           stock_expires_at: iso(captured + 7200000), is_fresh: true, is_fallback: false,
