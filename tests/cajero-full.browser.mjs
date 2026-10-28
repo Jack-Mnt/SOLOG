@@ -361,8 +361,8 @@ async function scenario(options, run) {
     try {
       const response = fake.mutate(args.p_action, args.p_payload)
       if (response === null) return route.abort('failed')
-      // Barrera exclusiva del test multitab: mantener la primera confirmación remota
-      // sin respuesta mientras la segunda pestaña pulsa Registrar conteo.
+      // Barrera para comprobar que una ventana secundaria permanece bloqueada
+      // mientras la instancia propietaria espera la respuesta V7.
       if (fake.holdFirstBatch && args.p_action === 'save_batch' && !fake.firstBatchHeld) {
         fake.firstBatchHeld = true
         await new Promise(resolve => { fake.releaseHeldBatch = resolve })
@@ -373,7 +373,7 @@ async function scenario(options, run) {
       return route.abort()
     }
   })
-  const createPage = async ({ waitForHome = true, trackJournalWrites = false } = {}) => {
+  const createPage = async ({ waitForHome = true, trackJournalWrites = false, noWebLocks = false } = {}) => {
     const page = await context.newPage()
     const calls = []
     requestsByPage.set(page, calls)
@@ -384,6 +384,11 @@ async function scenario(options, run) {
       const { name, args } = request.postDataJSON()
       calls.push({ name, action: args?.p_action ?? null })
     })
+    if (noWebLocks) {
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'locks', { configurable: true, value: undefined })
+      })
+    }
     if (trackJournalWrites) {
       await page.addInitScript(() => {
         window.__sologJournalWrites = 0
@@ -1070,6 +1075,8 @@ try {
     assert.deepEqual(rpcFor(b), [])
 
     await a.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+    await eventually(() => fake.lost && fake.calls.some(c => c.action === 'save_batch'),
+      'La V7 debía quedar confirmada remotamente sin respuesta')
     await waitPending(a, 1)
     const first = structuredClone(fake.calls.find(c => c.action === 'save_batch'))
     assert.ok(first, 'V7 debe haberse aplicado con respuesta perdida')
@@ -1088,6 +1095,34 @@ try {
     await waitPending(b, 0)
     assert.equal((await journal(b)).drafts[sid]?.length ?? 0, 0)
   })
+
+  await check('instancia única: recargar la propietaria conserva drafts sin despertar secundaria', {},
+    async ({ createPage, rpcFor }) => {
+      const a = await createPage()
+      await saveGroup(a, 'Grupo A')
+      const original = (await journal(a)).drafts[sid][0]
+      const b = await createPage({ waitForHome: false, trackJournalWrites: true })
+      await waitBlocked(b)
+      assert.deepEqual(rpcFor(b), [])
+      await a.reload()
+      await a.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+      assert.equal((await journal(a)).drafts[sid][0].clientObservationId, original.clientObservationId)
+      await waitBlocked(b)
+      assert.deepEqual(rpcFor(b), 'La secundaria no debe reclamar el lock durante la recarga')
+      assert.equal(await b.evaluate(() => window.__sologJournalWrites), 0)
+    })
+
+  await check('instancia única: Web Locks ausente impide montar Cajero y llamar V6/V7', {},
+    async ({ createPage, rpcFor }) => {
+      const page = await createPage({
+        waitForHome: false, trackJournalWrites: true, noWebLocks: true,
+      })
+      await page.getByText('No se pudo habilitar SOLOG Cajero', { exact: true }).waitFor()
+      await page.getByText('Web Locks no está disponible en este navegador.').waitFor()
+      assert.deepEqual(rpcFor(page), [])
+      assert.equal(await page.evaluate(() => window.__sologJournalWrites), 0)
+      assert.equal(await page.getByRole('button', { name: 'Registrar conteo' }).count(), 0)
+    })
 
   await check('instancia única: apertura simultánea concede un solo propietario', {},
     async ({ fake, createPage, rpcFor }) => {
