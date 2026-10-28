@@ -1108,7 +1108,7 @@ try {
       await a.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
       assert.equal((await journal(a)).drafts[sid][0].clientObservationId, original.clientObservationId)
       await waitBlocked(b)
-      assert.deepEqual(rpcFor(b), 'La secundaria no debe reclamar el lock durante la recarga')
+      assert.deepEqual(rpcFor(b), [], 'La secundaria no debe reclamar el lock durante la recarga')
       assert.equal(await b.evaluate(() => window.__sologJournalWrites), 0)
     })
 
