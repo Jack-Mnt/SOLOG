@@ -62,7 +62,7 @@ function CashierInstanceGate({ userId, onLogout }: {
   userId: string
   onLogout: () => Promise<void>
 }) {
-  const coordinator = getCashierInstanceCoordinator()
+  const [coordinator] = useState(getCashierInstanceCoordinator)
   const generation = useRef(0)
   const [view, setView] = useState<GateView>({
     userId, generation: 0, status: 'checking', error: null, handle: null,
@@ -80,16 +80,16 @@ function CashierInstanceGate({ userId, onLogout }: {
       })
     }
     handle = coordinator.connect(userId, update)
-    // connect puede emitir su estado inicial antes de devolver el handle.
-    // Repúblicalo ya vinculado, sin conservar uno de una generación anterior.
-    update(coordinator.getState())
+    // connect puede emitir el estado antes de devolver el handle.
+    // Revalidar en una microtarea permite asociarlo al consumidor correcto.
+    queueMicrotask(() => update(coordinator.getState()))
     return () => {
       connected = false
       handle?.disconnect()
     }
   }, [coordinator, userId])
 
-  const ready = view.userId === userId && view.generation === generation.current
+  const ready = view.userId === userId
   if (ready && view.status === 'owner' && view.handle) {
     return <Owner
       key={view.generation}
