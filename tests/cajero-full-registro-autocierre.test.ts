@@ -363,3 +363,28 @@ describe('Cajero Full — borradores y registro agrupado V7', () => {
   })
 
 })
+
+describe('Cajero Full — frescura KPI V6/V7', () => {
+  test('no mezcla banderas viejas durante confirmación V7; recupera frescura tras bootstrap', async () => {
+    const h = harness()
+    await h.runtime.start()
+    expect(h.runtime.getSnapshot().coverageFresh).toBe(true)
+    const published: boolean[] = []
+    const unsubscribe = h.runtime.subscribe(() => { published.push(h.runtime.getSnapshot().coverageFresh) })
+    await h.runtime.observe(groupA, 10, null, null)
+    await h.runtime.sendPending()
+    unsubscribe()
+    expect(published).toContain(false)
+    expect(h.runtime.getSnapshot().coverageFresh).toBe(true)
+    expect(h.runtime.getSnapshot().bootstrap?.groups.every(g => typeof g.coverage_pending_round === 'boolean')).toBe(true)
+  })
+  test('un rechazo definitivo queda excluido de la proyección provisional, sin borrarlo', async () => {
+    const h = harness({ reject: true })
+    await h.runtime.start()
+    await h.runtime.observe(groupA, 10, null, null)
+    const id = h.runtime.getDraft(groupA)!.clientObservationId
+    await expect(h.runtime.sendPending()).rejects.toThrow('PRIORITY_CONFLICT')
+    expect(h.runtime.getRejectedObservationIds(sid).has(id)).toBe(true)
+    expect(h.runtime.getDraft(groupA)?.clientObservationId).toBe(id)
+  })
+})
