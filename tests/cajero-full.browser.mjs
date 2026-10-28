@@ -308,6 +308,16 @@ async function scenario(options, run) {
     if (url.pathname !== '/__solog_full_browser_rpc__') return route.continue()
     const { name, args } = route.request().postDataJSON()
     if (name === 'rpc_solog_cashier_bootstrap_v6') {
+      if (options.bootstrapError === 'always' ||
+        (options.bootstrapError === 'once' && !fake.bootstrapFailureSent)) {
+        fake.bootstrapFailureSent = true
+        return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+          contract_version: 2, ok: false,
+          code: options.bootstrapError === 'always' ? 'DEVICE_UNAUTHORIZED' : 'FULL_TEMP_UNAVAILABLE',
+          server_now: iso(fake.now), retryable: options.bootstrapError === 'once',
+          request_id: '12345678-1234-4123-8123-1234567890b1', data: null, errors: [],
+        }) })
+      }
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify(fake.bootstrap()) })
     }
     if (name !== 'rpc_solog_cashier_mutate_v7') {
@@ -329,12 +339,12 @@ async function scenario(options, run) {
       return route.abort()
     }
   })
-  const createPage = async () => {
+  const createPage = async ({ waitForHome = true } = {}) => {
     const page = await context.newPage()
     page.setDefaultTimeout(12000)
     page.on('pageerror', e => failures.push(e.message))
     await page.goto(target)
-    await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    if (waitForHome) await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     return page
   }
   try {
@@ -376,6 +386,29 @@ async function check(title, options, test) {
   catch (e) { failures.push(title); console.error('FAIL Full browser: ' + title, e) }
 }
 try {
+  await check('bootstrap Full: error transitorio permite reintento explícito', {
+    bootstrapError: 'once',
+  }, async ({ fake, createPage }) => {
+    const page = await createPage({ waitForHome: false })
+    await page.getByText('No se pudo cargar Cajero').waitFor()
+    assert.equal(await page.getByRole('heading', { name: 'Inicio', exact: true }).count(), 0)
+    await page.getByRole('button', { name: 'Reintentar', exact: true }).click()
+    await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    assert.equal(fake.calls.length, 0, 'Retry de bootstrap nunca escribe una mutación')
+  })
+  await check('bootstrap Full: dispositivo denegado bloquea captura y ofrece salida segura', {
+    bootstrapError: 'always',
+  }, async ({ fake, createPage }) => {
+    const page = await createPage({ waitForHome: false })
+    await page.getByText('No se pudo cargar Cajero').waitFor()
+    await page.getByText('Este dispositivo aún no está autorizado.').waitFor()
+    assert.equal(await page.getByRole('button', { name: 'Iniciar conteo' }).count(), 0)
+    await page.getByRole('button', { name: 'Reintentar', exact: true }).click()
+    await page.getByText('No se pudo cargar Cajero').waitFor()
+    assert.equal(fake.calls.length, 0, 'Dispositivo rechazado nunca puede escribir')
+    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click()
+    await page.getByRole('dialog', { name: 'Cerrar sesión' }).waitFor()
+  })
   await check('tarjeta activa Full: popup de SKU y foco sin alterar conteos ni consultar servidor', {
     productDetails: true,
   }, async ({ fake, createPage }) => {
