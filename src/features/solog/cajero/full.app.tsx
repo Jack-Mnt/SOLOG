@@ -503,7 +503,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       </div>
     </header>
     <main className="cajero-main">
-      {error || view.error ? <div className="cajero-alert cajero-alert--error" role="alert">{error ?? explain(view.error)}</div> : null}
+      {view.bootstrap && (error || view.error) ? <div className="cajero-alert cajero-alert--error" role="alert">{error ?? explain(view.error)}</div> : null}
       {hasUnresolved ? <div className="cajero-alert cajero-alert--warning" role="status">
         <p>{view.drafts} borradores locales, {view.pending} operaciones pendientes y {view.rejected} rechazadas. Los registros permanecen en este dispositivo.</p>
         <button className="button button--secondary" type="button" disabled={working || view.busy || view.pending === 0}
@@ -520,7 +520,16 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
           <p>Exporta el diagnóstico antes de descartar. Los reintentos inciertos y los conflictos no se pueden descartar.</p>
         </div> : null}
       </div> : null}
-      {!view.bootstrap && !error && !view.error ? <PanelLoader variant="contained" /> :
+      {!view.bootstrap && (error || view.error) ? <PanelLoader variant="contained"
+        state="error" title="No se pudo cargar Cajero"
+        description={error ?? explain(view.error)}
+        actions={<>
+          <button className="button" type="button" disabled={working || view.busy}
+            onClick={() => void run(() => runtime.refresh())}>Reintentar</button>
+          <button className="button button--secondary" type="button" disabled={working || view.busy}
+            onClick={() => setLogoutOpen(true)}>Cerrar sesión</button>
+        </>} /> :
+        !view.bootstrap ? <PanelLoader variant="contained" /> :
         pathname === '/cajero/historial' && loadHistory ? <CajeroHistorial session={history}/> : !route ? <section className="cajero-module cajero-home">
         <div className="cajero-home__heading"><h1>Inicio</h1></div>
         <section className={'cajero-stock-card' + (stockFresh ? ' cajero-stock-card--updated' : ' cajero-stock-card--stale')}>
