@@ -4,7 +4,7 @@ import type { FullCoveragePresentation } from './full.coverage'
 
 type Step = 'coverage' | 'review' | 'daily'
 const steps: Record<Step, { title: string; description: string }> = {
-  coverage: { title: 'Conteo', description: 'Completa los grupos pendientes de la cobertura de la ronda.' },
+  coverage: { title: 'Conteo', description: 'Grupos por contar en la ronda actual.' },
   review: { title: 'Revisar', description: 'Recuenta los casos que requieren una nueva verificación física.' },
   daily: { title: 'Diario', description: 'Registra los grupos habilitados para un conteo normal en este turno.' },
 }
@@ -58,7 +58,7 @@ export function FullCoverageCard({ coverage, onClick }: {
   const content = <>
     <div className="cajero-coverage-card__copy">
       <span>{label}</span><h2>{displayed} / {total}</h2>
-      <p>{summary.coverage_pending} pendientes de confirmar</p>
+      <p>{summary.coverage_pending} grupos pendientes</p>
       <p className="full-coverage-breakdown">
         <span>{confirmed} confirmados</span>
         {provisional > 0 ? <span>{provisional} {provisional === 1 ? 'provisional' : 'provisionales'}</span> : null}
@@ -92,9 +92,10 @@ export function FullHomeMetric({ label, value, kind, wide, emphasized, onClick }
     wide ? 'cajero-home-metric--wide' : '',
     emphasized ? 'cajero-home-metric--emphasized' : '',
   ].filter(Boolean).join(' ')
+  const workLabel = kind === 'review' ? 'por recontar' : 'por contar'
   const body = <><Icon size={23} aria-hidden="true"/><span>{label}</span>
-    <div className="cajero-home-metric__value"><strong>{value}</strong><small>pendientes</small></div></>
+    <div className="cajero-home-metric__value"><strong>{value}</strong><small>{workLabel}</small></div></>
   return onClick
-    ? <button className={cls} type="button" onClick={onClick} aria-label={`Abrir ${label}, ${value} pendientes`}>{body}</button>
-    : <article className={cls} aria-label={`${label}: ${value} pendientes`}>{body}</article>
+    ? <button className={cls} type="button" onClick={onClick} aria-label={`Abrir ${label}, ${value} ${workLabel}`}>{body}</button>
+    : <article className={cls} aria-label={`${label}: ${value} ${workLabel}`}>{body}</article>
 }
