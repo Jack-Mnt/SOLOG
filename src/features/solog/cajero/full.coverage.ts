@@ -25,6 +25,8 @@ export function projectFullCoverage(
   coverageFresh: boolean,
 ): FullCoveragePresentation | null {
   if (!state || !clockTrusted || !coverageFresh || !Number.isFinite(serverNow)) return null
+  // Sesión presente pero ya no activa: estado transitorio/recovery, nunca A1 o A2.
+  if (session && session.status !== 'active') return null
   const summary = state.operational_summary
   const start = Date.parse(summary.basis.round_starts_at)
   const end = Date.parse(summary.basis.round_ends_at)
