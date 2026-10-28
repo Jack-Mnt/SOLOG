@@ -451,6 +451,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   }, [])
   const workLink = (r: CashierRoute) => {
     setCategory(null); setReviewGroup(null)
+    if (r === '/cajero/conteo') setStock('positive')
     navigateTo(r)
   }
   const record = async (g: FullGroup, value: number, note: Observation, expression: string) => {
@@ -654,7 +655,10 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
           <h2>Tipo de stock</h2><div className="cajero-selection-grid">
             {([['positive', 'Stock positivo'], ['zero', 'Stock 0'], ['negative', 'Stock negativo']] as const).map(([key, label]) =>
               <button type="button" key={key} className={stock === key ? 'is-active' : ''} aria-pressed={stock === key}
-                onClick={() => { setStock(key); setCategory(null) }}>
+                onClick={() => {
+                   setStock(key); setCategory(null)
+                   navigateTo('/cajero/conteo?stock=' + key)
+                 }}>
                 <ClipboardList size={23}/><span><strong>{label}</strong><small>{currentGroups.filter(g => stockType(g.stock_theoretical) === key).length} grupos</small></span>
               </button>)}
           </div></section> : null}
