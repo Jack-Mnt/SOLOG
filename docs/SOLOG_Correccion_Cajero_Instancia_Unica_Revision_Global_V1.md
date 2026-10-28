@@ -1,6 +1,6 @@
 # SOLOG — Corrección Cajero — Instancia única — Revisión global V1
 
-**Estado:** REVISIÓN GLOBAL COMPLETADA; **SMOKE HUMANO EN TABLET PENDIENTE**. No cerrar todavía.
+**Estado:** VIGENTE COMO ACTA DE REVISIÓN Y CIERRE. **IMPLEMENTACIÓN APROBADA Y CERRADA**; smoke humano validado por el usuario (2026-10-28).
 **Fecha:** 2026-10-28.
 **Rama:** `admin-work`.
 **HEAD auditado:** `2c2ceb2b931b635052385109cf0ba527aa36b691`.
@@ -49,9 +49,11 @@ Sin cambios de `full.runtime.ts`, `full.app.tsx`, `protected-app.tsx`, `src/feat
 
 **No verificado directamente:** ejecución de Bun/Playwright en este entorno, comprobación real de Web Locks en Chrome Android instalado, trazas de tráfico/egress contra Supabase, convivencia app instalada+pestaña y suspensión Android.
 
-## 4. Smoke humano pendiente — Chrome Android
+## 4. Smoke humano — APROBADO por el usuario (2026-10-28)
 
-Utilizar **SOLOG Preview de la misma rama/origen** y una **tablet Android con Chrome**. Evitar producción y conteos reales en las pruebas que escriban. No mezclar dominio Preview y producción para comprobar exclusividad: tienen orígenes diferentes.
+**Evidencia de aceptación:** el usuario confirmó explícitamente el 2026-10-28 que completó los siete puntos del smoke test de instancia única de SOLOG Cajero en Chrome/Android y que **todos pasaron**. No se adjuntaron trazas ni datos específicos del dispositivo; esta acta registra la validación humana comunicada, no una ejecución independiente del asistente.
+
+Los siete criterios ejecutados y aceptados fueron:
 
 1. **Dos pestañas, mismo Chrome/origen/perfil:** abrir Cajero A, abrir Cajero B. A permanece operativa; B muestra «SOLOG Cajero ya está abierto en otra ventana» y `Reintentar`. B no muestra controles de conteo.
 2. **Sin takeover por segundo plano:** pasar de A a B, dejar A en segundo plano y pulsar `Reintentar` en B. B sigue bloqueada. Regresar a A: continúan navegación y estado.
@@ -71,6 +73,26 @@ Utilizar **SOLOG Preview de la misma rama/origen** y una **tablet Android con Ch
 - La experiencia formal de PWA, el manifiesto y cualquier soporte offline pertenecen a un bloque independiente.
 - El control de focus/visibility, la deduplicación del journal y el sondeo horario de O1 siguen **pendientes**, fuera de esta implementación.
 
-## 6. Cierre
+## 6. Cierre formal — 2026-10-28
 
-**Pendiente de resultados del smoke humano de tablet.** Si se detecta un fallo, abrir corrección dirigida con evidencia (pasos exactos, Android/Chrome, tipo de instalación y capturas, sin datos sensibles). Si el smoke pasa, registrar aceptación y cerrar explícitamente el bloque de instancia única sin reabrir su especificación; continuar O1 con los optimizadores restantes.
+**IMPLEMENTACIÓN APROBADA Y CERRADA**
+
+| Campo | Cierre |
+| --- | --- |
+| Documento fuente | `docs/SOLOG_UX_Cajero_Instancia_Unica_Tablet_V1.md` |
+| Versión | V1, vigente y congelada |
+| Checkpoint de implementación | `2c2ceb2b931b635052385109cf0ba527aa36b691` |
+| Checkpoint de revisión global | `9959b40b9dcc9f9a4bc072b6a8e99c98d8cb6737` |
+| Actualización de estado de la fuente primaria | `22b99b9ffa725712ec6eabb77631f48a5e56613f` |
+| Alcance completado | Instancia única Cajero por origen/partición Chrome, compuerta Web Locks, secundaria bloqueada, reintento manual, drenaje y preservación Full |
+| Validaciones técnicas | `bun test`, navegador Full/Playwright, lint, build y `git diff --check` reportados en verde por el usuario |
+| Revisión global | Completada; no se identificaron bloqueos contractuales nuevos |
+| Smoke test | 7/7 puntos reportados aprobados por el usuario, Chrome/Android, 2026-10-28 |
+| Desviaciones aprobadas | Ninguna desviación funcional documentada; ajuste de aserción de test desactualizado incluido |
+| Pendientes dentro del bloque | Ninguno identificado con la evidencia disponible |
+| Deuda/límites conocidos | Web Locks no coordina orígenes, perfiles ni dispositivos diferentes; no equivale a funcionamiento offline |
+| Documentos reemplazados | Ninguno; el preflight conserva carácter histórico, la fuente primaria permanece vigente |
+
+**Límite del cierre:** la exclusividad de Cajero no implica cerrar O1 completo. La consolidación de refrescos V6, la deduplicación de escrituras de journal, la revisión de sondeo horario y la PWA formal continúan como actividades separadas, aún no aprobadas por este cierre.
+
+**Política posterior:** este bloque no se reabre por preferencias de diseño o ideas exploratorias; únicamente ante bug, regresión, evidencia nueva o cambio de requisitos expresamente aprobado. Toda corrección posterior será dirigida, con delta si modifica las decisiones congeladas.
