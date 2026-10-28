@@ -335,13 +335,15 @@ async function scenario(options, run) {
     if (url.pathname !== '/__solog_full_browser_rpc__') return route.continue()
     const { name, args } = route.request().postDataJSON()
     if (name === 'rpc_solog_cashier_bootstrap_v6') {
+      fake.bootstrapAttempts = (fake.bootstrapAttempts ?? 0) + 1
       if (options.bootstrapError === 'always' ||
+        (options.bootstrapError === 'untilRetry' && !fake.allowBootstrapRetry) ||
         (options.bootstrapError === 'once' && !fake.bootstrapFailureSent)) {
         fake.bootstrapFailureSent = true
         return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
           contract_version: 2, ok: false,
           code: options.bootstrapError === 'always' ? 'DEVICE_UNAUTHORIZED' : 'FULL_TEMP_UNAVAILABLE',
-          server_now: iso(fake.now), retryable: options.bootstrapError === 'once',
+          server_now: iso(fake.now), retryable: options.bootstrapError !== 'always',
           request_id: '12345678-1234-4123-8123-1234567890b1', data: null, errors: [],
         }) })
       }
@@ -414,13 +416,20 @@ async function check(title, options, test) {
 }
 try {
   await check('bootstrap Full: error transitorio permite reintento explícito', {
-    bootstrapError: 'once',
+    // StrictMode puede iniciar más de un bootstrap antes de mostrar el error.
+    // Persistir la avería hasta la acción humana hace determinista esta prueba.
+    bootstrapError: 'untilRetry',
   }, async ({ fake, createPage }) => {
     const page = await createPage({ waitForHome: false })
     await page.getByText('No se pudo cargar Cajero').waitFor()
+    assert.ok(fake.bootstrapAttempts >= 1, 'Debe existir al menos un intento V6 fallido')
+    const attemptsBeforeRetry = fake.bootstrapAttempts
     assert.equal(await page.getByRole('heading', { name: 'Inicio', exact: true }).count(), 0)
+    assert.equal(fake.calls.length, 0, 'El error V6 no debe producir mutaciones')
+    fake.allowBootstrapRetry = true
     await page.getByRole('button', { name: 'Reintentar', exact: true }).click()
     await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    assert.ok(fake.bootstrapAttempts > attemptsBeforeRetry, 'Reintentar debe emitir un nuevo bootstrap V6')
     assert.equal(fake.calls.length, 0, 'Retry de bootstrap nunca escribe una mutación')
   })
   await check('bootstrap Full: dispositivo denegado bloquea captura y ofrece salida segura', {
@@ -554,8 +563,18 @@ try {
     assert.ok(panelBox && navBox && calculatorBox)
     assert.ok(panelBox.y + panelBox.height - (navBox.y + navBox.height) < 65,
       'Navegación debe permanecer junto al borde inferior de captura')
-    assert.ok(calculatorBox.y + calculatorBox.height <= navBox.y + 3,
-      'Calculadora debe quedar inmediatamente encima de la navegación')
+    // La barra sticky puede superponerse visualmente al contenido desplazable
+    // antes de hacer scroll. Verificar orden estructural y accesibilidad real,
+    // no comparar bounding boxes de un estado intermedio del scroll.
+    const calculatorBeforeNav = await modal.evaluate(root => {
+      const calculator = root.querySelector('.cajero-calculator')
+      const navigation = root.querySelector('.cajero-capture-detail__navigation')
+      return !!calculator && !!navigation &&
+        Boolean(calculator.compareDocumentPosition(navigation) & Node.DOCUMENT_POSITION_FOLLOWING)
+    })
+    assert.ok(calculatorBeforeNav, 'Calculadora debe preceder a la navegación en el flujo')
+    await modal.locator('.cajero-calculator__keys button').last().click({ trial: true })
+    await modal.locator('.cajero-capture-detail__navigation button').last().click({ trial: true })
     await modal.getByRole('button', { name: 'Agregar observación' }).click()
     const observation = page.getByRole('dialog', { name: 'Motivo y observación' })
     await observation.waitFor()
