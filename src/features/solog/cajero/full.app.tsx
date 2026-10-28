@@ -447,7 +447,11 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       if (window.location.pathname === '/cajero/conteo') setStock(raw === 'zero' || raw === 'negative' ? raw : 'positive')
     }
     window.addEventListener('popstate', syncStock)
-    return () => window.removeEventListener('popstate', syncStock)
+    window.addEventListener('solog:navigation', syncStock)
+    return () => {
+      window.removeEventListener('popstate', syncStock)
+      window.removeEventListener('solog:navigation', syncStock)
+    }
   }, [])
   const workLink = (r: CashierRoute) => {
     setCategory(null); setReviewGroup(null)
