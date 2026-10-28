@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero — KPIs y cobertura Full — Revisión global P6 V1
 
-**Estado:** P6 REVISIÓN GLOBAL REMOTA COMPLETADA PARCIALMENTE; **CIERRE BLOQUEADO POR BROWSER TEST SIN RESULTADO Y SMOKE HUMANO PENDIENTE**. No declarar bloque cerrado.
+**Estado actualizado:** P6 REVISIÓN GLOBAL Y VALIDACIÓN AUTOMATIZADA APROBADAS SEGÚN REPORTE DEL USUARIO; **SMOKE VISUAL HUMANO PENDIENTE**. No declarar bloque cerrado todavía.
 **Fecha:** 2026-10-28, zona de proyecto America/Lima.
 **Clasificación:** cierre Nivel C/backend + B/frontend.
 **Rama:** `admin-work`; `master` fuera de alcance.
@@ -98,3 +98,12 @@ node tests/cajero-full.browser.mjs
 ```
 
 Mantener P6 abierto hasta resultado real y smoke visual humano.
+
+## 9. Resultado posterior del browser test — aprobado por el usuario (2026-10-28)
+
+El usuario confirmó explícitamente: **«Todos los test pasaron»** después de sincronizar y ejecutar la corrección puntual del browser test mediante Google Chrome instalado.
+
+- **Browser automatizado:** aprobado por reporte del usuario para la versión corregida de `tests/cajero-full.browser.mjs`. Esto supera los dos fallos inicialmente registrados en la sección 8. No se dispone de log final adjunto y no se atribuye ejecución a ChatGPT.
+- **Bun, lint, build y git diff --check:** aprobados anteriormente por el usuario en P5; los últimos cambios P6 fueron exclusivamente de pruebas y documentación. Sin cambios de código productivo posteriores.
+- **Contrato Supabase:** comprobado en lectura durante P6. Sin migraciones adicionales ni mutaciones.
+- **Única barrera restante:** smoke visual humano de Inicio A1/A2/B/C, segmentos del anillo, navegación y responsive en Preview o entorno controlado. No declarar P6 ni bloque global cerrado hasta que el usuario apruebe el smoke o acepte expresamente una excepción documentada.
