@@ -18,3 +18,58 @@
 }
 .cajero-incidents__row > span { min-width: 0; overflow-wrap: anywhere; }
 .cajero-incidents__row > button { flex-shrink: 0; }
+
+/* KPI Full: composición histórica de cobertura con segundo segmento provisional. */
+.full-progress-ring__provisional {
+  fill: none;
+  stroke: var(--color-warning);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+.full-coverage-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.85rem;
+}
+.full-coverage-breakdown > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.77rem;
+  font-weight: 650;
+}
+.full-coverage-breakdown > span::before {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+.full-coverage-breakdown > span + span::before { background: var(--color-warning); }
+.full-coverage-unavailable {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-secondary);
+}
+.full-coverage-unavailable p {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+}
+.full-coverage-unavailable .button {
+  flex-shrink: 0;
+}
+@media (max-width: 599px) {
+  .full-coverage-breakdown { gap: 0.3rem 0.55rem; }
+  .full-coverage-breakdown > span { font-size: 0.71rem; }
+  .full-coverage-unavailable .button { width: 100%; }
+}
