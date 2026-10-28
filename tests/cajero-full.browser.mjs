@@ -456,6 +456,18 @@ try {
       }
     })
   }
+  await check('Inicio B: Stock 0/negativo sincroniza la URL y filtros de conteo', {}, async ({ createPage }) => {
+    const page = await createPage()
+    await page.locator('.cajero-home-metrics--stock').getByRole('button', { name: /Stock 0/ }).click()
+    assert.equal(new URL(page.url()).searchParams.get('stock'), 'zero')
+    await page.getByRole('button', { name: /Stock negativo/ }).click()
+    assert.equal(new URL(page.url()).searchParams.get('stock'), 'negative')
+    await page.getByRole('button', { name: /Stock positivo/ }).click()
+    assert.equal(new URL(page.url()).searchParams.get('stock'), 'positive')
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Inicio', exact: true }).click()
+    assert.equal(new URL(page.url()).searchParams.has('stock'), false)
+  })
   await check('Inicio B: borrador provisional no completa la ronda', {}, async ({ createPage }) => {
     const page = await createPage()
     await saveGroup(page, 'Grupo A')
