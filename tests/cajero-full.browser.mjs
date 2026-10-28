@@ -47,6 +47,15 @@ class SimulatedFull {
       this.groups[0].package_price = 44
     }
     if (priorityChange) this.groups[1].priority_class = 'shift_coverage'
+    // Una ronda cubierta no puede conservar trabajo de round_coverage.
+    // El backend puede, en cambio, priorizar revisión y después diario.
+    if (homeScenario === 'A2' || homeScenario === 'C') {
+      this.groups[0].action = 'recount'
+      this.groups[0].priority_class = 'review_regular'
+      this.groups[0].recount_detail_id = '12345678-1234-4123-8123-1234567890b3'
+      this.groups[1].action = 'daily'
+      this.groups[1].priority_class = 'shift_coverage'
+    }
     if (recount) {
       this.groups[0].action = 'recount'
       this.groups[0].priority_class = 'review_regular'
@@ -109,7 +118,9 @@ class SimulatedFull {
         coverage_percent: fullyCovered ? 100 : Math.round(this.groups.filter(g => g.action === 'none').length * 1000 / this.groups.length) / 10,
         review_pending: this.groups.filter(g => g.action === 'recount').length,
         daily_pending: this.groups.filter(g => g.action === 'daily').length,
-        next_action: this.groups.some(g => g.action === 'coverage') ? 'coverage' : 'none',
+        next_action: this.groups.some(g => g.action === 'coverage') ? 'coverage'
+          : this.groups.some(g => g.action === 'recount') ? 'review'
+            : this.groups.some(g => g.action === 'daily') ? 'daily' : 'none',
       },
       session: active ? state : null,
       recovery_sessions: recovery ? [state] : [],
@@ -447,8 +458,18 @@ try {
       assert.equal(await completed.count(), homeScenario === 'A2' || homeScenario === 'C' ? 1 : 0)
       assert.equal(await coverage.count(), homeScenario === 'A1' || homeScenario === 'B' ? 1 : 0)
       assert.equal(await page.locator('.cajero-home-metrics--stock').count(), homeScenario === 'B' ? 1 : 0)
-      if (homeScenario === 'A2' || homeScenario === 'C')
+      if (homeScenario === 'A2' || homeScenario === 'C') {
         assert.equal(await page.locator('.cajero-home-metrics--operations .cajero-home-metric').count(), 2)
+        assert.equal(await page.locator('.cajero-home-metrics--operations').getByText('Revisar').count(), 1)
+        assert.equal(await page.locator('.cajero-home-metrics--operations').getByText('Conteo diario').count(), 1)
+        if (homeScenario === 'A2') {
+          assert.equal(await page.locator('.cajero-home-metrics--operations button').count(), 0,
+            'Los KPI pre-sesión informan pero no autorizan navegar')
+        } else {
+          assert.equal(await page.locator('.cajero-home-metrics--operations button').count(), 1,
+            'Solo Revisar puede abrirse cuando la prioridad Full es review_regular')
+        }
+      }
       for (const width of [390, 768, 1280]) {
         await page.setViewportSize({ width, height: 820 })
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
