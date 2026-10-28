@@ -33,8 +33,10 @@ describe('runtime productivo V4', () => {
   test('entry productivo monta Full V6/V7 sin volver a foundation V3 o UI V4', async () => {
     const app = await Bun.file('src/features/solog/cajero/cajero.app.tsx').text()
     const full = await Bun.file('src/features/solog/cajero/full.runtime.ts').text()
-    expect(app).toContain("import { FullRuntime, type FullRpc } from './full.runtime'")
+    expect(app).toMatch(/import\s*\{[^}]*\bFullRuntime\b[^}]*\}\s*from\s*['"]\.\/full\.runtime['"]/)
     expect(app).toContain('new FullRuntime(')
+    expect(app).toContain('handle.bindRuntime(transactionLock, call)')
+    expect(app).toContain("view.status === 'owner' && view.handle")
     expect(app).toContain('<FullCashierPanel runtime={runtime}')
     expect(app).not.toContain('<CashierV4Provider')
     expect(app).not.toContain("import('./cajero.v4.ui')")
