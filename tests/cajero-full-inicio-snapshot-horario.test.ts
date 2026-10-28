@@ -111,6 +111,7 @@ describe('Cajero Full — protección de runtime durante el inicio remoto', () =
         request_id: requestId, server_now: iso(serverNow), retryable: false,
         data: {
           timezone: 'America/Lima',
+          site: { id: '12345678-1234-4123-8123-1234567890e1', nombre: 'Cutervo' },
           stock: {
             snapshot_id: snapshotId,
             snapshot_captured_at: iso(captureAt),
