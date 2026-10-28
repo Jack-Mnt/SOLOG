@@ -32,6 +32,7 @@ export interface FullRecoveryDeliveryState {
 }
 export interface FullState {
   timezone: 'America/Lima'
+  site: { id: string; nombre: string }
   stock: null | { snapshot_id: string; snapshot_captured_at: string; snapshot_confirmed_at: string; stock_expires_at: string; is_fresh: boolean; is_fallback: boolean; catalog_version: number; groups_revision: number }
   session: FullSession | null; recovery_sessions: FullSession[]; groups: FullCashierGroup[]
   operational_summary: FullOperationalSummary
@@ -96,7 +97,9 @@ export function parseFullEnvelope(value: unknown): FullEnvelope {
   if (!r.ok) { check(r.data === null); check(Array.isArray(r.errors)); return value as FullEnvelope }
   const d = object(r.data)
   if (r.code === 'CASHIER_STATE') {
-    check(d.timezone === 'America/Lima'); if (d.session !== null) session(d.session)
+    check(d.timezone === 'America/Lima'); const site = object(d.site)
+    check(isUuid(site.id)); text(site.nombre); check(site.nombre.trim().length > 0)
+    if (d.session !== null) session(d.session)
     list(d.recovery_sessions).forEach(session); operationalSummary(d.operational_summary, r.server_now)
     list(d.groups).forEach(item => { group(item); boolean(object(item).coverage_pending_round) }); uniqueIds(d.confirmed_observation_ids)
     const groups = list(d.groups).map(object); check(new Set(groups.map(g => g.group_id)).size === groups.length)
