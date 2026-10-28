@@ -13,6 +13,7 @@ class FakeWebLocks {
 
   async request<T>(name: string, _options: { mode: 'exclusive'; ifAvailable: true }, callback: (lock: Lock | null) => Promise<T>): Promise<T> {
     this.requests++
+    expect(_options).toEqual({ mode: 'exclusive', ifAvailable: true })
     if (this.throwOnRequest) throw new Error('browser failure')
     await this.beforeGrant
     if (this.owners.has(name)) return callback(null)
