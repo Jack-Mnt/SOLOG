@@ -96,9 +96,21 @@ class SimulatedFull {
         stock_expires_at: iso(serverStart - 600_000 + 7200000),
         is_fresh: true, is_fallback: false, catalog_version: 1, groups_revision: 1,
       },
+      operational_summary: {
+        basis: { coverage_round: 2,
+          round_starts_at: iso(this.now - 5 * 86400000),
+          round_ends_at: iso(this.now + 5 * 86400000) },
+        coverage_total: this.groups.length,
+        coverage_counted: this.groups.filter(g => g.action === 'none').length,
+        coverage_pending: this.groups.filter(g => g.action !== 'none').length,
+        coverage_percent: Math.round(this.groups.filter(g => g.action === 'none').length * 1000 / this.groups.length) / 10,
+        review_pending: this.groups.filter(g => g.action === 'recount').length,
+        daily_pending: this.groups.filter(g => g.action === 'daily').length,
+        next_action: this.groups.some(g => g.action === 'coverage') ? 'coverage' : 'none',
+      },
       session: active ? state : null,
       recovery_sessions: recovery ? [state] : [],
-      groups: active ? this.groups : [],
+      groups: active ? this.groups.map(g => ({ ...g, coverage_pending_round: g.action !== 'none' })) : [],
       confirmed_observation_ids: active ? [...this.observations] : [],
       recovery_manifests: recovery ? [{ session_id: sid, observation_ids: [...this.observations] }] : [],
       recovery_delivery_states: recovery ? [{
@@ -214,7 +226,7 @@ class SimulatedCoexistingFull extends SimulatedFull {
       }],
       recovery_manifests: this.finished ? [] :
         [{ session_id: sid, observation_ids: [...this.observations] }],
-      groups: this.groupsB,
+      groups: this.groupsB.map(g => ({ ...g, coverage_pending_round: g.action !== 'none' })),
       confirmed_observation_ids: [...this.observationsB],
       stock: {
         ...base.stock, snapshot_id: snapshotB,
