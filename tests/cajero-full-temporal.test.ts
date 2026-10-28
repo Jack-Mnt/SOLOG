@@ -36,6 +36,7 @@ describe('Cajero Full — presentación temporal sin duplicar fechas', () => {
     expect(fullMinutesRemaining(null, Date.now(), true)).toBeNull()
     expect(fullMinutesRemaining('invalido', Date.now(), true)).toBeNull()
     expect(fullMinutesRemaining('2026-10-28T10:38:00.000Z', Number.NaN, true)).toBeNull()
+    expect(fullMinutesRemaining('2026-10-28T10:38:00.000Z', 0, true)).toBeNull()
     expect(fullRemainingLabel(null, 'stock')).toBe('Tiempo restante no disponible')
   })
 })
