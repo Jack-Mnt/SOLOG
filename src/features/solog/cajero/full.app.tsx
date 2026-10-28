@@ -308,6 +308,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const [incidentToDiscard, setIncidentToDiscard] = useState<FullIncident | null>(null)
   const autoClosed = useRef(new Map<string, number>())
   const lastPreparedRetry = useRef(Number.NEGATIVE_INFINITY)
+  const lastRoundRefresh = useRef<string | null>(null)
   const session = view.session
   const stockState = view.bootstrap?.stock
   const canCapture = runtime.clock.canCapture(session) && !working && !view.busy
@@ -388,6 +389,15 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       document.removeEventListener('visibilitychange', resume)
     }
   }, [runtime])
+  // Al cambiar la ronda, una sola nueva lectura V6; sin polling periódico de KPI.
+  useEffect(() => {
+    const endsAt = view.bootstrap?.operational_summary.basis.round_ends_at
+    if (!endsAt || !runtime.clock.trusted || !Number.isFinite(now) ||
+      now < Date.parse(endsAt) || view.busy || working || !navigator.onLine ||
+      lastRoundRefresh.current === endsAt) return
+    lastRoundRefresh.current = endsAt
+    void runtime.refresh().catch(e => setError(explain(e)))
+  }, [runtime, view.bootstrap, now, view.busy, working])
   // Refrescar V6 solo durante la ventana HH:59 → HH+1:02.
   // Nunca sustituir con este sondeo la autorización final del backend.
   useEffect(() => {
