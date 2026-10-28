@@ -531,6 +531,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         <button className="cajero-header__brand" type="button" aria-label="Ir a Inicio" onClick={() => workLink('/cajero')}>
           <img src="/Logo_SOLOG.png" alt="SOLOG"/>
         </button>
+        {view.bootstrap ? <strong className="cajero-header__site" title={`PR ${view.bootstrap.site.nombre}`}>PR {view.bootstrap.site.nombre}</strong> : null}
         <div className="cajero-header__actions">
           <div className="cajero-stock-indicator">
             <button className={'cajero-stock-indicator__trigger' + (!stockFresh ? ' cajero-stock-indicator__trigger--expired' : '')}
