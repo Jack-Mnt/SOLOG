@@ -48,9 +48,6 @@ const explain = (error: unknown) => {
   const code = error instanceof Error ? error.message : String(error)
   return messages[code] ?? code
 }
-const dateTime = (value?: string) => value
-  ? new Date(value).toLocaleString('es-PE', { timeZone: 'America/Lima', dateStyle: 'short', timeStyle: 'short' })
-  : 'Sin actualización'
 type WorkAction = FullWorkAction
 type StockType = FullStockType
 type Observation = { reason: CashierDifferenceReason | null; text: string | null }
@@ -698,7 +695,9 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         onClose={() => { setCategory(null); setReviewGroup(null) }}
         draftFor={groupId => runtime.getDraft(groupId)} onRecord={record}/> : null}
       {view.bootstrap?.recovery_sessions.map(s => <div className="cajero-alert cajero-alert--warning" key={s.session_id}>
-        <p>Sesión en recuperación. Entrega disponible hasta {dateTime(s.pending_delivery_until)}.</p>
+        <p>Sesión en recuperación. {fullRemainingLabel(
+          fullMinutesRemaining(s.pending_delivery_until, now, runtime.clock.trusted), 'delivery',
+        )}.</p>
         <button type="button" className="button button--secondary" disabled={working || view.busy}
           onClick={() => void run(() => runtime.finish(s.session_id))}>Reintentar cierre seguro</button>
       </div>)}
