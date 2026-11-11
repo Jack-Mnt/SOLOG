@@ -17,6 +17,92 @@ BEGIN
   THEN RAISE EXCEPTION 'SOLOG_V3_DISPATCH_BASELINE_CHANGED';END IF;
 END $preflight$;
 
+-- B4: la reserva de reconteo Full NO se libera al entrar en recovery.
+CREATE OR REPLACE FUNCTION inventario.solog_cleanup_session_runtime_groups()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO ''
+AS $fn$
+BEGIN
+  IF EXISTS(SELECT 1 FROM inventario.full_session_windows
+            WHERE session_id=NEW.id) THEN
+    IF NEW.estado IN ('finalizado','expirado')
+       AND OLD.estado IS DISTINCT FROM NEW.estado THEN
+      DELETE FROM inventario.full_recount_reservations
+      WHERE session_id=NEW.id;
+    END IF;
+  ELSE
+    IF NEW.estado IN ('finalizado','expirado')
+       AND OLD.estado IS DISTINCT FROM NEW.estado THEN
+      DELETE FROM inventario.solog_session_runtime_groups
+      WHERE conteo_id=NEW.id;
+    END IF;
+  END IF;
+  RETURN NEW;
+END $fn$;
+
+-- Ampliaciones aditivas JSON Schema. Ambos documentos se editan por separado
+-- para conservar su $ref raíz original y no sobrescribir sus diferencias.
+DO $schema$
+DECLARE
+  v_row record; v_document jsonb; v_variant jsonb;
+  v_props jsonb; v_new_codes jsonb :=
+    '["START_WINDOW_CLOSED","START_CAPTURE_TOO_SHORT","SNAPSHOT_SELECTION_CHANGED","START_POLICY_NOT_ENABLED","START_POLICY_UPGRADE_REQUIRED","SESSION_RECOVERY_PENDING","NORMAL_COUNT_BLOCKED_AFTER_INCONSISTENT"]'::jsonb;
+  v_offer jsonb;
+BEGIN
+  v_offer := jsonb_build_object(
+    'type','object',
+    'required',jsonb_build_array(
+       'policy_version','cycle_started_at','status','snapshot_id',
+       'requires_confirmation','can_start','capture_ends_at','block_reason'),
+    'properties',jsonb_build_object(
+       'policy_version',jsonb_build_object('const',3),
+       'cycle_started_at',jsonb_build_object('type','string','format','date-time'),
+       'status','{"enum":["new","fallback","unavailable"]}'::jsonb,
+       'snapshot_id','{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}]}'::jsonb,
+       'requires_confirmation',jsonb_build_object('type','boolean'),
+       'can_start',jsonb_build_object('type','boolean'),
+       'capture_ends_at','{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}]}'::jsonb,
+       'block_reason','{"anyOf":[{"type":"string"},{"type":"null"}]}'::jsonb),
+    'additionalProperties',false
+  );
+
+  FOR v_row IN SELECT kind,document FROM inventario.full_contracts
+               WHERE kind IN ('cashier_mutate','cashier_bootstrap')
+               ORDER BY kind FOR UPDATE LOOP
+    v_document:=v_row.document;
+    IF v_document#>>'{definitions,CashierMutationRequest,oneOf,0,properties,p_action,const}' IS DISTINCT FROM 'start' OR
+       v_document#>'{definitions,StartOfferV3}' IS NOT NULL THEN
+      RAISE EXCEPTION 'SOLOG_V3_CONTRACT_BASELINE_MISMATCH: %',v_row.kind;
+    END IF;
+
+    v_variant:=v_document#>'{definitions,CashierMutationRequest,oneOf,0}';
+    v_variant:=jsonb_set(v_variant,'{properties,p_payload,required}',
+       '["operation_id","device_token","expected_snapshot_id","expected_cycle_started_at","selected_as"]'::jsonb);
+    v_props:=v_variant#>'{properties,p_payload,properties}';
+    v_props:=v_props||jsonb_build_object(
+       'expected_snapshot_id',v_props->'operation_id',
+       'expected_cycle_started_at',jsonb_build_object('type','string','format','date-time'),
+       'selected_as','{"enum":["new","fallback"]}'::jsonb
+    );
+    v_variant:=jsonb_set(v_variant,'{properties,p_payload,properties}',v_props);
+    v_document:=jsonb_set(v_document,'{definitions,CashierMutationRequest,oneOf}',
+      (v_document#>'{definitions,CashierMutationRequest,oneOf}') || jsonb_build_array(v_variant));
+    v_document:=jsonb_set(v_document,'{definitions,StartOfferV3}',v_offer,true);
+    v_document:=jsonb_set(v_document,
+      '{definitions,CashierBootstrapSuccess,properties,data,properties,start_offer}',
+      '{"$ref":"#/definitions/StartOfferV3"}'::jsonb,true);
+
+    v_document:=jsonb_set(v_document,'{definitions,Failure,properties,code,enum}',
+      (v_document#>'{definitions,Failure,properties,code,enum}')||v_new_codes);
+    v_document:=jsonb_set(v_document,'{definitions,ErrorItem,properties,code,enum}',
+      (v_document#>'{definitions,ErrorItem,properties,code,enum}')||v_new_codes);
+    v_document:=jsonb_set(v_document,'{definitions,Capabilities,properties,block_reason,anyOf,0,enum}',
+      (v_document#>'{definitions,Capabilities,properties,block_reason,anyOf,0,enum}')||v_new_codes);
+
+    UPDATE inventario.full_contracts
+       SET document=v_document WHERE kind=v_row.kind;
+  END LOOP;
+END $schema$;
+
 CREATE OR REPLACE FUNCTION inventario.full_cashier_dispatch_v2(p_uid uuid, p_action text, p_payload jsonb, p_now timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS jsonb
  LANGUAGE plpgsql
