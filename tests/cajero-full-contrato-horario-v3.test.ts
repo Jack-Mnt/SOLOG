@@ -157,7 +157,9 @@ describe('SOLOG Full Fase 1 — contrato horario V6/V7 requerido', () => {
   })
 
   test('conserva fixtures históricas sin start_offer durante la transición hacia Fase 2', () => {
-    const state = successState(makeBootstrap(undefined))
+    const legacyResponse = makeBootstrap()
+    delete (legacyResponse.data as FullState).start_offer
+    const state = successState(legacyResponse)
     expect(state.start_offer).toBeUndefined()
     // Phase 2 rechazará este estado al PREPARAR un start, no al leer journal V2 histórico.
   })
