@@ -3,7 +3,7 @@
 -- docs/SOLOG_Logica_Cajero_Ciclo_Horario_V1.md
 -- Aplicar completa antes de la 02; configuración inicial 'legacy' sin nuevos starts V3.
 -- No ejecuta cron, no modifica RPC legacy V3 ni full_settings.policy_version.
-BEGIN;
+-- La transacción la gestiona el ejecutor de migraciones de Supabase.
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';
 
@@ -246,8 +246,7 @@ BEGIN
                WHERE kind IN ('cashier_mutate','cashier_bootstrap')
                ORDER BY kind FOR UPDATE LOOP
     v_document:=v_row.document;
-    IF v_document ? 'nonexistent_placeholder' OR
-       v_document#>>'{definitions,CashierMutationRequest,oneOf,0,properties,p_action,const}' IS DISTINCT FROM 'start' OR
+    IF v_document#>>'{definitions,CashierMutationRequest,oneOf,0,properties,p_action,const}' IS DISTINCT FROM 'start' OR
        v_document#>'{definitions,StartOfferV3}' IS NOT NULL THEN
       RAISE EXCEPTION 'SOLOG_V3_CONTRACT_BASELINE_MISMATCH: %',v_row.kind;
     END IF;
@@ -281,4 +280,3 @@ BEGIN
   END LOOP;
 END $schema$;
 
-COMMIT;
