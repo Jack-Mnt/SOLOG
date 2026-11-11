@@ -1,0 +1,41 @@
+name: SOLOG Cajero Full V3 - Contratos
+
+on:
+  push:
+    branches:
+      - admin-work
+    paths:
+      - "src/features/solog/cajero/full.contract.ts"
+      - "tests/cajero-full-contrato-horario-v3.test.ts"
+      - ".github/workflows/solog-cajero-full-v3-contracts.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - name: Pruebas dirigidas del Cajero Full
+        run: |
+          bun test \
+            tests/cajero-full-contrato-horario-v3.test.ts \
+            tests/cajero-full-registro-autocierre.test.ts \
+            tests/cajero-full-inicio-snapshot-horario.test.ts \
+            tests/cajero-full-kpis-cobertura.test.ts \
+            tests/cajero-full-temporal.test.ts
+      - name: Lint
+        run: bun run lint
+      - name: Typecheck y build
+        run: bun run build
+      - name: Git diff check
+        run: git diff --check "$(git merge-base origin/master HEAD)" HEAD
