@@ -7,6 +7,8 @@
 **Rama de staging:** `admin-work`. `master` no se modifica.
 **Proyecto Supabase observado:** `fvtohxvcvsflzmftgfzs` (confirmar destino antes de aplicar).
 
+> **ACTUALIZACIÓN 2026-11-11 — migraciones ejecutadas.** Las migraciones 01 y 02 están aplicadas junto con el delta **02B** (`SOLOG_Backend_Cajero_Ciclo_Horario_V3_02B_Prioridad_Errores.sql`). Se ejecutó validación SQL de lectura y el backend sigue en modo `legacy`. Las activaciones 03/04 NO se ejecutaron. El estado, la evidencia y el hallazgo de compatibilidad legacy se documentan en [`SOLOG_Backend_Cajero_Ciclo_Horario_V3_Reporte_Despliegue_Legacy_V1.md`](SOLOG_Backend_Cajero_Ciclo_Horario_V3_Reporte_Despliegue_Legacy_V1.md). **El reporte prevalece sobre el estado preparatorio histórico de este plan**; el contrato funcional congelado permanece inalterado.
+
 ## 1. Entregables y orden
 
 1. **`SOLOG_Backend_Cajero_Ciclo_Horario_V3_01_Base_Contratos.sql`:** preparación aditiva. Crea configuración privada en modo `legacy` y helpers internos de ventanas, oferta, estado y errores. No cambia V6/V7, JSON Schema ni reglas de reservas en esta etapa.
