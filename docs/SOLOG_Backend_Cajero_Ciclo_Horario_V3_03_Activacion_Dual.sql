@@ -1,7 +1,7 @@
 -- SOLOG | Activación controlada Full V3: LEGACY -> DUAL
 -- NO APLICAR hasta superar validación de migraciones 01 y 02.
 -- En DUAL los starts Full antiguos siguen creando V2; los nuevos con selección crean V3.
-BEGIN;
+-- La transacción la gestiona el ejecutor de migraciones de Supabase.
 SET LOCAL lock_timeout='5s';
 DO $check$
 DECLARE v_mode text; v_signature text;
@@ -22,4 +22,3 @@ BEGIN
      SET mode='dual',updated_at=clock_timestamp()
    WHERE singleton;
 END $check$;
-COMMIT;
