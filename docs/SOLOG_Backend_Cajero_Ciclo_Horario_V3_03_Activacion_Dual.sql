@@ -1,3 +1,6 @@
+-- HISTÓRICO — NO APLICAR. Esta migración fue sustituida por la activación directa
+-- LEGACY -> REQUIRED aprobada y desplegada (solog_cashier_hourly_v3_direct_required).
+-- Fuente de precedencia: docs/SOLOG_Backend_Cajero_Activacion_Directa_Required_V1.md
 -- SOLOG | Activación controlada Full V3: LEGACY -> DUAL
 -- NO APLICAR hasta superar validación de migraciones 01 y 02.
 -- En DUAL los starts Full antiguos siguen creando V2; los nuevos con selección crean V3.
