@@ -97,7 +97,7 @@ describe('SOLOG Full Fase 1 — contrato horario V6/V7 requerido', () => {
     corrupted(r => { (r.data as FullState).start_offer!.cycle_started_at = '2026-11-11T15:58:00.000Z' })
     corrupted(r => { (r.data as FullState).start_offer!.cycle_started_at = 'no-date' })
     corrupted(r => { (r.data as FullState).start_offer!.policy_version = 2 as 3 })
-    corrupted(r => { delete (r.data as FullState).start_offer!.can_start })
+    corrupted(r => { (r.data as FullState).start_offer!.can_start = undefined as unknown as boolean })
   })
 
   test('rechaza referencias o modalidades inconsistentes sin autorizarlas localmente', () => {
