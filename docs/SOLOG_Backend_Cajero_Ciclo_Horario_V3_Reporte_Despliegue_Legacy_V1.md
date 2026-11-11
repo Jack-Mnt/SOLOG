@@ -1,5 +1,7 @@
 # SOLOG — Backend Cajero — Ciclo horario V3 — Reporte de despliegue en modo legacy V1
 
+> **HISTÓRICO, reemplazado en lo relativo a estado activo**: el 2026-11-11 se aplicó la activación directa `required`, sin `dual`. El estado vigente y su evidencia están en [`SOLOG_Backend_Cajero_Reporte_Validacion_Required_V1.md`](SOLOG_Backend_Cajero_Reporte_Validacion_Required_V1.md); la decisión aprobada está en [`SOLOG_Backend_Cajero_Activacion_Directa_Required_V1.md`](SOLOG_Backend_Cajero_Activacion_Directa_Required_V1.md). Las afirmaciones históricas de este informe describen el estado anterior y no prevalecen sobre esos dos documentos.
+
 **Estado:** MIGRACIONES 01, 02 y delta 02B APLICADAS, validación SQL dirigida de solo lectura SUPERADA; **integración funcional y concurrencia NO VALIDADAS**. Modo `legacy`; política Full V3 no activada.
 **Fecha:** 2026-11-11.
 **Proyecto Supabase:** `fvtohxvcvsflzmftgfzs`.
