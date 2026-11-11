@@ -3,7 +3,7 @@
 -- Fuente funcional: docs/SOLOG_Logica_Cajero_Ciclo_Horario_V1.md
 -- Base de dispatcher verificada mediante md5 de pg_get_functiondef.
 -- Mantiene modo legacy. No activa V3 y no cambia RPC pública.
-BEGIN;
+-- La transacción la gestiona el ejecutor de migraciones de Supabase.
 SET LOCAL lock_timeout='5s';
 SET LOCAL statement_timeout='30s';
 DO $preflight$
@@ -228,4 +228,3 @@ EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range OR date
 
 -- Conserva el propietario y los grants anteriores de la función reemplazada.
 -- Las únicas RPC públicas siguen siendo V6/V7.
-COMMIT;
