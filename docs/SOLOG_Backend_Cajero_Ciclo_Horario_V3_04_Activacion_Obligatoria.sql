@@ -2,7 +2,7 @@
 -- NO APLICAR sin autorización tras publicar y validar frontend Full compatible.
 -- Bloquea NUEVOS starts antiguos, no sus replays ya aplicados.
 -- NO modifica las RPC legacy usadas por master.
-BEGIN;
+-- La transacción la gestiona el ejecutor de migraciones de Supabase.
 SET LOCAL lock_timeout='5s';
 DO $check$
 DECLARE v_mode text;
@@ -21,4 +21,3 @@ BEGIN
      SET mode='required',updated_at=clock_timestamp()
    WHERE singleton;
 END $check$;
-COMMIT;
