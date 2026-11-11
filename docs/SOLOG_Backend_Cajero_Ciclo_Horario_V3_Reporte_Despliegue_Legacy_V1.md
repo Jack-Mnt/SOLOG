@@ -4,7 +4,7 @@
 **Fecha:** 2026-11-11.
 **Proyecto Supabase:** `fvtohxvcvsflzmftgfzs`.
 **Fuente funcional única:** `docs/SOLOG_Logica_Cajero_Ciclo_Horario_V1.md` (APROBADA Y CONGELADA).
-**Rama de documentación:** `admin-work`. `master` no se modificó.
+**Rama de documentación:** `admin-work`. Tras la fusión comunicada el 2026-11-11, `master` y `admin-work` quedaron sincronizadas en `24b66a7bbfb76c2ceaa944ef1aee5477089de47e` (verificado en GitHub antes de este ajuste documental). Cloudflare Pages desplegó la fusión, según confirmación del responsable del proyecto.
 
 ## 1. Migraciones registradas en Supabase
 
@@ -41,21 +41,21 @@ No se aplicaron `03_Activacion_Dual.sql` ni `04_Activacion_Obligatoria.sql`. Los
 - RLS habilitado en tabla de configuración privada, sin políticas ni grants al cliente; aviso de linter `rls_enabled_no_policy` esperado para tabla exclusivamente interna.
 - Supabase registró las tres migraciones indicadas en tabla de historial.
 
-## 4. Hallazgo de compatibilidad con master (no modificado)
+## 4. Compatibilidad con master — incidencia documental RESUELTA
 
-En el código de `master`, `src/features/solog/cajero/cajero.v3.api.ts` solicita `rpc_solog_cashier_bootstrap_v3` y `rpc_solog_cashier_mutate_v3`. **Estas RPC V3 no aparecieron en `pg_proc` del proyecto Supabase inspeccionado.** Las disponibles son bootstrap V4/V5/V6 y mutate V4/V5/V6/V7.
+**Revalidación 2026-11-11 tras la fusión:** GitHub confirmó que `master` y `admin-work` eran idénticas (`24b66a7bbfb76c2ceaa944ef1aee5477089de47e`). La ruta operativa de Cajero en `src/protected-app.tsx` monta `CajeroApp`, que construye `FullRuntime` y `FullCashierPanel`, con RPC públicas `rpc_solog_cashier_bootstrap_v6` y `rpc_solog_cashier_mutate_v7`. El archivo histórico `src/features/solog/cajero/cajero.v3.api.ts` ya no existe en `master`.
 
-Esta discrepancia es **anterior a las migraciones Full V3 de este bloque**: los scripts 01/02/02B no eliminan ni alteran dichas funciones legacy. La existencia de una incompatibilidad entre la rama `master` y el backend observado no demuestra por sí sola cuál es la versión desplegada en Cloudflare ni una falla real en producción; exige inspeccionar su despliegue y contrato efectivo antes de activar `dual` o promover el frontend.
+Supabase confirmó ambas RPC Full públicas V6/V7 presentes. La afirmación histórica de esta sección sobre el cliente legacy V3 queda **reemplazada**: la ausencia de RPC V3 antiguas **no bloquea por sí misma al Cajero actual**.
 
-**Bloqueo:** no declarar compatibilidad legacy `master` validada. No reintroducir RPC V3 sin análisis de seguridad/contrato y decisión aprobada, porque excede el alcance de este despliegue.
+**Alcance de la resolución:** compatibilidad de nombres y rutas del código GitHub fusionado con RPC Supabase desplegadas. No equivale a validar E2E, recuperación, idempotencia ni que el nuevo frontend horario V3 se haya implementado. El frontend actual sigue iniciando mediante payload V2, compatible con modo `legacy`. El despliegue Cloudflare Pages de la fusión está **confirmado por el usuario**, no mediante un ensayo de petición desde este reporte.
 
 ## 5. Pruebas pendientes y decisión de paso
 
-**Pendientes** (NO ejecutadas): tests end-to-end RPC con usuario/dispositivo autorizado; validación de V6/V7 en modo dual; `start` real V3 y replays V2/V3; carrera de snapshot vs inicio; atomicidad de batch y persistencia real de rechazo/índice; reservas de reconteo en recovery con concurrencia; pruebas de producción/Preview y smoke humano; comparación de despliegue `master` Cloudflare.
+**Pendientes** (NO ejecutadas al redactar este informe inicial): tests end-to-end RPC con usuario/dispositivo autorizado; validación de V6/V7 en modo dual; `start` real V3 y replays V2/V3; carrera de snapshot vs inicio; atomicidad de batch y persistencia real de rechazo/índice; reservas de reconteo en recovery con concurrencia; smoke humano del nuevo flujo horario. La fusión y publicación de Cloudflare están confirmadas; no se consideran pruebas E2E V3.
 
 Para avanzar:
-1. Investigar la discrepancia legacy para confirmar el cliente actualmente desplegado y sus RPC realmente usadas.
-2. Verificar la funcionalidad con entorno aislado o ventana controlada, sin insertar conteos ficticios sobre datos de producción.
-3. Solo con esa evidencia y aprobación, considerar activación `dual` (migración 03). **No activar `required` hasta frontend Full nuevo publicado y validado**.
+1. La discrepancia documental legacy queda resuelta: el cliente fusionado usa Full V6/V7.
+2. Verificar la funcionalidad con entorno aislado o pruebas sin efectos sobre datos operativos, especialmente start/replay, batch y recovery.
+3. Solo con esa evidencia y aprobación, considerar activación `dual` (migración 03). **No activar `required` hasta frontend horario V3 publicado y validado**.
 
-**Dictamen:** despliegue de preparación en modo legacy completado y validado a nivel de esquema/cálculo/seguridad; integración operativa y compatibilidad de producción pendientes. No cerrar el bloque.
+**Dictamen actualizado:** despliegue de preparación en modo legacy completado y validado a nivel de esquema/cálculo/seguridad. Compatibilidad de rutas GitHub V6/V7 resuelta; integración operativa E2E y política V3 siguen pendientes. No cerrar el bloque.
