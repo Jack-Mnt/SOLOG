@@ -38,6 +38,14 @@ Las comprobaciones del RPC con autenticación se realizaron dentro de una transa
 
 **Límite de prueba:** las últimas capturas confirmadas disponibles tienen más de dos horas de antigüedad; no se dispone todavía de stock fresco para completar una sesión real. No se insertan ni modifican snapshots ficticios para fingir éxito del Motor.
 
+## C.1. Auditoría de seguridad y límites
+
+El Supabase Security Advisor confirma el aviso informativo `rls_enabled_no_policy` para la tabla privada `inventario.full_cashier_hourly_config_v3`; no se le concedió acceso directo a `anon` ni a `authenticated`. Se verificó que los helpers Full V3 no son ejecutables directamente por esos roles y que las RPC públicas Full están restringidas a los roles previstos.
+
+El advisor también informa **dos hallazgos de tipo `security_definer_view`** en `public.catalogo_productos_publico` y `public.oferta_detalle_publico`, además de otros avisos globales de Supabase. Son superficies externas al cambio horario de Cajero y **no se modificaron**. Deben revisarse en un bloque de seguridad específico si está previsto reabrir esas funcionalidades; no atribuirlos a la migración V3 ni declarar que toda la auditoría del proyecto quedó sin errores.
+
+Fuente de remediación: https://supabase.com/docs/guides/database/database-linter?lint=0010_security_definer_view
+
 ## D. Go/no-go
 
 - **Backend listo como contrato de integración:** V6/V7 exponen y exigen V3; pruebas de shape, cálculo y rechazo realizadas.
