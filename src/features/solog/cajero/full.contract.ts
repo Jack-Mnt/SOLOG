@@ -30,10 +30,34 @@ export interface FullRecoveryDeliveryState {
     recount_detail_id: string | null; reference_snapshot_id: string
   }[]
 }
+/** Contrato de oferta horaria publicado por bootstrap V6 con politica Full V3. */
+export interface CashierStartOfferV3 {
+  policy_version: 3
+  cycle_started_at: string
+  status: 'new' | 'fallback' | 'unavailable'
+  snapshot_id: string | null
+  requires_confirmation: boolean
+  can_start: boolean
+  capture_ends_at: string | null
+  block_reason: string | null
+}
+export type FullActionRequired =
+  'none' | 'retry_same_operation' | 'reconcile' | 'refresh_credentials' |
+  'new_capture' | 'refresh_catalog' | 'fix_payload' | 'manual_review' | 'wait'
+export interface FullErrorItem {
+  code: string; message: string; field_path: string
+  c_interno?: number | null; source_row?: number | null
+}
+export type FullHourlyStartError =
+  'START_WINDOW_CLOSED' | 'START_CAPTURE_TOO_SHORT' | 'SNAPSHOT_SELECTION_CHANGED' |
+  'START_POLICY_NOT_ENABLED' | 'START_POLICY_UPGRADE_REQUIRED' | 'SESSION_RECOVERY_PENDING'
+
 export interface FullState {
   timezone: 'America/Lima'
   site: { id: string; nombre: string }
   stock: null | { snapshot_id: string; snapshot_captured_at: string; snapshot_confirmed_at: string; stock_expires_at: string; is_fresh: boolean; is_fallback: boolean; catalog_version: number; groups_revision: number }
+  /** Transitorio para fixtures V2; todo inicio V3 exigira una oferta presente y validada en Fase 2. */
+  start_offer?: CashierStartOfferV3
   session: FullSession | null; recovery_sessions: FullSession[]; groups: FullCashierGroup[]
   operational_summary: FullOperationalSummary
   confirmed_observation_ids: string[]; recovery_manifests: { session_id: string; observation_ids: string[] }[]
@@ -44,7 +68,15 @@ export interface FullMutation {
   action: FullAction; replay: boolean; session: FullSession; affected_groups: FullGroup[]
   observation_results: { client_observation_id: string; detail_id: string; state: string; difference: number; replay: boolean }[]
 }
-export interface FullEnvelope { ok: boolean; code: string; contract_version: 2; server_now: string; retryable: boolean; request_id: string; data: FullState | FullMutation | null }
+export interface FullEnvelope {
+  ok: boolean; code: string; contract_version: 2; server_now: string; retryable: boolean; request_id: string
+  data: FullState | FullMutation | null
+  /** Contrato aditivo de diagnostico: siempre presente en RPC real, opcional para fixtures V2 preexistentes. */
+  action_required?: FullActionRequired
+  errors?: FullErrorItem[]
+  errors_total?: number
+  errors_truncated?: boolean
+}
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 export function isUuid(value: unknown): value is string { return typeof value === 'string' && uuidPattern.test(value) }
 function check(value: unknown): asserts value { if (!value) throw new Error('FULL_INVALID_RESPONSE') }
@@ -55,6 +87,47 @@ function date(value: unknown): asserts value is string { text(value); check(/^\d
 function integer(value: unknown): asserts value is number { check(Number.isSafeInteger(value)) }
 function boolean(value: unknown): asserts value is boolean { check(typeof value === 'boolean') }
 function uniqueIds(value: unknown) { const ids = list(value); ids.forEach(id => check(isUuid(id))); check(new Set(ids).size === ids.length) }
+function startOffer(value: unknown, serverNow: string, stockValue: unknown) {
+  const offer = object(value)
+  check(offer.policy_version === 3)
+  date(offer.cycle_started_at)
+  const cycle = Date.parse(offer.cycle_started_at)
+  const cycleDate = new Date(cycle)
+  // HH:59 del reloj Lima; la hora se serializa en UTC.
+  check(cycleDate.getUTCMinutes() === 59 && cycleDate.getUTCSeconds() === 0 &&
+    cycleDate.getUTCMilliseconds() === 0 && cycle <= Date.parse(serverNow))
+  check(['new', 'fallback', 'unavailable'].includes(String(offer.status)))
+  boolean(offer.can_start); boolean(offer.requires_confirmation)
+  if (!offer.can_start) {
+    check(offer.status === 'unavailable' && offer.snapshot_id === null &&
+      offer.capture_ends_at === null && offer.requires_confirmation === false)
+    text(offer.block_reason); check(offer.block_reason.trim().length > 0)
+    return
+  }
+  check(offer.status === 'new' || offer.status === 'fallback')
+  check(isUuid(offer.snapshot_id) && offer.block_reason === null &&
+    offer.requires_confirmation === (offer.status === 'fallback'))
+  date(offer.capture_ends_at)
+  const stock = object(stockValue)
+  check(stock.snapshot_id === offer.snapshot_id && stock.is_fresh === true)
+  const captured = Date.parse(String(stock.snapshot_captured_at))
+  const ends = Date.parse(offer.capture_ends_at)
+  check(Number.isFinite(captured) && captured <= Date.parse(serverNow) &&
+    ends > Date.parse(serverNow) && ends <= Date.parse(String(stock.stock_expires_at)))
+  check((offer.status === 'new') === (captured >= cycle))
+}
+function errorItem(value: unknown) {
+  const item = object(value)
+  text(item.code); check(item.code.length > 0)
+  text(item.message); check(item.message.length > 0 && item.message.length <= 1024)
+  text(item.field_path); check(item.field_path.length <= 256)
+  if (item.c_interno !== undefined && item.c_interno !== null) {
+    integer(item.c_interno); check(item.c_interno >= 20001)
+  }
+  if (item.source_row !== undefined && item.source_row !== null) {
+    integer(item.source_row); check(item.source_row >= 1)
+  }
+}
 function session(value: unknown) {
   const s = object(value); check(isUuid(s.session_id) && isUuid(s.reference_snapshot_id))
   check(['active', 'recovery', 'expired', 'finished'].includes(String(s.status)))
@@ -94,7 +167,19 @@ function group(value: unknown) {
 }
 export function parseFullEnvelope(value: unknown): FullEnvelope {
   const r = object(value); check(r.contract_version === 2 && isUuid(r.request_id)); boolean(r.ok); boolean(r.retryable); text(r.code); date(r.server_now)
-  if (!r.ok) { check(r.data === null); check(Array.isArray(r.errors)); return value as FullEnvelope }
+  if (r.action_required !== undefined) {
+    check(['none', 'retry_same_operation', 'reconcile', 'refresh_credentials',
+      'new_capture', 'refresh_catalog', 'fix_payload', 'manual_review', 'wait'].includes(String(r.action_required)))
+  }
+  if (r.errors_total !== undefined) { integer(r.errors_total); check(r.errors_total >= 0) }
+  if (r.errors_truncated !== undefined) boolean(r.errors_truncated)
+  if (!r.ok) {
+    check(r.data === null)
+    const errors = list(r.errors)
+    errors.forEach(errorItem)
+    if (r.errors_total !== undefined) check(r.errors_total >= errors.length)
+    return value as FullEnvelope
+  }
   const d = object(r.data)
   if (r.code === 'CASHIER_STATE') {
     check(d.timezone === 'America/Lima'); const site = object(d.site)
@@ -130,6 +215,9 @@ export function parseFullEnvelope(value: unknown): FullEnvelope {
     }
     const c = object(d.capabilities); boolean(c.can_start_session); boolean(c.can_capture_in_current_session); check(c.block_reason === null || typeof c.block_reason === 'string')
     if (d.stock !== null) { const s = object(d.stock); check(isUuid(s.snapshot_id)); for (const field of ['snapshot_captured_at', 'snapshot_confirmed_at', 'stock_expires_at']) date(s[field]); boolean(s.is_fresh); boolean(s.is_fallback); integer(s.catalog_version); integer(s.groups_revision) }
+    // Se acepta la ausencia solo para compatibilidad con fixtures historicas.
+    // Todo start nuevo debera requerir explicitamente start_offer en Fase 2.
+    if (d.start_offer !== undefined) startOffer(d.start_offer, r.server_now, d.stock)
   } else {
     check(['SESSION_STARTED', 'OBSERVATIONS_CONFIRMED', 'SESSION_FINISHED'].includes(r.code)); session(d.session); boolean(d.replay)
     check(['start', 'save_batch', 'recount_save_batch', 'finish'].includes(String(d.action)))
