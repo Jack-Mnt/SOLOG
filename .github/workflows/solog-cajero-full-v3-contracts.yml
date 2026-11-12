@@ -7,6 +7,10 @@ on:
     paths:
       - "src/features/solog/cajero/full.contract.ts"
       - "src/features/solog/cajero/full.runtime.ts"
+      - "src/features/solog/cajero/full.start-gate.ts"
+      - "src/features/solog/cajero/full.start-dialog.tsx"
+      - "src/features/solog/cajero/full.app.tsx"
+      - "src/features/solog/cajero/cajero.css"
       - "tests/cajero-full-contrato-horario-v3.test.ts"
       - "tests/cajero-full-runtime-inicio-v3.test.ts"
       - "tests/cajero-full-registro-autocierre.test.ts"
