@@ -15,6 +15,7 @@ on:
       - "tests/cajero-full-runtime-inicio-v3.test.ts"
       - "tests/cajero-full-registro-autocierre.test.ts"
       - "tests/cajero-full-inicio-snapshot-horario.test.ts"
+      - "tests/cajero-full.browser.mjs"
       - "tests/details-access-transition.test.ts"
       - ".github/workflows/solog-cajero-full-v3-contracts.yml"
   workflow_dispatch:
@@ -49,5 +50,14 @@ jobs:
         run: bun run lint
       - name: Typecheck y build
         run: bun run build
+      - name: Instalar Chromium para smoke de Cajero Full
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Smoke navegador Full V3
+        run: |
+          export SOLOG_PLAYWRIGHT_MODULE="$(node -p "require.resolve('playwright')")"
+          export SOLOG_TEST_BROWSER="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          bun tests/cajero-full.browser.mjs
       - name: Git diff check
         run: git diff --check "$(git merge-base origin/master HEAD)" HEAD
