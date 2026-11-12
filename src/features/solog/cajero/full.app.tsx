@@ -12,11 +12,12 @@ import { PanelLoader } from '../../../components/panel-loader'
 import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
 import { FullRuntime, type FullDraft, type FullIncident } from './full.runtime'
+import { FullStartFallbackDialog } from './full.start-dialog'
 import { cashierStartGate } from './full.start-gate'
 import { formatFullInventoryUpdate, fullMinutesRemaining, fullRemainingLabel } from './full.temporal'
 import { projectFullCoverage } from './full.coverage'
 import { FullCoverageCard, FullCoverageComplete, FullHomeMetric, FullOperationalFlow } from './full.home'
-import type { FullGroup } from './full.contract'
+import type { CashierStartOfferV3, FullGroup } from './full.contract'
 import { actionFor, actionable, stockType, type FullWorkAction, type FullStockType } from './full.presentation'
 import './cajero.css'
 import './full.css'
@@ -32,7 +33,16 @@ const messages: Record<string, string> = {
   DEVICE_UNAUTHORIZED: 'Este dispositivo aún no está autorizado.',
   USER_UNAUTHORIZED: 'El usuario no tiene acceso al conteo.',
   FULL_GROUP_ALREADY_PENDING: 'Este grupo tiene un registro pendiente de confirmación.',
-  FULL_HOURLY_START_GATE: 'Inicio temporalmente bloqueado por la actualización horaria del inventario.',
+  FULL_START_CLOCK_UNTRUSTED: 'No hay un reloj confiable. Vuelve a sincronizar el estado de Cajero.',
+  FULL_START_OFFER_REQUIRED: 'Falta una oferta horaria válida. Actualiza el estado antes de iniciar.',
+  FULL_FALLBACK_CONFIRMATION_REQUIRED: 'Confirma expresamente si deseas utilizar el inventario de respaldo.',
+  FULL_START_BLOCKED: 'El servidor no autoriza iniciar el conteo en este momento.',
+  START_WINDOW_CLOSED: 'El inicio está cerrado desde el minuto 57. Espera el siguiente ciclo horario.',
+  START_CAPTURE_TOO_SHORT: 'Quedan menos de tres minutos para capturar. Espera una ventana válida.',
+  SNAPSHOT_SELECTION_CHANGED: 'La referencia de inventario cambió. Actualiza y vuelve a seleccionar.',
+  SESSION_RECOVERY_PENDING: 'Existe una sesión anterior pendiente de conciliación.',
+  START_POLICY_UPGRADE_REQUIRED: 'Este inicio pertenece a una versión anterior y necesita revisión.',
+  START_POLICY_NOT_ENABLED: 'La política horaria todavía no está habilitada en el servidor.',
   FULL_DELIVERY_UNCERTAIN: 'No se confirmó el envío; los registros permanecen guardados para reintento seguro.',
   FULL_DELIVERY_RETRYABLE: 'Servidor temporalmente no disponible. Se reintentará sin duplicar registros.',
   FULL_REJECTED_REQUIRES_REVIEW: 'Hay un rechazo definitivo. Requiere revisión antes de finalizar.',
@@ -306,6 +316,13 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const [reviewGroup, setReviewGroup] = useState<string | null>(null)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [incidentToDiscard, setIncidentToDiscard] = useState<FullIncident | null>(null)
+  const [fallbackOffer, setFallbackOffer] = useState<CashierStartOfferV3 | null>(null)
+  const [fallbackWaitUntil, setFallbackWaitUntil] = useState<number | null>(null)
+  const [fallbackChecking, setFallbackChecking] = useState(false)
+  const fallbackWaitRef = useRef<number | null>(null)
+  const waitCheckedRef = useRef<number | null>(null)
+  const waitGeneration = useRef(0)
+  const lastHourlyRefresh = useRef<number | null>(null)
   const autoClosed = useRef(new Map<string, number>())
   const lastPreparedRetry = useRef(Number.NEGATIVE_INFINITY)
   const lastRoundRefresh = useRef<string | null>(null)
@@ -315,9 +332,10 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const captureMinutes = fullMinutesRemaining(session?.session_expires_at, now, runtime.clock.trusted)
   const stockMinutes = fullMinutesRemaining(stockState?.stock_expires_at, now, runtime.clock.trusted)
   const stockFresh = runtime.clock.trusted && Boolean(stockState?.is_fresh && now >= Date.parse(stockState.snapshot_captured_at) && now < Date.parse(stockState.stock_expires_at))
-  const startGate = cashierStartGate(now, runtime.clock.trusted, stockState?.snapshot_confirmed_at, stockState?.snapshot_captured_at)
+  const startGate = cashierStartGate(now, runtime.clock.trusted, view.bootstrap?.start_offer)
   const startGateSeconds = Math.ceil(startGate.remainingMs / 1000)
   const startGateCountdown = `${Math.floor(startGateSeconds / 60)}:${String(startGateSeconds % 60).padStart(2, '0')}`
+  const waitingSeconds = fallbackWaitUntil === null ? null : Math.max(0, Math.ceil((fallbackWaitUntil - now) / 1000))
   const available = useMemo(() => actionable(view.groups), [view.groups])
   const route = routes.find(item => item.route === pathname)
   const currentAction = route?.action ?? null
@@ -366,7 +384,8 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     }
     const online = () => {
       autoClosed.current.clear()
-      refresh()
+      // Durante una espera voluntaria, únicamente su vencimiento consulta V6.
+      if (fallbackWaitRef.current === null) refresh()
     }
     refresh()
     const tick = window.setInterval(() => { if (live) setNow(runtime.clock.now()) }, 250)
@@ -374,7 +393,10 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     const preparedRetry = window.setInterval(() => {
       if (live) void resumePrepared().catch(e => { if (live) setError(explain(e)) })
     }, 30_000)
-    const resume = () => { setNow(runtime.clock.now()); syncClockOffset(); if (!document.hidden) refresh() }
+    const resume = () => {
+      setNow(runtime.clock.now()); syncClockOffset()
+      if (!document.hidden && fallbackWaitRef.current === null) refresh()
+    }
     const storage = (e: StorageEvent) => { if (e.key === runtime.key) refresh() }
     window.addEventListener('online', online)
     window.addEventListener('focus', resume)
@@ -399,22 +421,62 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     lastRoundRefresh.current = endsAt
     void runtime.refresh().catch(e => setError(explain(e)))
   }, [runtime, view.bootstrap, now, view.busy, working])
-  // Refrescar V6 solo durante la ventana HH:59 → HH+1:02.
-  // Nunca sustituir con este sondeo la autorización final del backend.
+  // Solo una lectura V6 por cambio de hora: sin polling cada 8 segundos.
+  // Conservamos por separado el refresco de ronda, foco y reconciliación pendiente.
+  const currentHour = runtime.clock.trusted && Number.isFinite(now) && now > 0
+    ? Math.floor(now / 3_600_000) : null
   useEffect(() => {
-    if (session || working || view.busy ||
-      (startGate.phase !== 'minute_59' && startGate.phase !== 'waiting_new_snapshot')) return
-    let inflight = false
-    const poll = () => {
-      if (inflight) return
-      inflight = true
-      void runtime.refresh().catch(() => {
-        // Un sondeo fallido no borra el último estado; V6 revalidará el inicio.
-      }).finally(() => { inflight = false })
+    if (currentHour === null || !view.bootstrap || session || working || view.busy ||
+      !navigator.onLine || fallbackWaitRef.current !== null) return
+    if (lastHourlyRefresh.current === null) {
+      lastHourlyRefresh.current = currentHour
+      if (startGate.phase !== 'stale_offer') return
+    } else if (lastHourlyRefresh.current === currentHour) return
+    lastHourlyRefresh.current = currentHour
+    void runtime.refresh().catch(e => setError(explain(e)))
+  }, [currentHour, runtime, view.bootstrap, session, working, view.busy, startGate.phase])
+
+  // La espera se mide contra el reloj sincronizado, no contando ticks.
+  // Al reanudar una pestaña suspendida se realiza una sola nueva lectura.
+  useEffect(() => {
+    if (!fallbackOffer || fallbackWaitUntil === null || !runtime.clock.trusted ||
+      now < fallbackWaitUntil || fallbackChecking || working || view.busy ||
+      !navigator.onLine || document.hidden || waitCheckedRef.current === fallbackWaitUntil) return
+    waitCheckedRef.current = fallbackWaitUntil
+    const generation = waitGeneration.current
+    fallbackWaitRef.current = null
+    setFallbackWaitUntil(null)
+    setFallbackChecking(true)
+    void runtime.refresh()
+      .then(() => {
+        if (generation !== waitGeneration.current) return
+        const latest = runtime.getSnapshot().bootstrap?.start_offer
+        const latestGate = cashierStartGate(runtime.clock.now(), runtime.clock.trusted, latest)
+        // Nunca se inicia automáticamente después de esperar.
+        if (latest && latestGate.phase === 'fallback' && !latestGate.blocked) {
+          setFallbackOffer(structuredClone(latest))
+        } else {
+          setFallbackOffer(null)
+        }
+      })
+      .catch(e => {
+        if (generation !== waitGeneration.current) return
+        setError(explain(e)); setFallbackOffer(null)
+      })
+      .finally(() => {
+        if (generation === waitGeneration.current) setFallbackChecking(false)
+      })
+  }, [runtime, fallbackOffer, fallbackWaitUntil, fallbackChecking, now, view.busy, working])
+
+  // El modal nunca prolonga la ventana autorizada ni arrastra una selección de otro ciclo.
+  useEffect(() => {
+    if (!fallbackOffer || fallbackChecking) return
+    const gate = cashierStartGate(now, runtime.clock.trusted, fallbackOffer)
+    if (session || gate.blocked) {
+      closeFallback()
+      if (!session && gate.reason) setError(explain(gate.reason))
     }
-    const interval = window.setInterval(poll, 8_000)
-    return () => window.clearInterval(interval)
-  }, [runtime, session, working, view.busy, startGate.phase])
+  }, [session, fallbackOffer, fallbackChecking, now, runtime])
   useEffect(() => {
     if (!Number.isFinite(now) || working || view.busy || !runtime.clock.trusted) return
     if (typeof navigator !== 'undefined' && !navigator.onLine) return
@@ -427,18 +489,52 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     autoClosed.current.set(expired.session_id, now + 30_000)
     void runtime.finish(expired.session_id).catch(e => setError(explain(e)))
   }, [runtime, session, view.bootstrap, now, working, view.busy])
+  function closeFallback() {
+    waitGeneration.current++
+    fallbackWaitRef.current = null
+    setFallbackWaitUntil(null)
+    setFallbackChecking(false)
+    setFallbackOffer(null)
+  }
   const startGuarded = () => {
-    // Volver a comprobar en el propio clic para no iniciar con un render anterior
-    // al cambio de minuto, incluso si el botón seguía habilitado.
-    const latestStock = runtime.getSnapshot().bootstrap?.stock
-    const gate = cashierStartGate(runtime.clock.now(), runtime.clock.trusted, latestStock?.snapshot_confirmed_at, latestStock?.snapshot_captured_at)
-    if (gate.blocked) {
-      setError(gate.phase === 'minute_59'
-        ? 'Actualización horaria en curso. El inicio está bloqueado durante el minuto 59.'
-        : 'Esperando el nuevo stock. Si no llega, el respaldo se habilita desde el minuto 02.')
+    // Revalidar el reloj y la oferta exactamente al pulsar, no usar el render anterior.
+    const state = runtime.getSnapshot()
+    const selected = state.bootstrap?.start_offer
+    const gate = cashierStartGate(runtime.clock.now(), runtime.clock.trusted, selected)
+    if (gate.blocked || !selected || !state.bootstrap?.capabilities.can_start_session) {
+      setError(explain(gate.reason ?? state.bootstrap?.capabilities.block_reason ?? 'FULL_START_BLOCKED'))
       return
     }
-    void run(() => runtime.start())
+    if (selected.status === 'fallback') {
+      setError(null)
+      setFallbackOffer(structuredClone(selected))
+      return
+    }
+    void run(() => runtime.start(structuredClone(selected)))
+  }
+  const waitForNewSnapshot = () => {
+    if (!fallbackOffer || fallbackChecking || fallbackWaitRef.current !== null) return
+    const gate = cashierStartGate(runtime.clock.now(), runtime.clock.trusted, fallbackOffer)
+    if (gate.blocked) {
+      closeFallback(); setError(explain(gate.reason))
+      return
+    }
+    const deadline = runtime.clock.now() + 30_000
+    waitGeneration.current++
+    waitCheckedRef.current = null
+    fallbackWaitRef.current = deadline
+    setFallbackWaitUntil(deadline)
+  }
+  const startWithFallback = () => {
+    const selected = fallbackOffer
+    const gate = cashierStartGate(runtime.clock.now(), runtime.clock.trusted, selected)
+    if (!selected || selected.status !== 'fallback' || gate.blocked) {
+      closeFallback()
+      setError(explain(gate.reason ?? 'SNAPSHOT_SELECTION_CHANGED'))
+      return
+    }
+    closeFallback()
+    void run(() => runtime.start(structuredClone(selected)))
   }
   useEffect(() => {
     const syncStock = () => {
@@ -589,16 +685,19 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
               <h2>{stockFresh ? 'Inventario cargado' : 'Inventario desactualizado'}</h2>
               <p>Última actualización: {formatFullInventoryUpdate(stockState?.snapshot_captured_at)}</p>
               {session ? <p>{fullRemainingLabel(captureMinutes, 'capture')}</p>
-                : startGate.phase === 'minute_59' ? <p role="status">Actualizando inventario. Inicio bloqueado durante el minuto 59 · {startGateCountdown} restantes para habilitar el respaldo.</p>
-                : startGate.phase === 'waiting_new_snapshot' ? <p role="status">Esperando el nuevo snapshot. Si no llega, el stock anterior podrá utilizarse desde el minuto 02, si continúa vigente · {startGateCountdown}.</p>
-                : <p>{fullRemainingLabel(stockMinutes, 'stock')}</p>}
-              {!session && view.bootstrap?.capabilities.block_reason &&
-                <p>{explain(view.bootstrap.capabilities.block_reason)}</p>}
+                : startGate.phase === 'window_closed'
+                  ? <p role="status">Inicio cerrado desde el minuto 57. Próxima revisión horaria en {startGateCountdown}.</p>
+                  : startGate.phase === 'stale_offer'
+                    ? <p role="status">Consultando inventario para el nuevo ciclo horario.</p>
+                    : <p>{fullRemainingLabel(stockMinutes, 'stock')}</p>}
+              {!session && startGate.blocked && startGate.phase !== 'window_closed' &&
+                startGate.phase !== 'stale_offer' && startGate.reason &&
+                <p>{explain(startGate.reason)}</p>}
             </div>
           </div>
           <div className="cajero-stock-card__actions">
             {!session ? <button type="button" className="button" disabled={hasUnresolved || startGate.blocked || !view.bootstrap?.capabilities.can_start_session || !stockFresh || working || view.busy}
-              onClick={startGuarded}><Play size={19}/>{startGate.phase === 'minute_59' ? 'Actualizando inventario' : startGate.phase === 'waiting_new_snapshot' ? 'Esperando stock actualizado' : 'Iniciar conteo'}</button>
+              onClick={startGuarded}><Play size={19}/>{startGate.phase === 'window_closed' ? 'Inicio cerrado' : 'Iniciar conteo'}</button>
               : <button type="button" className="button button--danger" disabled={working || view.busy}
                 onClick={() => void run(() => runtime.finish())}><Square size={19}/> Finalizar conteo</button>}
           </div>
@@ -711,6 +810,10 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         </button>
       })}
     </div></nav>
+    {fallbackOffer ? <FullStartFallbackDialog offer={fallbackOffer}
+      waitingSeconds={waitingSeconds} checking={fallbackChecking}
+      busy={working || view.busy || startGate.blocked}
+      onWait={waitForNewSnapshot} onUse={startWithFallback} onCancel={closeFallback}/> : null}
     {incidentToDiscard ? <div className="cajero-confirmation-backdrop">
       <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-label="Descartar incidencia local">
         <h2>¿Descartar esta evidencia local?</h2>
