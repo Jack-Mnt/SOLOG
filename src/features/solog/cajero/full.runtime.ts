@@ -1,5 +1,4 @@
-import { isUuid, parseFullEnvelope, type FullAction, type FullEnvelope, type FullGroup, type FullMutation, type FullSession, type FullState } from './full.contract'
-import { cashierStartGate } from './full.start-gate'
+import { isUuid, parseFullEnvelope, type CashierStartOfferV3, type FullAction, type FullEnvelope, type FullGroup, type FullMutation, type FullSession, type FullState } from './full.contract'
 
 export type FullRpc = (name: 'rpc_solog_cashier_bootstrap_v6' | 'rpc_solog_cashier_mutate_v7', args: Record<string, unknown>) => Promise<unknown>
 export type FullLock = <T>(run: () => Promise<T>) => Promise<T>
@@ -15,6 +14,27 @@ export interface FullIncident {
 }
 // Solo rechazos confirmados por V7 antes de efectuar escrituras; nunca conflictos de identidad o idempotencia.
 const discardableRejections = new Set(['PRIORITY_CONFLICT', 'SESSION_CAPTURE_CLOSED', 'SESSION_DELIVERY_CLOSED', 'MANIFEST_NOT_CONFIRMED'])
+// V7 devuelve estos rechazos de start antes de crear la sesión. No autorizan
+// reintentar con el mismo UUID cambiando payload; solo descarte humano explícito.
+const discardableStartRejections = new Set([
+  'START_POLICY_UPGRADE_REQUIRED', 'START_POLICY_NOT_ENABLED',
+  'START_WINDOW_CLOSED', 'START_CAPTURE_TOO_SHORT',
+  'SNAPSHOT_SELECTION_CHANGED', 'SESSION_RECOVERY_PENDING',
+  'SNAPSHOT_REQUIRED', 'STOCK_EXPIRED', 'STRUCTURE_SNAPSHOT_REQUIRED',
+  'SESSION_ALREADY_ACTIVE', 'NEW_SESSIONS_PAUSED',
+])
+function sameStartOffer(a: CashierStartOfferV3, b: CashierStartOfferV3) {
+  return a.policy_version === 3 && b.policy_version === 3 &&
+    a.status === b.status && a.snapshot_id === b.snapshot_id &&
+    a.cycle_started_at === b.cycle_started_at &&
+    a.capture_ends_at === b.capture_ends_at &&
+    a.requires_confirmation === b.requires_confirmation &&
+    a.can_start === b.can_start && a.block_reason === b.block_reason
+}
+function canDiscardRejectedOperation(row: Pending) {
+  return row.status === 'rejected' && !!row.code &&
+    (row.action === 'start' ? discardableStartRejections.has(row.code) : discardableRejections.has(row.code))
+}
 interface Journal {
   version: 2; userId: string; deviceToken: string
   pending: Pending[]; confirmed: Record<string, string[]>; panels: Record<string, FullGroup[]>
@@ -187,7 +207,7 @@ export class FullRuntime {
       this.journal = this.read()
       const row = this.journal.pending.find(p => p.operationId === operationId)
       if (!row) throw new Error('FULL_INCIDENT_NOT_FOUND')
-      if (row.status !== 'rejected' || !row.code || !discardableRejections.has(row.code)) {
+      if (!canDiscardRejectedOperation(row)) {
         throw new Error('FULL_INCIDENT_DISCARD_BLOCKED')
       }
       const ids: string[] = (JSON.parse(row.exactPayload).items ?? [])
@@ -214,8 +234,8 @@ export class FullRuntime {
           i.grupo_id === current.groupId || (current.recountDetailId !== null && i.detalle_id === current.recountDetailId))
       })
     }
-    return incident.status === 'rejected' &&
-      incident.code !== null && incident.code !== undefined && discardableRejections.has(incident.code)
+    const row = this.journal.pending.find(p => p.operationId === incident.id)
+    return !!row && canDiscardRejectedOperation(row)
   }
 
   private async request(name: Parameters<FullRpc>[0], args: Record<string, unknown>): Promise<FullEnvelope> {
@@ -358,21 +378,66 @@ export class FullRuntime {
   }
   async retry() { await this.resumePrepared() }
 
-  async start() {
+  /**
+   * selectedOffer fija la selección visible y expresamente aceptada por el cajero.
+   * Sin parámetro solo se admite una oferta "new" ya visible; si el runtime aún
+   * no hizo bootstrap se permite seleccionar la primera oferta "new" leída.
+   * Nunca se acepta un fallback implícito ni se reemplaza una selección obsoleta.
+   */
+  async start(selectedOffer?: CashierStartOfferV3) {
     await this.gate(async () => {
       this.journal = this.read(); this.publish({ busy: true })
       try {
-        await this.refreshInside()
+        // Los replays ya preparados preceden a toda evaluación temporal nueva:
+        // su UUID y exactPayload son inmutables incluso después de HH:00.
         const preparedStart = this.journal.pending.find(p => p.action === 'start' && p.status === 'pending')
-        if (!preparedStart) {
-          if (Object.values(this.journal.drafts).some(d => d.length) || this.journal.pending.length ||
-            this.view.bootstrap?.recovery_sessions.length) throw new Error('FULL_OLD_SESSION_REQUIRES_RECONCILIATION')
-          const gate = cashierStartGate(this.clock.now(), this.clock.trusted, this.view.bootstrap?.stock?.snapshot_confirmed_at, this.view.bootstrap?.stock?.snapshot_captured_at)
-          if (gate.blocked) throw new Error('FULL_HOURLY_START_GATE')
-          if (!this.view.bootstrap?.capabilities.can_start_session)
-            throw new Error(this.view.bootstrap?.capabilities.block_reason ?? 'FULL_START_BLOCKED')
-          this.enqueue('start', null, {})
+        if (preparedStart) {
+          await this.flushInside()
+          await this.refreshInside()
+          return
         }
+        if (Object.values(this.journal.drafts).some(d => d.length) || this.journal.pending.length)
+          throw new Error('FULL_OLD_SESSION_REQUIRES_RECONCILIATION')
+        const visibleOffer = this.view.bootstrap?.start_offer
+        if (selectedOffer && (!visibleOffer || !sameStartOffer(selectedOffer, visibleOffer)))
+          throw new Error('SNAPSHOT_SELECTION_CHANGED')
+
+        // Se conserva la oferta previa al refresh para prevenir cambio silencioso.
+        // Solo una primera lectura sin oferta previa puede establecer "new".
+        const chosen = selectedOffer ?? visibleOffer
+        await this.refreshInside()
+        const current = this.view.bootstrap
+        const latest = current?.start_offer
+        if (!latest || latest.policy_version !== 3 || !this.clock.trusted)
+          throw new Error('FULL_START_OFFER_REQUIRED')
+        const accepted = chosen ?? (latest.status === 'new' ? latest : null)
+        if (!accepted || accepted.policy_version !== 3)
+          throw new Error(latest.status === 'fallback'
+            ? 'FULL_FALLBACK_CONFIRMATION_REQUIRED' : 'FULL_START_OFFER_REQUIRED')
+        if (accepted.status === 'fallback' && !selectedOffer)
+          throw new Error('FULL_FALLBACK_CONFIRMATION_REQUIRED')
+        if (accepted.status === 'unavailable' || !accepted.can_start)
+          throw new Error(accepted.block_reason ?? 'FULL_START_BLOCKED')
+        if (current?.session || current?.recovery_sessions.length)
+          throw new Error('FULL_OLD_SESSION_REQUIRES_RECONCILIATION')
+        if (!sameStartOffer(accepted, latest))
+          throw new Error('SNAPSHOT_SELECTION_CHANGED')
+        if (!current?.capabilities.can_start_session)
+          throw new Error(current?.capabilities.block_reason ?? 'FULL_START_BLOCKED')
+        if (!isUuid(accepted.snapshot_id) ||
+          accepted.status !== 'new' && accepted.status !== 'fallback' ||
+          accepted.requires_confirmation !== (accepted.status === 'fallback') ||
+          !Number.isFinite(Date.parse(accepted.cycle_started_at)) ||
+          !Number.isFinite(Date.parse(accepted.capture_ends_at ?? '')) ||
+          Date.parse(accepted.capture_ends_at!) - this.clock.now() < 180_000)
+          throw new Error('START_CAPTURE_TOO_SHORT')
+
+        // Persistir el payload completo antes del primer intento V7.
+        this.enqueue('start', null, {
+          expected_snapshot_id: accepted.snapshot_id,
+          expected_cycle_started_at: accepted.cycle_started_at,
+          selected_as: accepted.status,
+        })
         await this.flushInside()
         await this.refreshInside()
       } finally { this.publish({ busy: false }) }
