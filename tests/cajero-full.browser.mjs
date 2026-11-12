@@ -584,11 +584,37 @@ try {
       const dialog = page.getByRole('dialog', { name: 'Inventario no actualizado disponible' })
       await dialog.waitFor()
       assert.equal(fake.calls.length, 0, 'Abrir modal no autoriza V7')
-      await dialog.getByRole('button', { name: 'Utilizar inventario válido' }).click()
+      const cancel = dialog.getByRole('button', { name: 'Cancelar' })
+      const useBackup = dialog.getByRole('button', { name: 'Utilizar inventario válido' })
+      assert.equal(await cancel.evaluate(el => document.activeElement === el), true,
+        'El foco inicial debe quedar dentro del diálogo')
+      await page.keyboard.press('Shift+Tab')
+      assert.equal(await useBackup.evaluate(el => document.activeElement === el), true,
+        'Tab inverso permanece dentro del diálogo')
+      await page.keyboard.press('Tab')
+      assert.equal(await cancel.evaluate(el => document.activeElement === el), true,
+        'Tab conserva el foco dentro del diálogo')
+      await useBackup.click()
       await eventually(() => fake.calls.some(call => call.action === 'start'), 'V7 no recibió fallback')
       assert.equal(fake.calls.filter(call => call.action === 'start').length, 1)
       assert.equal(fake.calls[0].payload.selected_as, 'fallback')
       assert.equal(fake.started, true)
+    })
+
+  await check('V3: V6 actualizado retira modal obsoleto sin enviar start',
+    { hourlyStart: 'fallback' }, async ({ fake, createPage }) => {
+      const page = await createPage()
+      const start = page.getByRole('button', { name: 'Iniciar conteo' })
+      await start.click()
+      const dialog = page.getByRole('dialog', { name: 'Inventario no actualizado disponible' })
+      await dialog.waitFor()
+      fake.offerSnapshot = snapshotB
+      const before = fake.bootstrapAttempts
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+      await eventually(() => fake.bootstrapAttempts > before, 'El foco no revalidó V6')
+      await dialog.waitFor({ state: 'detached' })
+      assert.equal(fake.calls.length, 0, 'Una referencia sustituida no puede iniciar el conteo')
+      assert.equal(await start.isEnabled(), true)
     })
 
   await check('V3: esperar 30s hace una sola lectura V6 y nunca inicia solo',
