@@ -100,6 +100,12 @@ describe('Cajero Full — protección de runtime durante el inicio remoto', () =
       setItem: (key: string, value: string) => { memory.set(key, value) },
     }
     const captured = Date.parse(captureAt)
+    const now = Date.parse(serverNow)
+    const cycle = Math.floor(now / 3_600_000) * 3_600_000 - 60_000
+    const captureEnd = Math.min(captured + 7_200_000, Math.floor(now / 3_600_000) * 3_600_000 + 3_600_000)
+    const windowClosed = new Date(now).getUTCMinutes() >= 57
+    const canStart = !windowClosed && captureEnd - now >= 180_000
+    const offerStatus = captured >= cycle ? 'new' : 'fallback'
     const rpc: FullRpc = async name => {
       if (name === 'rpc_solog_cashier_mutate_v7') {
         mutationCalls++
@@ -129,7 +135,16 @@ describe('Cajero Full — protección de runtime durante el inicio remoto', () =
           },
           session: null, recovery_sessions: [], groups: [],
           confirmed_observation_ids: [], recovery_manifests: [],
-          capabilities: { can_start_session: true, can_capture_in_current_session: false, block_reason: null },
+          start_offer: {
+            policy_version: 3, cycle_started_at: new Date(cycle).toISOString(),
+            status: canStart ? offerStatus : 'unavailable',
+            snapshot_id: canStart ? snapshotId : null,
+            requires_confirmation: canStart && offerStatus === 'fallback',
+            can_start: canStart, capture_ends_at: canStart ? new Date(captureEnd).toISOString() : null,
+            block_reason: canStart ? null : windowClosed ? 'START_WINDOW_CLOSED' : 'START_CAPTURE_TOO_SHORT',
+          },
+          capabilities: { can_start_session: canStart, can_capture_in_current_session: false,
+            block_reason: canStart ? null : windowClosed ? 'START_WINDOW_CLOSED' : 'START_CAPTURE_TOO_SHORT' },
         },
       }
     }
@@ -139,26 +154,36 @@ describe('Cajero Full — protección de runtime durante el inicio remoto', () =
     return { runtime, getMutationCalls: () => mutationCalls }
   }
 
-  test('si bootstrap termina durante el minuto 59, no prepara ni envía un inicio', async () => {
+  test('V6 bloquea el inicio desde HH:57 sin preparar operación', async () => {
     const { runtime, getMutationCalls } = setup(
       '2026-10-23T08:59:30-05:00',
       '2026-10-23T08:59:00-05:00',
       '2026-10-23T08:59:22-05:00',
     )
-    await expect(runtime.start()).rejects.toThrow('FULL_HOURLY_START_GATE')
+    await expect(runtime.start()).rejects.toThrow('START_WINDOW_CLOSED')
     expect(runtime.inspectPending()).toEqual([])
     expect(getMutationCalls()).toBe(0)
   })
 
-  test('tras HH+1:02 el inicio de respaldo pasa la guardia sin perder el outbox', async () => {
+  test('el respaldo V3 requiere selección explícita y conserva el payload del outbox', async () => {
     const { runtime, getMutationCalls } = setup(
       '2026-10-23T09:02:00-05:00',
       '2026-10-23T07:59:00-05:00',
       '2026-10-23T07:59:22-05:00',
     )
-    await expect(runtime.start()).rejects.toThrow('FULL_DELIVERY_UNCERTAIN')
+    await runtime.refresh()
+    const selected = runtime.getSnapshot().bootstrap?.start_offer
+    expect(selected?.status).toBe('fallback')
+    await expect(runtime.start()).rejects.toThrow('FULL_FALLBACK_CONFIRMATION_REQUIRED')
+    expect(getMutationCalls()).toBe(0)
+    await expect(runtime.start(selected)).rejects.toThrow('FULL_DELIVERY_UNCERTAIN')
     expect(getMutationCalls()).toBe(1)
     expect(runtime.inspectPending()).toHaveLength(1)
-    expect(runtime.inspectPending()[0].action).toBe('start')
+    const [pending] = runtime.inspectPending()
+    expect(pending.action).toBe('start')
+    const payload = JSON.parse(pending.exactPayload)
+    expect(payload.expected_snapshot_id).toBe(snapshotId)
+    expect(payload.expected_cycle_started_at).toBe(selected?.cycle_started_at)
+    expect(payload.selected_as).toBe('fallback')
   })
 })
