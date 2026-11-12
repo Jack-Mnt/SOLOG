@@ -11,6 +11,7 @@ on:
       - "tests/cajero-full-runtime-inicio-v3.test.ts"
       - "tests/cajero-full-registro-autocierre.test.ts"
       - "tests/cajero-full-inicio-snapshot-horario.test.ts"
+      - "tests/details-access-transition.test.ts"
       - ".github/workflows/solog-cajero-full-v3-contracts.yml"
   workflow_dispatch:
 
