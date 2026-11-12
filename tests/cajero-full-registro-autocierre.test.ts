@@ -87,6 +87,19 @@ function harness(options: {
           ? groups.map(g => ({ ...g, coverage_pending_round: g.action !== 'none' })) : [],
         confirmed_observation_ids: startedSession && !finished && !recovery ? [...confirmed] : [],
         recovery_manifests: recovery ? [{ session_id: sid, observation_ids: [...confirmed] }] : [],
+        start_offer: !startedSession && now < expiration
+          ? {
+            policy_version: 3, cycle_started_at: iso(Math.floor(now / 3600000) * 3600000 - 60000),
+            status: 'new', snapshot_id: snapshotId,
+            requires_confirmation: false, can_start: true,
+            capture_ends_at: iso(expiration), block_reason: null,
+          }
+          : {
+            policy_version: 3, cycle_started_at: iso(Math.floor(now / 3600000) * 3600000 - 60000),
+            status: 'unavailable', snapshot_id: null,
+            requires_confirmation: false, can_start: false,
+            capture_ends_at: null, block_reason: 'SESSION_ALREADY_ACTIVE',
+          },
         capabilities: { can_start_session: !startedSession, can_capture_in_current_session: startedSession && !recovery,
           block_reason: startedSession ? 'SESSION_ALREADY_ACTIVE' : null },
       })
