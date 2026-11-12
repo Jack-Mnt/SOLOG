@@ -6,7 +6,11 @@ on:
       - admin-work
     paths:
       - "src/features/solog/cajero/full.contract.ts"
+      - "src/features/solog/cajero/full.runtime.ts"
       - "tests/cajero-full-contrato-horario-v3.test.ts"
+      - "tests/cajero-full-runtime-inicio-v3.test.ts"
+      - "tests/cajero-full-registro-autocierre.test.ts"
+      - "tests/cajero-full-inicio-snapshot-horario.test.ts"
       - ".github/workflows/solog-cajero-full-v3-contracts.yml"
   workflow_dispatch:
 
@@ -29,6 +33,7 @@ jobs:
         run: |
           bun test \
             tests/cajero-full-contrato-horario-v3.test.ts \
+            tests/cajero-full-runtime-inicio-v3.test.ts \
             tests/cajero-full-registro-autocierre.test.ts \
             tests/cajero-full-inicio-snapshot-horario.test.ts \
             tests/cajero-full-kpis-cobertura.test.ts \
