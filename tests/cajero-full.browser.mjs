@@ -289,6 +289,85 @@ class SimulatedCoexistingFull extends SimulatedFull {
   }
 }
 
+// Ciclo horario V3 con respuestas V6/V7 simuladas: no se conecta a Supabase.
+class SimulatedHourlyFull extends SimulatedFull {
+  constructor(variant = 'new') {
+    super({ homeScenario: 'A1' })
+    this.variant = variant
+    this.offerSnapshot = snapshot
+    this.started = false
+    this.expires = Math.floor(this.now / 3_600_000) * 3_600_000 + 3_600_000
+  }
+  get capturedAt() {
+    return this.variant === 'fallback' ? this.now - 90 * 60_000 : serverStart - 600_000
+  }
+  get captureEnd() { return Math.min(this.expires, this.capturedAt + 7_200_000) }
+  session() {
+    const base = super.session()
+    const captured = this.capturedAt
+    const expires = this.captureEnd
+    return {
+      ...base,
+      session_started_at: iso(this.now - 1000),
+      reference_snapshot_id: this.offerSnapshot,
+      reference_snapshot_captured_at: iso(captured),
+      reference_stock_expires_at: iso(captured + 7_200_000),
+      capture_interval_number: this.now - captured < 3_600_000 ? 1 : 2,
+      capture_interval_starts_at: iso(Math.floor(this.now / 3_600_000) * 3_600_000),
+      capture_interval_ends_at: iso(this.expires),
+      session_expires_at: iso(expires),
+      pending_delivery_until: iso(expires + 7_200_000),
+      capture_allowed: this.started && this.now < expires,
+      pending_delivery_allowed: this.started && this.now < expires + 7_200_000,
+    }
+  }
+  bootstrap() {
+    const base = super.bootstrap().data
+    const blocked = this.started || this.variant === 'unavailable'
+    const cycle = Math.floor(this.now / 3_600_000) * 3_600_000 - 60_000
+    return this.envelope('CASHIER_STATE', {
+      ...base,
+      stock: {
+        ...base.stock, snapshot_id: this.offerSnapshot,
+        snapshot_captured_at: iso(this.capturedAt),
+        snapshot_confirmed_at: iso(this.capturedAt + 30_000),
+        stock_expires_at: iso(this.capturedAt + 7_200_000),
+        is_fallback: this.variant === 'fallback',
+      },
+      start_offer: {
+        policy_version: 3, cycle_started_at: iso(cycle),
+        status: blocked ? 'unavailable' : this.variant,
+        snapshot_id: blocked ? null : this.offerSnapshot,
+        requires_confirmation: !blocked && this.variant === 'fallback',
+        can_start: !blocked,
+        capture_ends_at: blocked ? null : iso(this.captureEnd),
+        block_reason: blocked ? this.started ? 'SESSION_ALREADY_ACTIVE' : 'START_WINDOW_CLOSED' : null,
+      },
+      capabilities: {
+        ...base.capabilities, can_start_session: !blocked,
+        block_reason: blocked ? this.started ? 'SESSION_ALREADY_ACTIVE' : 'START_WINDOW_CLOSED' : null,
+      },
+    })
+  }
+  mutate(action, payload) {
+    if (action !== 'start') return super.mutate(action, payload)
+    this.calls.push({ action, payload: structuredClone(payload) })
+    assert.equal(payload.device_token, deviceToken)
+    assert.match(payload.operation_id, /^[0-9a-f-]{36}$/i)
+    assert.equal(payload.expected_snapshot_id, this.offerSnapshot)
+    assert.equal(payload.expected_cycle_started_at,
+      iso(Math.floor(this.now / 3_600_000) * 3_600_000 - 60_000))
+    assert.equal(payload.selected_as, this.variant)
+    assert.equal(this.started, false)
+    this.started = true
+    this.homeScenario = 'B'
+    return this.envelope('SESSION_STARTED', {
+      action: 'start', replay: false, session: this.session(),
+      affected_groups: [], observation_results: [],
+    })
+  }
+}
+
 const supabaseModule = [
   "const user = { id: '" + userId + "', email: 'cajero@browser.test' };",
   "const session = { user, access_token: 'browser-simulated' };",
@@ -321,7 +400,9 @@ const browser = await chromium.launch({
 const target = 'http://127.0.0.1:5212/cajero'
 
 async function scenario(options, run) {
-  const fake = options.coexisting ? new SimulatedCoexistingFull() : new SimulatedFull(options)
+  const fake = options.hourlyStart
+    ? new SimulatedHourlyFull(options.hourlyStart)
+    : options.coexisting ? new SimulatedCoexistingFull() : new SimulatedFull(options)
   const context = await browser.newContext({ viewport: { width: 1280, height: 850 } })
   const failures = [], external = []
   // Las solicitudes se atribuyen a la página que las emitió; el contador global
@@ -373,8 +454,10 @@ async function scenario(options, run) {
       return route.abort()
     }
   })
-  const createPage = async ({ waitForHome = true, trackJournalWrites = false, noWebLocks = false } = {}) => {
+  const createPage = async ({ waitForHome = true, trackJournalWrites = false, noWebLocks = false,
+    clock = false } = {}) => {
     const page = await context.newPage()
+    if (clock) await page.clock.install()
     const calls = []
     requestsByPage.set(page, calls)
     page.setDefaultTimeout(12000)
@@ -480,6 +563,68 @@ try {
     await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click()
     await page.getByRole('dialog', { name: 'Cerrar sesión' }).waitFor()
   })
+  await check('V3: inicio new sin modal, UUID y referencia coinciden', { hourlyStart: 'new' },
+    async ({ fake, createPage }) => {
+      const page = await createPage()
+      await page.getByRole('button', { name: 'Iniciar conteo' }).click()
+      await eventually(() => fake.calls.some(call => call.action === 'start'),
+        'El inicio new no llegó a V7')
+      assert.equal(fake.calls.filter(call => call.action === 'start').length, 1)
+      const start = fake.calls.find(call => call.action === 'start')
+      assert.equal(start.payload.expected_snapshot_id, snapshot)
+      assert.equal(start.payload.selected_as, 'new')
+      assert.equal(await page.getByRole('dialog', { name: 'Inventario no actualizado disponible' }).count(), 0)
+      assert.equal(fake.started, true)
+    })
+
+  await check('V3: respaldo requiere confirmación humana y conserva selección', { hourlyStart: 'fallback' },
+    async ({ fake, createPage }) => {
+      const page = await createPage()
+      await page.getByRole('button', { name: 'Iniciar conteo' }).click()
+      const dialog = page.getByRole('dialog', { name: 'Inventario no actualizado disponible' })
+      await dialog.waitFor()
+      assert.equal(fake.calls.length, 0, 'Abrir modal no autoriza V7')
+      await dialog.getByRole('button', { name: 'Utilizar inventario válido' }).click()
+      await eventually(() => fake.calls.some(call => call.action === 'start'), 'V7 no recibió fallback')
+      assert.equal(fake.calls.filter(call => call.action === 'start').length, 1)
+      assert.equal(fake.calls[0].payload.selected_as, 'fallback')
+      assert.equal(fake.started, true)
+    })
+
+  await check('V3: esperar 30s hace una sola lectura V6 y nunca inicia solo',
+    { hourlyStart: 'fallback' }, async ({ fake, createPage }) => {
+      const page = await createPage({ clock: true })
+      await page.getByRole('button', { name: 'Iniciar conteo' }).click()
+      const dialog = page.getByRole('dialog', { name: 'Inventario no actualizado disponible' })
+      await dialog.getByRole('button', { name: 'Esperar 30 segundos (Recomendado)' }).click()
+      await dialog.getByText(/Esperando actualización:/).waitFor()
+      const before = fake.bootstrapAttempts
+      await page.clock.fastForward(15_000)
+      assert.equal(fake.bootstrapAttempts, before, 'No corresponde sondeo a los 15 segundos')
+      fake.variant = 'new'
+      await page.clock.fastForward(16_000)
+      await eventually(() => fake.bootstrapAttempts === before + 1, 'La espera no consultó V6 al vencer')
+      await dialog.waitFor({ state: 'detached' })
+      assert.equal(fake.calls.length, 0, 'La espera no debe iniciar V7 automáticamente')
+      assert.equal(await page.getByRole('button', { name: 'Iniciar conteo' }).isEnabled(), true)
+    })
+
+  await check('V3: cambio de referencia en revalidación impide V7',
+    { hourlyStart: 'new' }, async ({ fake, createPage }) => {
+      const page = await createPage()
+      fake.offerSnapshot = snapshotB
+      await page.getByRole('button', { name: 'Iniciar conteo' }).click()
+      await page.getByText('La referencia de inventario cambió. Actualiza y vuelve a seleccionar.').waitFor()
+      assert.equal(fake.calls.length, 0)
+    })
+
+  await check('V3: sin oferta elegible no permite inicio remoto',
+    { hourlyStart: 'unavailable' }, async ({ fake, createPage }) => {
+      const page = await createPage()
+      assert.equal(await page.getByRole('button', { name: 'Iniciar conteo' }).isDisabled(), true)
+      assert.equal(fake.calls.length, 0)
+    })
+
   for (const homeScenario of ['A1', 'A2', 'B', 'C']) {
     await check('Inicio: presentación A1/A2/B/C · ' + homeScenario, {
       homeScenario,
