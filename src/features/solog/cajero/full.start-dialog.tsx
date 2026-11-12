@@ -21,7 +21,7 @@ export function FullStartFallbackDialog({
   const detailsId = useId()
   const root = useRef<HTMLElement>(null)
   const closeAction = useRef(onCancel)
-  closeAction.current = onCancel
+  useEffect(() => { closeAction.current = onCancel }, [onCancel])
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
     root.current?.querySelector<HTMLElement>('button:not(:disabled)')?.focus()
