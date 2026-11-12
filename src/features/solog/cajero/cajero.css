@@ -1174,6 +1174,47 @@
   flex-wrap: wrap;
 }
 
+/* Inicio Full V3: modal de respaldo, reutilizando tokens y geometría Cajero. */
+.cajero-start-fallback {
+  width: min(100%, 550px);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}
+.cajero-start-fallback__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+.cajero-start-fallback__heading svg {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+}
+.cajero-start-fallback__heading h2 { min-width: 0; }
+.cajero-start-fallback__status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.87rem;
+}
+.cajero-start-fallback__actions button { min-height: 42px; }
+.cajero-start-fallback :is(button):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+@media (max-width: 599px) {
+  .cajero-start-backdrop { padding: 0.5rem; }
+  .cajero-start-fallback {
+    max-height: calc(100dvh - 1rem);
+    padding: 0.9rem;
+  }
+  .cajero-start-fallback__actions .button { flex: 1 1 100%; }
+}
+
 @keyframes cajero-close-spin {
   to { transform: rotate(360deg); }
 }
