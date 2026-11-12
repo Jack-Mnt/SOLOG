@@ -1,88 +1,62 @@
 import { describe, expect, test } from 'bun:test'
 import { cashierStartGate } from '../src/features/solog/cajero/full.start-gate'
+import type { CashierStartOfferV3 } from '../src/features/solog/cajero/full.contract'
 import { FullRuntime, type FullRpc } from '../src/features/solog/cajero/full.runtime'
 
 const time = (local: string) => Date.parse(local)
-const gate = (local: string, confirmedAt: string | null = null, trusted = true, capturedAt: string | null = confirmedAt) =>
-  cashierStartGate(time(local), trusted, confirmedAt, capturedAt)
+const cycle = '2026-10-23T13:59:00.000Z'
+const offer = (kind: 'new' | 'fallback' | 'unavailable' = 'new',
+  end = '2026-10-23T15:00:00.000Z'): CashierStartOfferV3 => ({
+  policy_version: 3, cycle_started_at: cycle,
+  status: kind, snapshot_id: kind === 'unavailable' ? null : '12345678-1234-4123-8123-1234567890ac',
+  requires_confirmation: kind === 'fallback', can_start: kind !== 'unavailable',
+  capture_ends_at: kind === 'unavailable' ? null : end,
+  block_reason: kind === 'unavailable' ? 'STOCK_EXPIRED' : null,
+})
+const gate = (local: string, selected: CashierStartOfferV3 | null = offer(), trusted = true) =>
+  cashierStartGate(time(local), trusted, selected)
 
-describe('Cajero Full — protección frontend de inicio por snapshot horario', () => {
-  test('antes del minuto 59 no introduce bloqueo nuevo', () => {
-    expect(gate('2026-10-23T08:58:59.999-05:00').phase).toBe('outside_transition')
-    expect(gate('2026-10-23T08:58:59.999-05:00').blocked).toBe(false)
+describe('Cajero Full V3 — guardia de presentación horaria', () => {
+  test('permite new y fallback desde HH:00; el respaldo mantiene confirmación en V7', () => {
+    expect(gate('2026-10-23T09:00:00-05:00').phase).toBe('new')
+    expect(gate('2026-10-23T09:00:00-05:00').blocked).toBe(false)
+    expect(gate('2026-10-23T09:01:59.999-05:00', offer('fallback')).phase).toBe('fallback')
+    expect(gate('2026-10-23T09:02:00-05:00', offer('fallback')).blocked).toBe(false)
   })
 
-  test('minuto 59 completo se bloquea aunque se confirme el snapshot nuevo', () => {
-    const newSnapshot = '2026-10-23T08:59:22-05:00'
-    for (const at of [
-      '2026-10-23T08:59:00-05:00',
-      '2026-10-23T08:59:22-05:00',
-      '2026-10-23T08:59:59.999-05:00',
-    ]) {
-      const result = gate(at, newSnapshot)
-      expect(result.phase).toBe('minute_59')
-      expect(result.blocked).toBe(true)
-    }
-    expect(gate('2026-10-23T08:59:00-05:00').remainingMs).toBe(180_000)
-    expect(gate('2026-10-23T08:59:59.999-05:00').remainingMs).toBe(120_001)
+  test('HH:56:59.999 con 180.001 segundos habilita; HH:57:00 bloquea', () => {
+    expect(gate('2026-10-23T09:56:59.999-05:00').blocked).toBe(false)
+    const closed = gate('2026-10-23T09:57:00-05:00')
+    expect(closed.phase).toBe('window_closed')
+    expect(closed.reason).toBe('START_WINDOW_CLOSED')
+    expect(closed.remainingMs).toBe(180_000)
+    expect(gate('2026-10-23T09:59:59.999-05:00', offer('fallback')).blocked).toBe(true)
   })
 
-  test('de HH+1:00 a HH+1:01:59 solo deja iniciar con snapshot confirmado en el ciclo', () => {
-    const old = '2026-10-23T07:59:22-05:00'
-    const current = '2026-10-23T08:59:22-05:00'
-    const at = '2026-10-23T09:00:00-05:00'
-    expect(gate(at, old).phase).toBe('waiting_new_snapshot')
-    expect(gate(at, null).blocked).toBe(true)
-    expect(gate(at, current).phase).toBe('new_snapshot_ready')
-    expect(gate(at, current).blocked).toBe(false)
-    expect(gate('2026-10-23T09:01:59.999-05:00', old).blocked).toBe(true)
-    expect(gate('2026-10-23T09:01:59.999-05:00', current).blocked).toBe(false)
+  test('límite de 180 segundos considera expiración de stock anterior al ciclo', () => {
+    expect(gate('2026-10-23T09:30:00-05:00', offer('fallback', '2026-10-23T14:33:00.000Z')).blocked).toBe(false)
+    const short = gate('2026-10-23T09:30:00.001-05:00', offer('fallback', '2026-10-23T14:33:00.000Z'))
+    expect(short.phase).toBe('capture_too_short')
+    expect(short.reason).toBe('START_CAPTURE_TOO_SHORT')
   })
 
-  test('snapshot confirmado en el segundo 22 de la hora siguiente abre inicio de inmediato', () => {
-    const newSnapshot = '2026-10-23T09:00:22-05:00'
-    expect(gate('2026-10-23T09:00:21.999-05:00', newSnapshot).phase).toBe('waiting_new_snapshot')
-    expect(gate('2026-10-23T09:00:22-05:00', newSnapshot).phase).toBe('new_snapshot_ready')
+  test('oferta unavailable y ausencia de V6 nunca conceden inicio offline', () => {
+    expect(gate('2026-10-23T09:00:00-05:00', offer('unavailable')).reason).toBe('STOCK_EXPIRED')
+    expect(gate('2026-10-23T09:00:00-05:00', null).phase).toBe('awaiting_offer')
+    expect(gate('2026-10-23T09:00:00-05:00', null).blocked).toBe(true)
+    expect(gate('2026-10-23T09:00:00-05:00', offer(), false).phase).toBe('untrusted')
+    expect(cashierStartGate(Number.NaN, true, offer()).blocked).toBe(true)
   })
 
-  test('no admite un snapshot antiguo confirmado tarde como actualización del ciclo actual', () => {
-    const lateConfirmation = '2026-10-23T09:00:22-05:00'
-    const oldCapture = '2026-10-23T07:59:12-05:00'
-    const newCapture = '2026-10-23T08:59:12-05:00'
-    const at = '2026-10-23T09:00:23-05:00'
-    expect(gate(at, lateConfirmation, true, oldCapture).phase).toBe('waiting_new_snapshot')
-    expect(gate(at, lateConfirmation, true, newCapture).phase).toBe('new_snapshot_ready')
-    expect(gate(at, lateConfirmation, true, null).blocked).toBe(true)
+  test('oferta de ciclo anterior es obsoleta incluso si snapshot sigue vigente', () => {
+    expect(gate('2026-10-23T10:00:00-05:00', offer()).phase).toBe('stale_offer')
+    expect(gate('2026-10-24T09:00:00-05:00', offer()).blocked).toBe(true)
   })
 
-  test('exactamente tres minutos desde HH:59 desbloquea el respaldo', () => {
-    const previous = '2026-10-23T07:59:22-05:00'
-    const t = gate('2026-10-23T09:02:00-05:00', previous)
-    expect(t.phase).toBe('outside_transition')
-    expect(t.blocked).toBe(false)
-    expect(t.remainingMs).toBe(0)
-    // La validez de dos horas y la autorización efectiva se comprueban con V6.
-  })
-
-  test('no confunde confirmaciones de días diferentes al pasar por medianoche', () => {
-    const old = '2026-10-22T23:59:22-05:00'
-    const current = '2026-10-23T23:59:22-05:00'
-    expect(gate('2026-10-23T23:59:45-05:00', current).blocked).toBe(true)
-    expect(gate('2026-10-24T00:00:00-05:00', old).phase).toBe('waiting_new_snapshot')
-    expect(gate('2026-10-24T00:00:00-05:00', current).phase).toBe('new_snapshot_ready')
-    expect(gate('2026-10-24T00:02:00-05:00', old).blocked).toBe(false)
-  })
-
-  test('la compuerta también cubre el minuto 59 anterior a un cambio de turno', () => {
-    for (const at of ['2026-10-23T07:59:30-05:00', '2026-10-23T15:59:30-05:00']) {
-      expect(gate(at).phase).toBe('minute_59')
-    }
-  })
-
-  test('fail closed sin reloj sincronizado; una confirmación futura no sirve', () => {
-    expect(gate('2026-10-23T09:00:30-05:00', null, false).phase).toBe('untrusted')
-    expect(cashierStartGate(Number.NaN, true, null, null).blocked).toBe(true)
-    expect(gate('2026-10-23T09:00:21-05:00', '2026-10-23T09:00:22-05:00').blocked).toBe(true)
+  test('no existe bloqueo de 3 minutos ni espera automática por confirmación', () => {
+    expect(gate('2026-10-23T09:00:10-05:00', offer('fallback')).blocked).toBe(false)
+    expect(gate('2026-10-23T09:00:10-05:00', offer()).blocked).toBe(false)
+    expect(gate('2026-10-23T08:59:30-05:00', offer()).phase).toBe('window_closed')
   })
 })
 
