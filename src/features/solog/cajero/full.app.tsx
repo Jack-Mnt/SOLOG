@@ -441,7 +441,8 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   useEffect(() => {
     if (!fallbackOffer || fallbackWaitUntil === null || !runtime.clock.trusted ||
       now < fallbackWaitUntil || fallbackChecking || working || view.busy ||
-      !navigator.onLine || document.hidden || waitCheckedRef.current === fallbackWaitUntil) return
+      !navigator.onLine || document.hidden || waitCheckedRef.current === fallbackWaitUntil ||
+      cashierStartGate(now, runtime.clock.trusted, fallbackOffer).blocked) return
     waitCheckedRef.current = fallbackWaitUntil
     const generation = waitGeneration.current
     fallbackWaitRef.current = null
@@ -468,15 +469,16 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       })
   }, [runtime, fallbackOffer, fallbackWaitUntil, fallbackChecking, now, view.busy, working])
 
-  // El modal nunca prolonga la ventana autorizada ni arrastra una selección de otro ciclo.
+  // El modal desaparece en cuanto la ventana deja de ser válida; al hacerlo,
+  // se anula la espera sin originar renders encadenados desde un efecto.
+  const visibleFallback = fallbackOffer && !session &&
+    !cashierStartGate(now, runtime.clock.trusted, fallbackOffer).blocked
+    ? fallbackOffer : null
   useEffect(() => {
-    if (!fallbackOffer || fallbackChecking) return
-    const gate = cashierStartGate(now, runtime.clock.trusted, fallbackOffer)
-    if (session || gate.blocked) {
-      closeFallback()
-      if (!session && gate.reason) setError(explain(gate.reason))
-    }
-  }, [session, fallbackOffer, fallbackChecking, now, runtime])
+    if (visibleFallback || fallbackWaitRef.current === null) return
+    waitGeneration.current++
+    fallbackWaitRef.current = null
+  }, [visibleFallback])
   useEffect(() => {
     if (!Number.isFinite(now) || working || view.busy || !runtime.clock.trusted) return
     if (typeof navigator !== 'undefined' && !navigator.onLine) return
@@ -506,10 +508,12 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       return
     }
     if (selected.status === 'fallback') {
+      closeFallback()
       setError(null)
       setFallbackOffer(structuredClone(selected))
       return
     }
+    closeFallback()
     void run(() => runtime.start(structuredClone(selected)))
   }
   const waitForNewSnapshot = () => {
@@ -810,7 +814,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
         </button>
       })}
     </div></nav>
-    {fallbackOffer ? <FullStartFallbackDialog offer={fallbackOffer}
+    {visibleFallback ? <FullStartFallbackDialog offer={visibleFallback}
       waitingSeconds={waitingSeconds} checking={fallbackChecking}
       busy={working || view.busy || startGate.blocked}
       onWait={waitForNewSnapshot} onUse={startWithFallback} onCancel={closeFallback}/> : null}
