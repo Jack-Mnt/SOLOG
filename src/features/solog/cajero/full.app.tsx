@@ -471,7 +471,14 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
 
   // El modal desaparece en cuanto la ventana deja de ser válida; al hacerlo,
   // se anula la espera sin originar renders encadenados desde un efecto.
-  const visibleFallback = fallbackOffer && !session &&
+  const currentOffer = view.bootstrap?.start_offer
+  const fallbackStillOffered = fallbackOffer && currentOffer &&
+    currentOffer.status === 'fallback' &&
+    currentOffer.can_start && currentOffer.requires_confirmation &&
+    currentOffer.snapshot_id === fallbackOffer.snapshot_id &&
+    currentOffer.cycle_started_at === fallbackOffer.cycle_started_at &&
+    currentOffer.capture_ends_at === fallbackOffer.capture_ends_at
+  const visibleFallback = fallbackStillOffered && !session &&
     !cashierStartGate(now, runtime.clock.trusted, fallbackOffer).blocked
     ? fallbackOffer : null
   useEffect(() => {
