@@ -410,6 +410,8 @@ export class FullRuntime {
         const latest = current?.start_offer
         if (!latest || latest.policy_version !== 3 || !this.clock.trusted)
           throw new Error('FULL_START_OFFER_REQUIRED')
+        if (latest.status === 'unavailable' || !latest.can_start)
+          throw new Error(latest.block_reason ?? 'FULL_START_BLOCKED')
         const accepted = chosen ?? (latest.status === 'new' ? latest : null)
         if (!accepted || accepted.policy_version !== 3)
           throw new Error(latest.status === 'fallback'
