@@ -108,8 +108,9 @@ export class FullRuntime {
     const raw = this.storage.getItem(this.key)
     if (!raw) return emptyJournal(this.userId, this.deviceToken)
     if (raw.length > 8 * 1024 * 1024) throw new Error('FULL_OUTBOX_TOO_LARGE')
-    const value = JSON.parse(raw) as Omit<Journal, 'version' | 'drafts'> & {
+    const value = JSON.parse(raw) as Omit<Journal, 'version' | 'drafts' | 'archivedConflicts'> & {
       version: number; drafts?: Record<string, FullDraft[]>
+      archivedConflicts?: FullArchivedConflict[]
     }
     if (![1, 2].includes(value.version) || value.userId !== this.userId || value.deviceToken !== this.deviceToken ||
       !Array.isArray(value.pending) || !value.confirmed || !value.panels ||
@@ -137,8 +138,17 @@ export class FullRuntime {
         keys.add(row.groupId)
       }
     }
-    // Migración aditiva. Nunca se elimina una operación preexistente del outbox Full.
-    return { ...value, version: 2, drafts } as Journal
+    // Migración aditiva: los journals previos no incluyen el archivo local B5.
+    const archivedConflicts = value.archivedConflicts ?? []
+    if (!Array.isArray(archivedConflicts) ||
+      archivedConflicts.some(x => !x || !isUuid(x.operationId) || !isUuid(x.sessionId) ||
+        !isUuid(x.conflictingDraft?.clientObservationId) ||
+        !Number.isSafeInteger(x.itemIndex) || x.itemIndex < 0 ||
+        typeof x.fieldPath !== 'string' || !x.payloadWithoutToken ||
+        typeof x.payloadWithoutToken !== 'object' || 'device_token' in x.payloadWithoutToken)) {
+      throw new Error('FULL_OUTBOX_INVALID')
+    }
+    return { ...value, version: 2, drafts, archivedConflicts } as Journal
   }
   private persist(value: Journal) {
     const serialized = JSON.stringify(value)
@@ -151,6 +161,7 @@ export class FullRuntime {
       drafts: Object.values(this.journal.drafts).reduce((n, d) => n + d.length, 0),
       pending: this.journal.pending.filter(x => x.status === 'pending').length,
       rejected: this.journal.pending.filter(x => x.status === 'rejected').length,
+      archivedConflicts: this.journal.archivedConflicts.length,
       revision: this.view.revision + 1 }
     this.listeners.forEach(fn => fn())
   }
@@ -182,6 +193,7 @@ export class FullRuntime {
       ...this.journal.pending.map(p => ({
         kind: 'operation' as const, sessionId: p.sessionId, id: p.operationId,
         action: p.action, status: p.status, code: p.code,
+        fieldPath: p.failure?.errors.length === 1 ? p.failure.errors[0].field_path : null,
       })),
     ]
   }
@@ -196,9 +208,10 @@ export class FullRuntime {
         delete payload.device_token
         return {
           operationId: p.operationId, sessionId: p.sessionId, action: p.action,
-          status: p.status, code: p.code, payload,
+          status: p.status, code: p.code, failure: p.failure ?? null, payload,
         }
       }),
+      archivedConflicts: this.journal.archivedConflicts,
       confirmed: this.journal.confirmed,
     })
   }
@@ -337,7 +350,17 @@ export class FullRuntime {
         if (!response.retryable) {
           const next = structuredClone(this.journal)
           const row = next.pending.find(x => x.operationId === pending.operationId)
-          if (row) { row.status = 'rejected'; row.code = response.code; this.persist(next) }
+          if (row) {
+            row.status = 'rejected'; row.code = response.code
+            row.failure = {
+              serverNow: response.server_now, requestId: response.request_id,
+              actionRequired: response.action_required ?? null,
+              errors: structuredClone(response.errors ?? []),
+              errorsTotal: response.errors_total ?? null,
+              errorsTruncated: response.errors_truncated !== false,
+            }
+            this.persist(next)
+          }
         }
         this.publish({ error: response.code })
         throw new Error(response.retryable ? 'FULL_DELIVERY_RETRYABLE' : response.code)
