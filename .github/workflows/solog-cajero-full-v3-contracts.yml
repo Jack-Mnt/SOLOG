@@ -9,6 +9,7 @@ on:
       - "src/features/solog/cajero/full.runtime.ts"
       - "src/features/solog/cajero/full.start-gate.ts"
       - "src/features/solog/cajero/full.start-dialog.tsx"
+      - "src/features/solog/cajero/full.conflict-dialog.tsx"
       - "src/features/solog/cajero/full.app.tsx"
       - "src/features/solog/cajero/cajero.css"
       - "tests/cajero-full-contrato-horario-v3.test.ts"
