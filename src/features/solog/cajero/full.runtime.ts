@@ -268,6 +268,33 @@ export class FullRuntime {
     return structuredClone(this.journal.archivedConflicts)
   }
 
+  /**
+   * Acción humana B5. Una escritura atómica local: archiva el rechazo y
+   * el borrador conflictivo, libera el lote rechazado sin reenviar nada.
+   * Los demás drafts conservan UUID y timestamps para una acción posterior.
+   */
+  async resolveRejectedBatch(operationId: string) {
+    await this.gate(async () => {
+      this.journal = this.read()
+      const row = this.journal.pending.find(p => p.operationId === operationId)
+      const candidate = row ? this.inspectBatchConflict(row, this.journal) : null
+      if (!candidate || !row?.failure) throw new Error('FULL_BATCH_RESOLUTION_BLOCKED')
+      const payloadWithoutToken = JSON.parse(row.exactPayload) as Record<string, unknown>
+      delete payloadWithoutToken.device_token
+      const evidence: FullArchivedConflict = {
+        ...candidate, serverNow: row.failure.serverNow,
+        requestId: row.failure.requestId, errors: structuredClone(row.failure.errors),
+        payloadWithoutToken,
+      }
+      const next = structuredClone(this.journal)
+      next.archivedConflicts.push(evidence)
+      next.pending = next.pending.filter(p => p.operationId !== operationId)
+      next.drafts[candidate.sessionId] = (next.drafts[candidate.sessionId] ?? [])
+        .filter(d => d.clientObservationId !== candidate.conflictingDraft.clientObservationId)
+      if (!next.drafts[candidate.sessionId].length) delete next.drafts[candidate.sessionId]
+      this.persist(next)
+    })
+  }
   async discardDraft(sessionId: string, observationId: string) {
     await this.gate(async () => {
       this.journal = this.read()
