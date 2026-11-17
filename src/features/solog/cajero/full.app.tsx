@@ -13,6 +13,7 @@ import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
 import { FullRuntime, type FullBatchConflict, type FullDraft, type FullIncident } from './full.runtime'
 import { FullStartFallbackDialog } from './full.start-dialog'
+import { FullConflictDialog } from './full.conflict-dialog'
 import { cashierStartGate } from './full.start-gate'
 import { formatFullInventoryUpdate, fullMinutesRemaining, fullRemainingLabel } from './full.temporal'
 import { projectFullCoverage } from './full.coverage'
@@ -848,27 +849,12 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
       waitingSeconds={waitingSeconds} checking={fallbackChecking}
       busy={working || view.busy || startGate.blocked}
       onWait={waitForNewSnapshot} onUse={startWithFallback} onCancel={closeFallback}/> : null}
-    {conflictToResolve ? <div className="cajero-confirmation-backdrop">
-      <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-label="Resolver conflicto de conteo">
-        <h2>{conflictToResolve.code === 'NORMAL_COUNT_ALREADY_IN_SHIFT'
-          ? 'Conteo duplicado en el turno' : 'Conteo bloqueado por inconsistencia'}</h2>
-        <p>El servidor rechazó el lote completo, sin confirmar ninguna de sus observaciones.
-          Identificó como conflictiva la observación del grupo
-          {' '}{view.groups.find(g => g.group_id === conflictToResolve.conflictingDraft.groupId)?.group_name
-            ?? conflictToResolve.conflictingDraft.groupId}.</p>
-        <p>Si confirmas, esta observación y el rechazo original quedarán archivados únicamente
-          en este dispositivo. Los otros {conflictToResolve.retainedDraftCount} borradores
-          conservarán sus identificadores y fechas para que puedas registrarlos después,
-          siempre que sigan autorizados. <strong>No se enviará nada automáticamente.</strong></p>
-        <p>Antes de continuar, puedes exportar el diagnóstico para conservar una copia adicional.</p>
-        <div className="cajero-confirmation__actions">
-          <button type="button" className="button button--secondary"
-            onClick={() => setConflictToResolve(null)}>Cancelar</button>
-          <button type="button" className="button" disabled={working || view.busy}
-            onClick={resolveBatchConflict}>Apartar observación conflictiva</button>
-        </div>
-      </section>
-    </div> : null}
+    {conflictToResolve ? <FullConflictDialog conflict={conflictToResolve}
+      groupName={view.groups.find(g => g.group_id === conflictToResolve.conflictingDraft.groupId)?.group_name
+        ?? conflictToResolve.conflictingDraft.groupId}
+      busy={working || view.busy}
+      onCancel={() => setConflictToResolve(null)}
+      onConfirm={resolveBatchConflict} /> : null}
     {incidentToDiscard ? <div className="cajero-confirmation-backdrop">
       <section className="cajero-confirmation" role="dialog" aria-modal="true" aria-label="Descartar incidencia local">
         <h2>¿Descartar esta evidencia local?</h2>
