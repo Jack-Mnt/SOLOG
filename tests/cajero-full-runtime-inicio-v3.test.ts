@@ -183,6 +183,19 @@ describe('Cajero Full — Fase 2 inicio V3, selección y journal seguro', () => 
     expect(h.runtime.inspectPending()[0].operationId).toBe(prepared.operationId)
   })
 
+  test('si el refresco V6 cruza HH:57, el runtime no prepara ni envía V7', async () => {
+    const h = harness({ failNetwork: true })
+    await h.runtime.refresh()
+    const selected = structuredClone(h.runtime.getSnapshot().bootstrap!.start_offer!)
+    expect(selected?.status).toBe('new')
+    // La oferta sigue siendo de la misma generación y su fin es HH:00;
+    // 180 s exactos no son suficientes si ya comenzó HH:57.
+    h.setServerNow(now + 52 * 60_000)
+    await expect(h.runtime.start(selected)).rejects.toThrow('START_WINDOW_CLOSED')
+    expect(h.attempts()).toBe(0)
+    expect(h.runtime.inspectPending()).toEqual([])
+  })
+
   test('una selección explícita diferente a la visible no autoriza V7', async () => {
     const h = harness({ failNetwork: true })
     await h.runtime.refresh()
