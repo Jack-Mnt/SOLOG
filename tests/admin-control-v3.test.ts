@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test'
 import { AdminStore } from '../src/features/solog/admin/admin.v2.store'
 import { validateAdminResponse, validateControlPayload, type adminRpc, type AdminPayloads } from '../src/features/solog/admin/admin.v2'
 import { controlView } from '../src/features/solog/admin/control/admin.control.data'
+import { controlCustomDateBounds } from '../src/features/solog/admin/admin.v2.format'
 // @ts-expect-error shared browser fixtures
 import { responseFixture } from './fixtures/admin-v2.mjs'
 
@@ -20,6 +21,10 @@ function setup(transform = (_action: string, value: unknown) => value) {
 }
 
 test('V10 dataset completo, payload mínimo y caché por sede/período/custom sin revalidación', async () => {
+  // La ventana custom es relativa al día de Lima: evitar fechas absolutas que caduquen.
+  const { max } = controlCustomDateBounds()
+  const dateFrom = new Date(Date.parse(`${max}T00:00:00Z`) - 4 * 86_400_000).toISOString().slice(0, 10)
+  const customPeriod = { ...context, period: 'custom' as const, date_from: dateFrom, date_to: max }
   const { store, calls } = setup()
   await store.load('bootstrap', {})
   for (const payload of [
@@ -27,7 +32,7 @@ test('V10 dataset completo, payload mínimo y caché por sede/período/custom si
     { ...context, period: 'current_biweekly' as const },
     context,
     { ...context, site_id: 'site-b' },
-    { ...context, period: 'custom' as const, date_from: '2026-10-01', date_to: '2026-10-05' },
+    customPeriod,
     context,
   ]) {
     expect((await store.load('control_groups', payload)).items).toHaveLength(101)
@@ -36,7 +41,7 @@ test('V10 dataset completo, payload mínimo y caché por sede/período/custom si
     { action: 'control_groups', payload: context },
     { action: 'control_groups', payload: { ...context, period: 'current_biweekly' } },
     { action: 'control_groups', payload: { ...context, site_id: 'site-b' } },
-    { action: 'control_groups', payload: { ...context, period: 'custom', date_from: '2026-10-01', date_to: '2026-10-05' } },
+    { action: 'control_groups', payload: customPeriod },
   ])
   store.dispose()
 })
