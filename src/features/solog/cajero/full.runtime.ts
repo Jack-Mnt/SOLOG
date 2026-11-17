@@ -215,6 +215,59 @@ export class FullRuntime {
       confirmed: this.journal.confirmed,
     })
   }
+  /** B5: solo el field_path inequívoco del rechazo atómico V7 habilita separación. */
+  private inspectBatchConflict(row: Pending, journal: Journal): FullBatchConflict | null {
+    const receipt = row.failure
+    if (row.action !== 'save_batch' || row.status !== 'rejected' || !row.sessionId ||
+      (row.code !== 'NORMAL_COUNT_ALREADY_IN_SHIFT' &&
+       row.code !== 'NORMAL_COUNT_BLOCKED_AFTER_INCONSISTENT') ||
+      !receipt || receipt.actionRequired !== 'manual_review' ||
+      receipt.errorsTruncated || receipt.errorsTotal !== 1 || receipt.errors.length !== 1) return null
+    const error = receipt.errors[0]
+    if (error.code !== row.code) return null
+    const match = /^p_payload\.items\[(0|[1-9]\d*)\]$/.exec(error.field_path)
+    if (!match) return null
+    const index = Number(match[1])
+    let payload: { session_id?: string; expected_groups_revision?: number; items?: Array<{
+      client_observation_id: string; grupo_id: string; stock_fisico: number
+      contado_at: string; motivo_diferencia: string | null; observacion_diferencia: string | null
+    }> }
+    try { payload = JSON.parse(row.exactPayload) } catch { return null }
+    const items = payload.items
+    if (!Array.isArray(items) || items.length < 1 || items.length > 500 ||
+      index >= items.length || payload.session_id !== row.sessionId ||
+      journal.pending.some(p => p.operationId !== row.operationId && p.sessionId === row.sessionId)) return null
+    const drafts = journal.drafts[row.sessionId] ?? []
+    const confirmed = new Set(journal.confirmed[row.sessionId] ?? [])
+    const seen = new Set<string>()
+    for (const item of items) {
+      if (!item || !isUuid(item.client_observation_id) || !isUuid(item.grupo_id) ||
+        seen.has(item.client_observation_id) || confirmed.has(item.client_observation_id)) return null
+      seen.add(item.client_observation_id)
+      const draft = drafts.find(d => d.clientObservationId === item.client_observation_id)
+      if (!draft || draft.action === 'recount' || draft.sessionId !== row.sessionId ||
+        draft.groupId !== item.grupo_id || draft.physical !== item.stock_fisico ||
+        draft.countedAt !== item.contado_at || draft.reason !== item.motivo_diferencia ||
+        draft.note !== item.observacion_diferencia ||
+        draft.groupsRevision !== payload.expected_groups_revision) return null
+    }
+    const conflicting = drafts.find(d => d.clientObservationId === items[index].client_observation_id)
+    if (!conflicting) return null
+    return {
+      operationId: row.operationId, sessionId: row.sessionId,
+      code: row.code, itemIndex: index, fieldPath: error.field_path,
+      conflictingDraft: structuredClone(conflicting),
+      retainedDraftCount: items.length - 1, originalBatchSize: items.length,
+    }
+  }
+  getBatchConflict(operationId: string): FullBatchConflict | null {
+    const row = this.journal.pending.find(p => p.operationId === operationId)
+    return row ? this.inspectBatchConflict(row, this.journal) : null
+  }
+  getArchivedConflicts(): FullArchivedConflict[] {
+    return structuredClone(this.journal.archivedConflicts)
+  }
+
   async discardDraft(sessionId: string, observationId: string) {
     await this.gate(async () => {
       this.journal = this.read()
