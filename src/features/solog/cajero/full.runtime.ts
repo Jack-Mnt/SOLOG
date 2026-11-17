@@ -1,3 +1,4 @@
+import { cashierStartGate } from './full.start-gate'
 import { isUuid, parseFullEnvelope, type CashierStartOfferV3, type FullAction, type FullEnvelope, type FullErrorItem, type FullActionRequired, type FullGroup, type FullMutation, type FullSession, type FullState } from './full.contract'
 
 export type FullRpc = (name: 'rpc_solog_cashier_bootstrap_v6' | 'rpc_solog_cashier_mutate_v7', args: Record<string, unknown>) => Promise<unknown>
@@ -532,6 +533,10 @@ export class FullRuntime {
         const latest = current?.start_offer
         if (!latest || latest.policy_version !== 3 || !this.clock.trusted)
           throw new Error('FULL_START_OFFER_REQUIRED')
+        // El refresh V6 puede cruzar HH:57 o cambiar el ciclo entre clic y
+        // preparación V7. Aplicar la misma guardia temporal después del RPC.
+        const startGate = cashierStartGate(this.clock.now(), this.clock.trusted, latest)
+        if (startGate.blocked) throw new Error(startGate.reason ?? 'FULL_START_BLOCKED')
         if (latest.status === 'unavailable' || !latest.can_start)
           throw new Error(latest.block_reason ?? 'FULL_START_BLOCKED')
         const accepted = chosen ?? (latest.status === 'new' ? latest : null)
