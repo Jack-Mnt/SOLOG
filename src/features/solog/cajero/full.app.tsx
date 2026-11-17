@@ -11,7 +11,7 @@ import { PaletteSwitcher } from '../../theme/palette-switcher'
 import { PanelLoader } from '../../../components/panel-loader'
 import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
-import { FullRuntime, type FullDraft, type FullIncident } from './full.runtime'
+import { FullRuntime, type FullBatchConflict, type FullDraft, type FullIncident } from './full.runtime'
 import { FullStartFallbackDialog } from './full.start-dialog'
 import { cashierStartGate } from './full.start-gate'
 import { formatFullInventoryUpdate, fullMinutesRemaining, fullRemainingLabel } from './full.temporal'
@@ -316,6 +316,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const [reviewGroup, setReviewGroup] = useState<string | null>(null)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [incidentToDiscard, setIncidentToDiscard] = useState<FullIncident | null>(null)
+  const [conflictToResolve, setConflictToResolve] = useState<FullBatchConflict | null>(null)
   const [fallbackOffer, setFallbackOffer] = useState<CashierStartOfferV3 | null>(null)
   const [fallbackWaitUntil, setFallbackWaitUntil] = useState<number | null>(null)
   const [fallbackChecking, setFallbackChecking] = useState(false)
@@ -614,10 +615,17 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
     setStock(type); setCategory(null); setReviewGroup(null)
     navigateTo('/cajero/conteo?stock=' + type)
   }
-  const issueRequiresAttention = view.pending > 0 || view.rejected > 0 || view.drafts > activeDrafts
+  const issueRequiresAttention = view.pending > 0 || view.rejected > 0 ||
+    view.drafts > activeDrafts || view.archivedConflicts > 0
   const hasUnresolved = view.drafts > 0 || view.pending > 0 || view.rejected > 0 ||
     Boolean(view.bootstrap?.recovery_sessions.length)
   const incidents = hasUnresolved ? runtime.getIncidents() : []
+  const resolveBatchConflict = () => {
+    const selected = conflictToResolve
+    if (!selected) return
+    setConflictToResolve(null)
+    void run(() => runtime.resolveRejectedBatch(selected.operationId))
+  }
   const discardIncident = () => {
     if (!incidentToDiscard) return
     const incident = incidentToDiscard
@@ -665,15 +673,27 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
               onClick={() => void run(() => runtime.retry())}><RefreshCw size={18} aria-hidden="true"/> Reintentar operaciones</button>
             <button className="button button--secondary" type="button" onClick={exportPending}>Exportar diagnóstico</button>
           </div>
+          {view.archivedConflicts > 0 ? <p role="status">
+            {view.archivedConflicts} observación(es) conflictiva(s) apartada(s) con evidencia local;
+            no se han registrado como conteos remotos. Exporta el diagnóstico para conservarla.
+          </p> : null}
           {incidents.length ? <div className="cajero-incidents" aria-label="Incidencias locales">
             {incidents.slice(0, 12).map(item => <div className="cajero-incidents__row" key={item.id}>
               <span>{item.kind === 'draft' ? 'Borrador' : item.status === 'rejected' ? 'Rechazo definitivo' : 'Envío sin conciliar'} · {item.groupId?.slice(0, 8) ?? item.action ?? '—'} · {item.sessionId?.slice(0, 8) ?? 'Inicio'}
-                {item.code ? ` · ${item.code}` : ''}</span>
+                {item.code ? ` · ${item.code}` : ''}
+                {item.fieldPath ? ` · ${item.fieldPath}` : ''}</span>
+              {item.kind === 'operation' && runtime.getBatchConflict(item.id) ? <button
+                type="button" className="button button--secondary"
+                disabled={working || view.busy}
+                onClick={() => setConflictToResolve(runtime.getBatchConflict(item.id))}>
+                Resolver conflicto…
+              </button> : null}
               {runtime.canDiscardIncident(item) ? <button type="button" className="button button--secondary" disabled={working || view.busy}
                 onClick={() => setIncidentToDiscard(item)}>Descartar…</button> : null}
             </div>)}
             {incidents.length > 12 ? <p>{incidents.length - 12} incidencias adicionales en el diagnóstico exportable.</p> : null}
-            <p>Exporta el diagnóstico antes de descartar. Los reintentos inciertos y los conflictos no se pueden descartar.</p>
+            <p>Los conflictos B5 solo pueden separarse con un índice inequívoco de V7 y confirmación humana.
+              Los reintentos inciertos no se pueden descartar ni reconstruir.</p>
           </div> : null}
         </div>
       </details> : null}
