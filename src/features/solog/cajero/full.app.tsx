@@ -53,6 +53,9 @@ const messages: Record<string, string> = {
   FULL_CONFIRMATION_MANIFEST_MISMATCH: 'La confirmación del servidor no coincide. Los registros quedan retenidos para revisión.',
   FULL_INCIDENT_NOT_FOUND: 'La incidencia ya no está disponible. Actualiza el estado.',
   FULL_INCIDENT_DISCARD_BLOCKED: 'No se ha demostrado que este registro pueda descartarse de forma segura.',
+  FULL_BATCH_RESOLUTION_BLOCKED: 'No existe evidencia suficiente del servidor para separar este lote. Conserva el registro y exporta el diagnóstico.',
+  NORMAL_COUNT_ALREADY_IN_SHIFT: 'Ya existe un conteo normal confirmado para este grupo y turno. Revisa las incidencias.',
+  NORMAL_COUNT_BLOCKED_AFTER_INCONSISTENT: 'El conteo está bloqueado por una inconsistencia anterior. Revisa las incidencias.',
 }
 const explain = (error: unknown) => {
   const code = error instanceof Error ? error.message : String(error)
