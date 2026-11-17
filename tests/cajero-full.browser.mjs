@@ -594,7 +594,26 @@ try {
       const rejected = await journal(page)
       assert.equal(rejected.pending[0].failure.errors[0].field_path, 'p_payload.items[1]')
       await resolve.click()
-      const dialog = page.getByRole('dialog', { name: 'Resolver conflicto de conteo' })
+      let dialog = page.getByRole('dialog', { name: 'Conteo duplicado en el turno' })
+      await dialog.waitFor()
+      const cancel = dialog.getByRole('button', { name: 'Cancelar' })
+      const confirm = dialog.getByRole('button', { name: 'Apartar observación conflictiva' })
+      assert.equal(await cancel.evaluate(el => document.activeElement === el), true,
+        'B5 debe ubicar el foco dentro del diálogo')
+      await page.keyboard.press('Shift+Tab')
+      assert.equal(await confirm.evaluate(el => document.activeElement === el), true,
+        'B5 debe contener Tab inverso')
+      await page.keyboard.press('Tab')
+      assert.equal(await cancel.evaluate(el => document.activeElement === el), true,
+        'B5 debe contener Tab')
+      await page.keyboard.press('Escape')
+      await dialog.waitFor({ state: 'detached' })
+      assert.equal(await resolve.evaluate(el => document.activeElement === el), true,
+        'B5 debe devolver el foco al botón que abrió el modal')
+      assert.equal(fake.calls.filter(c => c.action === 'save_batch').length, 1,
+        'Escape no debe enviar V7 ni resolver el rechazo')
+      await resolve.click()
+      dialog = page.getByRole('dialog', { name: 'Conteo duplicado en el turno' })
       await dialog.waitFor()
       await dialog.getByRole('button', { name: 'Apartar observación conflictiva' }).click()
       await page.waitForFunction(key => {
