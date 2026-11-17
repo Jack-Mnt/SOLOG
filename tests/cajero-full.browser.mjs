@@ -596,8 +596,10 @@ try {
       const dialog = page.getByRole('dialog', { name: 'Resolver conflicto de conteo' })
       await dialog.waitFor()
       await dialog.getByRole('button', { name: 'Apartar observación conflictiva' }).click()
-      await eventually(async () => (await journal(page)).archivedConflicts?.length === 1,
-        'La evidencia B5 no quedó archivada')
+      await page.waitForFunction(key => {
+        const entry = JSON.parse(localStorage.getItem(key) || '{}')
+        return entry.archivedConflicts?.length === 1
+      }, journalKey)
       const resolved = await journal(page)
       assert.equal(resolved.pending.length, 0)
       assert.deepEqual(resolved.drafts[sid], [original[0]])
