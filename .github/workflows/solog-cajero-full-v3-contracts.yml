@@ -18,6 +18,7 @@ on:
       - "tests/cajero-full-inicio-snapshot-horario.test.ts"
       - "tests/cajero-full.browser.mjs"
       - "tests/details-access-transition.test.ts"
+      - "tests/admin-control-v3.test.ts"
       - ".github/workflows/solog-cajero-full-v3-contracts.yml"
   workflow_dispatch:
 
