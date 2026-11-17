@@ -23,10 +23,13 @@ const serverStart = Date.parse('2026-10-26T09:15:00.000Z')
 
 class SimulatedFull {
   constructor({ recovery = false, lostResponse = null, priorityChange = false, recount = false,
-    rejectSave = false, timeOffsetMinutes = null, lostResponseNth = 1, productDetails = false, homeScenario = null } = {}) {
+    rejectSave = false, conflictItemIndex = null, timeOffsetMinutes = null,
+    lostResponseNth = 1, productDetails = false, homeScenario = null } = {}) {
     this.homeScenario = homeScenario
     this.now = serverStart + (timeOffsetMinutes ?? (recovery ? 51 : 0)) * 60_000
     this.rejectSave = rejectSave
+    this.conflictItemIndex = conflictItemIndex
+    this.conflictRejected = false
     this.expires = serverStart + 50 * 60_000
     this.lostResponse = lostResponse
     this.lostResponseNth = lostResponseNth
@@ -153,6 +156,18 @@ class SimulatedFull {
       return this.envelope(prior.code, prior.data, true)
     }
     const items = payload.items ?? []
+    if (action === 'save_batch' && this.conflictItemIndex !== null && !this.conflictRejected) {
+      this.conflictRejected = true
+      assert.ok(items.length > this.conflictItemIndex, 'Fixture de conflicto exige lote multisede')
+      return {
+        contract_version: 2, ok: false, code: 'NORMAL_COUNT_ALREADY_IN_SHIFT',
+        server_now: iso(this.now), request_id: '12345678-1234-4123-8123-1234567890b1',
+        retryable: false, data: null, action_required: 'manual_review',
+        errors: [{ code: 'NORMAL_COUNT_ALREADY_IN_SHIFT', message: 'Lote rechazado.',
+          field_path: `p_payload.items[${this.conflictItemIndex}]` }],
+        errors_total: 1, errors_truncated: false,
+      }
+    }
     if (action === 'save_batch' && this.rejectSave) {
       return {
         contract_version: 2, ok: false, code: 'PRIORITY_CONFLICT',
@@ -563,6 +578,44 @@ try {
     await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click()
     await page.getByRole('dialog', { name: 'Cerrar sesión' }).waitFor()
   })
+  await check('B5: lote rechazado no envía parcialmente; resolución conserva evidencia y UUID restante',
+    { conflictItemIndex: 1 }, async ({ fake, createPage }) => {
+      const page = await createPage()
+      await saveGroup(page, 'Grupo A')
+      await saveGroup(page, 'Grupo B')
+      const original = structuredClone((await journal(page)).drafts[sid])
+      assert.equal(original.length, 2)
+      await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+      const resolve = page.getByRole('button', { name: 'Resolver conflicto…' })
+      await resolve.waitFor()
+      assert.equal(fake.observations.size, 0, 'El rechazo B5 no registra parcialmente el lote')
+      assert.equal(fake.calls.filter(c => c.action === 'save_batch').length, 1)
+      const rejected = await journal(page)
+      assert.equal(rejected.pending[0].failure.errors[0].field_path, 'p_payload.items[1]')
+      await resolve.click()
+      const dialog = page.getByRole('dialog', { name: 'Resolver conflicto de conteo' })
+      await dialog.waitFor()
+      await dialog.getByRole('button', { name: 'Apartar observación conflictiva' }).click()
+      await eventually(async () => (await journal(page)).archivedConflicts?.length === 1,
+        'La evidencia B5 no quedó archivada')
+      const resolved = await journal(page)
+      assert.equal(resolved.pending.length, 0)
+      assert.deepEqual(resolved.drafts[sid], [original[0]])
+      assert.equal(resolved.archivedConflicts[0].conflictingDraft.clientObservationId,
+        original[1].clientObservationId)
+      assert.ok(!('device_token' in resolved.archivedConflicts[0].payloadWithoutToken))
+      assert.equal(fake.calls.filter(c => c.action === 'save_batch').length, 1,
+        'Apartar conflicto no puede emitir un nuevo V7')
+      await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+      await eventually(() => fake.calls.filter(c => c.action === 'save_batch').length === 2,
+        'El reenvío explícito del borrador válido no llegó a V7')
+      const saved = fake.calls.filter(c => c.action === 'save_batch')[1].payload.items
+      assert.equal(saved.length, 1)
+      assert.equal(saved[0].client_observation_id, original[0].clientObservationId)
+      assert.equal(saved[0].contado_at, original[0].countedAt)
+      assert.equal(fake.observations.size, 1)
+    })
+
   await check('V3: inicio new sin modal, UUID y referencia coinciden', { hourlyStart: 'new' },
     async ({ fake, createPage }) => {
       const page = await createPage()
