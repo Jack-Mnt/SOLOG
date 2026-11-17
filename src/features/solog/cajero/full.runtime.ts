@@ -1,4 +1,4 @@
-import { isUuid, parseFullEnvelope, type CashierStartOfferV3, type FullAction, type FullEnvelope, type FullGroup, type FullMutation, type FullSession, type FullState } from './full.contract'
+import { isUuid, parseFullEnvelope, type CashierStartOfferV3, type FullAction, type FullEnvelope, type FullErrorItem, type FullActionRequired, type FullGroup, type FullMutation, type FullSession, type FullState } from './full.contract'
 
 export type FullRpc = (name: 'rpc_solog_cashier_bootstrap_v6' | 'rpc_solog_cashier_mutate_v7', args: Record<string, unknown>) => Promise<unknown>
 export type FullLock = <T>(run: () => Promise<T>) => Promise<T>
@@ -7,10 +7,27 @@ export interface FullDraft {
   groupId: string; action: 'coverage' | 'daily' | 'recount'; recountDetailId: string | null
   physical: number; reason: string | null; note: string | null; countedAt: string; expression: string
 }
-interface Pending { operationId: string; action: FullAction; sessionId: string | null; exactPayload: string; status: 'pending' | 'rejected'; code: string | null }
+interface FailureReceipt {
+  serverNow: string; requestId: string; actionRequired: FullActionRequired | null
+  errors: FullErrorItem[]; errorsTotal: number | null; errorsTruncated: boolean
+}
+interface Pending {
+  operationId: string; action: FullAction; sessionId: string | null; exactPayload: string
+  status: 'pending' | 'rejected'; code: string | null; failure?: FailureReceipt
+}
+export interface FullBatchConflict {
+  operationId: string; sessionId: string
+  code: 'NORMAL_COUNT_ALREADY_IN_SHIFT' | 'NORMAL_COUNT_BLOCKED_AFTER_INCONSISTENT'
+  itemIndex: number; fieldPath: string; conflictingDraft: FullDraft
+  retainedDraftCount: number; originalBatchSize: number
+}
+export interface FullArchivedConflict extends FullBatchConflict {
+  serverNow: string; requestId: string; payloadWithoutToken: Record<string, unknown>; errors: FullErrorItem[]
+}
 export interface FullIncident {
   kind: 'draft' | 'operation'; sessionId: string | null; id: string
   groupId?: string; action?: FullAction; status?: 'pending' | 'rejected'; code?: string | null
+  fieldPath?: string | null
 }
 // Solo rechazos confirmados por V7 antes de efectuar escrituras; nunca conflictos de identidad o idempotencia.
 const discardableRejections = new Set(['PRIORITY_CONFLICT', 'SESSION_CAPTURE_CLOSED', 'SESSION_DELIVERY_CLOSED', 'MANIFEST_NOT_CONFIRMED'])
@@ -39,18 +56,20 @@ interface Journal {
   version: 2; userId: string; deviceToken: string
   pending: Pending[]; confirmed: Record<string, string[]>; panels: Record<string, FullGroup[]>
   drafts: Record<string, FullDraft[]>
+  archivedConflicts: FullArchivedConflict[]
 }
 interface StoragePort { getItem(key: string): string | null; setItem(key: string, value: string): void }
 export interface FullView {
   bootstrap: FullState | null; session: FullSession | null; groups: FullGroup[]
-  drafts: number; pending: number; rejected: number; busy: boolean; error: string | null; revision: number
+  drafts: number; pending: number; rejected: number; archivedConflicts: number
+  busy: boolean; error: string | null; revision: number
   coverageFresh: boolean
 }
 
 const rank: Record<string, number> = { round_coverage: 0, review_for_coverage: 1, review_regular: 2, shift_coverage: 3, none: 4 }
 const reasons = ['Transferencia', 'Venta por mayor', 'Dañado', 'Vencido', 'Otro motivo']
 const emptyJournal = (userId: string, deviceToken: string): Journal =>
-  ({ version: 2, userId, deviceToken, pending: [], confirmed: {}, panels: {}, drafts: {} })
+  ({ version: 2, userId, deviceToken, pending: [], confirmed: {}, panels: {}, drafts: {}, archivedConflicts: [] })
 
 export class ServerClock {
   private server = Number.NaN; private tick = 0; private wall = 0; trusted = false
@@ -72,7 +91,7 @@ export class FullRuntime {
   private journal: Journal; private listeners = new Set<() => void>(); private gate: FullLock
   private view: FullView = {
     bootstrap: null, session: null, groups: [], drafts: 0, pending: 0,
-    rejected: 0, busy: false, error: null, revision: 0, coverageFresh: false,
+    rejected: 0, archivedConflicts: 0, busy: false, error: null, revision: 0, coverageFresh: false,
   }
   constructor(readonly userId: string, readonly deviceToken: string, private storage: StoragePort,
     private rpc: FullRpc, options: { clock?: ServerClock; lock?: FullLock } = {}) {
