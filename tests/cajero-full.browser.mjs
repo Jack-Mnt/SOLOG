@@ -586,6 +586,7 @@ try {
       const original = structuredClone((await journal(page)).drafts[sid])
       assert.equal(original.length, 2)
       await page.getByRole('button', { name: 'Registrar conteo', exact: true }).click()
+      await page.locator('details.full-local-issues > summary').click()
       const resolve = page.getByRole('button', { name: 'Resolver conflicto…' })
       await resolve.waitFor()
       assert.equal(fake.observations.size, 0, 'El rechazo B5 no registra parcialmente el lote')
