@@ -46,8 +46,6 @@ jobs:
             tests/cajero-full-inicio-snapshot-horario.test.ts \
             tests/cajero-full-kpis-cobertura.test.ts \
             tests/cajero-full-temporal.test.ts
-      - name: Suite completa
-        run: bun test
       - name: Lint
         run: bun run lint
       - name: Typecheck y build
@@ -63,3 +61,5 @@ jobs:
           bun tests/cajero-full.browser.mjs
       - name: Git diff check
         run: git diff --check "$(git merge-base origin/master HEAD)" HEAD
+      - name: Suite completa
+        run: bun test
