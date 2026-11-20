@@ -1002,6 +1002,69 @@ try {
     assert.equal(fake.observations.size, 1)
   })
 
+  await check('Revisar navega entre grupos de distintas categorías sin paso intermedio', {
+    recount: true,
+  }, async ({ fake, createPage }) => {
+    // Ambos grupos tienen la misma prioridad autorizada, pero categorías distintas.
+    fake.groups[0].recount_origin = {
+      difference: 5, counted_at: iso(serverStart - 3600000),
+      reason: 'Transferencia', note: 'Motivo original de la transferencia',
+    }
+    fake.groups[1].action = 'recount'
+    fake.groups[1].priority_class = 'review_regular'
+    fake.groups[1].recount_detail_id = '12345678-1234-4123-8123-1234567890b4'
+    fake.groups[1].recount_origin = {
+      difference: -5, counted_at: iso(serverStart - 3600000), reason: null, note: null,
+    }
+    fake.groups[1].category_id = '12345678-1234-4123-8123-1234567890b5'
+    fake.groups[1].category_name = 'Otra categoría'
+    const page = await createPage()
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Revisar' }).click()
+    const rows = page.locator('.cajero-review-list__rows button')
+    assert.equal(await rows.count(), 2, 'Debe mostrar dos grupos de categorías distintas')
+    await rows.first().click()
+    let modal = page.locator('.cajero-capture-modal')
+    await modal.getByRole('heading', { name: 'Revisar' }).waitFor()
+    await modal.getByText('0/2 contados', { exact: true }).waitFor()
+    await modal.getByRole('button', { name: 'Siguiente' }).click()
+    await modal.getByRole('heading', { name: 'Grupo B' }).waitFor()
+    assert.equal(await modal.locator('.cajero-capture-summary').count(), 0,
+      'Siguiente no debe abrir la lista intermedia por categoría')
+    await modal.getByRole('button', { name: 'Anterior' }).click()
+    await modal.getByRole('heading', { name: 'Grupo A' }).waitFor()
+    // Motivo heredado sin cantidad no debe activar confirmación de cambios.
+    await modal.getByRole('button', { name: 'Regresar' }).click()
+    await modal.waitFor({ state: 'detached' })
+    await rows.first().click()
+    modal = page.locator('.cajero-capture-modal')
+    const keys = modal.locator('.cajero-calculator__keys')
+    await keys.getByRole('button', { name: '1', exact: true }).click()
+    await keys.getByRole('button', { name: '0', exact: true }).click()
+    await modal.getByRole('button', { name: 'Continuar' }).click()
+    await modal.getByRole('heading', { name: 'Grupo B' }).waitFor()
+    await modal.getByText('1/2 contados', { exact: true }).waitFor()
+    const drafts = (await journal(page)).drafts[sid]
+    assert.equal(drafts.length, 1)
+    assert.equal(drafts[0].groupId, groupA)
+    await modal.getByRole('button', { name: 'Siguiente' }).click()
+    await modal.waitFor({ state: 'detached' })
+    assert.equal(await rows.count(), 2)
+    assert.equal((await journal(page)).drafts[sid].length, 1,
+      'La navegación no debe descartar borradores')
+
+    // Con un filtro activo, navegación y denominador siguen la lista visible.
+    await page.getByRole('button', { name: 'Ocultar sobrantes' }).click()
+    assert.equal(await rows.count(), 1)
+    await rows.first().click()
+    modal = page.locator('.cajero-capture-modal')
+    await modal.getByRole('heading', { name: 'Grupo B' }).waitFor()
+    await modal.getByText('0/1 contados', { exact: true }).waitFor()
+    await modal.getByRole('button', { name: 'Siguiente' }).click()
+    await modal.waitFor({ state: 'detached' })
+    assert.equal((await journal(page)).drafts[sid].length, 1)
+  })
+
   await check('Revisar muestra diferencia original y conserva motivo heredado sin nota innecesaria', {
     recount: true,
   }, async ({ fake, createPage }) => {

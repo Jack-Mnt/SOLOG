@@ -73,13 +73,14 @@ const routes: { action: WorkAction; route: CashierRoute; title: string; label: s
 ]
 const routeFor = (action: WorkAction) => routes.find(r => r.action === action)!.route
 
-function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFor }: {
+function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFor, reviewMode }: {
   groups: FullGroup[]
   initialId: string | null
   onClose: () => void
   disabled: boolean
   onRecord: (group: FullGroup, physical: number, observation: Observation, expression: string) => Promise<void>
   draftFor: (groupId: string) => FullDraft | null
+  reviewMode: boolean
 }) {
   const titleId = useId()
   const confirmationId = useId()
@@ -93,7 +94,7 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
     groups.map(g => {
       const draft = draftFor(g.group_id)
       return [g.group_id, {
-        reason: (draft?.reason ?? (g.action === 'recount' ? g.recount_origin?.reason : null) ?? null) as CashierDifferenceReason | null,
+        reason: (draft ? draft.reason : (g.action === 'recount' ? g.recount_origin?.reason ?? null : null)) as CashierDifferenceReason | null,
         text: draft?.note ?? null,
       }]
     }),
@@ -114,10 +115,11 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
     ? calculateCajeroValuationPreview(difference, group.price, group.units_per_package, group.package_price)
     : null
   const saved = selected ? draftFor(selected) : null
+  const originalReason = group?.action === 'recount' ? group.recount_origin?.reason ?? null : null
   const dirty = Boolean(group && (saved
     ? (physical !== saved.physical || currentNote.reason !== saved.reason ||
       currentNote.text !== saved.note)
-    : (expression.trim() !== '' || currentNote.reason !== null || currentNote.text !== null)))
+    : (expression.trim() !== '' || currentNote.reason !== originalReason || currentNote.text !== null)))
   const locked = saving || disabled
 
   useEffect(() => {
@@ -163,7 +165,7 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
       setExpressions(old => ({ ...old, [id]: draft?.expression ?? '' }))
       const target = groups.find(g => g.group_id === id)
       setNotes(old => ({ ...old, [id]: {
-        reason: (draft?.reason ?? (target?.action === 'recount' ? target.recount_origin?.reason : null) ?? null) as CashierDifferenceReason | null,
+        reason: (draft ? draft.reason : (target?.action === 'recount' ? target.recount_origin?.reason ?? null : null)) as CashierDifferenceReason | null,
         text: draft?.note ?? null,
       } }))
     }
@@ -171,7 +173,9 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
   }
   const next = () => {
     const nextGroup = groups[index + 1]
-    select(nextGroup?.group_id ?? null)
+    if (nextGroup) select(nextGroup.group_id)
+    else if (reviewMode) onClose()
+    else select(null)
   }
   const required = (value: Observation) => {
     if (difference === null) return false
@@ -211,8 +215,8 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
   }}>
     <section ref={root} className="cajero-capture-modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <header className="cajero-capture-modal__header">
-        <button type="button" className="cajero-capture-modal__icon-button" aria-label="Regresar a la lista" onClick={() => requestExit(() => select(null))}><ArrowLeft size={22}/></button>
-        <h2 id={titleId}>{group?.category_name ?? 'Grupos'}</h2>
+        <button type="button" className="cajero-capture-modal__icon-button" aria-label="Regresar a la lista" onClick={() => requestExit(reviewMode ? onClose : () => select(null))}><ArrowLeft size={22}/></button>
+        <h2 id={titleId}>{reviewMode ? 'Revisar' : group?.category_name ?? 'Grupos'}</h2>
         <strong>{groups.filter(g => draftFor(g.group_id)).length}/{groups.length} contados</strong>
         <button type="button" className="cajero-capture-modal__icon-button" aria-label="Cerrar" onClick={() => requestExit(onClose)}><X size={22}/></button>
       </header>
@@ -258,7 +262,7 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
           <nav className="cajero-capture-detail__navigation" aria-label="Navegación entre grupos">
             <button type="button" className="button button--secondary" disabled={saving || index <= 0}
               onClick={() => requestExit(() => select(groups[index - 1]?.group_id ?? null))}>Anterior</button>
-            <button type="button" className="button button--secondary" disabled={saving} onClick={() => requestExit(() => select(null))}>Regresar</button>
+            <button type="button" className="button button--secondary" disabled={saving} onClick={() => requestExit(reviewMode ? onClose : () => select(null))}>Regresar</button>
             <button type="button" className="button" disabled={locked || (expression.trim() !== '' && physical === null)} onClick={continueToNext}>
               {expression.trim() ? 'Continuar' : 'Siguiente'}
             </button>
@@ -368,8 +372,14 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const currentGroups = currentAction ? available.filter(g => actionFor(g) === currentAction) : []
   const stockGroups = currentAction === 'coverage' ? currentGroups.filter(g => stockType(g.stock_theoretical) === stock) : currentGroups
   const categories = [...new Map(stockGroups.map(g => [g.category_id, { id: g.category_id, name: g.category_name }])).values()]
-  const modalGroups = category ? stockGroups.filter(g => g.category_id === category) : reviewGroup
-    ? stockGroups.filter(g => g.group_id === reviewGroup) : []
+  const reviewSequence = currentAction === 'recount' ? currentGroups.filter(g =>
+    g.recount_origin && (
+      (g.recount_origin.difference > 0 && differenceSigns.positive) ||
+      (g.recount_origin.difference < 0 && differenceSigns.negative)
+    )) : []
+  const modalGroups = reviewGroup
+    ? reviewSequence
+    : category ? stockGroups.filter(g => g.category_id === category) : []
   const history = useMemo(() => ({
     serverOffsetMs,
     cacheRevision: view.revision,
@@ -872,9 +882,10 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
           </div>
         </section>}
       </section>}
-      {(category !== null || reviewGroup !== null) && modalGroups.length > 0 ? <CaptureDialog
+      {(category !== null || reviewGroup !== null) && modalGroups.length > 0 &&
+        (reviewGroup === null || modalGroups.some(g => g.group_id === reviewGroup)) ? <CaptureDialog
         key={(session?.session_id ?? '') + ':' + (category ?? reviewGroup ?? '')}
-        groups={modalGroups} initialId={reviewGroup} disabled={!canCapture}
+        groups={modalGroups} initialId={reviewGroup} reviewMode={reviewGroup !== null} disabled={!canCapture}
         onClose={() => { setCategory(null); setReviewGroup(null) }}
         draftFor={groupId => runtime.getDraft(groupId)} onRecord={record}/> : null}
       {view.bootstrap?.recovery_sessions.map(s => <div className="cajero-alert cajero-alert--warning" key={s.session_id}>
