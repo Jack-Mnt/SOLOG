@@ -164,6 +164,49 @@ function harness(options: {
   }
 }
 
+describe('Cajero Full — motivo heredado en reconteos', () => {
+  function recountHarness(reason: 'Transferencia' | null) {
+    const h = harness()
+    h.groups[0].action = 'recount'
+    h.groups[0].priority_class = 'review_regular'
+    h.groups[0].recount_detail_id = uuid('1234567890b3')
+    h.groups[0].recount_origin = {
+      difference: -25, counted_at: iso(started - 60000),
+      reason, note: reason === null ? null : 'Transferencia de origen',
+    }
+    h.groups[1].action = 'none'
+    h.groups[1].priority_class = 'none'
+    return h
+  }
+
+  test('motivo original permanece fijo, nota bajo umbral es opcional; umbral 12 exige nueva nota', async () => {
+    const h = recountHarness('Transferencia')
+    await h.runtime.start()
+    await h.runtime.observe(groupA, 11, 'Transferencia', null, '11')
+    expect(h.runtime.getDraft(groupA)?.note).toBeNull()
+    expect(h.runtime.getDraft(groupA)?.reason).toBe('Transferencia')
+    await expect(h.runtime.observe(groupA, 11, 'Otro motivo', 'Motivo modificado')).rejects.toThrow('FULL_REASON_REQUIRED')
+    await expect(h.runtime.observe(groupA, 25, 'Transferencia', null)).rejects.toThrow('FULL_REASON_REQUIRED')
+    await h.runtime.observe(groupA, 25, 'Transferencia', 'Nuevo reconteo verificado')
+    expect(h.runtime.getDraft(groupA)?.note).toBe('Nuevo reconteo verificado')
+    await h.runtime.observe(groupA, 10, null, null)
+    expect(h.runtime.getDraft(groupA)?.note).toBeNull()
+    expect(h.runtime.getDraft(groupA)?.reason).toBeNull()
+  })
+
+  test('motivo históricamente ausente exige nueva nota si el cajero incorpora motivo', async () => {
+    const h = recountHarness(null)
+    await h.runtime.start()
+    await h.runtime.observe(groupA, 11, null, null)
+    await expect(h.runtime.observe(groupA, 11, 'Otro motivo', null)).rejects.toThrow('FULL_REASON_REQUIRED')
+    await h.runtime.observe(groupA, 11, 'Otro motivo', 'Motivo observado ahora')
+    expect(h.runtime.getDraft(groupA)?.reason).toBe('Otro motivo')
+    expect(h.runtime.getDraft(groupA)?.note).toBe('Motivo observado ahora')
+    await expect(h.runtime.observe(groupA, 25, null, null)).rejects.toThrow('FULL_REASON_REQUIRED')
+    await h.runtime.observe(groupA, 25, 'Otro motivo', 'Reconocido en reconteo')
+  })
+})
+
 describe('Cajero Full — borradores y registro agrupado V7', () => {
   test('Continuar persiste y permite editar un borrador sin llamar mutate_v7', async () => {
     const h = harness()
