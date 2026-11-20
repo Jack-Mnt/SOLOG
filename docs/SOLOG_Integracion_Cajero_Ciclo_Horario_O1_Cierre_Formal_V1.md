@@ -1,7 +1,7 @@
 # SOLOG — Integración Cajero — Ciclo horario V3 — O1: Cierre formal V1
 
-**Estado: CERRADO — aprobación explícita del usuario, 2026-11-20 (America/Lima).**  
-**Clasificación:** Nivel A, registro documental de cierre de un bloque Nivel C ya implementado y evaluado.  
+**Estado: CERRADO — aprobación explícita del usuario, 2026-11-20 (America/Lima).**
+**Clasificación:** Nivel A, registro documental de cierre de un bloque Nivel C ya implementado y evaluado.
 **Rama documental:** `admin-work`. Sin modificación de código, Supabase ni `master`.
 
 ## 1. Decisión aprobada

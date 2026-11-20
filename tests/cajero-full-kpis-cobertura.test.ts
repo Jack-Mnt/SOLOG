@@ -123,6 +123,7 @@ describe('Cajero Full — contrato V6 KPI separado de V7', () => {
     expect(parseFullEnvelope(mutation).code).toBe('SESSION_STARTED')
     expect(_flag).toBe(true)
     expect(_origin).toBeNull()
+    expect('recount_origin' in baseGroup).toBe(false)
   })
 })
 
