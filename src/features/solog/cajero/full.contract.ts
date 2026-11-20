@@ -6,15 +6,23 @@ export interface FullSession {
   session_expires_at: string; pending_delivery_until: string; capture_allowed: boolean; pending_delivery_allowed: boolean
   groups_revision: number
 }
+import type { CashierDifferenceReason } from './cajero.observaciones.v5'
+export interface FullRecountOrigin {
+  difference: number; counted_at: string
+  reason: CashierDifferenceReason | null; note: string | null
+}
 export interface FullGroup {
   group_id: string; group_name: string; category_id: string; category_name: string
   reference_snapshot_id: string; groups_revision: number; stock_theoretical: number; member_codes: number[]
   members: { c_interno: number; product: string; barcode: string | null; price: number }[]
   price: number; units_per_package: number | null; package_price: number | null
   action: 'recount' | 'coverage' | 'daily' | 'none'; priority_class: string; recount_detail_id: string | null
+  /** Presente en V6 CASHIER_STATE.groups; ausente en V7 affected_groups. */
+  recount_origin?: FullRecountOrigin | null
 }
 export interface FullCashierGroup extends FullGroup {
   coverage_pending_round: boolean
+  recount_origin: FullRecountOrigin | null
 }
 export interface FullOperationalSummary {
   basis: { coverage_round: 1 | 2; round_starts_at: string; round_ends_at: string }
@@ -165,6 +173,19 @@ function group(value: unknown) {
   check(['recount', 'coverage', 'daily', 'none'].includes(String(g.action))); text(g.priority_class)
   check(g.recount_detail_id === null || isUuid(g.recount_detail_id))
 }
+function cashierRecountOrigin(value: unknown, groupValue: Record<string, unknown>) {
+  if (groupValue.action !== 'recount') {
+    check(value === undefined || value === null)
+    return
+  }
+  check(isUuid(groupValue.recount_detail_id))
+  const origin = object(value)
+  integer(origin.difference); check(origin.difference !== 0)
+  date(origin.counted_at)
+  check(origin.reason === null ||
+    ['Transferencia', 'Venta por mayor', 'Dañado', 'Vencido', 'Otro motivo'].includes(String(origin.reason)))
+  check(origin.note === null || typeof origin.note === 'string' && origin.note.trim().length >= 3)
+}
 export function parseFullEnvelope(value: unknown): FullEnvelope {
   const r = object(value); check(r.contract_version === 2 && isUuid(r.request_id)); boolean(r.ok); boolean(r.retryable); text(r.code); date(r.server_now)
   if (r.action_required !== undefined) {
@@ -186,7 +207,12 @@ export function parseFullEnvelope(value: unknown): FullEnvelope {
     check(isUuid(site.id)); text(site.nombre); check(site.nombre.trim().length > 0)
     if (d.session !== null) session(d.session)
     list(d.recovery_sessions).forEach(session); operationalSummary(d.operational_summary, r.server_now)
-    list(d.groups).forEach(item => { group(item); boolean(object(item).coverage_pending_round) }); uniqueIds(d.confirmed_observation_ids)
+    list(d.groups).forEach(item => {
+      group(item)
+      const g = object(item)
+      boolean(g.coverage_pending_round)
+      cashierRecountOrigin(g.recount_origin, g)
+    }); uniqueIds(d.confirmed_observation_ids)
     const groups = list(d.groups).map(object); check(new Set(groups.map(g => g.group_id)).size === groups.length)
     check(d.session !== null || groups.length === 0)
     if (d.session !== null) { const s = object(d.session); check(groups.every(g => g.reference_snapshot_id === s.reference_snapshot_id && g.groups_revision === s.groups_revision)) }

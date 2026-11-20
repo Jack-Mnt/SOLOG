@@ -33,7 +33,8 @@ export function CajeroObservacionDialog({
   const fixedReason = isRecount && priorReason !== null
   const canApply = isResolved
     ? note.trim().length === 0
-    : reason !== null && hasCashierObservationText(note) && !(isRecount && note.trim() === 'Resuelto')
+    : (fixedReason && !mandatory && note.trim().length === 0) ||
+      (reason !== null && hasCashierObservationText(note) && !(isRecount && note.trim() === 'Resuelto'))
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     closeButton.current?.focus()
@@ -126,7 +127,7 @@ export function CajeroObservacionDialog({
         </button> : null}
         <button className="button button--secondary" type="button" onClick={onCancel}>Cancelar</button>
         <button className="button" type="button" disabled={!canApply}
-          onClick={() => onApply(reason, isResolved ? null : note.trim())}>
+          onClick={() => onApply(reason, isResolved || note.trim().length === 0 ? null : note.trim())}>
           Aplicar
         </button>
       </div>

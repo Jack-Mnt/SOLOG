@@ -51,6 +51,7 @@ const messages: Record<string, string> = {
   FULL_OLD_SESSION_REQUIRES_RECONCILIATION: 'Primero deben registrarse y cerrarse los conteos de la sesión anterior.',
   FULL_PENDING_DELIVERY_REQUIRES_RECONCILIATION: 'Existen borradores u operaciones sin confirmar; no se puede finalizar.',
   FULL_RECOUNT_DETAIL_MISSING: 'Falta el detalle de reconteo necesario para guardar.',
+  FULL_RECOUNT_ORIGIN_UNAVAILABLE: 'Falta el contexto original del reconteo. Actualiza antes de capturar.',
   FULL_CONFIRMATION_MANIFEST_MISMATCH: 'La confirmación del servidor no coincide. Los registros quedan retenidos para revisión.',
   FULL_INCIDENT_NOT_FOUND: 'La incidencia ya no está disponible. Actualiza el estado.',
   FULL_INCIDENT_DISCARD_BLOCKED: 'No se ha demostrado que este registro pueda descartarse de forma segura.',
@@ -91,7 +92,10 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
   const [notes, setNotes] = useState<Record<string, Observation>>(() => Object.fromEntries(
     groups.map(g => {
       const draft = draftFor(g.group_id)
-      return [g.group_id, { reason: (draft?.reason ?? null) as CashierDifferenceReason | null, text: draft?.note ?? null }]
+      return [g.group_id, {
+        reason: (draft?.reason ?? (g.action === 'recount' ? g.recount_origin?.reason : null) ?? null) as CashierDifferenceReason | null,
+        text: draft?.note ?? null,
+      }]
     }),
   ))
   const [observation, setObservation] = useState<{ required: boolean; after?: () => void } | null>(null)
@@ -157,8 +161,10 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
     if (id) {
       const draft = draftFor(id)
       setExpressions(old => ({ ...old, [id]: draft?.expression ?? '' }))
+      const target = groups.find(g => g.group_id === id)
       setNotes(old => ({ ...old, [id]: {
-        reason: (draft?.reason ?? null) as CashierDifferenceReason | null, text: draft?.note ?? null,
+        reason: (draft?.reason ?? (target?.action === 'recount' ? target.recount_origin?.reason : null) ?? null) as CashierDifferenceReason | null,
+        text: draft?.note ?? null,
       } }))
     }
     setSelected(id); setError(null)
@@ -169,9 +175,18 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
   }
   const required = (value: Observation) => {
     if (difference === null) return false
-    if (group?.action === 'recount' && difference === 0) return false
-    return Math.abs(difference) >= 12 && (value.reason === null || !value.text || value.text.trim().length < 3)
-      || value.reason !== null && (!value.text || value.text.trim().length < 3)
+    const noteValid = value.text !== null && value.text.trim().length >= 3
+    if (group?.action === 'recount') {
+      if (difference === 0) return false
+      const prior = group.recount_origin?.reason ?? null
+      if (prior !== null && value.reason !== prior) return true
+      const effectiveReason = prior ?? value.reason
+      if (Math.abs(difference) >= 12) return effectiveReason === null || !noteValid
+      if (value.text !== null && (!noteValid || effectiveReason === null)) return true
+      return prior === null && value.reason !== null && value.text === null
+    }
+    return Math.abs(difference) >= 12 && (value.reason === null || !noteValid)
+      || value.reason !== null && !noteValid
       || value.reason === null && value.text !== null
   }
   async function record(value: Observation, after: () => void) {
@@ -224,7 +239,11 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
                   </button>
                 </div>
               </div>
-              {group.action === 'recount' ? <p className="full-contract-pending">Motivo y diferencia inicial: pendiente de contrato de lectura.</p> : null}
+              {group.action === 'recount' && group.recount_origin ? <p>
+                Diferencia inicial: <span className={getCajeroDifferenceClass(group.recount_origin.difference)}>
+                  {formatCajeroDifference(group.recount_origin.difference)}
+                </span>
+              </p> : null}
               <dl>
                 <div><dt>Stock TumiSoft</dt><dd>{group.stock_theoretical}</dd></div>
                 <div><dt>Conteo</dt><dd>{physical ?? '—'}</dd></div>
@@ -262,7 +281,8 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
       group={group} onClose={() => setProductsOpen(false)} /> : null}
     {observation && group ? <CajeroObservacionDialog key={group.group_id}
       initialReason={currentNote.reason} initialText={currentNote.text}
-      priorReason={null} priorText={null}
+      priorReason={group.action === 'recount' ? group.recount_origin?.reason ?? null : null}
+       priorText={group.action === 'recount' ? group.recount_origin?.note ?? null : null}
       isRecount={group.action === 'recount'} isResolved={group.action === 'recount' && difference === 0}
       mandatory={observation.required}
       onCancel={() => setObservation(null)}
@@ -318,6 +338,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   })
   const [category, setCategory] = useState<string | null>(null)
   const [reviewGroup, setReviewGroup] = useState<string | null>(null)
+  const [differenceSigns, setDifferenceSigns] = useState({ positive: true, negative: true })
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [incidentToDiscard, setIncidentToDiscard] = useState<FullIncident | null>(null)
   const [conflictToResolve, setConflictToResolve] = useState<FullBatchConflict | null>(null)
@@ -789,7 +810,17 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
             disabled={working || view.busy || (!activeDrafts && !view.pending)}
             onClick={register}><Send size={18} aria-hidden="true"/> Registrar conteo</button> : null}
           {currentAction === 'recount' ? <div className="cajero-segmented-control cajero-segmented-control--symbols" role="group" aria-label="Filtrar por diferencia inicial">
-            <span className="full-contract-pending">Filtro por diferencia inicial pendiente de contrato</span>
+            {(['positive', 'negative'] as const).map(sign => {
+              const active = differenceSigns[sign]
+              const other = sign === 'positive' ? 'negative' : 'positive'
+              const label = sign === 'positive' ? 'sobrantes' : 'faltantes'
+              return <button key={sign} type="button" aria-label={`${active ? 'Ocultar' : 'Mostrar'} ${label}`}
+                aria-pressed={active} className={active ? 'is-active' : undefined}
+                onClick={() => setDifferenceSigns(current =>
+                  current[sign] && !current[other] ? current : { ...current, [sign]: !current[sign] })}>
+                {sign === 'positive' ? '+' : '−'}
+              </button>
+            })}
           </div> : null}
         </div>
         {currentAction === 'coverage' ? <section className="cajero-selection-level cajero-selection-level--stock">
@@ -804,10 +835,28 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
               </button>)}
           </div></section> : null}
         {currentAction === 'recount' ? <section className="cajero-review-list">
-          <div className="cajero-review-list__head"><span>Nombre</span><span>Reconteo</span><span>Estado</span><span/></div>
+          <div className="cajero-review-list__head"><span>Nombre</span><span>Diferencia inicial</span><span>Diferencia actual</span></div>
           <div className="cajero-review-list__rows">
-            {currentGroups.map(g => <button type="button" key={g.group_id} disabled={!canCapture}
-              onClick={() => setReviewGroup(g.group_id)}><strong>{g.group_name}</strong><span>Verificar</span><span>Disponible</span><span>›</span></button>)}
+            {currentGroups.filter(g => !g.recount_origin ||
+              (g.recount_origin.difference > 0 && differenceSigns.positive) ||
+              (g.recount_origin.difference < 0 && differenceSigns.negative)).map(g => {
+              const draft = runtime.getDraft(g.group_id)
+              const initial = g.recount_origin?.difference ?? null
+              const actual = draft ? draft.physical - g.stock_theoretical : null
+              const initialLabel = formatCajeroDifference(initial)
+              return <button type="button" key={g.group_id} disabled={!canCapture || !g.recount_origin}
+                aria-label={`Revisar ${g.group_name}, diferencia inicial ${initialLabel}, ${draft
+                  ? 'diferencia actual ' + formatCajeroDifference(actual) : 'sin reconteo actual'}`}
+                onClick={() => setReviewGroup(g.group_id)}>
+                <strong>{g.group_name}</strong>
+                <span className={getCajeroDifferenceClass(initial)}>{initialLabel}</span>
+                <span className="cajero-review-transition">{draft
+                  ? <><span className="cajero-review-transition__arrow" aria-hidden="true">→</span>
+                    <span className={getCajeroDifferenceClass(actual)}>{formatCajeroDifference(actual)}</span></>
+                  : '—'}</span>
+                <span aria-hidden="true">›</span>
+              </button>
+            })}
           </div>
         </section> : <section className="cajero-selection-level">
           <h2>Categorías</h2><div className="cajero-selection-grid">

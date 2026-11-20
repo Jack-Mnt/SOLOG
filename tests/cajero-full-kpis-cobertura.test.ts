@@ -33,6 +33,7 @@ function group(id: string, pending: boolean): FullCashierGroup {
     price: 2, units_per_package: null, package_price: null,
     action: 'coverage', priority_class: 'round_coverage', recount_detail_id: null,
     coverage_pending_round: pending,
+    recount_origin: null,
   }
 }
 function state(active = true): FullState {
@@ -92,9 +93,29 @@ describe('Cajero Full — contrato V6 KPI separado de V7', () => {
     } } }
     expect(() => parseFullEnvelope(response(invalid))).toThrow('FULL_INVALID_RESPONSE')
   })
+  test('CASHIER_STATE exige origen válido solo para grupos de reconteo', () => {
+    const s = state()
+    const original = {
+      difference: 25, counted_at: '2026-10-27T12:00:00.000Z',
+      reason: 'Transferencia' as const, note: 'Se trasladaron 25 unidades',
+    }
+    s.groups[0] = { ...s.groups[0], action: 'recount', priority_class: 'review_regular',
+      recount_detail_id: uuid('1234567890b3'), recount_origin: original }
+    expect(parseFullEnvelope(response(s)).code).toBe('CASHIER_STATE')
+    for (const recount_origin of [undefined, null, { ...original, difference: 0 },
+      { ...original, counted_at: 'fecha inválida' }, { ...original, reason: 'Motivo no permitido' }]) {
+      expect(() => parseFullEnvelope(response({ ...s, groups: [{ ...s.groups[0], recount_origin }] })))
+        .toThrow('FULL_INVALID_RESPONSE')
+    }
+    s.groups[0] = { ...s.groups[0], recount_origin: { ...original, reason: null, note: null } }
+    expect(parseFullEnvelope(response(s)).ok).toBe(true)
+    expect(() => parseFullEnvelope(response({ ...s, groups: [{
+      ...s.groups[0], action: 'coverage', recount_origin: original,
+    }] }))).toThrow('FULL_INVALID_RESPONSE')
+  })
   test('V7 no necesita bandera ni resumen de V6', () => {
     const g = group(groupA, true)
-    const { coverage_pending_round: _flag, ...baseGroup } = g
+    const { coverage_pending_round: _flag, recount_origin: _origin, ...baseGroup } = g
     const mutation = {
       ...response(state()), code: 'SESSION_STARTED',
       data: { action: 'start', replay: false, session, affected_groups: [baseGroup], observation_results: [] },

@@ -56,6 +56,9 @@ class SimulatedFull {
       this.groups[0].action = 'recount'
       this.groups[0].priority_class = 'review_regular'
       this.groups[0].recount_detail_id = '12345678-1234-4123-8123-1234567890b3'
+      this.groups[0].recount_origin = {
+        difference: 5, counted_at: iso(serverStart - 3600000), reason: null, note: null,
+      }
       this.groups[1].action = 'daily'
       this.groups[1].priority_class = 'shift_coverage'
     }
@@ -63,6 +66,9 @@ class SimulatedFull {
       this.groups[0].action = 'recount'
       this.groups[0].priority_class = 'review_regular'
       this.groups[0].recount_detail_id = '12345678-1234-4123-8123-1234567890b3'
+      this.groups[0].recount_origin = {
+        difference: 5, counted_at: iso(serverStart - 3600000), reason: null, note: null,
+      }
       this.groups[1].action = 'none'
       this.groups[1].priority_class = 'none'
     }
@@ -75,6 +81,7 @@ class SimulatedFull {
       members: [{ c_interno: 1001, product: name, barcode: null, price: 5 }],
       price: 5, units_per_package: null, package_price: null,
       action: 'coverage', priority_class: 'round_coverage', recount_detail_id: null,
+      recount_origin: null,
     }
   }
   session() {
@@ -184,7 +191,7 @@ class SimulatedFull {
         const group = this.groups.find(g => g.group_id === item.grupo_id ||
           g.recount_detail_id === item.detalle_id)
         assert.ok(group, 'Grupo enviado fuera del scope de prueba')
-        group.action = 'none'; group.priority_class = 'none'
+        group.action = 'none'; group.priority_class = 'none'; group.recount_origin = null
       }
     } else if (action === 'finish') {
       assert.equal(payload.session_id, sid)
@@ -993,6 +1000,81 @@ try {
       '12345678-1234-4123-8123-1234567890b3')
     assert.deepEqual(fake.calls.map(c => c.action), ['recount_save_batch', 'finish'])
     assert.equal(fake.observations.size, 1)
+  })
+
+  await check('Revisar muestra diferencia original y conserva motivo heredado sin nota innecesaria', {
+    recount: true,
+  }, async ({ fake, createPage }) => {
+    fake.groups[0].recount_origin = {
+      difference: 25, counted_at: iso(serverStart - 3600000),
+      reason: 'Transferencia', note: 'Se trajo desde Huaca',
+    }
+    const page = await createPage()
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Revisar' }).click()
+    await page.getByRole('button', { name: 'Ocultar sobrantes' }).click()
+    assert.equal(await page.getByRole('button', { name: /Revisar Grupo A/ }).count(), 0)
+    await page.getByRole('button', { name: 'Mostrar sobrantes' }).click()
+    await page.getByRole('button', { name: /Revisar Grupo A/ }).click()
+    const modal = page.getByRole('dialog')
+    await modal.getByText('+25', { exact: true }).waitFor()
+    await modal.getByRole('button', { name: 'Agregar observación' }).click()
+    const obs = page.getByRole('dialog', { name: 'Motivo y observación' })
+    await obs.getByText('Se trajo desde Huaca').waitFor()
+    assert.equal(await obs.locator('input[type="radio"]:not(:disabled)').count(), 0)
+    await obs.getByRole('button', { name: 'Cancelar' }).click()
+    const keys = modal.locator('.cajero-calculator__keys')
+    await keys.getByRole('button', { name: '1', exact: true }).click()
+    await keys.getByRole('button', { name: '1', exact: true }).click()
+    await modal.getByRole('button', { name: 'Continuar', exact: true }).click()
+    await page.waitForFunction(key => (JSON.parse(localStorage.getItem(key) || '{}').drafts?.[sid]?.length ?? 0) === 1, journalKey)
+    const saved = (await journal(page)).drafts[sid][0]
+    assert.equal(saved.reason, 'Transferencia')
+    assert.equal(saved.note, null)
+    await modal.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Inicio', exact: true }).click()
+    await page.getByRole('button', { name: 'Finalizar conteo' }).click()
+    await eventually(() => fake.finished, 'No finalizó con motivo heredado')
+    const item = fake.calls.find(call => call.action === 'recount_save_batch').payload.items[0]
+    assert.equal(item.motivo_diferencia, 'Transferencia')
+    assert.equal(item.observacion_reconteo, null)
+  })
+
+  await check('Reconteo alto conserva motivo original y requiere nueva nota', {
+    recount: true,
+  }, async ({ fake, createPage }) => {
+    fake.groups[0].recount_origin = {
+      difference: -25, counted_at: iso(serverStart - 3600000),
+      reason: 'Transferencia', note: 'Registro original de transferencia',
+    }
+    const page = await createPage()
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Revisar' }).click()
+    await page.getByRole('button', { name: /Revisar Grupo A/ }).click()
+    const modal = page.getByRole('dialog')
+    const keys = modal.locator('.cajero-calculator__keys')
+    await keys.getByRole('button', { name: '2', exact: true }).click()
+    await keys.getByRole('button', { name: '5', exact: true }).click()
+    await modal.getByRole('button', { name: 'Continuar', exact: true }).click()
+    const obs = page.getByRole('dialog', { name: 'Explica esta diferencia' })
+    await obs.getByText('Registro original de transferencia').waitFor()
+    assert.equal(await obs.getByRole('button', { name: 'Aplicar' }).isDisabled(), true)
+    assert.equal(await obs.locator('input[type="radio"]:not(:disabled)').count(), 0)
+    await obs.getByRole('textbox', { name: 'Explicación' }).fill('Verificado en segundo conteo')
+    await obs.getByRole('button', { name: 'Aplicar' }).click()
+    await page.waitForFunction(key => (JSON.parse(localStorage.getItem(key) || '{}').drafts?.[sid]?.length ?? 0) === 1, journalKey)
+    const saved = (await journal(page)).drafts[sid][0]
+    assert.equal(saved.reason, 'Transferencia')
+    assert.equal(saved.note, 'Verificado en segundo conteo')
+    await modal.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await page.getByRole('navigation', { name: 'Panel Cajero' })
+      .getByRole('button', { name: 'Inicio', exact: true }).click()
+    await page.getByRole('button', { name: 'Finalizar conteo' }).click()
+    await eventually(() => fake.finished, 'No finalizó reconteo alto')
+    const item = fake.calls.find(call => call.action === 'recount_save_batch').payload.items[0]
+    assert.equal(item.motivo_diferencia, 'Transferencia')
+    assert.equal(item.observacion_reconteo, 'Verificado en segundo conteo')
   })
 
   await check('prioridad cambia tras primer batch y el segundo se envía por separado', {

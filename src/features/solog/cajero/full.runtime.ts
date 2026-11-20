@@ -580,11 +580,23 @@ export class FullRuntime {
       if (!session || !group || !this.clock.canCapture(session) || group.action === 'none')
         throw new Error('SESSION_CAPTURE_CLOSED')
       if (!Number.isSafeInteger(physical) || physical < 0 || physical > 2147483647) throw new Error('FULL_PHYSICAL_INVALID')
-      if ((reason === null) !== (note === null) ||
-        (reason !== null && !reasons.includes(reason)) ||
-        (note !== null && (note.trim().length < 3 || note.length > 1024)) ||
-        (Math.abs(physical - group.stock_theoretical) >= 12 && reason === null))
-        throw new Error('FULL_REASON_REQUIRED')
+      if (group.action === 'recount' && (!group.recount_origin || !isUuid(group.recount_detail_id)))
+        throw new Error('FULL_RECOUNT_ORIGIN_UNAVAILABLE')
+      const prior = group.action === 'recount' ? group.recount_origin?.reason ?? null : null
+      const resolved = group.action === 'recount' && physical === group.stock_theoretical
+      const high = Math.abs(physical - group.stock_theoretical) >= 12
+      const invalidText = note !== null && (note.trim().length < 3 || note.length > 1024)
+      const invalidReason = reason !== null && !reasons.includes(reason)
+      const invalidPair = group.action === 'recount'
+        ? (prior !== null && reason !== null && reason !== prior) ||
+          (resolved && note !== null) ||
+          (!resolved && (
+            (prior === null && (reason === null) !== (note === null)) ||
+            (note !== null && (prior ?? reason) === null) ||
+            (high && ((prior ?? reason) === null || note === null))
+          ))
+        : (reason === null) !== (note === null) || (high && reason === null)
+      if (invalidReason || invalidText || invalidPair) throw new Error('FULL_REASON_REQUIRED')
       const existing = this.journal.drafts[session.session_id]?.find(d => d.groupId === groupId)
       if (this.pendingFor(session.session_id).some(p => {
         const items = JSON.parse(p.exactPayload).items ?? []
