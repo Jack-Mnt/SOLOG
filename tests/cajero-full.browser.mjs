@@ -1027,7 +1027,9 @@ try {
     await keys.getByRole('button', { name: '1', exact: true }).click()
     await keys.getByRole('button', { name: '1', exact: true }).click()
     await modal.getByRole('button', { name: 'Continuar', exact: true }).click()
-    await page.waitForFunction(key => (JSON.parse(localStorage.getItem(key) || '{}').drafts?.[sid]?.length ?? 0) === 1, journalKey)
+    await page.waitForFunction(({ key, sessionId }) =>
+      (JSON.parse(localStorage.getItem(key) || '{}').drafts?.[sessionId]?.length ?? 0) === 1,
+      { key: journalKey, sessionId: sid })
     const saved = (await journal(page)).drafts[sid][0]
     assert.equal(saved.reason, 'Transferencia')
     assert.equal(saved.note, null)
@@ -1063,7 +1065,9 @@ try {
     assert.equal(await obs.locator('input[type="radio"]:not(:disabled)').count(), 0)
     await obs.getByRole('textbox', { name: 'Explicación' }).fill('Verificado en segundo conteo')
     await obs.getByRole('button', { name: 'Aplicar' }).click()
-    await page.waitForFunction(key => (JSON.parse(localStorage.getItem(key) || '{}').drafts?.[sid]?.length ?? 0) === 1, journalKey)
+    await page.waitForFunction(({ key, sessionId }) =>
+      (JSON.parse(localStorage.getItem(key) || '{}').drafts?.[sessionId]?.length ?? 0) === 1,
+      { key: journalKey, sessionId: sid })
     const saved = (await journal(page)).drafts[sid][0]
     assert.equal(saved.reason, 'Transferencia')
     assert.equal(saved.note, 'Verificado en segundo conteo')
