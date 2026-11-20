@@ -988,7 +988,7 @@ try {
     await modal.locator('.cajero-calculator__keys').getByRole('button', { name: '1', exact: true }).click()
     await modal.locator('.cajero-calculator__keys').getByRole('button', { name: '0', exact: true }).click()
     await modal.getByRole('button', { name: 'Continuar', exact: true }).click()
-    await modal.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await modal.waitFor({ state: 'detached' })
     await page.getByRole('navigation', { name: 'Panel Cajero' })
       .getByRole('button', { name: 'Inicio', exact: true }).click()
     assert.equal((await journal(page)).drafts[sid][0].action, 'recount')
@@ -1034,7 +1034,7 @@ try {
     await modal.getByRole('button', { name: 'Anterior' }).click()
     await modal.getByRole('heading', { name: 'Grupo A' }).waitFor()
     // Motivo heredado sin cantidad no debe activar confirmación de cambios.
-    await modal.getByRole('button', { name: 'Regresar' }).click()
+    await modal.getByRole('button', { name: 'Regresar', exact: true }).click()
     await modal.waitFor({ state: 'detached' })
     await rows.first().click()
     modal = page.locator('.cajero-capture-modal')
@@ -1096,7 +1096,7 @@ try {
     const saved = (await journal(page)).drafts[sid][0]
     assert.equal(saved.reason, 'Transferencia')
     assert.equal(saved.note, null)
-    await modal.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await modal.waitFor({ state: 'detached' })
     await page.getByRole('navigation', { name: 'Panel Cajero' })
       .getByRole('button', { name: 'Inicio', exact: true }).click()
     await page.getByRole('button', { name: 'Finalizar conteo' }).click()
@@ -1134,7 +1134,7 @@ try {
     const saved = (await journal(page)).drafts[sid][0]
     assert.equal(saved.reason, 'Transferencia')
     assert.equal(saved.note, 'Verificado en segundo conteo')
-    await modal.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await modal.waitFor({ state: 'detached' })
     await page.getByRole('navigation', { name: 'Panel Cajero' })
       .getByRole('button', { name: 'Inicio', exact: true }).click()
     await page.getByRole('button', { name: 'Finalizar conteo' }).click()
