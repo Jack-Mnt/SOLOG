@@ -52,3 +52,11 @@ Otros hallazgos posteriores no bloqueantes deberán registrarse en backlog. Si s
 - La publicación del código funcional existente y la estrategia `master`/`admin-work` no cambian por este documento.
 
 **Decisión final:** **O1 CERRADO**. Reanudar nuevas funcionalidades mediante su propio bloque y fuente primaria, sin repetir las validaciones aprobadas salvo evidencia nueva.
+
+---
+
+## 6. Actualización de referencia posterior — 2026-11-21
+
+La referencia de la sección 4 a **R6 — contexto original de reconteos pendiente** corresponde al estado histórico del cierre O1, fechado 2026-11-20. El bloque independiente R1–R5 de restitución del contexto original **ya fue cerrado con aceptación humana**; la autoridad sobre su estado actual es [`SOLOG_Integracion_Cajero_Contexto_Original_Reconteos_Cierre_Formal_V1.md`](./SOLOG_Integracion_Cajero_Contexto_Original_Reconteos_Cierre_Formal_V1.md).
+
+Este apéndice **no reabre O1** ni modifica sus riesgos residuales E2E aceptados en la sección 3; tampoco declara cerrado el proyecto SOLOG completo.
