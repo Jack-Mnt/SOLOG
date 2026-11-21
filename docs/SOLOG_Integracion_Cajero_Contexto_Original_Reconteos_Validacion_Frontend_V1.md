@@ -71,3 +71,18 @@ Lectura Supabase de 2026-11-20 16:54:45 Lima:
 - Reconteos no accionables no pueden forzarse ni saltarse prioridad.
 
 **Estado del bloque:** implementación y pruebas técnicas terminadas, **bloque integral NO cerrado** hasta smoke R5 y aprobación del usuario. O1 continúa cerrado.
+
+---
+
+## 6. Actualización posterior — cierre humano R5 (2026-11-21)
+
+**Estado vigente del bloque: R1–R5 CERRADAS Y APROBADAS POR EL USUARIO.** Las menciones anteriores de «R5 pendiente» describen exclusivamente el estado histórico al emitir el informe R4.
+
+- **Fuente del cierre formal y de la evidencia operativa:** [`SOLOG_Integracion_Cajero_Contexto_Original_Reconteos_Cierre_Formal_V1.md`](./SOLOG_Integracion_Cajero_Contexto_Original_Reconteos_Cierre_Formal_V1.md).
+- R5.1, R5.2 y R5.3: smoke humano aprobado de tabla Revisar, tarjeta/diálogo de observaciones y navegación continua, incluido el [delta de navegación](./SOLOG_UX_Cajero_Revisar_Navegacion_Continua_V1.md).
+- R5.4: cinco grupos de Cutervo comprobados mediante lectura directa de Supabase; `recount_save_batch` persistido y diferencias/estados concordantes con la UI; posterior aceptación expresa del usuario.
+- Se acepta que `conteo_detalle.diferencia` contenga solo el resultado actualizado, que las diferencias varíen por momento de referencia y que existan stocks teóricos negativos.
+- **CI posterior al delta:** [run 44832246122](https://github.com/Jack-Mnt/SOLOG/actions/runs/44832246122), código `119ea42b8b4855ded85a89846482eaafdd8fab11`, **success** con pruebas dirigidas, lint, build, Chromium, `git diff --check` y suite global.
+- Esta aceptación no afirma haber verificado nuevamente el estado terminal de la sesión consultada; dicho control no se ejecutó de forma independiente durante R5.
+
+**No modificar ni reabrir el contrato funcional congelado, O1 o `master` como efecto de este cierre.**
