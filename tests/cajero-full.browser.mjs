@@ -442,6 +442,39 @@ async function scenario(options, run) {
     }
     if (url.pathname !== '/__solog_full_browser_rpc__') return route.continue()
     const { name, args } = route.request().postDataJSON()
+    if (name === 'rpc_solog_route_v2') {
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+        contract_version: 2, generated_at: iso(fake.now),
+        identity: { id: userId, nombre: 'Cajero simulado', rol: 'cajero' },
+        route: '/cajero',
+      }) })
+    }
+    if (name === 'rpc_solog_details_v2' && args.p_action === 'summary') {
+      fake.deviceSummaryAttempts = (fake.deviceSummaryAttempts ?? 0) + 1
+      if (options.deviceAccess === 'error' && !fake.allowDeviceRetry) return route.abort('failed')
+      assert.deepEqual(args.p_payload, { device_token: deviceToken })
+      const deviceState = options.deviceAccess === 'pending' ? 'pendiente'
+        : options.deviceAccess === 'unauthorized' || options.deviceAccess === 'mismatch'
+          ? 'sin_solicitud' : 'autorizado'
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+        contract_version: 2, generated_at: iso(fake.now),
+        revisions: { operational: 1, devices: 1 },
+        site: { id: 'site-1', nombre: 'Cutervo' },
+        summary: {
+          periodo: { desde: '2026-11-16', hasta: '2026-11-30', inaugurada: true,
+            grupos_contados: 0, grupos_totales: 493, pendientes: 493, porcentaje: 0, completa: false },
+          diaria: { fecha: '2026-11-20', grupos_requeridos: 0, grupos_verificados: 0,
+            pendientes: 0, porcentaje: 0, sin_requerimientos: true },
+          conteo_diario_pendientes: 0, revisar_pendientes: 0, ultimo_snapshot: null,
+        },
+        access: {
+          authorized_device_id: deviceState === 'autorizado' ? 'device-1' : null,
+          current_device_id: 'device-1', current_device_state: deviceState,
+          current_device_matches_site: options.deviceAccess !== 'mismatch',
+          can_request: deviceState === 'sin_solicitud',
+        },
+      }) })
+    }
     if (name === 'rpc_solog_cashier_bootstrap_v6') {
       fake.bootstrapAttempts = (fake.bootstrapAttempts ?? 0) + 1
       if (options.bootstrapError === 'always' ||
@@ -477,7 +510,7 @@ async function scenario(options, run) {
     }
   })
   const createPage = async ({ waitForHome = true, trackJournalWrites = false, noWebLocks = false,
-    clock = false } = {}) => {
+    clock = false, entryPath = '/cajero' } = {}) => {
     const page = await context.newPage()
     if (clock) await page.clock.install()
     const calls = []
@@ -487,7 +520,11 @@ async function scenario(options, run) {
     page.on('request', request => {
       if (new URL(request.url()).pathname !== '/__solog_full_browser_rpc__') return
       const { name, args } = request.postDataJSON()
-      calls.push({ name, action: args?.p_action ?? null })
+      // La consulta read-only de autorización precede a la tenencia de instancia.
+      // Esta métrica se reserva exclusivamente para V6/V7 del runtime Full.
+      if (name === 'rpc_solog_cashier_bootstrap_v6' || name === 'rpc_solog_cashier_mutate_v7') {
+        calls.push({ name, action: args?.p_action ?? null })
+      }
     })
     if (noWebLocks) {
       await page.addInitScript(() => {
@@ -504,7 +541,7 @@ async function scenario(options, run) {
         }
       })
     }
-    await page.goto(target)
+    await page.goto('http://127.0.0.1:5212' + entryPath)
     if (waitForHome) await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     return page
   }
@@ -553,6 +590,42 @@ async function check(title, options, test) {
   catch (e) { failures.push(title); console.error('FAIL Full browser: ' + title, e) }
 }
 try {
+  await check('Login Cajero: dispositivo autorizado accede a /cajero', {},
+    async ({ fake, createPage }) => {
+      const page = await createPage({ entryPath: '/login' })
+      assert.equal(new URL(page.url()).pathname, '/cajero')
+      assert.equal(fake.deviceSummaryAttempts, 1, 'La decisión de acceso consulta summary una sola vez')
+    })
+  await check('Login Cajero: dispositivo sin autorización abre Detalles sin Full ni journal', {
+    deviceAccess: 'unauthorized',
+  }, async ({ fake, createPage, rpcFor }) => {
+    const page = await createPage({ waitForHome: false, entryPath: '/login', trackJournalWrites: true })
+    await page.waitForURL('**/detalles')
+    await page.getByRole('heading', { name: 'Sin autorización', exact: true }).waitFor()
+    assert.deepEqual(rpcFor(page), [], 'No se inicia V6/V7 sin autorización del dispositivo')
+    assert.equal(await page.evaluate(() => window.__sologJournalWrites), 0)
+    assert.equal(fake.calls.length, 0)
+  })
+  await check('Ruta directa Cajero: solicitud pendiente abre Detalles; alias tampoco salta guard', {
+    deviceAccess: 'pending',
+  }, async ({ createPage, rpcFor }) => {
+    const page = await createPage({ waitForHome: false, entryPath: '/count' })
+    await page.waitForURL('**/detalles')
+    await page.getByRole('heading', { name: 'Solicitud pendiente', exact: true }).waitFor()
+    assert.deepEqual(rpcFor(page), [], 'Ruta compatible no puede emitir V6/V7 sin autorización')
+  })
+  await check('Acceso Cajero: error de red no equivale a dispositivo no autorizado', {
+    deviceAccess: 'error',
+  }, async ({ fake, createPage, rpcFor }) => {
+    const page = await createPage({ waitForHome: false })
+    await page.getByText('No se pudo comprobar el dispositivo').waitFor()
+    assert.equal(new URL(page.url()).pathname, '/cajero')
+    assert.deepEqual(rpcFor(page), [])
+    fake.allowDeviceRetry = true
+    await page.getByRole('button', { name: 'Reintentar', exact: true }).click()
+    await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
+    assert.ok(fake.deviceSummaryAttempts >= 2)
+  })
   await check('bootstrap Full: error transitorio permite reintento explícito', {
     // StrictMode puede iniciar más de un bootstrap antes de mostrar el error.
     // Persistir la avería hasta la acción humana hace determinista esta prueba.
