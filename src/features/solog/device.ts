@@ -11,12 +11,15 @@ function generateDeviceToken(): string {
   )
 }
 
-export function getOrCreateDeviceToken(): string {
-  const storedToken = localStorage.getItem(DEVICE_TOKEN_STORAGE_KEY)
+/** Lectura pura: nunca crea un token ni escribe en storage. */
+export function getStoredDeviceToken(storage: Pick<Storage, 'getItem'> = localStorage): string | null {
+  const storedToken = storage.getItem(DEVICE_TOKEN_STORAGE_KEY)
+  return storedToken && DEVICE_TOKEN_PATTERN.test(storedToken) ? storedToken : null
+}
 
-  if (storedToken && DEVICE_TOKEN_PATTERN.test(storedToken)) {
-    return storedToken
-  }
+export function getOrCreateDeviceToken(): string {
+  const storedToken = getStoredDeviceToken()
+  if (storedToken) return storedToken
 
   const deviceToken = generateDeviceToken()
   localStorage.setItem(DEVICE_TOKEN_STORAGE_KEY, deviceToken)
