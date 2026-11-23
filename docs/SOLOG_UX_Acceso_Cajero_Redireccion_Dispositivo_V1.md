@@ -51,3 +51,23 @@ Cambio acotado a:
 Pruebas dirigidas del destino autorizado/no autorizado y errores, chequeo de que el guard envuelve todas las rutas compatibles, lint, typecheck/build, suite Bun, browser de regresión Full, `git diff --check`, CI y smoke humano en navegador con dispositivo autorizado y no autorizado. La CI nunca sustituye una prueba real de rol/dispositivo en Supabase.
 
 **Estado de implementación:** pendiente en el momento de congelación. Registrar commits, resultados reales y límites posteriores en un apartado aditivo, sin reescribir estas decisiones.
+
+---
+
+## 5. Ejecución y evidencia posterior — 2026-11-23
+
+**Estado de implementación: COMPLETADA Y VALIDADA TÉCNICAMENTE; smoke humano con dispositivos reales PENDIENTE.** Esta sección sustituye únicamente el estado «pendiente» de la sección 4, sin modificar el contrato funcional congelado.
+
+- `src/features/solog/device.ts`: `getStoredDeviceToken()` de solo lectura; la creación sigue reservada a `getOrCreateDeviceToken()`.
+- `src/features/solog/cashier-access.ts`: resolución `/cajero` o `/detalles` con `rpc_solog_details_v2` `summary`; error de red no se convierte en denegación.
+- `src/protected-app.tsx`: `CashierDeviceGuard` protege las cinco rutas Cajero y los dos alias, después de resolver rol; **no monta `CajeroApp` antes de autorización**. La navegación interna autorizada no reinstancia el guard. Se preservan `/admin` y `/detalles`.
+- `tests/cajero-access-routing.test.ts`: matriz, token ausente, lectura sin escritura, errores y cobertura del guard.
+- `tests/cajero-full.browser.mjs`: RPC de acceso y rol simuladas, acceso desde login, redirección no autorizado, alias pendiente y recuperación tras fallo de red. Seguimiento de tenencia conserva su invariantes V6/V7.
+- `.github/workflows/solog-cajero-full-v3-contracts.yml`: archivos y test añadidos a activación y batería dirigida.
+
+**HEAD de código validado:** `336516d8f8d132bfb7e1d1691b2642fe7089062d`.
+**CI:** [GitHub Actions #45264684682](https://github.com/Jack-Mnt/SOLOG/actions/runs/45264684682), **conclusion=success**. Pasaron: pruebas dirigidas, lint, typecheck/build, Chromium Full con simulación, `git diff --check` y suite global Bun. No hubo consultas remotas de Supabase desde los escenarios de navegador.
+
+**Pendiente humano para cierre:** desde un navegador/dispositivo previamente autorizado, entrar por Login y acceder a `/cajero`; desde otro sin autorización, entrar por Login y terminar en `/detalles`, ver su dispositivo y solicitar/consultar permiso; comprobar que tras autorizar desde Detalles «Ir a Cajero» funciona; comprobar entrada directa sin autorización y fallo de conexión sin falsa denegación. No se debe forzar revocación de un dispositivo operativo para probar. Los estados post-entrada autorizada siguen validados por el backend V6/V7.
+
+**No se modifica Supabase, V6/V7, motor, journal, recovery ni `master`.**
