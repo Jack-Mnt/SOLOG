@@ -64,3 +64,20 @@ Este archivo es la **fuente primaria exclusiva de este bloque**; prevalece solam
 3. Codex implementa por partes A1/A4, A2, A3 con pruebas.
 4. ChatGPT contrasta implementación con esta fuente; usuario ejecuta smoke cuando corresponda.
 5. Cierre explícito del bloque.
+
+---
+
+## 7. Reconciliación de estado contra runtime Full — 2026-11-23
+
+**Auditoría de código completada; A3 sigue sin implementar en Full.** La cabecera histórica «implementación pendiente» corresponde al baseline de 2026-10-09. No debe interpretarse como que faltan todas las subfases.
+
+| Subfase | Estado verificado por inspección de `admin-work` | Evidencia |
+|---|---|---|
+| A1 | Código presente; pruebas dirigidas/smoke específico no repetidos en esta auditoría | `detalles.panel.tsx`: reloj cada 30 s, `serverOffsetMs`, `formatStockUpdate`, `isDetailsStockStale` |
+| A2 | Código presente; teclado/foco en navegador real no repetido en esta auditoría | `detalles.historial.dialog.tsx`: focus trap, Escape, retorno foco, bloqueo scroll |
+| A3 | **Pendiente para la ruta actual Full** | `full.app.tsx`: `getCachedHistory: () => null`, `cacheRevision: view.revision`; `cajero.v4.runtime.ts` preserva un mecanismo histórico no conectado al Full |
+| A4 | Código presente | `detalles.panel.tsx`: etiqueta `Cobertura de turno pendiente`, sin renombrar `conteo_diario_pendientes` |
+
+**Diseño propuesto de A3:** `docs/SOLOG_Optimizacion_Cajero_Full_Cache_Historial_A3_Diseno_V1.md` (no aprobado para implementación). No usar el runtime V4 como consumidor vigente. No reabrir A1/A2/A4 salvo fallo reproducible.
+
+**Delta de acceso por dispositivo:** `docs/SOLOG_UX_Acceso_Cajero_Redireccion_Dispositivo_V1.md` implementado y validado técnicamente como bloque independiente; requiere smoke humano.
