@@ -3,6 +3,7 @@ import { PanelLoader } from './components/panel-loader'
 import { AuthProvider, useAuth } from './features/auth/context'
 import { getSologRoute } from './features/solog/api'
 import { getSologErrorMessageFromUnknown } from './features/solog/errors'
+import { getStoredDeviceToken } from './features/solog/device'
 import {
   isAdminRoute,
   isCashierRoute,
@@ -82,6 +83,62 @@ function LoginRouteResolver({ userId }: { userId: string }) {
   )
 }
 
+type CashierDestination = '/cajero' | '/detalles'
+
+/** La comprobación previa solo lee el token existente: no monta FullRuntime ni toca su journal. */
+function checkCashierEntry(): Promise<CashierDestination> {
+  let token: string | null = null
+  try { token = getStoredDeviceToken() } catch { /* Detalles admite lectura aun sin storage. */ }
+  if (!token) return Promise.resolve('/detalles')
+  return import('./features/solog/cashier-access')
+    .then(({ resolveCashierDestination }) => resolveCashierDestination(token))
+}
+
+function CashierDeviceGuard({ userId, onLogout }: { userId: string; onLogout: () => Promise<void> }) {
+  const [attempt, setAttempt] = useState(0)
+  const pending = useRef<{ userId: string; attempt: number; request: Promise<CashierDestination> } | null>(null)
+  const [authorized, setAuthorized] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let active = true
+    if (!pending.current || pending.current.userId !== userId || pending.current.attempt !== attempt) {
+      pending.current = { userId, attempt, request: checkCashierEntry() }
+    }
+    void pending.current.request
+      .then((destination) => {
+        if (!active) return
+        if (destination === '/detalles') {
+          replaceRoute('/detalles')
+        } else {
+          setAuthorized(true)
+        }
+      })
+      .catch((cause: unknown) => {
+        if (active) setError(getSologErrorMessageFromUnknown(cause))
+      })
+    return () => { active = false }
+  }, [attempt, userId])
+
+  if (error) {
+    return <PanelLoader state="error" title="No se pudo comprobar el dispositivo"
+      description={error} actions={<>
+        <button className="button" type="button" onClick={() => {
+          setError(null)
+          setAuthorized(false)
+          setAttempt(value => value + 1)
+        }}>Reintentar</button>
+        <button className="button button--secondary" type="button"
+          onClick={() => void onLogout()}>Cerrar sesión</button>
+      </>}/>
+  }
+
+  if (!authorized) return <PanelLoader label="Comprobando autorización del dispositivo…" />
+  return <Suspense fallback={<PanelLoader />}>
+    <CajeroApp userId={userId} onLogout={onLogout} />
+  </Suspense>
+}
+
 function AuthenticatedApp() {
   const auth = useAuth()
   const pathname = usePathname()
@@ -128,7 +185,7 @@ function AuthenticatedApp() {
     return <Suspense fallback={<PanelLoader />}><DetailsPage userId={auth.user?.id ?? ''} onLogout={() => void auth.logout()} /></Suspense>
   }
   if (isCashierRoute(pathname) || pathname === '/count' || pathname === '/cajero/seguimiento') {
-    return <Suspense fallback={<PanelLoader />}><CajeroApp userId={auth.user?.id ?? ''} onLogout={auth.logout} /></Suspense>
+    return <CashierDeviceGuard key={auth.user?.id ?? ''} userId={auth.user?.id ?? ''} onLogout={auth.logout} />
   }
   if (isAdminRoute(pathname)) {
     return <Suspense fallback={<PanelLoader />}><AdminV2App key={auth.user?.id ?? ''} userId={auth.user?.id ?? ''} route={pathname} onLogout={() => void auth.logout()} /></Suspense>
