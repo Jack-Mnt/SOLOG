@@ -6,6 +6,9 @@ on:
       - admin-work
     paths:
       - "src/features/solog/cajero/full.contract.ts"
+      - "src/protected-app.tsx"
+      - "src/features/solog/device.ts"
+      - "src/features/solog/cashier-access.ts"
       - "src/features/solog/cajero/full.runtime.ts"
       - "src/features/solog/cajero/full.start-gate.ts"
       - "src/features/solog/cajero/full.start-dialog.tsx"
@@ -22,6 +25,7 @@ on:
       - "tests/cajero-full-temporal.test.ts"
       - "tests/cajero-full.browser.mjs"
       - "tests/details-access-transition.test.ts"
+      - "tests/cajero-access-routing.test.ts"
       - "tests/admin-control-v3.test.ts"
       - ".github/workflows/solog-cajero-full-v3-contracts.yml"
   workflow_dispatch:
@@ -44,6 +48,7 @@ jobs:
       - name: Pruebas dirigidas del Cajero Full
         run: |
           bun test \
+            tests/cajero-access-routing.test.ts \
             tests/cajero-full-contrato-horario-v3.test.ts \
             tests/cajero-full-runtime-inicio-v3.test.ts \
             tests/cajero-full-conflictos-b5.test.ts \
