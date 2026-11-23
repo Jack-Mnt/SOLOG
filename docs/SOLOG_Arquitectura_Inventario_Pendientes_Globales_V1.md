@@ -56,3 +56,14 @@
 5. **B1–B6** únicamente según prioridad aprobada; no abrir seis bloques automáticamente.
 
 Este orden es una **recomendación** y no congela una hoja de ruta nueva. El usuario determina prioridad, alcance y aprobación de cada bloque.
+
+---
+
+## 6. Actualización operativa — 2026-11-23
+
+- **Dashboard Admin V2 F7:** pospuesto por decisión expresa del usuario; sigue pendiente, **no iniciado ni cerrado**.
+- **Bloque A Cajero/Detalles:** auditoría dirigida realizada. A1/A2/A4 constan implementadas en el runtime inspeccionado; no se repitió smoke específico. A3 **continúa pendiente en Full**; propuesta no congelada en `SOLOG_Optimizacion_Cajero_Full_Cache_Historial_A3_Diseno_V1.md`.
+- **Nuevo delta de acceso Cajero condicionado por dispositivo:** `SOLOG_UX_Acceso_Cajero_Redireccion_Dispositivo_V1.md`, **implementado y validado técnicamente** en `admin-work`. CI `336516d8`: [run 45264684682](https://github.com/Jack-Mnt/SOLOG/actions/runs/45264684682), success. **Pendiente smoke humano real** con dispositivo autorizado/no autorizado.
+- **Siguiente secuencia recomendada:** smoke de acceso Cajero → aprobar o ajustar propuesta A3 → implementar A3 mediante fase independiente → tests/smoke → retomar resto del backlog según prioridad del usuario.
+
+Esta adenda prevalece solo para el **estado actual de seguimiento** frente a las prioridades sugeridas en la sección 5; no convierte la propuesta A3 en una decisión aprobada.
