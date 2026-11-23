@@ -541,7 +541,7 @@ async function scenario(options, run) {
         }
       })
     }
-    await page.goto('http://127.0.0.1:5212' + entryPath)
+    await page.goto(new URL(entryPath, target).toString())
     if (waitForHome) await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     return page
   }
