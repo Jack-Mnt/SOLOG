@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero — Historial condicional A3 V1
 
-**Estado:** DISEÑO DE IMPLEMENTACIÓN — COMPORTAMIENTO APROBADO, **FRONTEND BLOQUEADO HASTA DESPLIEGUE/VALIDACIÓN BACKEND**.
+**Estado:** COMPORTAMIENTO Y CONTRATO APROBADOS — BACKEND V3 DESPLEGADO/VALIDADO; FRONTEND PENDIENTE DE PLAN Y APROBACIÓN.
 **Fecha:** 2026-11-23 (America/Lima).
 **Clasificación:** Nivel C para el bloque completo, Nivel B frontend consumidor.
 **Rama:** `admin-work`; producción `master` fuera de alcance.
@@ -126,3 +126,13 @@ Validar `bun test` dirigidos, Chromium, suite completa, lint, typecheck/build, `
 - No polling, TTL de 120 s, cambio de modelo de datos, nuevos triggers/revisiones o protocolo de deltas en V1.
 
 **Criterio de cierre:** backend V3 validado + cliente consume contrato desplegado + pruebas automatizadas + smoke humano; la aprobación conceptual de la estrategia no cierra la implementación.
+
+---
+
+## 8. Gate backend habilitado — 2026-11-23
+
+El backend **A3-B1** fue desplegado y validado. Migración `20261124025038_solog_cajero_historial_condicional_rpc_v3`; documentación vinculante `SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_V1.md`; evidencia `SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_Validacion_V1.md`.
+
+**Se levantó exclusivamente el bloqueo de contrato remoto.** Sigue pendiente iniciar A3-F0 con Codex: inspección baseline `admin-work`, identificación de cambios preexistentes, plan acotado de integración V3 sin implementar y aprobación del usuario antes de A3-F1. El proyecto **no ha cambiado frontend** como consecuencia de A3-B1.
+
+La paridad RPC V2/V3 con filas no vacías del día real y la validación HTTP/JWT deben comprobarse durante el smoke integrado, sin fabricar historial productivo. No tocar incidencias pospuestas de login/redirección ni Dashboard F7.
