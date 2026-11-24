@@ -81,3 +81,15 @@ Este archivo es la **fuente primaria exclusiva de este bloque**; prevalece solam
 **Diseño propuesto de A3:** `docs/SOLOG_Optimizacion_Cajero_Full_Cache_Historial_A3_Diseno_V1.md` (no aprobado para implementación). No usar el runtime V4 como consumidor vigente. No reabrir A1/A2/A4 salvo fallo reproducible.
 
 **Delta de acceso por dispositivo:** `docs/SOLOG_UX_Acceso_Cajero_Redireccion_Dispositivo_V1.md` implementado y validado técnicamente como bloque independiente; requiere smoke humano.
+
+---
+
+## 8. Delta de prioridad A3 — 2026-11-23
+
+**A3 cambió de alcance por decisión explícita del usuario.** Su implementación actual se diseñará como **consulta condicional al servidor en cada apertura**, con respuesta mínima si no cambió el contenido y respuesta completa si cambió.
+
+- **Fuente primaria A3:** `docs/SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md`.
+- **Contrato backend para A3:** `docs/SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_V1.md` (propuesto, **no desplegado**).
+- Los límites del apartado original A3 «no introducir nuevas RPC / no modificar backend» quedan **sustituidos exclusivamente para A3**; siguen vigentes las demás exclusiones no reemplazadas.
+- **A1/A2/A4** y sus decisiones congeladas permanecen sin reinterpretar.
+- Fallas de redirección de Cajero reportadas durante smoke real: **pendientes**; no modificarlas hasta finalizar este trabajo A3.
