@@ -11,7 +11,7 @@ const yesterday = cashierHistoryDate(now, 'yesterday')
 const etagA = 'a'.repeat(64), etagB = 'b'.repeat(64)
 const item = (difference = 3): CashierHistoryItem => ({
   detalle_id: 'detalle-1', grupo_id: 'grupo-1', grupo: 'Grupo de prueba', categoria: 'Cervezas',
-  stock_teorico: 10, stock_fisico: 13, diferencia, precio: 5,
+  stock_teorico: 10, stock_fisico: 13, diferencia: difference, precio: 5,
   valor_diferencia: difference * 5, estado_diferencia: 'Recontar',
   contado_at: '2026-11-20T20:00:00.000Z', recontado_at: null,
   snapshot_referencia_id: null, primer_snapshot_posterior_id: null,
