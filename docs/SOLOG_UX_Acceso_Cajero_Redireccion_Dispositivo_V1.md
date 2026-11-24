@@ -122,3 +122,17 @@ La CI previa continúa válida como evidencia **técnica simulada**, no como evi
 **Acción pendiente acotada:** identificar qué cuenta se utilizó y confirmar expresamente si debería estar activa. Solo si el usuario aprueba la reactivación de **esa identidad concreta**, verificar y ajustar su `public.usuarios.activo` en backend, con validación posterior. No cambiar RLS, roles, tablas ni RPC para eludir cuentas deshabilitadas. Después repetir smoke en un dispositivo nuevo y verificar el caso específico de sede con dispositivo previamente autorizado.
 
 **UX de doble salto:** actualmente `LoginRouteResolver` dirige a `/cajero` por rol y `CashierDeviceGuard` puede reemplazar por `/detalles`. Es una mejora independiente posible para evitar la navegación intermedia, pero **no se ha probado que sea causante de las capturas**. Cualquier refactor de ruta debe ser un delta aprobado y no sustituye resolver el estado activo de la cuenta.
+
+---
+
+## 9. Cierre de incidencia por cuenta deshabilitada — 2026-11-24
+
+**Estado actual de la incidencia observada: RESUELTA Y CONFIRMADA POR EL USUARIO.** El diagnóstico y las capturas de §§7–8 son históricos y no representan un bloqueo vigente.
+
+- **Causa comprobada:** las RPC `rpc_solog_route_v2` y `rpc_solog_details_v2` rechazaban una identidad con `public.usuarios.activo=false`, antes de verificar autorización de dispositivo. El error visible era `SOLOG_USER_DISABLED` («Este usuario está deshabilitado») en `/login`, `/detalles` y `/cajero`.
+- **Corrección backend autorizada:** a petición expresa del usuario se actualizaron únicamente los tres registros inicialmente inactivos de `public.usuarios` a `activo=true`; no se cambiaron roles, sedes, dispositivos, tokens, RLS ni funciones. Verificación posterior en Supabase: **7/7 usuarios activos**, **5/5 cajeros activos**, **0 inactivos**.
+- **Smoke humano:** el usuario repitió la prueba y comunicó explícitamente «se solucionó». Se registra como **aprobación de la incidencia de acceso observada**. No hay capturas ni mediciones HTTP de todos los escenarios de la matriz de acceso posteriores a la corrección; no se declara acreditada exhaustivamente toda la matriz.
+- **Implementación frontend:** sin cambios en el guard ni en el doble salto por rol; la corrección de la incidencia fue de **datos/estado de cuenta**, no de lógica de redirección. La observación técnica sobre el salto `/login → /cajero → /detalles` queda como **oportunidad UX opcional, no como fallo activo**. Solo implementar con delta y aprobación si se prioriza.
+- **Rama:** `admin-work`; sin fusión a `master` ni nuevos commits de código para esta resolución.
+
+**Cierre:** no abrir otra corrección de redirección por esta incidencia sin nueva evidencia reproducible. El bloque A3 permanece cerrado por separado.
