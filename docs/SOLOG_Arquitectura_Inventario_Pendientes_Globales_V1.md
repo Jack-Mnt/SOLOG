@@ -99,3 +99,11 @@ Por orden directa del usuario, A3 se implementó en GitHub `admin-work` mediante
 **Pendiente inmediato A3-F3:** smoke humano en Preview con un navegador autorizado, revalidación `not_modified` en Hoy/Ayer y prueba `full` con cambios reales. El informe `SOLOG_Integracion_Cajero_Historial_Condicional_A3_Validacion_Frontend_V1.md` incluye checklist y límites de evidencia.
 
 **Pendientes posteriores intactos:** incidencias de redirección Cajero/Detalles encontradas por el usuario y, más adelante, Dashboard Admin F7. No adelantar cambios sobre guard o backend.
+
+---
+
+## 10. Cierre A3 y reanudación de redirección Cajero/Detalles — 2026-11-24
+
+- **A3 — Historial condicional: CERRADO.** Backend V3 desplegado; frontend `admin-work` validado con CI 86/86 dirigidos, 893/893 globales, Chromium, lint, build y diff check; el usuario comunicó smoke humano aparentemente correcto y pidió continuar. **Fuente primaria de cierre:** `SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md` §10. Sin trazas HTTP ni mediciones de egress entregadas; no inventar evidencia adicional.
+- **Próxima prioridad activa:** fallas de redirección Cajero/Detalles detectadas en smoke real, antes pospuestas. `SOLOG_UX_Acceso_Cajero_Redireccion_Dispositivo_V1.md` sigue vigente y el fallo humano **no está resuelto**. Diagnosticar con capturas/contexto; no atribuir causa sin evidencia ni tocar V6/V7 o backend innecesariamente.
+- **Dashboard F7:** sigue pospuesto. Promoción a `master` no autorizada.
