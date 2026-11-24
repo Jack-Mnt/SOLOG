@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero — Historial condicional A3: validación frontend V1
 
-**Estado:** IMPLEMENTADO Y VALIDADO TÉCNICAMENTE — **SMOKE HUMANO PENDIENTE**.
+**Estado:** VALIDACIÓN TÉCNICA APROBADA — SMOKE HUMANO ACEPTADO; BLOQUE A3 CERRADO.
 **Rama:** `admin-work`. **Fecha:** 2026-11-24 (America/Lima).
 **Fuente primaria:** `docs/SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md`.
 **Contrato desplegado:** `docs/SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_V1.md`.
@@ -66,3 +66,11 @@ Desde un navegador ya autorizado y el Preview del SHA actualizado:
 Para la comprobación `full` con filas no vacías reales, usar datos operativos legítimos; **no generar/borrar registros sintéticos en Supabase sin aprobación explícita**.
 
 **Cierre funcional A3:** pendiente de aprobación expresa del smoke humano por el usuario. Las fallas previas del guard de redirección Cajero/Detalles y Dashboard F7 siguen pospuestas conforme a las decisiones del usuario.
+
+---
+
+## 5. Adenda de smoke y cierre — 2026-11-24
+
+El usuario informó haber realizado el smoke correspondiente y que el comportamiento «aparentemente [está] en orden», solicitando continuar con el trabajo pendiente. **A3 se considera aceptado y cerrado** con esta evidencia humana más CI verde. No se adjuntaron logs de Network, medidas reales de egress o detalle por caso del smoke; los límites de comprobación documentados arriba permanecen y no se presentan como comprobaciones nuevas.
+
+Prevalece el cierre en el §10 de `docs/SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md` sobre el estado histórico «smoke pendiente». No reabrir el Historial por defecto; el siguiente trabajo independiente son las incidencias de redirección Cajero/Detalles.
