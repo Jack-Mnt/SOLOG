@@ -81,3 +81,22 @@ Pruebas dirigidas del destino autorizado/no autorizado y errores, chequeo de que
 Por decisión explícita del usuario, la investigación y corrección de estas incidencias se **pospone hasta finalizar el bloque A3 — Historial condicional** (`docs/SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md`). No intervenir el guard, `rpc_solog_details_v2`, login ni V6/V7 como parte de A3.
 
 La CI previa continúa válida como evidencia **técnica simulada**, no como evidencia de que el flujo real aprobado haya superado su smoke. Cuando se retome el incidente, revisar capturas, baseline actual y causas reales antes de ampliar el alcance.
+
+---
+
+## 7. Reanudación de diagnóstico — 2026-11-24
+
+**Estado vigente: INCIDENCIA ABIERTA; PRE-FLIGHT DIRIGIDO EN CURSO; SIN NUEVA IMPLEMENTACIÓN.** El usuario completó el smoke de A3 Historial y solicitó continuar con este pendiente. Ya no está pospuesto por A3.
+
+**Inspección estática en `admin-work`:**
+
+1. En `src/protected-app.tsx`, `LoginRouteResolver` invoca `rpc_solog_route_v2`, que decide `/cajero` por rol; **luego** `CashierDeviceGuard` evalúa el dispositivo antes de montar Full. Esto supone **dos saltos lógicos** para Cajero. Que el salto intermedio sea la causa del fallo real **no está demostrado**.
+2. `CashierDeviceGuard` usa `getStoredDeviceToken()` de solo lectura y `rpc_solog_details_v2('summary',{device_token})`; únicamente permite `/cajero` cuando `current_device_state === 'autorizado'` y `current_device_matches_site === true`. Ante ausencia de token envía a `/detalles`; en fallos de red muestra reintento.
+3. `/detalles` utiliza `getOrCreateDeviceToken()` para iniciar o gestionar solicitud, vuelve a leer `summary` y expone «Ir a Cajero» cuando el dispositivo está autorizado. Esto implica segunda consulta de resumen después del guard en un flujo no autorizado.
+4. **Supabase inspeccionado en solo lectura:** `public.rpc_solog_details_v2` valida `auth.uid()`, usuario activo de rol `cajero`, sede activa; busca dispositivo por SHA-256 del token y determina `current_device_state`, `current_device_matches_site`, `authorized_device_id` y `can_request`. El contrato de frontend `DetailsSummary` es coherente en campos, pero **no se ha comprobado una respuesta HTTP real del caso fallido**.
+5. GitHub Actions `45264684682` validó casos **simulados** de acceso permitido, no autorizado, solicitud pendiente y error de red. Es evidencia de regresión técnica, no certificación del smoke humano.
+6. Como Cloudflare Pages puede no desplegar automáticamente pushes de `admin-work`, para reproducir el problema se debe comprobar **qué SHA está activo en Preview**, y registrar ruta inicial/final, tipo de dispositivo, mensaje en pantalla, RPC HTTP y si el token existe, **sin compartir token ni credenciales**.
+
+**Necesidad de evidencia:** el usuario anunció capturas de los fallos reales, pero aún no las ha adjuntado a este bloque. Esperarlas para identificar el caso concreto y proponer corrección mínima; no inferir que el problema procede del backend o del navegador sin reproducción.
+
+**Límites vigentes:** no cambiar rutas, permisos, RLS, RPC V2, bootstrap Full V6/V7, journal ni recuperación sin causa confirmada y delta aprobado. A3 continúa cerrado e independiente.
