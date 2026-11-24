@@ -1,6 +1,6 @@
 # SOLOG — Backend Cajero — Historial condicional RPC V3 — Contrato de diseño V1
 
-**Estado:** DISEÑO TÉCNICO PROPUESTO — PRE-FLIGHT COMPLETADO — **NO DESPLEGADO; NO CONGELADO PARA IMPLEMENTAR**.
+**Estado:** APROBADO Y CONGELADO — RPC V3 DESPLEGADA Y VALIDADA EN SUPABASE, con límites de evidencia documentados.
 **Fecha:** 2026-11-23 (America/Lima).
 **Clasificación:** Nivel C — contrato RPC y consistencia de historial.
 **Proyecto Supabase:** PuertoRicoOnline (`fvtohxvcvsflzmftgfzs`), esquema `inventario`, API expuesta `public`.
@@ -127,3 +127,24 @@ Para `SECURITY DEFINER`: `SET search_path = ''`, referencias schema-qualified, v
 - Fuente funcional anterior A3: `SOLOG_Correccion_Cajero_Detalles_BloqueA_Frontend_V1.md`, vigente para objetivo de caché selectiva salvo exclusiones modificadas explícitamente por esta decisión de Nivel C.
 
 **No realizar migraciones, DDL ni mutaciones de datos basándose solo en este documento de diseño.**
+
+---
+
+## 9. Despliegue y congelación del contrato — 2026-11-23
+
+**A3-B1 COMPLETADA.** El usuario aprobó expresamente el diseño y autorizó la implementación backend. La migración aditiva fue ejecutada en `PuertoRicoOnline` y comprobada en `supabase_migrations` como **`20261124025038_solog_cajero_historial_condicional_rpc_v3`** (versión UTC). Archivo versionado: `supabase/migrations/20261124025038_solog_cajero_historial_condicional_rpc_v3.sql`.
+
+**Contrato congelado para consumidores:**
+- RPC exacta `public.rpc_solog_cashier_history_v3(p_payload jsonb DEFAULT '{}'::jsonb)`.
+- Entradas `period` y, opcionalmente juntas, `if_date` y `if_etag`; valores malformados/incompletos se rechazan.
+- `contract_version:3`; `status:'full'|'not_modified'`; `items` como lista completa o `null`, respectivamente; `etag` SHA-256 de 64 minúsculas.
+- `date` conforme a Lima, `revisions.operational` informativa **no** usada para igualdad.
+- Proyección y filtros V2 preservados. `if_etag` incorpora versión de proyección, usuario, sede, período, fecha y contenido completo.
+- `SECURITY DEFINER`, `search_path=''`, ACL `authenticated` y `service_role` ejecutables, `anon` no ejecutable; identidad y sede derivadas del servidor.
+- Ninguna modificación de la función V2, Full V6/V7, Motor, tablas, datos ni autorización de dispositivos.
+
+**Validación posterior:** `docs/SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_Validacion_V1.md`. Pruebas reales `full/not_modified`, fechas, ETag, permisos, errores, aislamiento y simulación de diferencias y bajas contra 438 registros históricos. Se reporta explícitamente que no había filas para hoy/ayer al momento del smoke SQL, por lo que no se certificó la paridad RPC no vacía ni el HTTP autenticado real. La CI frontend y el smoke humano siguen pendientes.
+
+El aviso histórico de la sección 8 «No realizar migraciones basándose solo en diseño» se aplica a la fase de propuesta **ya concluida**; el usuario aprobó y autorizó expresamente el cambio posterior.
+
+**Gate habilitado:** A3-F0 — baseline y **plan frontend de Codex**; esperar aprobación del usuario antes de implementar.
