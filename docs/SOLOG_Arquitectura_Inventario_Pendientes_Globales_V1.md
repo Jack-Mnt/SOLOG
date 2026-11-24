@@ -107,3 +107,12 @@ Por orden directa del usuario, A3 se implementó en GitHub `admin-work` mediante
 - **A3 — Historial condicional: CERRADO.** Backend V3 desplegado; frontend `admin-work` validado con CI 86/86 dirigidos, 893/893 globales, Chromium, lint, build y diff check; el usuario comunicó smoke humano aparentemente correcto y pidió continuar. **Fuente primaria de cierre:** `SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md` §10. Sin trazas HTTP ni mediciones de egress entregadas; no inventar evidencia adicional.
 - **Próxima prioridad activa:** fallas de redirección Cajero/Detalles detectadas en smoke real, antes pospuestas. `SOLOG_UX_Acceso_Cajero_Redireccion_Dispositivo_V1.md` sigue vigente y el fallo humano **no está resuelto**. Diagnosticar con capturas/contexto; no atribuir causa sin evidencia ni tocar V6/V7 o backend innecesariamente.
 - **Dashboard F7:** sigue pospuesto. Promoción a `master` no autorizada.
+
+---
+
+## 11. Incidencia de acceso resuelta — 2026-11-24
+
+- **Redirección Cajero/Detalles — incidencia reportada: RESUELTA.** Las capturas correspondían a `SOLOG_USER_DISABLED` por tres cuentas Cajero con `public.usuarios.activo=false`, no a una denegación normal de dispositivo. Por autorización expresa del usuario, ChatGPT activó las tres cuentas; verificación remota: **7 usuarios activos, 0 inactivos**. El usuario repitió la prueba y confirmó «se solucionó».
+- **Fuente primaria y cierre de este incidente:** `docs/SOLOG_UX_Acceso_Cajero_Redireccion_Dispositivo_V1.md` §9; las referencias anteriores a error no resuelto son **históricas**.
+- **Sin cambio de rutas o backend de autorización:** `CashierDeviceGuard`, RPC V2, V6/V7 y recuperación permanecen intactos. El doble salto de login a Cajero antes de Detalles se conserva como oportunidad UX opcional **no priorizada**; no afirmar que el usuario pidió rediseñarlo.
+- **A3 Historial:** cerrado con CI aprobada y smoke humano reportado. **Dashboard F7:** pospuesto. **Merge con `master`:** pendiente de autorización y controles de release.
