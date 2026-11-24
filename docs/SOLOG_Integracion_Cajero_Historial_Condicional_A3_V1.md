@@ -1,6 +1,6 @@
 # SOLOG — Integración Cajero — Historial condicional A3 V1
 
-**Estado:** BACKEND V3 DESPLEGADO/VALIDADO; FRONTEND A3 IMPLEMENTADO Y VALIDADO TÉCNICAMENTE — SMOKE HUMANO PENDIENTE.
+**Estado:** CERRADO — backend V3 desplegado, frontend validado técnicamente y smoke humano aceptado por el usuario (2026-11-24).
 **Fecha:** 2026-11-23 (America/Lima).
 **Clasificación:** Nivel C para el bloque completo, Nivel B frontend consumidor.
 **Rama:** `admin-work`; producción `master` fuera de alcance.
@@ -150,3 +150,18 @@ Por solicitud explícita del usuario, ChatGPT realizó **directamente en `admin-
 - **Backend:** se reutilizó la RPC V3 ya desplegada; no se alteraron migraciones ni contratos. El guard de redirección reportado como defectuoso permanece fuera de este alcance.
 
 **Estado:** A3-F0/F1/F2 ejecutadas con validación técnica; **A3-F3 pendiente de smoke humano con un dispositivo autorizado y datos reales**. La implementación está lista para probar en Preview, pero no se considera cerrada funcionalmente ni se fusiona automáticamente a `master`.
+
+---
+
+## 10. Cierre formal A3 — 2026-11-24
+
+**Estado vigente: CERRADO**, por validación técnica comprobada y smoke humano informado por el usuario en el Preview correspondiente. El usuario indicó «realicé el smoke correspondiente y aparentemente en orden todo» y ordenó continuar con los pendientes. Se toma como aceptación operativa proporcional, no como evidencia de que cada caso límite haya sido medido por red.
+
+- **CI de código validado:** `991b4975e171406a0cbfc48a05465482255f8d6d`, GitHub Actions [45334661719](https://github.com/Jack-Mnt/SOLOG/actions/runs/45334661719): pruebas dirigidas 86/86, globales 893/893, lint, typecheck/build, Chromium con escenarios A3 y `git diff --check`, todos correctos.
+- **Backend desplegado:** `public.rpc_solog_cashier_history_v3`, migración `20261124025038_solog_cajero_historial_condicional_rpc_v3`; sigue en vigor la documentación de contrato y validación backend.
+- **Smoke humano:** usuario comunica que las comprobaciones de Historial resultan aparentemente correctas. No se entregaron trazas HTTP ni una lista de comprobaciones concretas, por lo que **no se afirma medida real de egress, paridad de datos no vacíos o cobertura exhaustiva de reintentos/concurrencia reales**.
+- **Fuentes:** esta especificación sigue siendo fuente primaria A3; `SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_V1.md` prevalece para contrato remoto, `SOLOG_Integracion_Cajero_Historial_Condicional_A3_Validacion_Frontend_V1.md` registra las pruebas y su alcance. Las menciones históricas anteriores a «smoke pendiente» quedan sustituidas exclusivamente por este cierre.
+- **Sin promoción a producción:** `admin-work` sigue siendo la rama de trabajo; no se fusionó con `master`.
+- **Siguiente bloque:** retomar diagnóstico de los fallos del smoke real de redirección Cajero/Detalles, reportados previamente. Es un bloque **independiente**, no reabre A3 ni altera V3.
+
+Solo reabrir A3 mediante bug reproducible, incompatibilidad concreta o delta aprobado.
