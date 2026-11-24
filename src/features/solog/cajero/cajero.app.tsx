@@ -9,7 +9,7 @@ import {
   type CashierInstanceState,
 } from './cajero.instance'
 import { FullCashierPanel } from './full.app'
-import { fetchCashierHistory } from './cajero.history'
+import { CashierFullHistorySync } from './cajero.full-history'
 
 const call: FullRpc = async (name, args) => {
   if (!supabase) throw new Error('Falta configurar la conexión de SOLOG.')
@@ -23,7 +23,7 @@ function Owner({ userId, onLogout, handle }: {
   onLogout: () => Promise<void>
   handle: CashierInstanceHandle
 }) {
-  const [{ runtime, error }] = useState(() => {
+  const [{ runtime, historySync, error }] = useState(() => {
     try {
       // No obtener token ni leer journal antes de adquirir la tenencia exclusiva.
       const deviceToken = getOrCreateDeviceToken()
@@ -33,15 +33,23 @@ function Owner({ userId, onLogout, handle }: {
         return navigator.locks.request(transactionKey, run)
       }
       const guarded = handle.bindRuntime(transactionLock, call)
-      return {
-        runtime: new FullRuntime(userId, deviceToken, window.localStorage, guarded.rpc, { lock: guarded.lock }),
-        error: null,
-      }
+      const runtime = new FullRuntime(userId, deviceToken, window.localStorage, guarded.rpc, { lock: guarded.lock })
+      // El historial se asocia a la tenencia del propietario, usuario, token y sede V6.
+      const historySync = new CashierFullHistorySync(
+        () => {
+          const siteId = runtime.getSnapshot().bootstrap?.site.id
+          return siteId ? `${userId}:${deviceToken}:${siteId}` : null
+        },
+        () => runtime.clock.trusted ? runtime.clock.now() : null,
+      )
+      return { runtime, historySync, error: null }
     } catch (error) {
-      return { runtime: null, error }
+      return { runtime: null, historySync: null, error }
     }
   })
-  if (!runtime) {
+  // La ruta Historial se desmonta al navegar; la caché solo muere al perder la tenencia.
+  useEffect(() => () => historySync?.clear(), [historySync])
+  if (!runtime || !historySync) {
     return <PanelLoader
       state="error"
       title="No se pudo abrir el almacenamiento de conteos"
@@ -49,7 +57,7 @@ function Owner({ userId, onLogout, handle }: {
       actions={<button type="button" className="button" onClick={() => void onLogout()}>Cerrar sesión</button>}
     />
   }
-  return <FullCashierPanel runtime={runtime} onLogout={onLogout} loadHistory={fetchCashierHistory}/>
+  return <FullCashierPanel runtime={runtime} onLogout={onLogout} historySync={historySync}/>
 }
 
 type GateView = CashierInstanceState & {
