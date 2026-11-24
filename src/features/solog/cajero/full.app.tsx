@@ -9,7 +9,7 @@ import { CajeroHistorial } from './cajero.historial'
 import { getCajeroCategoryIcon, evaluateCajeroExpression, calculateCajeroValuationPreview, formatCajeroCurrency, formatCajeroDifference, getCajeroDifferenceClass } from './cajero.utils'
 import { PaletteSwitcher } from '../../theme/palette-switcher'
 import { PanelLoader } from '../../../components/panel-loader'
-import type { CashierHistory, CashierHistoryPeriod } from './cajero.history'
+import type { CashierFullHistorySync } from './cajero.full-history'
 import type { CashierDifferenceReason } from './cajero.observaciones.v5'
 import { FullRuntime, type FullBatchConflict, type FullDraft, type FullIncident } from './full.runtime'
 import { FullStartFallbackDialog } from './full.start-dialog'
@@ -324,10 +324,10 @@ function CaptureDialog({ groups, initialId, onClose, disabled, onRecord, draftFo
   </div>
 }
 
-export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
+export function FullCashierPanel({ runtime, onLogout, historySync }: {
   runtime: FullRuntime
   onLogout: () => Promise<void>
-  loadHistory?: (period: CashierHistoryPeriod) => Promise<CashierHistory>
+  historySync: CashierFullHistorySync
 }) {
   const view = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot, runtime.getSnapshot)
   const pathname = usePathname()
@@ -380,12 +380,13 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
   const modalGroups = reviewGroup
     ? reviewSequence
     : category ? stockGroups.filter(g => g.category_id === category) : []
+  // La revisión local de Full no representa una actualización del historial.
   const history = useMemo(() => ({
     serverOffsetMs,
-    cacheRevision: view.revision,
-    getCachedHistory: () => null,
-    loadHistory: (period: CashierHistoryPeriod) => loadHistory!(period),
-  }), [serverOffsetMs, view.revision, loadHistory])
+    cacheRevision: 0,
+    getCachedHistory: historySync.getCachedHistory,
+    loadHistory: historySync.syncHistory,
+  }), [serverOffsetMs, historySync])
   const actionRoute = available[0] ? routeFor(actionFor(available[0])) : null
   useEffect(() => {
     if (view.bootstrap && route && (!session || pathname !== actionRoute)) navigateTo('/cajero')
@@ -742,7 +743,7 @@ export function FullCashierPanel({ runtime, onLogout, loadHistory }: {
             onClick={() => setLogoutOpen(true)}>Cerrar sesión</button>
         </>} /> :
         !view.bootstrap ? <PanelLoader variant="contained" /> :
-        pathname === '/cajero/historial' && loadHistory ? <CajeroHistorial session={history}/> : !route ? <section className="cajero-module cajero-home">
+        pathname === '/cajero/historial' ? <CajeroHistorial session={history}/> : !route ? <section className="cajero-module cajero-home">
         <div className="cajero-home__heading"><h1>Inicio</h1></div>
         <section className={'cajero-stock-card' + (stockFresh ? ' cajero-stock-card--updated' : ' cajero-stock-card--stale')}>
           <div className="cajero-stock-card__status">
