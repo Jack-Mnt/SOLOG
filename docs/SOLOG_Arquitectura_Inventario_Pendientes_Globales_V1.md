@@ -67,3 +67,15 @@ Este orden es una **recomendación** y no congela una hoja de ruta nueva. El usu
 - **Siguiente secuencia recomendada:** smoke de acceso Cajero → aprobar o ajustar propuesta A3 → implementar A3 mediante fase independiente → tests/smoke → retomar resto del backlog según prioridad del usuario.
 
 Esta adenda prevalece solo para el **estado actual de seguimiento** frente a las prioridades sugeridas en la sección 5; no convierte la propuesta A3 en una decisión aprobada.
+
+---
+
+## 7. Prioridad de continuidad — 2026-11-23
+
+Por solicitud del usuario, se prioriza **A3: Historial condicional** antes de revisar las fallas encontradas en el smoke real de redirección Cajero.
+
+- Estrategia funcional A3 **aprobada**: consultar al abrir; `not_modified` con respuesta mínima si el contenido no cambió; `full` con reemplazo total si cambió. El TTL fijo queda descartado.
+- **Diseño backend Nivel C:** `SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_V1.md`, contrato V3 propuesto, sin despliegue.
+- **Diseño integración frontend:** `SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md`, bloqueado hasta que ChatGPT despliegue y valide backend y se apruebe plan técnico de Codex.
+- **Acceso Cajero/Detalles:** CI técnica anterior aprobada; sin embargo, el usuario encontró fallas en el smoke real. **Incidencia abierta y pospuesta**, sin diagnóstico aún porque faltan las capturas. No declarar cerrado ese delta.
+- Dashboard F7 continúa pospuesto.
