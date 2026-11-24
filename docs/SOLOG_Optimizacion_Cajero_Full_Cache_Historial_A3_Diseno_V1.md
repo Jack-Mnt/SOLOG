@@ -52,3 +52,13 @@ Ejecutar tests Bun dirigidos, browser con RPC simulada, suite global, lint, type
 4. **A3.4 — Smoke humano y cierre:** validar Historial Hoy/Ayer y resultado tras conteo real; documentar evidencia.
 
 **No iniciar A3 automáticamente:** este documento es una propuesta técnica, no permiso de implementación. Se requiere aprobación del usuario de sus políticas de frescura/TTL y del delta específico.
+
+---
+
+## 5. Actualización de precedencia — 2026-11-23
+
+**PROPUESTA HISTÓRICA, REEMPLAZADA.** El usuario eligió explícitamente **consulta condicional por apertura + historial completo cuando cambia**, sustituyendo la propuesta de caché con TTL de 120 segundos. No implementar este diseño V1.
+
+La fuente primaria para el nuevo diseño A3 es `docs/SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md`. El contrato backend específico (RPC V3, propuesto y no desplegado) está en `docs/SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_V1.md`.
+
+A3 es ahora un bloque **Nivel C dependiente de backend**. No enviar su implementación a Codex hasta el despliegue y validación del contrato Supabase y la aprobación del plan técnico. Las fallas del acceso Cajero permanecen pendientes para después de A3.
