@@ -100,3 +100,25 @@ La CI previa continúa válida como evidencia **técnica simulada**, no como evi
 **Necesidad de evidencia:** el usuario anunció capturas de los fallos reales, pero aún no las ha adjuntado a este bloque. Esperarlas para identificar el caso concreto y proponer corrección mínima; no inferir que el problema procede del backend o del navegador sin reproducción.
 
 **Límites vigentes:** no cambiar rutas, permisos, RLS, RPC V2, bootstrap Full V6/V7, journal ni recuperación sin causa confirmada y delta aprobado. A3 continúa cerrado e independiente.
+
+---
+
+## 8. Hallazgo por capturas y verificación Supabase — 2026-11-24
+
+**Estado: CAUSA DEL BLOQUEO OBSERVADO IDENTIFICADA EN LA CAPA DE CUENTA; NO SE HA DEMOSTRADO DEFECTO EN REDIRECCIÓN DE DISPOSITIVO; SIN CAMBIOS DE SEGURIDAD.**
+
+**Capturas aportadas por el usuario:** `localhost:5173/login`, `/detalles`, `/cajero`. En las tres se muestra literalmente «Este usuario está deshabilitado», con títulos contextuales «No se pudo resolver tu acceso», «No se pudo cargar la información de la sede» y «No se pudo comprobar el dispositivo».
+
+**Preflight SQL remoto en el proyecto PuertoRicoOnline, solo lecturas:**
+
+- En `public.usuarios` existen **5 identidades de rol cajero**, de las cuales **3 tienen `activo=false`** y 2 `activo=true`. Sus cuentas de Auth existen y las sedes asignadas están activas.
+- `public.rpc_solog_route_v2` devuelve `SOLOG_USER_DISABLED` si el usuario autenticado no aparece en `public.usuarios` **o** `activo=false`. No llega a evaluar el rol/ruta cuando ocurre esto.
+- `public.rpc_solog_details_v2` también rechaza identidad ausente/deshabilitada con `SOLOG_USER_DISABLED` **antes** de la detección del dispositivo. El guard de `/cajero` consulta esa misma RPC `summary`; correctamente no convierte un error de cuenta en `/detalles`.
+- Una lectura en transacción `BEGIN/ROLLBACK` simulando rol Cajero **activo** con un token nuevo (64 hex) obtuvo `summary.access.current_device_state='sin_solicitud'` y `current_device_matches_site=true`. En la sede inspeccionada había otro dispositivo autorizado, por lo que `can_request=false`: ese escenario es un bloqueo por capacidad de sede, no por login. Sin cambios de datos.
+- **No se identificó la cuenta exacta de las capturas:** hay tres cajeros inactivos y ninguna de las imágenes muestra qué correo/identidad Auth se utilizó. No atribuir una cuenta específica sin dato adicional y no habilitar cuentas en masa.
+
+**Diagnóstico:** el fallo reproducido sucede en la **autorización de cuenta**, previa a la autorización del dispositivo. Ningún Cajero inactivo debe acceder a Detalles ni crear solicitudes para sortear el control de cuenta. La redirección `/cajero → /detalles` aplica únicamente cuando **la cuenta está activa** y el dispositivo no está autorizado; un error `SOLOG_USER_DISABLED` debe permanecer como error de acceso.
+
+**Acción pendiente acotada:** identificar qué cuenta se utilizó y confirmar expresamente si debería estar activa. Solo si el usuario aprueba la reactivación de **esa identidad concreta**, verificar y ajustar su `public.usuarios.activo` en backend, con validación posterior. No cambiar RLS, roles, tablas ni RPC para eludir cuentas deshabilitadas. Después repetir smoke en un dispositivo nuevo y verificar el caso específico de sede con dispositivo previamente autorizado.
+
+**UX de doble salto:** actualmente `LoginRouteResolver` dirige a `/cajero` por rol y `CashierDeviceGuard` puede reemplazar por `/detalles`. Es una mejora independiente posible para evitar la navegación intermedia, pero **no se ha probado que sea causante de las capturas**. Cualquier refactor de ruta debe ser un delta aprobado y no sustituye resolver el estado activo de la cuenta.
