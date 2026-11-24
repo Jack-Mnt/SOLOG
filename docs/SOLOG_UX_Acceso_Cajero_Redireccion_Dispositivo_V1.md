@@ -71,3 +71,13 @@ Pruebas dirigidas del destino autorizado/no autorizado y errores, chequeo de que
 **Pendiente humano para cierre:** desde un navegador/dispositivo previamente autorizado, entrar por Login y acceder a `/cajero`; desde otro sin autorización, entrar por Login y terminar en `/detalles`, ver su dispositivo y solicitar/consultar permiso; comprobar que tras autorizar desde Detalles «Ir a Cajero» funciona; comprobar entrada directa sin autorización y fallo de conexión sin falsa denegación. No se debe forzar revocación de un dispositivo operativo para probar. Los estados post-entrada autorizada siguen validados por el backend V6/V7.
 
 **No se modifica Supabase, V6/V7, motor, journal, recovery ni `master`.**
+
+---
+
+## 6. Incidencias del smoke humano — pendientes
+
+**Estado vigente: VALIDACIÓN HUMANA NO SUPERADA; el usuario identificó fallas reales en redirección de acceso.** No hay diagnóstico concreto ni capturas todavía, por lo que no se atribuye causa ni se considera corregido.
+
+Por decisión explícita del usuario, la investigación y corrección de estas incidencias se **pospone hasta finalizar el bloque A3 — Historial condicional** (`docs/SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md`). No intervenir el guard, `rpc_solog_details_v2`, login ni V6/V7 como parte de A3.
+
+La CI previa continúa válida como evidencia **técnica simulada**, no como evidencia de que el flujo real aprobado haya superado su smoke. Cuando se retome el incidente, revisar capturas, baseline actual y causas reales antes de ampliar el alcance.
