@@ -56,6 +56,7 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
     session.getCachedHistory('today'),
   )
   const [loading, setLoading] = useState(history === null)
+  const [checking, setChecking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const requestVersion = useRef(0)
   const getCachedHistory = session.getCachedHistory
@@ -64,25 +65,28 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
   const loadHistory = useCallback(async () => {
     const currentRequest = ++requestVersion.current
     const cached = getCachedHistory(period)
-    if (cached) {
-      setHistory(cached)
-      setLoading(false)
-      setError(null)
-      return
-    }
-
-    setHistory(null)
-    setLoading(true)
+    // Toda apertura/selección consulta V3; los datos cacheados permanecen visibles.
+    setHistory(cached)
+    setLoading(cached === null)
+    setChecking(cached !== null)
     setError(null)
     try {
       const response = await loadCachedHistory(period)
       if (currentRequest !== requestVersion.current) return
       setHistory(response)
+      const validIds = new Set(response.items.map((item) => item.detalle_id))
+      setExpandedItemIds((current) => {
+        if ([...current].every((id) => validIds.has(id))) return current
+        return new Set([...current].filter((id) => validIds.has(id)))
+      })
     } catch (loadError) {
       if (currentRequest !== requestVersion.current) return
       setError(getSologErrorMessageFromUnknown(loadError))
     } finally {
-      if (currentRequest === requestVersion.current) setLoading(false)
+      if (currentRequest === requestVersion.current) {
+        setLoading(false)
+        setChecking(false)
+      }
     }
   }, [getCachedHistory, loadCachedHistory, period])
 
@@ -126,6 +130,11 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
     ) {
       setSelectedCategoryId(null)
     }
+    // No presentar registros del período anterior durante la comprobación.
+    setHistory(nextHistory)
+    setLoading(nextHistory === null)
+    setChecking(false)
+    setError(null)
     setPeriod(nextPeriod)
   }
 
@@ -211,10 +220,13 @@ export function CajeroHistorial({ session }: { session: CajeroHistoryController 
 
       {error ? (
         <div className="cajero-alert cajero-alert--error" role="alert">
-          <AlertCircle aria-hidden="true" size={21} /><p>{error}</p>
+          <AlertCircle aria-hidden="true" size={21} />
+          <p>{error}{history ? ' Los datos anteriores todavía no han sido verificados.' : ''}</p>
           <button className="button button--secondary" onClick={() => void loadHistory()} type="button">Reintentar</button>
         </div>
       ) : null}
+
+      {checking ? <p role="status" aria-live="polite">Comprobando cambios…</p> : null}
 
       {loading ? (
         <PanelLoader variant="contained" />
