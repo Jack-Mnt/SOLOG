@@ -79,3 +79,13 @@ Por solicitud del usuario, se prioriza **A3: Historial condicional** antes de re
 - **Diseño integración frontend:** `SOLOG_Integracion_Cajero_Historial_Condicional_A3_V1.md`, bloqueado hasta que ChatGPT despliegue y valide backend y se apruebe plan técnico de Codex.
 - **Acceso Cajero/Detalles:** CI técnica anterior aprobada; sin embargo, el usuario encontró fallas en el smoke real. **Incidencia abierta y pospuesta**, sin diagnóstico aún porque faltan las capturas. No declarar cerrado ese delta.
 - Dashboard F7 continúa pospuesto.
+
+---
+
+## 8. A3 — Estado backend desplegado — 2026-11-23
+
+**A3-B1 cerrado técnicamente:** `public.rpc_solog_cashier_history_v3` desplegada y validada, migración `20261124025038_solog_cajero_historial_condicional_rpc_v3`. Fuente primaria `SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_V1.md` y resultados `SOLOG_Backend_Cajero_Historial_Condicional_RPC_V3_Validacion_V1.md`.
+
+**Siguiente bloque A3-F0:** Codex debe establecer el baseline y presentar el plan frontend de historial condicional, **sin implementar todavía**. La autorización al frontend requiere aprobación humana del plan, aunque el backend ya está congelado.
+
+**Pendientes explícitos inalterados:** fallas reales del smoke de redirección Cajero (investigar después de finalizar A3); Dashboard F7 (pospuesto). No considerar cerrada A3 global hasta validación del consumidor y smoke humano.
