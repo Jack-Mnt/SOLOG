@@ -39,6 +39,9 @@ class SimulatedFull {
     this.observations = new Set()
     this.receipts = new Map()
     this.calls = []
+    this.historyCalls = []
+    this.historyRevision = 1
+    this.historyRows = []
     this.groups = [this.group(groupA, 'Grupo A'), this.group(groupB, 'Grupo B')]
     if (productDetails) {
       this.groups[0].members = Array.from({ length: 16 }, (_, i) => ({
@@ -475,6 +478,24 @@ async function scenario(options, run) {
         },
       }) })
     }
+    if (name === 'rpc_solog_cashier_history_v3') {
+      const { period, if_date, if_etag } = args.p_payload ?? {}
+      assert.ok(period === 'today' || period === 'yesterday')
+      fake.historyCalls.push({ period, if_date: if_date ?? null, if_etag: if_etag ?? null })
+      if (fake.rejectHistory && !fake.allowHistoryRetry) return route.abort('failed')
+      const at = period === 'yesterday' ? fake.now - 86_400_000 : fake.now
+      const date = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit',
+      }).format(at)
+      const etag = fake.historyRevision.toString(16).padStart(64, '0') + (period === 'yesterday' ? '' : '')
+      const notModified = if_etag === etag && if_date === date
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+        contract_version: 3, generated_at: iso(fake.now), period, date,
+        status: notModified ? 'not_modified' : 'full',
+        etag, revisions: { operational: 1 },
+        items: notModified ? null : period === 'today' ? fake.historyRows : [],
+      }) })
+    }
     if (name === 'rpc_solog_cashier_bootstrap_v6') {
       fake.bootstrapAttempts = (fake.bootstrapAttempts ?? 0) + 1
       if (options.bootstrapError === 'always' ||
@@ -626,6 +647,74 @@ try {
     await page.getByRole('heading', { name: 'Inicio', exact: true }).waitFor()
     assert.ok(fake.deviceSummaryAttempts >= 2)
   })
+  await check('Historial A3: primera carga, reabrir sin cambios y reemplazar al actualizar', {},
+    async ({ fake, createPage }) => {
+      const page = await createPage()
+      const navigation = page.getByRole('navigation', { name: 'Panel Cajero' })
+      const historyButton = navigation.getByRole('button', { name: 'Historial' })
+      const homeButton = navigation.getByRole('button', { name: 'Inicio', exact: true })
+      await historyButton.click()
+      await page.getByRole('heading', { name: 'Historial', exact: true }).waitFor()
+      await eventually(() => fake.historyCalls.length === 1, 'Primera apertura debe llamar V3')
+      assert.equal(fake.historyCalls[0].if_etag, null)
+      await homeButton.click()
+      await historyButton.click()
+      await eventually(() => fake.historyCalls.length === 2, 'Reabrir debe comprobar V3')
+      assert.equal(fake.historyCalls[1].if_etag, '1'.padStart(64, '0'))
+      // Mutación externa simulada: V3 debe entregar colección completa nueva.
+      fake.historyRevision++
+      fake.historyRows = [{
+        detalle_id: '12345678-1234-4123-8123-1234567890f1',
+        grupo_id: groupA, grupo: 'Grupo histórico actualizado', categoria: 'Pruebas',
+        stock_teorico: 10, stock_fisico: 13, diferencia: 3,
+        precio: 5, valor_diferencia: 15, estado_diferencia: 'Recontar',
+        contado_at: iso(fake.now), recontado_at: null,
+        snapshot_referencia_id: null, primer_snapshot_posterior_id: null,
+        snapshot_posterior_id: null, snapshot_reconteo_id: null,
+        stock_posterior: null, stock_teorico_reconteo: null, stock_reconteo: null,
+        motivo_diferencia: null, observacion_diferencia: null, observacion_reconteo: null,
+      }]
+      await homeButton.click()
+      await historyButton.click()
+      await page.getByText('Grupo histórico actualizado', { exact: true }).waitFor()
+      assert.equal(fake.historyCalls.length, 3)
+      assert.equal(fake.historyCalls[2].if_etag, '1'.padStart(64, '0'))
+      fake.historyRevision++
+      fake.historyRows = []
+      await homeButton.click()
+      await historyButton.click()
+      await page.getByText('No hay registros para hoy.', { exact: true }).waitFor()
+      assert.equal(fake.historyCalls.length, 4)
+    })
+  await check('Historial A3: alternar Hoy/Ayer siempre revalida cada período', {},
+    async ({ fake, createPage }) => {
+      const page = await createPage()
+      const nav = page.getByRole('navigation', { name: 'Panel Cajero' })
+      await nav.getByRole('button', { name: 'Historial' }).click()
+      await eventually(() => fake.historyCalls.length === 1)
+      await page.getByRole('button', { name: 'Ayer', exact: true }).click()
+      await eventually(() => fake.historyCalls.length === 2)
+      await page.getByRole('button', { name: 'Hoy', exact: true }).click()
+      await eventually(() => fake.historyCalls.length === 3)
+      assert.deepEqual(fake.historyCalls.map(c => c.period), ['today', 'yesterday', 'today'])
+      assert.equal(fake.historyCalls[2].if_etag, '1'.padStart(64, '0'))
+    })
+  await check('Historial A3: error mantiene caché anterior y ofrece reintento', {},
+    async ({ fake, createPage }) => {
+      const page = await createPage()
+      const nav = page.getByRole('navigation', { name: 'Panel Cajero' })
+      await nav.getByRole('button', { name: 'Historial' }).click()
+      await eventually(() => fake.historyCalls.length === 1)
+      fake.rejectHistory = true
+      await nav.getByRole('button', { name: 'Inicio', exact: true }).click()
+      await nav.getByRole('button', { name: 'Historial' }).click()
+      await page.getByRole('button', { name: 'Reintentar', exact: true }).waitFor()
+      assert.equal(new URL(page.url()).pathname, '/cajero/historial')
+      fake.allowHistoryRetry = true
+      await page.getByRole('button', { name: 'Reintentar', exact: true }).click()
+      await eventually(() => fake.historyCalls.length === 3)
+      await page.getByText('No hay registros para hoy.', { exact: true }).waitFor()
+    })
   await check('bootstrap Full: error transitorio permite reintento explícito', {
     // StrictMode puede iniciar más de un bootstrap antes de mostrar el error.
     // Persistir la avería hasta la acción humana hace determinista esta prueba.
