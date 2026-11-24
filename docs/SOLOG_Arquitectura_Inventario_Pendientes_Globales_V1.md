@@ -89,3 +89,13 @@ Por solicitud del usuario, se prioriza **A3: Historial condicional** antes de re
 **Siguiente bloque A3-F0:** Codex debe establecer el baseline y presentar el plan frontend de historial condicional, **sin implementar todavía**. La autorización al frontend requiere aprobación humana del plan, aunque el backend ya está congelado.
 
 **Pendientes explícitos inalterados:** fallas reales del smoke de redirección Cajero (investigar después de finalizar A3); Dashboard F7 (pospuesto). No considerar cerrada A3 global hasta validación del consumidor y smoke humano.
+
+---
+
+## 9. A3 — Frontend implementado, smoke pendiente — 2026-11-24
+
+Por orden directa del usuario, A3 se implementó en GitHub `admin-work` mediante ChatGPT usando el contrato `rpc_solog_cashier_history_v3` desplegado. **CI verde** en el commit `991b4975`, run https://github.com/Jack-Mnt/SOLOG/actions/runs/45334661719: 86 pruebas dirigidas, Chromium, 893 pruebas globales, lint, build y diff check aprobados.
+
+**Pendiente inmediato A3-F3:** smoke humano en Preview con un navegador autorizado, revalidación `not_modified` en Hoy/Ayer y prueba `full` con cambios reales. El informe `SOLOG_Integracion_Cajero_Historial_Condicional_A3_Validacion_Frontend_V1.md` incluye checklist y límites de evidencia.
+
+**Pendientes posteriores intactos:** incidencias de redirección Cajero/Detalles encontradas por el usuario y, más adelante, Dashboard Admin F7. No adelantar cambios sobre guard o backend.
